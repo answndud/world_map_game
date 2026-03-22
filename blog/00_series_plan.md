@@ -1,0 +1,69 @@
+# WorldMap 개발 블로그 시리즈 요약 인덱스
+
+이 문서는 공개용 목차다.
+
+상세 구현 순서와 학습 체크는 [docs/PORTFOLIO_PLAYBOOK.md](/Users/alex/project/worldmap/docs/PORTFOLIO_PLAYBOOK.md)를 기준으로 삼고, 이 문서는 독자에게 어떤 순서로 설명할지 정리한다.
+
+## 연재 목표
+
+이 시리즈는 아래 독자를 대상으로 한다.
+
+- Spring Boot 포트폴리오를 처음 만드는 사람
+- 게임형 서비스라도 백엔드 중심으로 설명하고 싶은 사람
+- AI를 붙이더라도 "왜 이렇게 설계했는가"를 설명하고 싶은 사람
+
+## 공개 순서
+
+### Part A. 문제 정의와 방향
+
+1. [왜 WorldMap 게임 플랫폼을 포트폴리오 주제로 잡았는가](./01-why-worldmap-game-platform-domain.md)
+
+### Part B. 부트스트랩과 공통 기반
+
+2. [Spring Boot, Gradle, Thymeleaf로 프로젝트 시작하기](./02-spring-boot-bootstrap.md)
+3. Docker로 PostgreSQL 또는 MySQL, Redis 개발 환경 만들기
+4. `application.yml`과 profile 전략 설계하기
+5. JPA, Redis, Validation 공통 기반 잡기
+6. `common`, `country`, `game`, `ranking`, `recommendation` 패키지 구조 잡기
+
+### Part C. 핵심 게임 도메인
+
+7. [`country` 엔티티와 시드 데이터 설계](./03-country-seed-loading.md)
+8. `game_session`, `game_round`로 게임 상태 모델링
+9. 위치 찾기 게임 Level 1 구현
+10. 인구수 맞추기 게임 Level 1 구현
+
+### Part D. 랭킹과 추천
+
+11. Redis Sorted Set으로 랭킹 반영하기
+12. 설문 기반 추천 엔진 만들기
+13. LLM으로 추천 결과 설명 생성하기
+
+### Part E. 테스트, 확장, 취업 패키징
+
+14. 왜 핵심 게임 로직을 테스트해야 하는가
+15. 인증, 전적, 마이페이지 붙이기
+16. Level 2 난이도와 실시간성 고도화
+17. README, 아키텍처, 면접 답변 패키지 만들기
+
+## 실제 집필 우선순위
+
+공개는 1번부터 하지만, 실제 작성은 아래 순서가 더 효율적이다.
+
+1. 01. 주제 선정과 방향
+2. 02. 프로젝트 뼈대 만들기
+3. 07. 국가 데이터와 시드 설계
+4. 08. 게임 세션 / 라운드 모델링
+5. 09. 위치 찾기 게임 Level 1
+
+이유는 이 다섯 개가 프로젝트의 성격을 가장 빠르게 보여 주기 때문이다.
+
+## 각 글에서 공통으로 다룰 질문
+
+- 왜 이 단계가 필요한가?
+- 이전 단계에서 무엇이 준비됐는가?
+- 실제로 어떤 파일이 바뀌는가?
+- 요청은 어떤 흐름으로 지나가는가?
+- 상태는 어디에서 바뀌는가?
+- 무엇을 테스트해야 하는가?
+- 면접에서는 이걸 어떻게 설명하면 좋은가?
