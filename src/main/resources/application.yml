@@ -1,0 +1,31 @@
+spring:
+  application:
+    name: worldmap
+  profiles:
+    default: local
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
+  data:
+    redis:
+      repositories:
+        enabled: false
+  jpa:
+    open-in-view: false
+
+server:
+  error:
+    whitelabel:
+      enabled: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+worldmap:
+  seed:
+    countries:
+      enabled: true
+      location: classpath:data/countries.json

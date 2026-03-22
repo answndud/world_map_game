@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WorldMap</title>
+    <link rel="stylesheet" th:href="@{/css/site.css}">
+</head>
+<body>
+<div class="page-shell">
+    <header class="hero">
+        <p class="eyebrow">Spring Boot 3 Portfolio Project</p>
+        <h1>WorldMap</h1>
+        <p class="hero-copy">
+            하나의 사이트에서 세계 지도 게임, 인구수 퀴즈, 나라 추천, 실시간 랭킹을 제공하는
+            서버 주도 게임 플랫폼을 만듭니다.
+        </p>
+    </header>
+
+    <main class="layout">
+        <section class="panel">
+            <div class="panel-head">
+                <h2>모드 구성</h2>
+                <p>현재는 프로젝트 뼈대 단계이며, 아래 기능을 순차적으로 구현합니다.</p>
+            </div>
+            <div class="card-grid">
+                <article class="mode-card" th:each="card : ${modeCards}">
+                    <div class="card-top">
+                        <span class="status" th:text="${card.status}">Planned</span>
+                        <span class="subtitle" th:text="${card.subtitle}">Level 1~2</span>
+                    </div>
+                    <h3 th:text="${card.title}">국가 위치 찾기</h3>
+                    <p th:text="${card.description}">
+                        서버가 문제를 생성하고 정답과 점수를 판정합니다.
+                    </p>
+                    <a class="ghost-link" th:href="${card.href}">예정 경로 보기</a>
+                </article>
+            </div>
+        </section>
+
+        <section class="split">
+            <article class="panel">
+                <div class="panel-head">
+                    <h2>핵심 원칙</h2>
+                </div>
+                <ul class="check-list">
+                    <li th:each="principle : ${principles}" th:text="${principle}">
+                        서버가 게임 상태를 관리합니다.
+                    </li>
+                </ul>
+            </article>
+
+            <article class="panel">
+                <div class="panel-head">
+                    <h2>현재 로드맵</h2>
+                </div>
+                <ol class="roadmap">
+                    <li th:each="step : ${roadmap}" th:text="${step}">
+                        Spring Boot 뼈대 만들기
+                    </li>
+                </ol>
+            </article>
+        </section>
+    </main>
+</div>
+</body>
+</html>
