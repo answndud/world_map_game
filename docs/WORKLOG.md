@@ -217,3 +217,540 @@
 - 배운 점: 시드 데이터는 단순 JSON 파일이 아니라 “출처, 기준 연도, 좌표 의미”를 설명할 수 있어야 면접과 포트폴리오에서 설득력이 생긴다. 또한 초기 적재 로직은 편하지만, 운영 환경에서는 마이그레이션 전략과 어떻게 분리할지도 계속 생각해야 한다.
 - 아직 약한 부분: 현재 대표 좌표는 World Bank API의 capital city 좌표를 사용한다. 즉 위치 찾기 게임의 정답 기준점이 국가의 경계나 중심점이 아니라 `수도 기준 대표점`이라는 한계가 있다. 이후 게임 점수 정책을 만들 때 이 trade-off를 더 명확히 설명할 준비가 필요하다.
 - 면접용 30초 요약: 국가 데이터를 `country` 테이블에 미리 적재해 게임과 추천 기능의 공통 기준 데이터를 만들었고, 시작 시 JSON 시드 파일을 검증한 뒤 빈 테이블에만 넣도록 구성했다. 인구수는 World Bank API 기준 2024 데이터를 사용했고, 위치 판정용 좌표는 첫 버전에서는 대표점 하나만 저장해 복잡도를 낮췄다.
+
+## 2026-03-23 - 3단계 국가 위치 찾기 게임 Level 1 완료
+
+- 단계: 3. 국가 위치 찾기 게임 Level 1
+- 목적: 서버가 세션, 라운드, 점수, 진행 상태를 직접 관리하는 첫 번째 실제 게임 흐름을 완성한다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/common/exception/GlobalApiExceptionHandler.java`
+  - `src/main/java/com/worldmap/web/HomeController.java`
+  - `src/main/java/com/worldmap/game/location/domain/LocationGameSessionStatus.java`
+  - `src/main/java/com/worldmap/game/location/domain/LocationGameSession.java`
+  - `src/main/java/com/worldmap/game/location/domain/LocationGameRound.java`
+  - `src/main/java/com/worldmap/game/location/domain/LocationGameSessionRepository.java`
+  - `src/main/java/com/worldmap/game/location/domain/LocationGameRoundRepository.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationAnswerJudgement.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameScoringPolicy.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameStartView.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameCurrentRoundView.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameAnswerView.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameRoundResultView.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameSessionResultView.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameService.java`
+  - `src/main/java/com/worldmap/game/location/web/StartLocationGameRequest.java`
+  - `src/main/java/com/worldmap/game/location/web/SubmitLocationAnswerRequest.java`
+  - `src/main/java/com/worldmap/game/location/web/LocationGameApiController.java`
+  - `src/main/java/com/worldmap/game/location/web/LocationGamePageController.java`
+  - `src/main/resources/templates/location-game/start.html`
+  - `src/main/resources/templates/location-game/play.html`
+  - `src/main/resources/templates/location-game/result.html`
+  - `src/main/resources/static/js/location-game.js`
+  - `src/main/resources/static/css/site.css`
+  - `src/test/java/com/worldmap/game/location/application/LocationGameScoringPolicyTest.java`
+  - `src/test/java/com/worldmap/game/location/LocationGameFlowIntegrationTest.java`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `README.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/04-location-game-level-1.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 사용자가 시작 페이지에서 닉네임을 입력하면 `POST /api/games/location/sessions`가 세션과 라운드들을 만든다. 플레이 페이지는 `GET /round`로 현재 문제를 받고, 좌표와 `roundNumber`를 함께 `POST /answer`로 보낸다. 서버는 현재 라운드와 요청 라운드를 비교해 중복 제출을 막고, 거리 계산과 점수 계산을 수행한 뒤 세션과 라운드를 함께 갱신한다. 마지막 라운드가 끝나면 결과 페이지에서 세션 요약과 라운드별 기록을 보여준다.
+- 데이터 / 상태 변화: 새로 `location_game_session`, `location_game_round` 테이블이 생기고, 상태는 `READY -> IN_PROGRESS -> FINISHED`로 바뀐다. 각 답안 제출 시 세션 총점과 완료 라운드 수가 증가하고, 라운드에는 제출 좌표, 거리, 판정, 점수가 저장된다.
+- 핵심 도메인 개념: 세션과 라운드 분리, 서버 주도 정답 판정, `roundNumber` 기반 중복 제출 방지, 거리 계산과 점수 계산의 정책 분리, SSR 페이지와 API의 역할 분리
+- 예외 / 엣지 케이스: 존재하지 않는 세션은 `404`, 현재 라운드와 다른 라운드 번호 제출은 `409`, 범위를 벗어난 좌표는 `400`으로 처리한다. 현재 UI는 지도 클릭이 아니라 좌표 입력형 셸이며, 정답 기준도 국가 경계가 아니라 대표 좌표 1개라는 한계가 있다.
+- 테스트: `./gradlew test` 통과, 점수 정책 단위 테스트와 전체 게임 흐름 통합 테스트 추가
+- 배운 점: 게임형 서비스에서도 결국 중요한 것은 시각 효과보다 상태 전이와 데이터 무결성이다. 특히 “중복 제출이 다음 라운드를 잘못 먹지 않게 하는가” 같은 예외 흐름이 백엔드 설계의 질을 크게 좌우한다.
+- 아직 약한 부분: 현재 프론트는 좌표를 직접 입력하는 형태라 사용자 경험이 거칠다. 다음 단계나 별도 UI 고도화 단계에서 Leaflet 지도 클릭을 붙이되, 지금 만든 API와 세션 구조는 그대로 유지된다는 점을 더 또렷하게 설명할 필요가 있다.
+- 면접용 30초 요약: 위치 찾기 게임 Level 1에서는 서버가 게임 세션과 라운드를 직접 저장하고, 답안 제출 시 거리와 점수를 계산해 상태를 갱신하도록 만들었다. 답안 요청에 `roundNumber`를 포함해 중복 제출을 방지했고, 결과 페이지에서는 라운드별 거리와 점수를 다시 확인할 수 있게 해 서버 주도 게임 구조를 명확히 보여 주었다.
+
+## 2026-03-23 - 4단계 국가 인구수 맞추기 게임 Level 1 완료
+
+- 단계: 4. 국가 인구수 맞추기 게임 Level 1
+- 목적: 위치 게임에서 만든 세션 구조를 재사용하면서, 보기형 퀴즈 방식의 두 번째 모드를 추가한다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/game/common/domain/GameSessionStatus.java`
+  - `src/main/java/com/worldmap/game/common/domain/BaseGameSession.java`
+  - `src/main/java/com/worldmap/game/location/domain/LocationGameSession.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameStartView.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameAnswerView.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameSessionResultView.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameService.java`
+  - `src/main/java/com/worldmap/game/population/domain/PopulationGameSession.java`
+  - `src/main/java/com/worldmap/game/population/domain/PopulationGameRound.java`
+  - `src/main/java/com/worldmap/game/population/domain/PopulationGameSessionRepository.java`
+  - `src/main/java/com/worldmap/game/population/domain/PopulationGameRoundRepository.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationOptionView.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationGameStartView.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationGameCurrentRoundView.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationAnswerJudgement.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationGameScoringPolicy.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationGameOptionGenerator.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationRoundOptions.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationGameAnswerView.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationGameRoundResultView.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationGameSessionResultView.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationGameService.java`
+  - `src/main/java/com/worldmap/game/population/web/StartPopulationGameRequest.java`
+  - `src/main/java/com/worldmap/game/population/web/SubmitPopulationAnswerRequest.java`
+  - `src/main/java/com/worldmap/game/population/web/PopulationGameApiController.java`
+  - `src/main/java/com/worldmap/game/population/web/PopulationGamePageController.java`
+  - `src/main/resources/templates/population-game/start.html`
+  - `src/main/resources/templates/population-game/play.html`
+  - `src/main/resources/templates/population-game/result.html`
+  - `src/main/resources/static/js/population-game.js`
+  - `src/main/resources/static/css/site.css`
+  - `src/main/java/com/worldmap/web/HomeController.java`
+  - `src/test/java/com/worldmap/game/population/application/PopulationGameOptionGeneratorTest.java`
+  - `src/test/java/com/worldmap/game/population/PopulationGameFlowIntegrationTest.java`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `README.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/05-population-game-level-1.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 사용자가 시작 페이지에서 닉네임을 입력하면 `POST /api/games/population/sessions`가 세션과 라운드를 만든다. 라운드 생성 시 서버는 `PopulationGameOptionGenerator`로 보기 4개를 만들고, 플레이 페이지는 `GET /round`로 문제와 보기를 받아 렌더링한다. 사용자가 `selectedOptionNumber`를 제출하면 서버는 정답 여부와 점수를 계산하고 세션/라운드를 함께 갱신한다. 마지막 라운드가 끝나면 결과 페이지에서 라운드별 선택값과 정답값을 보여준다.
+- 데이터 / 상태 변화: `population_game_session`, `population_game_round` 테이블이 추가됐고, 위치 게임과 인구수 게임 모두 `BaseGameSession`의 공통 세션 구조를 사용하게 됐다. 각 인구수 라운드에는 정답 인구수, 보기 4개, 정답 보기 번호, 사용자가 선택한 보기 번호, 점수가 저장된다.
+- 핵심 도메인 개념: 공통 세션 구조 재사용, 모드별 라운드 분리, 보기 생성 규칙, 모드별 점수 정책, “공통화는 세션까지만 / 라운드는 모드별로”라는 경계 설정
+- 예외 / 엣지 케이스: 국가 수가 4개 미만이면 보기형 게임 자체를 시작할 수 없다. 답안 요청의 라운드 번호가 현재 세션 라운드와 다르면 `409`로 막고, 보기 번호가 1~4 범위를 벗어나면 `400`으로 처리한다. 보기 생성은 비슷한 인구 규모를 우선 고르지만, seed 데이터가 적기 때문에 매우 정교한 난이도 조절은 아직 아니다.
+- 테스트: `./gradlew test` 통과, 옵션 생성 단위 테스트와 인구수 게임 전체 흐름 통합 테스트 추가, 기존 위치 게임 테스트도 유지
+- 배운 점: 두 번째 게임을 추가해 보니 “공통으로 보이는 것”과 “정말 공통인 것”이 다르다는 점이 분명해졌다. 세션 필드와 상태 전이는 공통이지만, 라운드 데이터와 점수 정책은 모드별로 남기는 편이 훨씬 설명 가능하고 유지보수하기 좋다.
+- 아직 약한 부분: 현재 인구수 Level 1은 보기형이어서 판정이 단순하다. 이후 Level 2 수치 입력형으로 넘어갈 때 오차율 기반 점수 계산과 보기형 구조를 어떻게 같이 설명할지 더 다듬을 필요가 있다.
+- 면접용 30초 요약: 인구수 맞추기 게임 Level 1에서는 위치 게임에서 검증한 세션 구조를 `BaseGameSession`으로 재사용하고, 라운드와 점수 정책만 모드별로 분리했다. 서버가 비슷한 인구 규모의 보기 4개를 만들고 정답 여부를 판정하도록 해, 공통 구조와 모드별 로직의 경계를 설명 가능한 형태로 정리했다.
+
+## 2026-03-23 - 3단계 위치 찾기 게임 Level 1 요구사항 정합화
+
+- 단계: 3. 국가 위치 찾기 게임 Level 1
+- 목적: 좌표 입력형 프로토타입을 실제 요구사항인 `3D 지구본 국가 선택형`으로 맞추고, 답안 모델을 좌표가 아닌 국가 코드 기준으로 정리한다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/game/location/domain/LocationGameRound.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameScoringPolicy.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameService.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationAnswerJudgement.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameAnswerView.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameRoundResultView.java`
+  - `src/main/java/com/worldmap/game/location/web/SubmitLocationAnswerRequest.java`
+  - `src/main/java/com/worldmap/game/location/web/LocationGameApiController.java`
+  - `src/main/java/com/worldmap/web/HomeController.java`
+  - `src/main/resources/templates/location-game/start.html`
+  - `src/main/resources/templates/location-game/play.html`
+  - `src/main/resources/templates/location-game/result.html`
+  - `src/main/resources/static/js/location-game.js`
+  - `src/main/resources/static/css/site.css`
+  - `src/main/resources/static/data/world-countries.geojson`
+  - `src/main/resources/static/images/earth-blue-marble.jpg`
+  - `src/test/java/com/worldmap/game/location/application/LocationGameScoringPolicyTest.java`
+  - `src/test/java/com/worldmap/game/location/LocationGameFlowIntegrationTest.java`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `README.md`
+  - `blog/04-location-game-level-1.md`
+  - `blog/05-population-game-level-1.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 사용자가 시작 페이지에서 닉네임을 입력하면 `POST /api/games/location/sessions`가 세션과 라운드를 만든다. 플레이 페이지는 `GET /round`로 현재 문제 국가명을 받고, 동시에 `/api/countries`와 `/data/world-countries.geojson`을 내려받아 지구본에 활성 국가를 표시한다. 사용자가 국가 폴리곤을 클릭하면 프론트는 `selectedCountryIso3Code`를 선택 상태로 들고 있다가 `roundNumber`와 함께 `POST /answer`로 보낸다. 서버는 현재 라운드와 요청 라운드를 비교하고, 선택한 ISO3가 실제 시드 국가인지 검증한 뒤 세션과 라운드를 갱신한다.
+- 데이터 / 상태 변화: `location_game_round`는 이제 제출 좌표와 거리 대신 `selectedCountryIso3Code`, `selectedCountryName`, `correct`, `awardedScore`를 저장한다. `targetLatitude`, `targetLongitude`는 향후 Level 2나 다른 시각화 확장을 위해 남겨뒀지만, 현재 Level 1 판정에는 사용하지 않는다. 프론트 정적 자산으로 GeoJSON과 지구 텍스처가 추가됐다.
+- 핵심 도메인 개념: 3D 지구본은 입력 UI일 뿐이고, 정답 판정의 기준은 서버가 가진 국가 ISO 코드다. 프론트는 국가 폴리곤을 렌더링하지만 정답 여부를 계산하지 않는다. `roundNumber` 기반 중복 제출 방지와 `selectedCountryIso3Code` 정규화가 서버 무결성의 핵심이다.
+- 예외 / 엣지 케이스: 존재하지 않는 세션은 `404`, 현재 라운드와 다른 `roundNumber` 제출은 `409`, 시드에 없는 국가 ISO3를 제출하면 `400`이다. 프론트에서는 시드에 포함된 국가만 활성화하지만, 서버도 동일 검증을 수행해 클라이언트 조작을 막는다. 현재는 17개 시드 국가만 활성화되어 있어 실제 전체 국가 찾기 난도와는 차이가 있다.
+- 테스트: `./gradlew test` 통과. `LocationGameScoringPolicyTest`에서 국가 코드 일치/불일치 점수 정책을 검증했고, `LocationGameFlowIntegrationTest`에서 세션 시작, 현재 라운드 조회, 정답 제출, 중복 제출 차단, 게임 종료 흐름을 확인했다.
+- 배운 점: 요구사항이 바뀌면 화면만 바꾸는 것이 아니라 요청 모델과 판정 기준까지 같이 바뀐다. 이번 수정은 “좌표 게임”에서 “국가 선택 게임”으로 문제 정의가 이동한 사례라서, 서비스와 DTO를 함께 재정의해야 일관성이 생겼다.
+- 아직 약한 부분: 현재 지구본 렌더링은 CDN의 `three`와 `globe.gl`에 의존한다. 또한 GeoJSON은 정적 파일이라 모바일 성능이나 폴리곤 단순화 전략을 아직 검토하지 않았다. 이후 랭킹 단계 전에 프론트 성능과 asset 관리 전략을 한 번 더 점검할 필요가 있다.
+- 면접용 30초 요약: 위치 찾기 게임 요구사항이 실제로는 3D 지구본에서 나라를 선택하는 방식이어서, 답안 모델을 좌표에서 국가 ISO 코드로 다시 정의했습니다. 프론트는 지구본과 국가 폴리곤을 렌더링하고, 서버는 선택한 ISO3가 정답 국가와 일치하는지만 판정해 세션과 라운드를 갱신합니다. 이렇게 해서 시각 효과와 판정 로직을 분리한 서버 주도 구조를 더 명확하게 설명할 수 있게 됐습니다.
+
+## 2026-03-23 - 위치 찾기 지구본 렌더링 성능 안정화
+
+- 단계: 3. 국가 위치 찾기 게임 Level 1
+- 목적: 플레이 페이지에서 지구본이 뜨지 않고 브라우저가 멈추는 문제를 해결한다.
+- 변경 파일:
+  - `src/main/resources/static/js/location-game.js`
+  - `src/main/resources/static/data/active-countries.geojson`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `blog/04-location-game-level-1.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 플레이 페이지 진입 시 프론트는 더 이상 전 세계 고해상도 폴리곤 전체를 내려받지 않는다. `/api/countries`로 활성 국가 목록을 받고, `/data/active-countries.geojson`으로 현재 시드 국가만 담은 경량 자산을 내려받아 지구본을 렌더링한다.
+- 데이터 / 상태 변화: 정적 자산이 `world-countries.geojson` 중심에서 `active-countries.geojson` 중심으로 바뀌었다. 새 자산은 시드 17개 국가만 포함하고 좌표 정밀도를 낮춰 파일 크기를 줄였다.
+- 핵심 도메인 개념: Level 1의 실제 선택 가능 범위는 시드 국가다. 따라서 렌더링 자산도 같은 범위로 맞추는 것이 기능 요구사항과 성능 요구사항을 동시에 만족시키는 방법이다.
+- 예외 / 엣지 케이스: 전체 세계 폴리곤을 렌더링하면 브라우저 메인 스레드가 멈출 수 있다. 현재는 선택 가능한 국가만 렌더링하므로 비활성 국가 클릭 개념 자체가 사라졌고, 대신 “왜 모든 국가가 안 보이느냐”는 UX 설명이 필요하다.
+- 테스트: `./gradlew test` 통과. 로컬 서버 재기동 후 `/games/location/play/{sessionId}`가 `globe.gl` 스크립트와 경량 GeoJSON 경로를 포함하는지 확인했고, 세션 시작/라운드 조회/정답 제출 API도 재검증했다.
+- 배운 점: 프론트 성능 문제는 종종 코드 로직보다 “어떤 자산을 얼마나 브라우저에 올리느냐”의 문제다. 이번 수정은 정답 판정 모델만큼 렌더링 대상 범위를 맞추는 것도 설계의 일부라는 점을 보여준다.
+- 아직 약한 부분: 현재 경량화는 “활성 국가만 추리기 + 좌표 정밀도 낮추기” 수준이다. 추후 전체 국가를 지원하려면 단순 필터링이 아니라 폴리곤 단순화, LOD, 타일 전략 같은 추가 설계가 필요하다.
+- 면접용 30초 요약: 위치 찾기 게임을 3D 지구본으로 바꾼 뒤 브라우저가 멈추는 문제가 있어서, 전체 세계 폴리곤 대신 실제 시드에 포함된 국가만 별도 GeoJSON으로 분리했습니다. 이렇게 해서 요구사항 범위와 렌더링 범위를 맞추고, 지구본은 정상적으로 뜨면서도 서버 판정 구조는 그대로 유지할 수 있게 했습니다.
+
+## 2026-03-23 - 위치 찾기 지구본 레이아웃과 색상 개선
+
+- 단계: 3. 국가 위치 찾기 게임 Level 1
+- 목적: 지구본이 태양처럼 붉게 보이고 화면 오른쪽으로 치우쳐 보이는 문제를 해결한다.
+- 변경 파일:
+  - `src/main/resources/static/js/location-game.js`
+  - `src/main/resources/static/css/site.css`
+  - `src/main/resources/templates/location-game/play.html`
+  - `src/main/resources/static/data/active-countries.geojson`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 플레이 페이지 진입 시 프론트는 이제 더 단순한 Natural Earth 110m 기반 `active-countries.geojson`을 불러온다. 지구본 생성 후 `globeStage`의 실제 크기를 읽어 정사각형 캔버스를 맞추고, `ResizeObserver`로 레이아웃 변화에 따라 다시 동기화한다.
+- 데이터 / 상태 변화: `active-countries.geojson`은 17개 시드 국가를 모두 포함하도록 다시 생성했다. 이전 고해상도 데이터에서 France 코드가 `-99`로 들어가 누락되던 문제도 함께 사라졌다.
+- 핵심 도메인 개념: Level 1에서 보여 줄 국가 범위와 실제 선택 가능한 국가 범위를 일치시키는 것이 중요하다. 또한 3D 지구본은 “상호작용 컴포넌트”이므로, 시각 스타일보다 먼저 캔버스 크기와 데이터 복잡도를 안정적으로 맞춰야 한다.
+- 예외 / 엣지 케이스: 정사각형 캔버스를 맞추지 않으면 지구가 잘리거나 한쪽으로 밀려 보일 수 있다. 기본 폴리곤 색이 너무 강하면 텍스처보다 오버레이가 먼저 보여 지구가 아니라 단색 구체처럼 보인다. 시드 국가만 보여 주는 구조이므로 모든 나라가 보이지 않는 것은 현재 Level 1의 의도된 제한이다.
+- 테스트: `./gradlew test` 통과. 새 `active-countries.geojson` 크기가 약 70KB인지 확인했고, 로컬 서버 재기동 후 `location-game.js`가 새 경로를 참조하는지와 결과 페이지가 200으로 렌더링되는지 확인했다.
+- 배운 점: 브라우저에서 보이는 “이상한 3D 화면”은 종종 WebGL 자체보다 데이터 밀도, 캔버스 크기, 기본 색 설계가 원인이다. 특히 기본 상태를 강한 빨강으로 두면 사용자는 정답/선택/일반 상태를 구분하기 어렵다.
+- 아직 약한 부분: 아직 실제 브라우저 상호작용 테스트는 수동 확인이 필요하다. 다음에는 데스크톱 브라우저와 모바일 브라우저에서 드래그 감도, 확대 축소, 선택 정확도까지 점검해야 한다.
+- 면접용 30초 요약: 지구본이 오른쪽으로 밀리고 붉은 구체처럼 보이는 문제를 해결하기 위해, 먼저 국가 데이터 자체를 더 단순한 110m 해상도 자산으로 교체하고, 캔버스를 컨테이너 크기에 맞는 정사각형으로 동기화했습니다. 그리고 기본 국가 색을 저채도 파란색으로 낮추고 선택/정답 상태에만 강한 색을 써서, 텍스처가 보이면서도 상호작용 상태가 명확한 화면으로 바꿨습니다.
+
+## 2026-03-23 - 위치 게임 아케이드 리부트와 우주 테마 재설계 계획 수립
+
+- 단계: 3. 국가 위치 찾기 게임 Level 1
+- 목적: 현재 동작하는 프로토타입을 포트폴리오 대표 기능으로 끌어올리기 위해, 게임 루프와 사이트 비주얼 방향을 다시 설계한다.
+- 변경 파일:
+  - `docs/LOCATION_GAME_ARCADE_REBOOT.md`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 이번 작업은 코드 구현보다 먼저 “앞으로 어떤 요청 흐름을 만들 것인가”를 고정하는 단계다. 새 방향에서는 사용자가 세션을 시작하면 서버가 `하트 3개`, `현재 Stage`, `총점`을 가진 세션을 만들고, 플레이 중에는 `GET /state`로 HUD 상태를 조회하며 `POST /answer`로 선택한 국가를 제출한다. 정답이면 점수와 Stage가 갱신되고, 오답이면 같은 Stage를 유지한 채 하트만 줄어든다.
+- 데이터 / 상태 변화: 아직 실제 엔티티 변경은 없지만, 목표 도메인 모델을 `세션 / Stage / Attempt` 구조로 재정의했다. 또한 사이트 전체의 디자인 방향을 `따뜻한 카드형`에서 `차가운 우주 HUD`로 전환하기로 결정했다.
+- 핵심 도메인 개념: 서버 주도 하트 관리, Stage 기반 진행, Attempt 기록, 게임오버 상태, HUD 중심 게임 UI, 나라 이름 비노출 규칙
+- 예외 / 엣지 케이스: 위치 게임은 “국가를 찾는 것”이 목적이므로 플레이 중 tooltip이나 국가명 label을 보여주면 게임성이 깨진다. 또한 `한 문제 = 한 번 제출` 구조로는 재시도와 게임오버를 표현하기 어려워 현재 도메인 모델을 그대로 유지하면 요구사항과 어긋난다.
+- 테스트: 없음. 이번 작업은 설계 문서와 개발 순서 정리 단계다.
+- 배운 점: 사용자 경험을 게임답게 만들려면 CSS 수정만으로는 부족하고, 게임 루프와 상태 모델부터 다시 정의해야 한다. 특히 하트, 재시도, 자동 다음 단계 같은 감각은 프론트 연출 이전에 백엔드 상태 전이 설계가 먼저다.
+- 아직 약한 부분: 점수 공식과 Stage 종료 규칙은 초안을 정했지만 실제 플레이 템포를 보며 다시 조정할 가능성이 높다. 또한 인구수 게임과 공통 세션 구조를 어디까지 공유할지도 리부트 과정에서 다시 판단해야 한다.
+- 면접용 30초 요약: 위치 찾기 게임 프로토타입은 서버 주도 구조는 맞았지만 게임성이 약해서, 하트 3개와 재시도, 게임오버, 자동 Stage 진행이 있는 아케이드 루프로 다시 설계했습니다. 이 과정에서 기존 `세션 + 라운드`만으로는 부족하다고 보고 `세션 / Stage / Attempt` 구조와 우주 HUD 비주얼 방향을 문서로 먼저 고정해, 이후 구현이 설계 의도와 분리되지 않게 만들었습니다.
+
+## 2026-03-23 - 위치 게임 아케이드 리부트 1차 구현
+
+- 단계: 3. 국가 위치 찾기 게임 Level 1
+- 목적: 문서로만 정리했던 아케이드 규칙을 실제 코드로 옮겨, `하트 3개 + 같은 Stage 재시도 + 게임오버` 흐름이 서버 주도로 동작하게 만든다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/game/common/domain/GameSessionStatus.java`
+  - `src/main/java/com/worldmap/game/common/domain/BaseGameSession.java`
+  - `src/main/java/com/worldmap/game/location/domain/LocationGameSession.java`
+  - `src/main/java/com/worldmap/game/location/domain/LocationGameStage.java`
+  - `src/main/java/com/worldmap/game/location/domain/LocationGameStageStatus.java`
+  - `src/main/java/com/worldmap/game/location/domain/LocationGameAttempt.java`
+  - `src/main/java/com/worldmap/game/location/domain/LocationGameStageRepository.java`
+  - `src/main/java/com/worldmap/game/location/domain/LocationGameAttemptRepository.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameService.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameScoringPolicy.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameStateView.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameAnswerView.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameSessionResultView.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameStageResultView.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameAttemptResultView.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameAnswerOutcome.java`
+  - `src/main/java/com/worldmap/game/location/web/LocationGameApiController.java`
+  - `src/main/java/com/worldmap/game/location/web/SubmitLocationAnswerRequest.java`
+  - `src/main/resources/templates/location-game/play.html`
+  - `src/main/resources/templates/location-game/result.html`
+  - `src/main/resources/static/js/location-game.js`
+  - `src/main/resources/static/css/site.css`
+  - `src/test/java/com/worldmap/game/location/application/LocationGameScoringPolicyTest.java`
+  - `src/test/java/com/worldmap/game/location/LocationGameFlowIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/LOCATION_GAME_ARCADE_REBOOT.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 사용자가 시작 페이지에서 세션을 만들면 서버가 `location_game_session`과 여러 개의 `location_game_stage`를 생성한다. 플레이 화면은 `GET /api/games/location/sessions/{sessionId}/state`로 현재 Stage, 하트, 점수, 문제 국가를 받는다. 사용자가 지구본에서 국가를 클릭해 `POST /answer`를 보내면 서버는 현재 Stage 번호를 검증하고, `LocationGameAttempt`를 1건 저장한 뒤 정답 여부에 따라 `LocationGameStage` 상태와 `LocationGameSession`의 하트/점수/진행 상태를 갱신한다. 정답이면 다음 Stage 번호가 바뀌고, 오답이면 같은 Stage를 유지하며 하트만 감소한다.
+- 핵심 도메인 개념: `LocationGameSession`은 게임 전체 상태를, `LocationGameStage`는 한 문제의 진행을, `LocationGameAttempt`는 그 안의 개별 시도를 표현한다. 이 분리 덕분에 “같은 문제를 세 번 틀리고 게임오버가 났다”는 흐름을 데이터로 그대로 설명할 수 있다.
+- 예외 상황 또는 엣지 케이스: 현재 세션의 Stage 번호와 다른 `stageNumber`를 보내면 `409`로 막는다. 시드에 없는 ISO3를 보내면 `400`이다. 하트가 0이 되는 마지막 오답은 Attempt로 남기고, 같은 Stage를 `FAILED`로 마감한다. 플레이 중 tooltip은 제거했기 때문에 나라 이름은 클릭 후 액션 바에서만 확인 가능하다.
+- 테스트 내용: `./gradlew test` 통과. `LocationGameScoringPolicyTest`에서 Stage/시도/하트에 따른 점수 공식을 검증했고, `LocationGameFlowIntegrationTest`에서 전체 클리어 흐름, 오답 시 하트 감소, 세 번 오답 시 `GAME_OVER`를 검증했다.
+- 면접에서 30초 안에 설명하는 요약: 위치 게임을 `세션 + 라운드 1회 제출형`에서 `세션 / Stage / Attempt` 구조로 바꿔 하트 3개와 재시도형 아케이드 루프를 서버가 직접 관리하도록 만들었습니다. 프론트는 지구본에서 나라를 고르고 제출/취소 UI를 보여주기만 하고, 실제 하트 감소, 점수 계산, 게임오버 판정은 모두 서버에서 처리합니다.
+- 아직 내가 이해가 부족한 부분: 현재 UI는 여전히 기존 사이트 톤 위에 얹힌 1차 플레이 셸이라, “차가운 우주 HUD” 느낌의 전면 리디자인은 다음 작업에서 별도로 정리해야 한다. 또한 모바일에서 지구본 드래그와 선택 감도는 실사용 테스트가 더 필요하다.
+
+## 2026-03-23 - 공통 우주 테마 1차 적용
+
+- 단계: 3. 국가 위치 찾기 게임 Level 1 리부트 보강, 4. 공통 UI 톤 정리
+- 목적: 따뜻하고 둥근 카드형 사이트 인상을 걷어내고, 프로젝트 전체를 `cold space HUD` 방향으로 통일한다.
+- 변경 파일:
+  - `src/main/resources/static/css/site.css`
+  - `src/main/resources/templates/home.html`
+  - `src/main/resources/templates/location-game/start.html`
+  - `src/main/resources/templates/location-game/result.html`
+  - `src/main/resources/templates/population-game/start.html`
+  - `src/main/resources/templates/population-game/play.html`
+  - `src/main/resources/templates/population-game/result.html`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/LOCATION_GAME_ARCADE_REBOOT.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 서버 로직은 바꾸지 않고, 같은 API와 SSR 진입점을 유지한 채 화면 표현 계층만 재설계했다. 홈 화면은 모드 허브처럼 보이도록 바꿨고, 시작 화면은 규칙 카드, 결과 화면은 디브리프 배너 중심으로 정리했다.
+- 핵심 도메인 개념: 이 작업은 도메인이나 API가 아니라 `표현 계층의 공통 디자인 시스템`을 정리한 것이다. 기능별 페이지를 따로 꾸미기보다 `공통 CSS 토큰`을 먼저 바꾸면 이후 랭킹, 추천, 마이페이지도 같은 언어로 확장할 수 있다.
+- 예외 상황 또는 엣지 케이스: 구현 순서상 원래는 Step 4에서 테마를 통일할 예정이었지만, 위치 게임 리부트의 플레이 감각을 보여주려면 메인/시작/결과 화면의 온도감부터 먼저 바꾸는 편이 자연스러워 이번에 앞당겨 적용했다. 다만 위치 게임 플레이 HUD 자체는 아직 1차 수준이라 추가 polish가 남아 있다.
+- 테스트 내용: `./gradlew test` 통과. 서버 재시작 후 `/`, `/games/location/start`, `/css/site.css` 응답 `200` 확인.
+- 면접에서 30초 안에 설명하는 요약: 기능 로직을 바꾸지 않고도 서비스 인상이 크게 달라질 수 있기 때문에, 공통 CSS 변수와 화면 구조를 먼저 우주 HUD 톤으로 다시 잡았습니다. 이 작업은 단순 색상 교체가 아니라, 홈과 시작/결과 화면의 정보 구조를 게임 허브처럼 다시 배열해 프로젝트 전체의 정체성을 통일한 단계입니다.
+- 아직 내가 이해가 부족한 부분: 현재는 CSS와 템플릿 중심의 1차 리디자인이라, 브라우저별 폰트 로딩 체감과 모바일에서의 실제 시각 밀도는 직접 플레이하며 한 번 더 조정할 필요가 있다.
+
+## 2026-03-23 - 국가 데이터 194개 확장과 시드 동기화 전환
+
+- 단계: 2. 국가 데이터와 시드 적재 보강
+- 목적: 위치 게임에서 17개 국가만 선택 가능한 제약을 줄이고, `country` 테이블과 `active-countries.geojson`이 최대한 넓은 같은 범위를 보도록 만든다.
+- 변경 파일:
+  - `scripts/generate_country_assets.py`
+  - `src/main/resources/data/countries.json`
+  - `src/main/resources/static/data/active-countries.geojson`
+  - `src/main/java/com/worldmap/country/domain/Country.java`
+  - `src/main/java/com/worldmap/country/application/CountrySeedInitializer.java`
+  - `src/test/java/com/worldmap/country/CountrySeedIntegrationTest.java`
+  - `src/main/resources/templates/location-game/play.html`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/LOCATION_GAME_ARCADE_REBOOT.md`
+  - `blog/03-country-seed-loading.md`
+  - `blog/04-location-game-level-1.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 애플리케이션 시작 시 `CountrySeedInitializer`가 `countries.json`을 읽고 검증한 뒤, 기존 `country` 테이블을 ISO3 기준으로 조회한다. 이후 시드에 있는 국가는 추가 또는 갱신하고, 시드에 없는 국가는 삭제해 DB 범위를 현재 정적 자산 범위와 맞춘다. 플레이 화면은 계속 `/api/countries`와 `/data/active-countries.geojson`을 함께 읽는데, 이제 두 경로 모두 독립국 194개를 기준으로 응답한다.
+- 데이터 / 상태 변화: 국가 시드는 `World Bank API + REST Countries` 조합으로 다시 만들었고, 인구수는 2024 기준 최신치에 맞췄다. `active-countries.geojson`도 독립국 194개만 포함하도록 다시 생성했다. 기존 “빈 테이블이면 적재, 아니면 생략” 구조에서 “앱 시작 시 현재 시드와 동기화” 구조로 바뀌면서 로컬 DB에 17개만 남아 있던 상태도 자동으로 194개로 확장된다.
+- 핵심 도메인 개념: 이 단계의 핵심은 단순히 JSON 숫자를 늘리는 것이 아니라 `시드 파일`, `RDB`, `프론트 정적 자산`이 같은 국가 집합을 보게 만드는 것이다. 키는 `ISO3 코드`이며, 이 코드로 국가 데이터를 식별하고 동기화한다.
+- 예외 상황 또는 엣지 케이스: 전 세계 지도 자산에는 영토와 특수 지역이 섞여 있고 일부 국가는 ISO3가 `-99`로 들어가므로, “파일에 있는 모든 폴리곤”을 그대로 국가 시드로 쓰면 데이터 설명력이 떨어진다. 그래서 이번 단계는 최대 범위를 추구하되, 게임과 인구 데이터가 함께 설명 가능한 `독립국 194개`를 기준으로 잘랐다. France와 Norway처럼 원본 GeoJSON에서 ISO3가 비정상인 케이스는 이름 매핑으로 보정했다.
+- 테스트 내용: `./gradlew test` 통과. `CountrySeedIntegrationTest`에서 시작 시 194개 동기화, 기존 잘못된 데이터 복원, 존재하지 않는 가짜 국가 삭제를 검증했다. 서버 재시작 후 `/api/countries`가 `194`, `/data/active-countries.geojson`의 feature 수가 `194`, `/api/countries/FRA`가 정상 응답하는 것도 확인했다.
+- 배운 점: 시드 데이터는 “초기 적재”보다 “현재 자산과 동기화”가 중요할 때가 있다. 특히 이 프로젝트처럼 게임 출제 범위를 프론트 GeoJSON과 함께 다루는 경우에는, 시드와 DB와 정적 자산이 조금만 어긋나도 실제 플레이에서 바로 문제가 난다.
+- 아직 약한 부분: 현재는 독립국 194개를 기준으로 잘랐지만, 향후 Level 2에서 영토와 소국까지 확장할지, 국가명 한글 번역을 어떤 기준으로 더 정제할지는 추가 판단이 필요하다.
+- 면접용 30초 요약: 위치 게임의 국가 수가 너무 적어 보여서 단순히 JSON만 늘리는 대신, `World Bank API + REST Countries`로 국가 시드를 재생성하고 앱 시작 시 ISO3 기준으로 DB를 동기화하도록 바꿨습니다. 그래서 이제 `/api/countries`와 `active-countries.geojson`이 모두 독립국 194개를 기준으로 움직이고, 기존 로컬 DB에 17개만 남아 있어도 서버 재시작만 하면 자동으로 같은 범위로 맞춰집니다.
+
+## 2026-03-23 - 위치 게임 제출 전 국가명 비노출 규칙 보강
+
+- 단계: 3. 국가 위치 찾기 게임 Level 1 리부트 보강
+- 목적: 사용자가 지구본에서 클릭한 나라 이름이 제출 전 액션 바에 보이면 사실상 추가 힌트가 되므로, 제출 직전까지는 선택 상태만 보여주도록 규칙을 더 엄격하게 만든다.
+- 변경 파일:
+  - `src/main/resources/static/js/location-game.js`
+  - `src/main/resources/templates/location-game/play.html`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/LOCATION_GAME_ARCADE_REBOOT.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 사용자가 국가 폴리곤을 클릭하면 프론트는 여전히 `selectedCountryIso3Code`를 내부 상태로 저장하지만, 화면에는 더 이상 실제 국가명을 렌더링하지 않는다. 액션 바에는 `국가 선택됨` 같은 상태만 보이고, 사용자가 `POST /answer`를 보낸 뒤에야 서버 응답의 `selectedCountryName`을 이용해 정답/오답 피드백에서 이름을 보여준다.
+- 데이터 / 상태 변화: 서버 API와 DB 스키마는 바뀌지 않았다. 바뀐 것은 프론트의 정보 공개 시점이며, “클릭 직후”에서 “제출 후 판정 단계”로 한 단계 늦춰졌다.
+- 핵심 도메인 개념: 위치 게임의 핵심은 “국가를 찾는 행위”이므로, 사용자에게 너무 빠른 텍스트 힌트를 주면 게임성이 무너진다. 따라서 `선택 상태`와 `선택 국가명`을 같은 시점에 공개하지 않고 분리하는 것이 UX 규칙상 중요하다.
+- 예외 상황 또는 엣지 케이스: 사용자는 여전히 잘못된 국가를 선택할 수 있고 취소도 가능하다. 다만 제출 전에는 액션 바에서 “내가 정확히 무엇을 골랐는지”를 텍스트로 재확인할 수 없으므로, 지구본 하이라이트와 취소 버튼이 더 중요해졌다.
+- 테스트 내용: `./gradlew test` 통과. 로컬 플레이 화면에서 클릭 후 액션 바에 이름 대신 상태 텍스트만 보이는지 수동 확인 필요.
+- 배운 점: 같은 “이름 비노출” 규칙이라도 hover tooltip만 끄는 것과, 제출 전 선택 텍스트까지 숨기는 것은 게임성에 미치는 강도가 다르다. 실제 플레이 감각을 맞추려면 정보 공개 타이밍도 설계 요소로 봐야 한다.
+- 아직 약한 부분: 현재는 국가명을 숨겼지만, 제출 전 “선택 실수 방지”를 위한 시각적 확인 수단은 하이라이트 정도뿐이다. 이후에는 카메라 줌, 선택 애니메이션, 취소 UX를 더 다듬어야 한다.
+- 면접용 30초 요약: 위치 게임은 나라를 찾는 것이 목적이라, 클릭 직후 액션 바에 국가명을 보여주는 것도 사실상 힌트라고 판단했습니다. 그래서 프론트는 선택 ISO 코드를 내부 상태로만 들고 있고, 화면에는 제출 전까지 `국가 선택됨`만 보여주며, 실제 이름은 서버 판정 응답 이후에만 공개하도록 바꿨습니다.
+
+## 2026-03-23 - 위치 게임 시작 지연 체감 개선
+
+- 단계: 3. 국가 위치 찾기 게임 Level 1 리부트 보강
+- 목적: `/games/location/start`에서 세션 시작 후 플레이 화면 진입이 오래 걸리고, 그동안 회색 화면처럼 멈춰 보이는 문제를 줄인다.
+- 변경 파일:
+  - `src/main/resources/static/vendor/globe.gl.min.js`
+  - `src/main/resources/static/js/location-game.js`
+  - `src/main/resources/templates/location-game/start.html`
+  - `src/main/resources/templates/location-game/play.html`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 시작 페이지에서 사용자가 `세션 시작하기`를 누르면 프론트가 버튼을 바로 비활성화하고 로딩 메시지를 보여준다. 플레이 페이지에서는 `GET /state`와 지구본 자산 fetch를 병렬로 시작하고, 상태 텍스트를 먼저 렌더링한 뒤 첫 페인트 이후에만 `Globe.gl` 초기화를 진행한다. 지구본도 바로 모든 폴리곤을 붙이지 않고, 베이스 지구본을 먼저 만들고 그 다음 단계에서 국가 폴리곤을 붙인다.
+- 데이터 / 상태 변화: 백엔드 세션 생성 속도 자체는 원래 빠른 편이었다. 이번 변경은 서버 데이터가 아니라 프론트 초기화 순서를 바꿔 “멈춘 것처럼 보이는 시간”을 줄이는 데 집중했다. 또한 CDN 의존을 줄이기 위해 `globe.gl`를 로컬 정적 자산으로 옮겼다.
+- 핵심 도메인 개념: 이 작업의 핵심은 게임 상태가 아니라 `초기 렌더링 경로`다. 세션 생성 API가 빠르더라도 브라우저가 무거운 3D 초기화를 첫 페인트 전에 몰아서 하면 사용자는 서버가 느리다고 느낄 수 있다.
+- 예외 상황 또는 엣지 케이스: 국가 수가 194개로 늘면서 폴리곤 수가 많아졌기 때문에, 지구본 초기화는 여전히 기기 성능 영향을 받는다. 이번에는 “무조건 더 빠르게”보다 “네트워크 변수 제거 + 로딩 메시지 유지 + 무거운 작업을 뒤로 미루기”에 초점을 맞췄다.
+- 테스트 내용: `./gradlew test` 통과. 서버 재시작 후 세션 생성, 플레이 페이지 HTML, `/api/countries`, `/data/active-countries.geojson` 응답 시간이 모두 짧은 것을 확인했고, 실제 플레이 페이지 HTML에 로딩 문구가 기본 노출되는 것도 확인했다.
+- 배운 점: 사용자가 느끼는 “느림”은 종종 백엔드 처리시간보다도 첫 화면이 언제 보이느냐에 더 크게 좌우된다. 특히 WebGL 같은 무거운 초기화는 첫 페인트 뒤로 보내야 체감 품질이 좋아진다.
+- 아직 약한 부분: 현재는 `globe.gl`만 로컬 자산으로 옮겼다. 폰트, 텍스처, 지구본 폴리곤 자체의 체감 로딩은 모바일 기기 기준으로 한 번 더 점검해야 한다.
+- 면접용 30초 요약: 세션 생성 API를 측정해 보니 서버는 거의 즉시 응답해서 병목이 아니었습니다. 대신 플레이 화면에서 3D 지구본과 194개 국가 폴리곤을 한 번에 초기화하는 구간이 체감 지연을 만들고 있었기 때문에, 로딩 메시지를 먼저 보여주고 상태를 먼저 렌더링한 뒤 지구본을 단계적으로 초기화하도록 프론트 흐름을 바꿨습니다.
+
+## 2026-03-23 - 지구본 렌더링 경량화와 경계선 가시성 조정
+
+- 단계: 3. 국가 위치 찾기 게임 Level 1 리부트 보강
+- 목적: 사용자가 “하늘색 원만 보이고 국가 경계가 안 보인다”고 느끼는 문제와, 국가 수 확대 이후 지구본 초기화가 무거워진 문제를 같이 줄인다.
+- 변경 파일:
+  - `scripts/generate_country_assets.py`
+  - `src/main/resources/static/data/active-countries.geojson`
+  - `src/main/resources/static/js/location-game.js`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 플레이 페이지가 `/data/active-countries.geojson`을 내려받는 구조는 유지하되, 자산 자체를 더 강하게 단순화해서 브라우저가 처리할 좌표 수를 줄였다. 지구본 초기화 시에는 `polygonCapCurvatureResolution`을 거칠게 조정해 폴리곤 표면 분할 수를 줄이고, 폴리곤 fill은 거의 투명하게, stroke는 더 선명하게 바꿔 실제 국가 경계가 먼저 보이도록 했다.
+- 데이터 / 상태 변화: `active-countries.geojson`은 여전히 194개 국가를 포함하지만 파일 크기가 약 `863KB -> 461KB`로 줄었다. 프론트 렌더링에서는 밝은 하늘색 면 덩어리보다 얇은 국경선 중심으로 보이도록 시각 균형을 바꿨다.
+- 핵심 도메인 개념: 이 작업은 국가 수를 줄인 것이 아니라 “같은 194개를 더 가벼운 기하 데이터와 덜 비싼 표면 곡률로 그린다”는 최적화다. 즉 기능 범위는 유지하면서 렌더링 비용만 줄이는 방향이다.
+- 예외 상황 또는 엣지 케이스: GeoJSON을 더 많이 단순화하면 작은 섬나라 윤곽이 거칠어질 수 있다. 이번에는 194개 보존을 우선했고, 클릭 정확도와 성능 사이에서 현재 기준점을 다시 잡았다.
+- 테스트 내용: `./gradlew test` 통과. 재생성 후 `active-countries.geojson` feature 수가 194개인지와 파일 크기가 줄어든 것을 확인하고, 서버 재시작까지 완료했다.
+- 배운 점: “국가 수가 많아졌다”와 “렌더링이 무거워졌다”는 별개의 문제가 아니라 같은 변경의 양면일 수 있다. 이럴 때는 기능을 되돌리기보다, 데이터 단순화와 렌더링 옵션 튜닝으로 같은 범위를 더 효율적으로 보여주는 쪽이 낫다.
+- 아직 약한 부분: 실제 사용자 브라우저에서 클릭 정확도와 경계선 가독성은 한 번 더 수동 확인이 필요하다. 특히 소국과 섬나라가 너무 거칠게 보이지 않는지 체크해야 한다.
+- 면접용 30초 요약: 국가 수를 194개로 늘린 뒤 지구본이 단색 구처럼 보이고 무거워져서, 기능 범위는 유지한 채 렌더링 비용만 줄이는 방향으로 다시 튜닝했습니다. GeoJSON을 더 단순화해 파일 크기를 줄이고, Globe.gl의 폴리곤 곡률 해상도를 낮춰 계산량을 줄였으며, fill보다 stroke를 강조해 실제 나라 경계가 먼저 보이도록 바꿨습니다.
+
+## 2026-03-23 - 위치 게임 endless Stage화와 선택 안정화, 공통 헤더 추가
+
+- 단계: 3. 국가 위치 찾기 게임 Level 1 리부트 보강
+- 목적: 위치 게임이 5 Stage에서 끝나는 구조를 없애고, Stage가 올라갈수록 더 어려워지며, 회전 중 오선택이 덜 나는 실제 아케이드 루프로 보강한다. 동시에 어느 화면에서나 메인으로 돌아갈 수 있는 공통 헤더를 추가한다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/game/common/domain/BaseGameSession.java`
+  - `src/main/java/com/worldmap/game/location/domain/LocationGameSession.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameDifficultyPlan.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameDifficultyPolicy.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameService.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameStateView.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameAnswerView.java`
+  - `src/main/resources/static/js/location-game.js`
+  - `src/main/resources/static/css/site.css`
+  - `src/main/resources/templates/fragments/site-header.html`
+  - `src/main/resources/templates/home.html`
+  - `src/main/resources/templates/location-game/start.html`
+  - `src/main/resources/templates/location-game/play.html`
+  - `src/main/resources/templates/location-game/result.html`
+  - `src/main/resources/templates/population-game/start.html`
+  - `src/main/resources/templates/population-game/play.html`
+  - `src/main/resources/templates/population-game/result.html`
+  - `scripts/generate_country_assets.py`
+  - `src/main/resources/static/data/active-countries.geojson`
+  - `src/test/java/com/worldmap/game/location/LocationGameFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/game/location/application/LocationGameDifficultyPolicyTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/LOCATION_GAME_ARCADE_REBOOT.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 세션 시작 시 서버는 더 이상 5개 Stage를 미리 만들지 않고 Stage 1만 생성한다. 사용자가 `POST /answer`로 정답을 맞히면 `LocationGameService`가 현재 Stage를 `CLEARED`로 바꾸기 전에 다음 Stage를 새로 생성하고 `totalRounds`를 확장해, 세션이 끝나지 않고 계속 진행되게 만든다. 현재 상태 조회 `GET /state`는 `difficultyLabel`까지 내려주고, 프론트는 이를 HUD에 표시한다. 프론트에서는 지구본 드래그와 클릭을 구분해 회전 후 오선택되는 클릭을 무시한다.
+- 데이터 / 상태 변화: `location_game_session`의 총 라운드는 고정값이 아니라 “현재까지 계획된 Stage 수”가 됐다. Stage를 맞힐 때마다 다음 Stage가 추가되고, 하트가 0이 되기 전까지 세션은 `IN_PROGRESS`를 유지한다. 난이도는 새 테이블을 만들지 않고 현재 `country.population` 데이터를 기준으로 `주요 국가 -> 지역 확장 -> 글로벌 -> 전체 국가` 순으로 후보 풀 크기를 넓히는 방식으로 구현했다. GeoJSON은 선택 정확도를 위해 단순화 강도를 완화해 약 `1.55MB` 수준으로 다시 생성했다.
+- 핵심 도메인 개념: endless 모드에서도 “다음 Stage를 누가 만들 것인가”는 서버 책임이다. 그래야 프론트 조작만으로 Stage를 건너뛰거나 쉬운 국가만 반복 선택하는 흐름을 막을 수 있다. 또 현재 데이터 구조에서 난이도 상승을 가장 설명 가능하게 구현하는 방법은 “추가 메타데이터를 억지로 붙이는 것”이 아니라 이미 가진 인구 데이터를 기준으로 익숙한 국가 풀에서 덜 익숙한 국가 풀로 점진적으로 넓히는 것이다.
+- 예외 상황 또는 엣지 케이스: 드래그 후 pointer up 순간이 클릭으로 해석되면 회전하다가 원치 않는 국가가 선택될 수 있다. 그래서 프론트에서 이동 거리 10px 이상인 포인터 상호작용은 선택으로 인정하지 않게 막았다. 나라를 모두 한 번씩 소진한 뒤에도 endless run을 유지해야 하므로, 전체 국가를 다 쓴 이후에는 직전 국가만 피하면서 재등장할 수 있게 했다.
+- 테스트 내용: `./gradlew test` 통과. `LocationGameFlowIntegrationTest`에서 7 Stage 연속 정답 후에도 게임이 끝나지 않고 8번째 Stage가 준비되는지 확인했고, 기존 하트 감소 / 3회 오답 게임오버 테스트를 유지했다. `LocationGameDifficultyPolicyTest`에서 Stage가 올라갈수록 후보 풀 크기가 커지고, 후반부에는 194개 전체를 쓰는지 검증했다.
+- 면접에서 30초 안에 설명하는 요약: 원래 위치 게임은 5 Stage를 미리 만들어 놓고 끝나는 구조였는데, 그 방식으로는 아케이드 감각이 약해서 정답을 맞힐 때마다 서버가 다음 Stage를 계속 생성하는 endless 구조로 바꿨습니다. 난이도는 별도 복잡한 메타데이터 없이 현재 가진 인구 데이터를 기준으로 주요 국가 풀에서 전체 국가 풀로 점차 넓히도록 설계했고, 프론트는 회전 드래그와 클릭을 구분해 오선택을 줄였습니다. 화면 쪽은 모든 페이지에서 홈으로 복귀할 수 있도록 공통 헤더도 같이 넣었습니다.
+- 아직 내가 이해가 부족한 부분: 현재 난이도는 “익숙한 국가에서 덜 익숙한 국가로 넓힌다”는 1차 정책이라, 대륙/면적/섬나라 여부까지 섞은 더 정교한 난이도 모델은 다음 단계에서 검토가 필요하다. 또한 GeoJSON 정확도를 높이면서 파일이 다시 커졌기 때문에, 저사양 브라우저에서의 체감 성능은 실제 플레이로 한 번 더 확인해야 한다.
+
+## 2026-03-23 - 지구본 폴리곤 링 방향 오류 수정
+
+- 단계: 3. 국가 위치 찾기 게임 Level 1 리부트 보강
+- 목적: 국가 선택 화면에서 나라 내부가 아니라 바깥 영역이 채워지며, 지구본 전체가 이상하게 덮이는 렌더링 버그를 해결한다.
+- 변경 파일:
+  - `scripts/generate_country_assets.py`
+  - `src/main/resources/static/data/active-countries.geojson`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/LOCATION_GAME_ARCADE_REBOOT.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 위치 게임 플레이 화면은 계속 `/data/active-countries.geojson`을 읽어 `Globe.gl`에 폴리곤을 넘긴다. 이번 문제는 프론트 이벤트가 아니라 GeoJSON 자산의 외곽 링 방향이 원본 세계 지도와 반대로 뒤집힌 상태였기 때문에, `scripts/generate_country_assets.py`에서 단순화 후 최종 GeoJSON을 한 번 더 읽어 외곽 링은 시계 방향, 홀은 반대 방향으로 다시 맞춘 뒤 저장하도록 바꿨다.
+- 데이터 / 상태 변화: 국가 수 194개는 그대로 유지했고, 바뀐 것은 폴리곤 좌표의 순서다. 수정 전에는 단순화 결과의 외곽 링이 모두 반대 방향이라 Globe가 “국가 내부” 대신 “국가 바깥쪽 구면”을 캡으로 채우는 현상이 있었다. 수정 후에는 외곽 링 방향이 원본 `world-countries.geojson`과 같은 방향으로 맞춰졌다.
+- 핵심 도메인 개념: 이 버그는 색상이나 클릭 이벤트 문제가 아니라 `기하 데이터 해석 규칙` 문제다. 같은 좌표 집합이어도 링 방향이 바뀌면 3D 구면에서 안쪽/바깥쪽 판정이 달라질 수 있다는 점을 설명할 수 있어야 한다.
+- 예외 상황 또는 엣지 케이스: GeoJSON은 단순화나 클린업 과정에서 링 방향이 바뀔 수 있다. 그래서 이번 수정은 일회성 수동 편집이 아니라 생성 스크립트에 보정 로직을 넣어, 앞으로 자산을 다시 만들더라도 같은 오류가 반복되지 않게 했다.
+- 테스트 내용: `./gradlew test` 통과. 추가로 `active-countries.geojson`의 외곽 링 부호를 검사했을 때 194개 전부 원본과 같은 방향으로 정렬된 것을 확인했고, 서버도 재시작했다.
+- 면접에서 30초 안에 설명하는 요약: 지구본이 이상하게 보인 원인은 JS 색상보다도 GeoJSON의 링 방향이 뒤집힌 데 있었습니다. 단순화된 국가 폴리곤의 외곽 링이 원본과 반대 방향이어서 Globe가 나라 내부가 아니라 바깥 영역을 채우고 있었고, 그래서 자산 생성 스크립트에 링 방향 보정 단계를 넣어 다시 생성 가능하게 고쳤습니다.
+- 아직 내가 이해가 부족한 부분: 현재는 원본 세계 지도와 같은 방향으로 맞춰 정상 렌더링을 회복했지만, 향후 다른 지도 소스를 가져올 때도 같은 방향 규칙이 항상 유지되는지는 자산별 검증이 더 필요하다.
+
+## 2026-03-23 - 위치 게임 폴리곤 캡 렌더링 안정화
+
+- 단계: 3. 국가 위치 찾기 게임 Level 1 리부트 보강
+- 목적: 국가 면이 지글거리거나 큰 삼각형처럼 흔들려 보이는 현상과, 일부 국가가 잘 안 눌리는 체감을 줄이기 위해 기본 렌더링을 `면 중심`에서 `경계선 중심`으로 바꾼다.
+- 변경 파일:
+  - `src/main/resources/static/js/location-game.js`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 플레이 화면이 `active-countries.geojson`을 읽는 구조는 유지한다. 다만 `Globe.gl`에 넘긴 뒤 기본 상태에서는 국가 cap을 사실상 투명하게 두고 stroke만 강하게 렌더링하도록 바꿨다. hover, selected, correct, wrong 상태에서만 cap을 약하게 드러내고, 기본 altitude를 조금 올려 지구 텍스처와 거의 같은 표면에서 생기던 z-fighting을 줄였다.
+- 데이터 / 상태 변화: 서버 상태나 DB는 바뀌지 않았다. 바뀐 것은 프론트의 폴리곤 시각화 정책이다. 이전에는 모든 국가가 반투명 cap을 가지고 있어 복잡한 MultiPolygon에서 triangulation 결과가 그대로 드러났고, 지금은 선택 전 기본 상태에서 cap을 그리지 않아 시각 노이즈가 크게 줄어든다.
+- 핵심 도메인 개념: 위치 게임에서 중요한 것은 “나라를 읽고 클릭할 수 있는가”이지, 모든 국가 면을 항상 칠해 놓는 것이 아니다. 따라서 기본 상태는 경계선을 우선해 가독성을 확보하고, 상태 변화가 생길 때만 면을 노출하는 쪽이 게임 UX에 더 맞다.
+- 예외 상황 또는 엣지 케이스: 클릭 실수를 줄이려고 넣어둔 드래그 판정이 너무 민감하면 큰 나라도 안 눌리는 느낌이 날 수 있다. 그래서 드래그 임계값을 10px에서 18px로 완화해, 약간의 손 떨림은 클릭으로 인정하도록 조정했다.
+- 테스트 내용: `./gradlew test` 통과. 런타임에서는 새 JS가 반영되도록 서버 재시작이 필요하다.
+- 면접에서 30초 안에 설명하는 요약: 위치 게임 지구본은 폴리곤이 많고 나라가 복잡해서, 모든 국가 면을 반투명으로 항상 그리면 오히려 삼각형 캡과 깜빡임이 보였습니다. 그래서 기본 렌더링을 경계선 중심으로 바꾸고, hover나 선택 같은 상태에서만 면을 잠깐 드러내도록 바꿔 가독성과 선택 안정성을 높였습니다.
+- 아직 내가 이해가 부족한 부분: 현재 방식은 시각적 안정성을 우선한 1차 조정이라, 이후에는 나라 크기별로 hover altitude를 달리 주거나, 모바일 터치 환경에서 별도 threshold를 분리할지 검토가 더 필요하다.
+
+## 2026-03-23 - 위치 게임 지도 자산을 Natural Earth 50m로 교체
+
+- 단계: 3. 국가 위치 찾기 게임 Level 1 리부트 보강
+- 목적: 기존 `world-countries.geojson` 기반 자산이 나라를 지나치게 잘게 쪼개고, 클릭/hover가 불안정하며, 브라질·중국 같은 대국에서도 넓은 영역이 반응하지 않는 문제를 줄인다.
+- 변경 파일:
+  - `src/main/resources/static/data/world-countries.geojson`
+  - `src/main/resources/static/data/active-countries.geojson`
+  - `src/main/resources/static/js/location-game.js`
+  - `scripts/generate_country_assets.py`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 플레이 화면은 계속 `/data/active-countries.geojson`을 읽지만, 이제 이 파일은 기존 데이터셋이 아니라 Natural Earth 50m 국가 경계를 기반으로 생성된다. `generate_country_assets.py`는 새 소스의 `ISO_A3/ADM0_A3/SOV_A3/GU_A3` 필드를 보고 현재 시드 194개와 매칭한 뒤, 별도 mapshaper 단순화 없이 필터링과 링 방향 보정만 수행해 최종 active GeoJSON을 만든다.
+- 데이터 / 상태 변화: `active-countries.geojson`은 여전히 194개 국가를 담지만, 국가 조각 수가 크게 줄었다. 예를 들어 브라질은 이전 자산에서 34조각이던 것이 새 자산에서는 17조각, 중국은 26조각에서 13조각 수준으로 내려갔다. South Sudan처럼 `ADM0_A3`와 `ISO_A3`가 다른 국가는 `ISO_A3`를 우선 사용하도록 매칭 순서도 조정했다.
+- 핵심 도메인 개념: 위치 게임에서 중요한 것은 “국가 수가 많다”보다 “국가 경계가 설명 가능하고 클릭 가능하다”다. 따라서 데이터셋 선택도 단순 용량 문제가 아니라 `웹 렌더링 안정성`과 `상호작용 정확도` 기준으로 결정해야 한다.
+- 예외 상황 또는 엣지 케이스: Natural Earth 110m는 충분히 가볍지만 194개 전체를 온전히 담지 못해서 제외했고, 10m는 너무 무거워 50m를 선택했다. 즉 이번 선택은 “194개 유지”와 “폴리곤 안정성” 사이에서 잡은 중간 해상도다.
+- 테스트 내용: `./gradlew test` 통과. 생성 후 `active-countries.geojson` feature 수가 194개인지, 누락 국가가 없는지, 주요 국가 조각 수가 줄었는지 스크립트로 확인했고 서버도 재시작했다.
+- 면접에서 30초 안에 설명하는 요약: 기존 위치 게임 지도는 국가 수는 많았지만 폴리곤이 너무 지저분해서 실제 클릭 안정성이 떨어졌습니다. 그래서 지구본 코드를 계속 미세 조정하기보다, 웹용 국가 경계 데이터로 많이 쓰이는 Natural Earth 50m를 기준으로 active GeoJSON을 다시 만들었고, 194개 국가 범위는 유지하면서 국가 조각 수를 줄여 hover와 클릭 안정성을 높였습니다.
+- 아직 내가 이해가 부족한 부분: 현재는 데이터셋을 더 안정적인 쪽으로 바꾼 단계라, 실제 사용자 브라우저에서 어느 정도까지 클릭 체감이 좋아졌는지는 한 번 더 플레이 기준 확인이 필요하다. 특히 캐나다, 미국, 노르웨이처럼 다도해/북극권 조각이 많은 국가는 추가 검증이 필요하다.
+
+## 2026-03-23 - 위치 게임 Level 1 범위를 상위 72개 국가로 축소
+
+- 단계: 3. 국가 위치 찾기 게임 Level 1 리부트 보강
+- 목적: 세션 진입 지연과 클릭 불안정이 계속 남아 있어, Level 1의 화면 범위를 먼저 줄여 플레이 가능한 기준선부터 확보한다.
+- 변경 파일:
+  - `scripts/generate_country_assets.py`
+  - `src/main/resources/static/data/active-countries.geojson`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameService.java`
+  - `src/main/resources/static/js/location-game.js`
+  - `src/main/resources/templates/location-game/start.html`
+  - `src/main/resources/templates/location-game/play.html`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 위치 게임 시작 시 서버는 이제 전체 `country` 194건이 아니라 인구 기준 상위 72개만 후보로 사용한다. 프론트는 `/api/countries` 전체 목록을 더 이상 받지 않고, `active-countries.geojson`만 받아 그 안의 ISO 코드 집합으로 선택 가능 국가를 판단한다. 그래서 세션 시작 후 플레이 화면 초기화 시 네트워크 요청 수와 자산량이 같이 줄어든다.
+- 데이터 / 상태 변화: DB의 `country` 시드는 여전히 194개를 유지한다. 바뀐 것은 위치 게임 Level 1의 활성 국가 범위이며, `active-countries.geojson`도 72개 feature로 줄었다. 게임오버 시에는 결과 화면에 머무르지 않고 시작 화면으로 바로 되돌아가 새로 시작하게 바꿨다.
+- 핵심 도메인 개념: “시드는 넓게, Level 1 플레이 범위는 작게”를 분리하는 것이 중요하다. 전체 국가 데이터는 추천/인구수/향후 Level 2를 위해 유지하되, 현재 사용자 경험이 불안정하면 Level 1은 작은 집합으로 먼저 안정화하는 편이 맞다.
+- 예외 상황 또는 엣지 케이스: 지금 72개로 줄였다고 해서 위치 게임 아키텍처가 바뀐 것은 아니다. 서버는 여전히 Stage 생성과 정답 판정을 담당하고, 이후 성능이 확보되면 100개 이상으로 다시 넓힐 수 있다.
+- 테스트 내용: `./gradlew test` 통과. 재생성 후 `active-countries.geojson` feature 수가 72개로 줄었는지 확인했고, 서버 재시작까지 완료했다.
+- 면접에서 30초 안에 설명하는 요약: 194개 전체를 한 번에 지구본에 올리니 클릭 안정성과 초기 로딩이 계속 흔들려서, Level 1은 인구 기준 상위 72개 주요 국가로 범위를 줄였습니다. 대신 전체 194개 시드는 DB에 그대로 유지해 다른 기능과 이후 확장은 막지 않았고, 프론트는 전체 국가 목록 요청을 없애고 active GeoJSON만 읽도록 줄여 초기화 비용도 같이 낮췄습니다.
+- 아직 내가 이해가 부족한 부분: 72개가 현재 기준선으로는 현실적이지만, 어느 시점부터 100개 이상으로 다시 늘릴 수 있는지는 브라우저 성능과 클릭 정확도 테스트가 더 필요하다.
+
+## 2026-03-23 - 위치 게임 Level 1 자산을 110m로 낮추고 좌표 기반 직접 선택 판정 추가
+
+- 단계: 3. 국가 위치 찾기 게임 Level 1 리부트 보강
+- 목적: 세션 진입이 오래 걸리고, 일부 국가가 잘 클릭되지 않으며, `Globe.gl` 폴리곤 이벤트만으로는 선택 안정성이 부족한 문제를 줄인다.
+- 변경 파일:
+  - `src/main/resources/static/data/world-countries-level1.geojson`
+  - `src/main/resources/static/data/active-countries.geojson`
+  - `scripts/generate_country_assets.py`
+  - `src/main/resources/static/js/location-game.js`
+  - `src/main/resources/static/css/site.css`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/LOCATION_GAME_ARCADE_REBOOT.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 플레이 화면은 계속 `GET /state`와 `GET /data/active-countries.geojson`을 병렬로 받는다. 이번에는 Level 1용 지도 소스를 `Natural Earth 110m`로 분리해 `active-countries.geojson`을 다시 만들었고, 프론트는 `onPolygonClick` 하나에만 의존하지 않고 `onGlobeClick`으로 받은 위도/경도 좌표를 GeoJSON 폴리곤 내부 포함 판정에 한 번 더 통과시켜 선택 국가를 결정한다.
+- 데이터 / 상태 변화: DB의 국가 시드 194개는 그대로다. 바뀐 것은 Level 1 활성 지도 자산과 선택 방식이다. `active-countries.geojson`은 약 `1.52MB -> 157KB`로 줄었고, 브라질/중국/미국 같은 다각형 복잡도가 큰 국가도 더 낮은 해상도 경계를 사용하게 됐다. 게임오버 시에는 프론트에서 지구본 입력을 즉시 잠그고 시작 화면으로 복귀한다.
+- 핵심 도메인 개념: 이 작업의 핵심은 “보이는 폴리곤”과 “선택 판정”을 분리한 것이다. 사용자는 여전히 지구본에서 나라를 고르지만, 클릭 성공 여부를 3D 라이브러리 이벤트 하나에 맡기지 않고 `클릭 좌표 -> GeoJSON 포함 판정 -> ISO 코드 제출`로 한 단계 더 명시적으로 처리한다.
+- 예외 상황 또는 엣지 케이스: 반경계선, 작은 섬, 날짜 변경선 근처 국가는 단순 평면 point-in-polygon 판정이 흔들릴 수 있다. 그래서 현재 로직은 클릭 좌표 기준으로 경도 값을 정규화해 anti-meridian을 완화하지만, 캐나다/러시아 같은 극지·다도해 국가는 추가 확인이 필요하다.
+- 테스트 내용: `./gradlew test` 통과. 로컬 서버 재기동 후 `POST /api/games/location/sessions`는 약 `0.10s`, `GET /data/active-countries.geojson`은 약 `157KB / 0.015s`로 확인했다. 또 API 기준으로 3회 오답 제출 시 `GAME_OVER`, `livesRemaining = 0`이 내려오는 것도 확인했다.
+- 면접에서 30초 안에 설명하는 요약: 위치 게임이 느리고 일부 나라가 잘 안 눌린 원인은 서버보다 프론트 지도 자산과 선택 방식에 있었습니다. 그래서 Level 1용 국가 경계를 더 낮은 해상도의 Natural Earth 110m로 분리해 초기 로딩을 크게 줄였고, Globe.gl의 기본 폴리곤 클릭만 믿지 않고 지구본 클릭 좌표를 GeoJSON 내부 판정으로 다시 검사해 선택 안정성을 높였습니다.
+- 아직 내가 이해가 부족한 부분: 현재 직접 hit-test는 브라우저에서 충분히 설명 가능한 단순 알고리즘이지만, 구면 좌표 특성과 홀/섬 처리까지 완전한 GIS 수준으로 다루는 것은 아니다. 이후 Level 2 확장 전에는 작은 섬나라와 극지권 국가 기준으로 한 번 더 확인이 필요하다.
+
+## 2026-03-23 - 위치 게임 GAME_OVER 선택 모달과 시작 버튼 문구 수정
+
+- 단계: 3. 국가 위치 찾기 게임 Level 1 리부트 보강
+- 목적: 하트가 모두 소진됐을 때 바로 화면을 강제로 넘기지 않고, 사용자가 탈락을 인지한 뒤 `홈으로` 또는 `다시 시작`을 직접 고를 수 있게 만든다. 동시에 시작 화면 CTA를 더 자연스러운 문구로 바꾼다.
+- 변경 파일:
+  - `src/main/resources/templates/location-game/play.html`
+  - `src/main/resources/templates/location-game/start.html`
+  - `src/main/resources/static/js/location-game.js`
+  - `src/main/resources/static/css/site.css`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 서버는 여전히 3회 오답 후 `GAME_OVER`를 내려준다. 바뀐 것은 프론트 후처리다. 플레이 화면은 `GAME_OVER` 응답을 받으면 지구본 입력을 잠그고, 자동 리다이렉트 대신 탈락 모달을 띄운다. 사용자는 그 안에서 `/` 또는 `/games/location/start`로 이동을 직접 선택한다.
+- 데이터 / 상태 변화: 서버 상태와 DB는 바뀌지 않았다. UI 상태만 바뀌었다. 이전에는 `GAME_OVER -> 자동 시작 페이지 이동`이었고, 지금은 `GAME_OVER -> 입력 잠금 -> 탈락 모달 표시 -> 사용자 선택` 흐름이다.
+- 핵심 도메인 개념: 이 변경은 게임 규칙을 바꾼 것이 아니라 피드백 UX를 바꾼 것이다. 즉 `언제 게임이 끝나는가`는 계속 서버가 결정하고, 프론트는 그 종료 사실을 사용자가 이해하기 쉬운 방식으로 표현한다.
+- 예외 상황 또는 엣지 케이스: 탈락 모달이 떠 있는 동안 다시 선택하거나 제출하면 안 되므로, 게임오버 시 `globe-stage` 입력 자체를 잠그게 했다.
+- 테스트 내용: `node --check src/main/resources/static/js/location-game.js` 통과. 기존 `./gradlew test` 상태도 유지했다.
+- 면접에서 30초 안에 설명하는 요약: 게임오버 자체는 서버가 그대로 결정하지만, 사용성 측면에서는 즉시 화면을 넘겨 버리면 왜 끝났는지 체감이 약했습니다. 그래서 프론트에서 `GAME_OVER` 응답을 받으면 입력을 잠그고 탈락 모달을 보여준 뒤, 사용자가 홈으로 갈지 바로 다시 시작할지 선택하게 바꿨습니다.
+- 아직 내가 이해가 부족한 부분: 현재는 모달 안에서 단순 이동만 제공한다. 이후에는 최근 점수, 도달 Stage, 다시 시작 시 닉네임 유지 여부까지 넣을지 결정이 필요하다.
+
+## 2026-03-23 - 새 게임 시작 시 이전 GAME_OVER 모달 상태 초기화
+
+- 단계: 3. 국가 위치 찾기 게임 Level 1 리부트 보강
+- 목적: `다시 시작하기` 후 새 게임을 시작해도 이전 탈락 모달이 그대로 보이는 문제를 막는다.
+- 변경 파일:
+  - `src/main/resources/static/js/location-game.js`
+  - `src/main/resources/static/css/site.css`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 새 플레이 화면에 진입하거나 `pageshow`가 다시 발생하면 프론트가 `GAME_OVER` 모달을 먼저 숨긴 뒤 상태를 불러오도록 바꿨다. 또한 CSS에 `[hidden] { display: none !important; }`를 넣어 hidden 속성이 클래스 스타일보다 항상 우선되게 고정했다.
+- 데이터 / 상태 변화: 서버 상태와 DB는 변하지 않았다. 바뀐 것은 모달 표시 상태 초기화 시점이다.
+- 핵심 도메인 개념: `GAME_OVER`는 서버 도메인 상태이고, 모달 노출 여부는 프론트 UI 상태다. 새 세션이 시작되면 이전 UI 상태를 반드시 초기화해야 서버 상태와 화면 상태가 어긋나지 않는다.
+- 예외 상황 또는 엣지 케이스: 브라우저의 뒤로 가기/앞으로 가기 캐시에서 이전 DOM 상태가 살아 있을 수 있어 `pageshow` 시점에도 모달을 강제로 숨기게 했다.
+- 테스트 내용: `node --check src/main/resources/static/js/location-game.js` 통과.
+- 면접에서 30초 안에 설명하는 요약: 탈락 모달을 추가한 뒤에는 새 게임이 시작될 때 이전 UI 상태를 초기화하는 것도 중요해졌습니다. 그래서 플레이 화면 진입 시와 브라우저 `pageshow` 시점에 모달을 다시 숨기고, CSS hidden 속성을 강제해 이전 탈락 상태가 새 세션으로 이어지지 않게 했습니다.
+- 아직 내가 이해가 부족한 부분: 브라우저별 BFCache 동작 차이는 추가 확인이 필요하다. 현재는 가장 단순한 `pageshow` 초기화로 대응했다.
+
+## 2026-03-23 - 위치 게임 다시 시작을 같은 세션 리셋 방식으로 변경
+
+- 단계: 3. 국가 위치 찾기 게임 Level 1 리부트 보강
+- 목적: 탈락 후 `다시 시작하기`를 눌렀을 때 시작 페이지로 돌아가 새 세션을 만드는 대신, 현재 세션을 그대로 초기화해 같은 플레이 화면에서 바로 다시 시작하게 만든다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/game/common/domain/BaseGameSession.java`
+  - `src/main/java/com/worldmap/game/location/domain/LocationGameSession.java`
+  - `src/main/java/com/worldmap/game/location/domain/LocationGameStageRepository.java`
+  - `src/main/java/com/worldmap/game/location/domain/LocationGameAttemptRepository.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameService.java`
+  - `src/main/java/com/worldmap/game/location/web/LocationGameApiController.java`
+  - `src/main/resources/templates/location-game/play.html`
+  - `src/main/resources/static/js/location-game.js`
+  - `src/test/java/com/worldmap/game/location/LocationGameFlowIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 프론트에서 `다시 시작하기`를 누르면 `POST /api/games/location/sessions/{sessionId}/restart`가 호출된다. 서버는 같은 `sessionId`의 attempt와 stage를 지우고, 세션의 상태/하트/점수/현재 Stage를 초기값으로 리셋한 뒤 Stage 1을 다시 만든다. 프론트는 새 URL로 이동하지 않고 같은 플레이 화면에서 `GET /state`를 다시 불러와 게임을 이어서 보여준다.
+- 데이터 / 상태 변화: 이 변경 전에는 탈락 후 새 시작 흐름으로 넘어가며 사실상 새 세션을 만드는 UX였다. 지금은 같은 세션 row를 재사용하고, 관련 stage/attempt 데이터만 비운 뒤 다시 시작한다. 따라서 `sessionId`는 유지되고, 점수/하트/클리어 카운트만 초기화된다.
+- 핵심 도메인 개념: “다시 시작”은 도메인 관점에서 `새 게임 생성`이 아니라 `종료된 세션의 초기화`다. 그래서 이 로직은 컨트롤러가 아니라 서비스에서 attempt 삭제, stage 삭제, session reset, 새 Stage 생성 순서를 묶어 처리해야 한다.
+- 예외 상황 또는 엣지 케이스: 삭제 후 같은 세션에 Stage 1을 다시 넣기 때문에, attempt를 먼저 지우고 stage를 지운 뒤 flush까지 해줘야 unique constraint와 FK 충돌을 피할 수 있다. 또한 진행 중인 세션은 실수로 초기화되지 않도록 terminal 상태에서만 restart를 허용한다.
+- 테스트 내용: `LocationGameFlowIntegrationTest`에 restart 시나리오를 추가해, 3회 오답으로 게임오버 후 `POST /restart`를 호출하면 같은 `sessionId`가 유지되고, lives=3 / score=0 / stage=1 / attempt 비움 상태로 복구되는지 확인했다. `./gradlew test` 통과.
+- 면접에서 30초 안에 설명하는 요약: 탈락 후 다시 시작을 새 세션 생성으로 처리하면 같은 런의 흐름이 끊기고 프론트도 다시 시작 페이지를 거쳐야 했습니다. 그래서 별도 restart API를 두고, 서비스에서 기존 attempt와 stage를 지운 뒤 같은 sessionId의 상태를 초기화하고 Stage 1을 다시 생성하도록 바꿨습니다.
+- 아직 내가 이해가 부족한 부분: 현재는 restart 시 이전 플레이 기록을 세션 안에 남기지 않는다. 나중에 “한 세션 안의 여러 러닝”까지 분석하고 싶다면 run 단위를 따로 분리할지 고민이 필요하다.

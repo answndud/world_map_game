@@ -58,8 +58,8 @@
 
 7. [국가 데이터 시드와 `country` 모델링](./03-country-seed-loading.md)
 8. `game_session`, `game_round` 모델링
-9. 국가 위치 찾기 게임 Level 1 만들기
-10. 국가 인구수 맞추기 게임 Level 1 만들기
+9. [국가 위치 찾기 게임 Level 1 만들기](./04-location-game-level-1.md)
+10. [국가 인구수 맞추기 게임 Level 1 만들기](./05-population-game-level-1.md)
 
 ### Part D. 랭킹과 추천
 

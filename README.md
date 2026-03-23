@@ -74,24 +74,36 @@
 #### Level 1
 
 - 서버가 국가 1개를 출제한다.
-- 프론트는 세계 지도에서 클릭 입력을 받는다.
-- 서버는 사용자가 클릭한 좌표와 국가 대표 좌표 또는 중심 좌표를 비교한다.
-- 정답 반경 안에 들어오면 정답 처리한다.
-- 대륙 힌트 또는 국가 윤곽 강조를 제공할 수 있다.
+- 프론트는 3D 지구본에서 국가 폴리곤 클릭 입력을 받는다.
+- 플레이 중 지구본 위 국가 이름은 노출하지 않는다.
+- 클릭 후 하단 액션 바에서는 선택 상태만 확인하고 `제출 / 취소`를 고른다.
+- 선택한 국가 이름은 제출 전에는 노출하지 않고, 판정 단계 이후에만 공개한다.
+- 서버는 `현재 Stage`, `하트 3개`, `점수`, `시도 횟수`를 관리한다.
+- 오답이면 하트가 1개 줄고 같은 Stage를 다시 시도한다.
+- 하트가 모두 사라지면 `GAME OVER`로 종료하고, 현재 세션을 같은 `sessionId`로 다시 시작하거나 홈으로 복귀할 수 있다.
+- 정답이면 점수를 부여하고 다음 Stage로 자동 진행한다.
+- 현재 Level 1은 고정 5스테이지가 아니라 `하트가 남아 있는 동안 계속 진행되는 endless run`이다.
+- 현재 Level 1은 성능과 클릭 안정성을 위해 인구 기준 상위 72개 주요 국가로 먼저 운영한다.
+- 현재 Level 1의 지구본 자산은 `Natural Earth 110m` 기반으로 다시 생성해 초기 로딩과 폴리곤 흔들림을 줄였다.
+- 현재 Level 1의 국가 선택은 `Globe.gl polygon click`에만 의존하지 않고, 지구본 클릭 좌표를 기준으로 GeoJSON 내부 포함 판정을 한 번 더 수행한다.
+- 이후 Level 2 또는 고도화 단계에서 독립국 194개 전체로 확장한다.
 
 #### Level 2
 
 - 힌트 없이 출제한다.
-- 허용 반경을 더 좁게 잡는다.
-- 정답이 아니어도 오차 거리(km)를 계산해 부분 점수를 줄 수 있다.
+- 제한 시간, 연속 정답 보너스, 카메라 보조 축소 같은 규칙으로 탐색 난도를 올린다.
+- 영토, 소국, endless mode 같은 확장 규칙을 추가할 수 있다.
 
 #### 서버 책임
 
 - 출제 국가 선택
-- 중복 출제 방지
-- 정답 허용 반경 계산
+- Stage 진행 관리
+- 목숨(하트) 감소 처리
+- 시도 이력 저장
+- 선택 국가 코드 검증
+- 정답 국가 코드 비교
 - 라운드별 점수 계산
-- 남은 문제 수, 진행 상태 관리
+- 총점과 게임오버 상태 관리
 
 ### 5.2 국가 인구수 맞추기 게임
 
@@ -193,10 +205,14 @@
 
 - Thymeleaf SSR
 - 바닐라 JavaScript
-- 지도 표현: Leaflet 또는 Three.js
+- 3D 지구본 표현: `Three.js + Globe.gl`
 
-초기에는 구현 난이도와 안정성을 위해 `Leaflet 우선`이 적합하다.
-Three.js는 3D 지구본 연출이 목적일 때 2차 확장으로 두는 편이 안전하다.
+현재 위치 찾기 Level 1은 정적 GeoJSON과 지구 텍스처를 사용해 `Globe.gl`로 렌더링한다.
+전체 국가 시드는 `World Bank API + REST Countries` 기준 독립국 194개를 유지한다.
+다만 위치 게임 Level 1의 `active-countries.geojson`은 현재 성능과 상호작용 안정화를 위해 인구 기준 상위 72개 국가만 사용한다.
+Level 1 활성 지오데이터는 `Natural Earth 110m` 기반으로 따로 유지하고, 선택 판정은 지구본 클릭 좌표를 GeoJSON과 다시 비교하는 방식으로 안정성을 보강했다.
+정답 판정은 프론트가 아니라 서버에서 국가 ISO 코드 비교로 처리한다.
+현재 프로토타입은 동작하지만, 실제 목표는 `하트 기반 아케이드 게임 루프 + 우주 HUD 디자인`이다.
 
 ### 백엔드
 
@@ -220,9 +236,28 @@ Three.js는 3D 지구본 연출이 목적일 때 2차 확장으로 두는 편이
 - `application.yml`, `application-local.yml`, `application-test.yml` 프로파일 분리
 - Docker Compose 기반 PostgreSQL / Redis 개발 환경 뼈대
 - 공통 API 예외 응답 구조
-- `country` 엔티티, 시드 검증기, 시작 시 초기 적재 로직
-- World Bank API 기준 2024 인구수와 대표 좌표를 담은 국가 시드 17건
+- `country` 엔티티, 시드 검증기, 시작 시 ISO3 기준 동기화 로직
+- `scripts/generate_country_assets.py`로 재생성 가능한 국가 데이터 파이프라인 추가
+- World Bank API + REST Countries 기준 2024 인구수와 대표 좌표를 담은 독립국 시드 194건
 - 국가 목록 / 상세 조회 API (`/api/countries`, `/api/countries/{iso3Code}`)
+- 위치 찾기 Level 1 `세션 / Stage / Attempt` 저장 구조
+- 위치 찾기 하트 3개, 같은 Stage 재시도, 게임오버, 자동 다음 Stage 흐름
+- 위치 찾기 endless Stage 생성과 단계별 난이도 확장 정책
+- 위치 찾기 Stage별 점수 계산 로직과 Attempt 기록 저장
+- 위치 찾기용 `active-countries.geojson`, 지구 텍스처 정적 에셋 추가
+- 위치 찾기 폴리곤 자산을 Natural Earth 50m 기반으로 재구성
+- 위치 찾기 SSR 시작/플레이/결과 페이지와 3D 지구본 국가 선택 셸
+- 위치 게임 플레이 중 tooltip 제거, 제출 전 국가명 비노출, 선택 취소, 오버레이 피드백, 자동 전환 1차 구현
+- 드래그와 클릭을 구분하는 선택 안정화 로직, 전역 홈 이동 헤더 추가
+- 홈 / 시작 / 결과 화면과 공통 CSS의 `cold space HUD` 테마 1차 적용
+- 위치 게임 아케이드 리부트 설계 문서 작성
+- `game/common`의 공통 세션 구조 재사용
+- 인구수 맞추기 Level 1 세션/라운드 저장 구조와 보기형 출제 로직
+- 인구수 맞추기 SSR 시작/플레이/결과 페이지와 바닐라 JS 선택형 셸
+
+현재 위치 게임 리부트 기준 문서:
+
+- `docs/LOCATION_GAME_ARCADE_REBOOT.md`
 
 ## 9. 도메인 모델 초안
 
@@ -238,6 +273,10 @@ Three.js는 3D 지구본 연출이 목적일 때 2차 확장으로 두는 편이
   - 모드, 레벨, 상태, 총점, 시작/종료 시각
 - `game_round`
   - 몇 번째 문제인지, 출제 국가, 정답 데이터, 사용자 답변, 정답 여부, 획득 점수
+- `location_game_stage`
+  - 아케이드형 위치 게임에서 현재 단계, 정답 국가, 단계 상태, 획득 점수
+- `location_game_attempt`
+  - 위치 게임에서 한 단계 안의 개별 시도 기록, 오답 이력, 남은 하트
 - `survey_submission`
   - 추천 설문 제출 이력
 - `country_recommendation`
@@ -247,6 +286,8 @@ Three.js는 3D 지구본 연출이 목적일 때 2차 확장으로 두는 편이
 
 - 한 명의 플레이어는 여러 `game_session`을 가진다.
 - 한 개의 `game_session`은 여러 `game_round`를 가진다.
+- 한 개의 `location_game_session`은 여러 `location_game_stage`를 가진다.
+- 한 개의 `location_game_stage`는 여러 `location_game_attempt`를 가진다.
 - 한 번의 `survey_submission`은 여러 개의 추천 결과를 만든다.
 
 ## 10. 페이지 / 화면 초안
@@ -257,12 +298,16 @@ Three.js는 3D 지구본 연출이 목적일 때 2차 확장으로 두는 편이
   - 메인 페이지, 모드 선택
 - `/games/location/start`
   - 위치 찾기 게임 시작
-- `/games/location/play`
+- `/games/location/play/{sessionId}`
   - 위치 찾기 진행 화면
+- `/games/location/result/{sessionId}`
+  - 위치 찾기 결과 화면
 - `/games/population/start`
   - 인구수 게임 시작
-- `/games/population/play`
+- `/games/population/play/{sessionId}`
   - 인구수 진행 화면
+- `/games/population/result/{sessionId}`
+  - 인구수 결과 화면
 - `/ranking`
   - 실시간 랭킹
 - `/recommendation/survey`
@@ -292,16 +337,20 @@ SSR을 쓰더라도 게임 진행 중에는 비동기 API가 필요하다.
 
 - `POST /api/games/location/sessions`
   - 게임 세션 시작
-- `GET /api/games/location/sessions/{sessionId}/round`
-  - 현재 문제 조회
+- `GET /api/games/location/sessions/{sessionId}/state`
+  - 현재 Stage, 하트, 점수, 문제 국가 조회
 - `POST /api/games/location/sessions/{sessionId}/answer`
-  - 좌표 제출
+  - 선택한 국가의 `ISO3 코드` 제출
+- `GET /api/games/location/sessions/{sessionId}/result`
+  - 결과 요약과 Stage / Attempt 기록 조회
 
 ### 인구수 맞추기
 
 - `POST /api/games/population/sessions`
 - `GET /api/games/population/sessions/{sessionId}/round`
 - `POST /api/games/population/sessions/{sessionId}/answer`
+- `GET /api/games/population/sessions/{sessionId}`
+  - 결과 요약과 라운드 기록 조회
 
 ### 추천
 
@@ -324,19 +373,22 @@ SSR을 쓰더라도 게임 진행 중에는 비동기 API가 필요하다.
 ### Step 2
 
 - 국가 데이터 준비
-- 위치 좌표 / 인구수 시드 데이터 준비
+- 인구수 시드 데이터와 국가 기준 데이터 준비
 - 시드 검증과 초기 적재 구조 구현
 
 ### Step 3
 
-- 위치 찾기 Level 1 구현
-- 서버 주도 세션 / 라운드 설계
-- 점수 계산 로직 구현
+- 위치 찾기 Level 1 아케이드 리부트
+- 서버 주도 세션 / Stage / Attempt 설계
+- 하트, 점수, 재시도, 게임오버 규칙 구현
+- 3D 지구본 HUD와 선택 확인 UI 구현
+- 결과 / 게임오버 화면 완성도 보강
 
 ### Step 4
 
 - 인구수 맞추기 Level 1 구현
 - 공통 게임 세션 구조 추상화
+- 사이트 전반 우주 테마 디자인 통일
 
 ### Step 5
 
@@ -382,7 +434,7 @@ SSR을 쓰더라도 게임 진행 중에는 비동기 API가 필요하다.
 ### 꼭 필요한 테스트
 
 - 점수 계산 서비스 단위 테스트
-- 위치 오차 거리 계산 테스트
+- 위치 게임 국가 코드 판정 테스트
 - 인구수 오차율 계산 테스트
 - 게임 세션 상태 전이 테스트
 - 랭킹 반영 통합 테스트
@@ -406,6 +458,7 @@ SSR을 쓰더라도 게임 진행 중에는 비동기 API가 필요하다.
 - Redis를 단순 캐시가 아니라 랭킹용 자료구조로 사용한 이유
 - AI를 사실 판단 도구가 아니라 설명 생성 도구로 제한한 이유
 - SSR + API 혼합 구조를 선택한 이유
+- 프로토타입을 아케이드 게임 루프로 다시 설계한 이유
 
 ## 16. 지금 바로 시작할 때의 현실적인 개발 순서
 
@@ -413,11 +466,12 @@ SSR을 쓰더라도 게임 진행 중에는 비동기 API가 필요하다.
 
 1. 프로젝트 이름 확정
 2. 국가 시드 데이터 포맷 결정(JSON/CSV)
-3. `위치 찾기 Level 1`만 먼저 완성
-4. 게임 세션/라운드 공통 구조 정리
-5. 인구수 게임 추가
-6. Redis 랭킹 연결
-7. AI 추천 추가
+3. `위치 찾기 Level 1` 프로토타입 완성
+4. 위치 게임을 하트 기반 아케이드 루프로 리부트
+5. 게임 세션 공통 구조 재정리
+6. 인구수 게임 추가
+7. Redis 랭킹 연결
+8. AI 추천 추가
 
-핵심은 `지도 게임 1개를 끝까지 완성한 뒤 공통 구조를 재사용`하는 것이다.
+핵심은 `지도 게임 1개를 끝까지 완성한 뒤, 실제 플레이 감각과 상태 모델을 다시 다듬고 나서 공통 구조를 재사용`하는 것이다.
 처음부터 모든 기능을 동시에 만들면 포트폴리오보다 미완성 사이드프로젝트가 되기 쉽다.

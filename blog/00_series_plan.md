@@ -30,8 +30,8 @@
 
 7. [`country` 엔티티와 시드 데이터 설계](./03-country-seed-loading.md)
 8. `game_session`, `game_round`로 게임 상태 모델링
-9. 위치 찾기 게임 Level 1 구현
-10. 인구수 맞추기 게임 Level 1 구현
+9. [위치 찾기 게임 Level 1 구현](./04-location-game-level-1.md)
+10. [인구수 맞추기 게임 Level 1 구현](./05-population-game-level-1.md)
 
 ### Part D. 랭킹과 추천
 
