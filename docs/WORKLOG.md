@@ -893,3 +893,24 @@
 - 테스트 내용: `node --check src/main/resources/static/js/population-game.js` 통과, `./gradlew test --tests com.worldmap.game.population.application.PopulationGameOptionGeneratorTest --tests com.worldmap.game.population.PopulationGameFlowIntegrationTest` 통과.
 - 면접에서 30초 안에 설명하는 요약: 인구수 게임 Level 1은 정확 숫자 4개를 읽게 하면 피로도가 높아서, 서버가 인구 규모 구간 4개를 생성하는 방식으로 바꿨습니다. 구간 정의는 공통 카탈로그로 두고 Stage에는 구간 키를 저장해, 플레이 화면과 결과 화면 모두 같은 구간 언어로 설명 가능하게 만들었습니다.
 - 아직 내가 이해가 부족한 부분: 현재 구간 경계는 첫 버전이라 실제 플레이 감각 기준으로는 더 다듬을 수 있다. 특히 7천만, 1억 5천만 같은 경계 근처 국가들이 체감상 어느 정도 헷갈리는지는 플레이 데이터를 보고 다시 판단해야 한다.
+
+## 2026-03-24 - 인구수 게임 HUD / 결과 디브리프 1차 polish
+
+- 단계: 4. 국가 인구수 맞추기 게임 Level 1 리부트 보강
+- 목적: 현재 인구수 게임은 루프는 게임답게 바뀌었지만, 플레이 중 “내가 무엇을 골랐는지”와 결과 화면의 요약 밀도가 부족했다. 그래서 플레이 화면에 선택 상태와 진행 가이드를 보강하고, 결과 화면에는 핵심 러닝 지표를 추가해 설명 가능한 디브리프 화면으로 만든다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/game/population/application/PopulationGameService.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationGameSessionResultView.java`
+  - `src/main/resources/templates/population-game/play.html`
+  - `src/main/resources/templates/population-game/result.html`
+  - `src/main/resources/static/js/population-game.js`
+  - `src/test/java/com/worldmap/game/population/PopulationGameFlowIntegrationTest.java`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 플레이 화면은 여전히 `GET /api/games/population/sessions/{sessionId}/state`로 현재 Stage를 받고, `POST /answer`로 판정을 요청한다. 다만 프론트는 이제 선택한 보기 라벨을 로컬 HUD에 즉시 반영하고, 서버 응답이 오면 정답/오답에 맞는 진행 가이드를 같은 화면에서 갱신한다. 결과 화면은 `GET /api/games/population/sessions/{sessionId}` 응답에 서버가 계산한 `totalAttemptCount`, `firstTryClearCount`를 추가로 받아 디브리프 카드에 표시한다.
+- 데이터 / 상태 변화: DB 스키마는 바뀌지 않았고, 결과 요약 값은 기존 `PopulationGameStage`, `PopulationGameAttempt` 기록을 읽어 서비스에서 계산한다. 즉 영속 데이터는 그대로 두고, “면접에서 설명하기 좋은 요약값”만 조회 시점에 조합한 것이다.
+- 핵심 도메인 개념: 선택 상태 표시와 다음 행동 가이드는 프론트의 책임이지만, 총 시도 수나 1트 클리어 수 같은 러닝 요약은 서버가 계산해 내려줘야 한다. 이유는 이 값들이 Stage/Attempt 전체 기록을 기준으로 일관되게 계산돼야 하고, 나중에 랭킹이나 전적 페이지로 확장해도 같은 기준을 재사용할 수 있기 때문이다. 그래서 UI 문구는 JS가 관리하고, 디브리프 지표는 서비스가 만든다.
+- 예외 상황 또는 엣지 케이스: 오답 후 같은 Stage를 다시 시도할 때는 `GET /state`를 재호출하지 않으므로, 선택 상태와 진행 가이드를 프론트에서 직접 초기화해야 한다. 또한 결과 요약은 아직 “총 시도 수 / 1트 클리어 수”까지만 넣었고, 연속 정답 보너스나 평균 시도 수 같은 값은 다음 polish 범위로 남겨뒀다.
+- 테스트 내용: `node --check src/main/resources/static/js/population-game.js` 통과, `./gradlew test --tests com.worldmap.game.population.PopulationGameFlowIntegrationTest` 통과, `./gradlew test` 전체 통과. 통합 테스트에는 인구수 결과 응답의 `totalAttemptCount`, `firstTryClearCount` 확인을 추가했다.
+- 면접에서 30초 안에 설명하는 요약: 인구수 게임의 게임 루프는 이미 서버 주도로 정리돼 있었고, 이번에는 사용자가 현재 선택 상태와 결과를 더 잘 읽을 수 있게 polish 했습니다. 플레이 화면은 선택한 구간과 다음 행동을 바로 보여주고, 결과 화면은 Stage/Attempt 기록에서 계산한 총 시도 수와 1트 클리어 수를 서버가 내려줘서 디브리프 화면으로 설명 가능하게 만들었습니다.
+- 아직 내가 이해가 부족한 부분: 현재 HUD 문구와 결과 지표는 첫 버전이라, 실제 플레이 기준으로 어떤 정보가 과하고 어떤 정보가 부족한지는 한 번 더 조정할 수 있다. 특히 모바일에서는 선택 상태 카드와 버튼 간격이 얼마나 읽기 좋은지 추가 확인이 필요하다.
