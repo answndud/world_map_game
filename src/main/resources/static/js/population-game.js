@@ -14,10 +14,15 @@ function initStartPage() {
     const form = document.getElementById("population-start-form");
     const nicknameInput = document.getElementById("population-nickname");
     const messageBox = document.getElementById("population-start-message");
+    const submitButton = document.getElementById("population-start-submit");
+    const defaultButtonText = submitButton.textContent;
 
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
         hidePopulationMessage(messageBox);
+        submitButton.disabled = true;
+        submitButton.textContent = "게임 준비 중...";
+        showPopulationMessage(messageBox, "첫 번째 Stage와 보기 데이터를 준비하는 중입니다. 잠시만 기다려주세요.");
 
         try {
             const response = await fetch("/api/games/population/sessions", {
@@ -28,11 +33,13 @@ function initStartPage() {
             const payload = await response.json();
 
             if (!response.ok) {
-                throw new Error(payload.message || "게임 세션을 시작하지 못했습니다.");
+                throw new Error(payload.message || "게임을 시작하지 못했습니다.");
             }
 
-            window.location.href = payload.playPageUrl;
+            window.location.assign(payload.playPageUrl);
         } catch (error) {
+            submitButton.disabled = false;
+            submitButton.textContent = defaultButtonText;
             showPopulationMessage(messageBox, error.message);
         }
     });
@@ -46,137 +53,300 @@ function initPlayPage() {
     const yearLabel = document.getElementById("population-year");
     const optionsBox = document.getElementById("population-options");
     const feedback = document.getElementById("population-answer-feedback");
-    const nextRoundButton = document.getElementById("load-next-population-round-button");
+    const overlay = document.getElementById("population-stage-overlay");
     const messageBox = document.getElementById("population-play-message");
+    const submitButton = document.getElementById("population-submit-button");
+    const nextStageButton = document.getElementById("population-next-stage-button");
+    const gameOverModal = document.getElementById("population-game-over-modal");
+    const gameOverSummary = document.getElementById("population-game-over-summary");
+    const restartButton = document.getElementById("population-restart-button");
 
-    let currentRound = null;
+    let currentState = null;
+    let interactionLocked = false;
 
-    nextRoundButton.addEventListener("click", async () => {
-        await loadRound();
+    window.addEventListener("pageshow", hideGameOverModal);
+    restartButton?.addEventListener("click", restartCurrentSession);
+    nextStageButton?.addEventListener("click", () => {
+        hidePopulationMessage(messageBox);
+        nextStageButton.disabled = true;
+        loadState()
+            .catch((error) => showPopulationMessage(messageBox, error.message))
+            .finally(() => {
+                nextStageButton.disabled = false;
+            });
     });
 
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
         hidePopulationMessage(messageBox);
 
-        if (!currentRound) {
-            showPopulationMessage(messageBox, "현재 라운드를 아직 불러오지 못했습니다.");
+        if (!currentState) {
+            showPopulationMessage(messageBox, "현재 Stage를 아직 불러오지 못했습니다.");
+            return;
+        }
+
+        if (interactionLocked) {
             return;
         }
 
         const selectedOption = form.querySelector("input[name='population-option']:checked");
-
         if (!selectedOption) {
-            showPopulationMessage(messageBox, "보기 하나를 선택해주세요.");
+            showPopulationMessage(messageBox, "보기 하나를 먼저 선택해주세요.");
             return;
         }
 
         try {
+            lockInteraction(true);
             const response = await fetch(`/api/games/population/sessions/${sessionId}/answer`, {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify({
-                    roundNumber: currentRound.roundNumber,
+                    stageNumber: currentState.stageNumber,
                     selectedOptionNumber: Number(selectedOption.value)
                 })
             });
             const payload = await response.json();
 
             if (!response.ok) {
+                lockInteraction(false);
                 throw new Error(payload.message || "정답 제출에 실패했습니다.");
             }
 
-            renderPopulationFeedback(feedback, payload);
-            renderPopulationStatus(statusBox, {
-                roundNumber: payload.nextRoundNumber || payload.roundNumber,
-                totalRounds: currentRound.totalRounds,
-                answeredRoundCount: payload.answeredRoundCount,
-                totalScore: payload.totalScore
+            renderStatus(statusBox, {
+                stageNumber: payload.nextStageNumber || currentState.stageNumber,
+                difficultyLabel: payload.nextDifficultyLabel || currentState.difficultyLabel,
+                clearedStageCount: payload.clearedStageCount,
+                totalScore: payload.totalScore,
+                livesRemaining: payload.livesRemaining
             });
 
-            if (payload.gameStatus === "FINISHED") {
-                nextRoundButton.hidden = true;
-                form.hidden = true;
-                showPopulationMessage(messageBox, "게임이 종료되었습니다. 결과 페이지로 이동하세요.");
-                messageBox.insertAdjacentHTML(
-                    "beforeend",
-                    `<br><a class="primary-link inline-action" href="${payload.resultPageUrl}">결과 페이지 보기</a>`
-                );
+            if (payload.correct) {
+                renderFeedback(feedback, payload);
+                renderStageOverlay(overlay, "정답", `+${payload.awardedScore}`, "success");
+
+                if (payload.outcome === "FINISHED") {
+                    setTimeout(() => {
+                        window.location.href = payload.resultPageUrl;
+                    }, 1100);
+                    return;
+                }
+
+                showNextStageAction();
                 return;
             }
 
-            currentRound = null;
-            nextRoundButton.hidden = false;
+            hidePopulationFeedback(feedback);
+            renderStageOverlay(
+                overlay,
+                payload.outcome === "GAME_OVER" ? "탈락" : "오답",
+                payload.outcome === "GAME_OVER" ? "하트를 모두 잃었습니다" : `하트 ${payload.livesRemaining}개 남음`,
+                "danger"
+            );
+
+            if (payload.outcome === "GAME_OVER") {
+                lockInteraction(true);
+                showGameOverModal(payload);
+                return;
+            }
+
+            currentState = {
+                ...currentState,
+                totalScore: payload.totalScore,
+                livesRemaining: payload.livesRemaining,
+                clearedStageCount: payload.clearedStageCount
+            };
+
+            setTimeout(() => {
+                overlay.hidden = true;
+                clearOptionSelection();
+                lockInteraction(false);
+            }, 950);
         } catch (error) {
+            lockInteraction(false);
             showPopulationMessage(messageBox, error.message);
         }
     });
 
-    loadRound().catch((error) => showPopulationMessage(messageBox, error.message));
+    showPopulationMessage(messageBox, "Stage와 보기 데이터를 불러오는 중입니다.");
+    hideGameOverModal();
+    loadState()
+        .then(() => hidePopulationMessage(messageBox))
+        .catch((error) => showPopulationMessage(messageBox, error.message));
 
-    async function loadRound() {
-        hidePopulationMessage(messageBox);
-        feedback.hidden = true;
-        nextRoundButton.hidden = true;
-
-        const response = await fetch(`/api/games/population/sessions/${sessionId}/round`);
+    async function loadState() {
+        const response = await fetch(`/api/games/population/sessions/${sessionId}/state`, {
+            cache: "no-store"
+        });
         const payload = await response.json();
 
         if (!response.ok) {
-            throw new Error(payload.message || "현재 라운드를 불러오지 못했습니다.");
+            throw new Error(payload.message || "현재 Stage를 불러오지 못했습니다.");
         }
 
-        currentRound = payload;
+        currentState = payload;
+        renderQuestion(payload);
+        renderStatus(statusBox, payload);
+        renderOptions(optionsBox, payload.options);
+        feedback.hidden = true;
+        overlay.hidden = true;
+        hideNextStageAction();
+        hideGameOverModal();
+        lockInteraction(false);
+        submitButton.disabled = true;
+    }
+
+    async function restartCurrentSession() {
+        try {
+            restartButton.disabled = true;
+            const response = await fetch(`/api/games/population/sessions/${sessionId}/restart`, {
+                method: "POST"
+            });
+            const payload = await response.json();
+
+            if (!response.ok) {
+                throw new Error(payload.message || "게임을 다시 시작하지 못했습니다.");
+            }
+
+            hideGameOverModal();
+            feedback.hidden = true;
+            overlay.hidden = true;
+            hideNextStageAction();
+            showPopulationMessage(messageBox, "같은 세션을 Stage 1부터 다시 시작했습니다.");
+            await loadState();
+        } catch (error) {
+            showPopulationMessage(messageBox, error.message);
+        } finally {
+            restartButton.disabled = false;
+        }
+    }
+
+    function renderQuestion(payload) {
         countryName.textContent = payload.targetCountryName;
         yearLabel.textContent = `기준 연도: ${payload.populationYear}`;
-        renderPopulationStatus(statusBox, payload);
-        renderPopulationOptions(optionsBox, payload.options);
+    }
+
+    function renderStatus(target, payload) {
+        target.innerHTML = `
+            <article class="stat-card">
+                <span class="subtitle">현재 Stage</span>
+                <strong>${payload.stageNumber}</strong>
+            </article>
+            <article class="stat-card">
+                <span class="subtitle">난이도</span>
+                <strong>${payload.difficultyLabel}</strong>
+            </article>
+            <article class="stat-card">
+                <span class="subtitle">누적 점수</span>
+                <strong>${payload.totalScore}</strong>
+            </article>
+            <article class="stat-card">
+                <span class="subtitle">클리어 수</span>
+                <strong>${payload.clearedStageCount}</strong>
+            </article>
+            <article class="stat-card">
+                <span class="subtitle">하트</span>
+                <strong class="heart-row">${renderHearts(payload.livesRemaining)}</strong>
+            </article>
+        `;
+    }
+
+    function renderOptions(target, options) {
+        target.innerHTML = options.map((option) => `
+            <label class="option-card" data-option-number="${option.optionNumber}">
+                <input type="radio" name="population-option" value="${option.optionNumber}">
+                <span class="subtitle">Choice ${option.optionNumber}</span>
+                <strong>${formatPopulation(option.population)}</strong>
+            </label>
+        `).join("");
+
+        target.querySelectorAll("input[name='population-option']").forEach((input) => {
+            input.addEventListener("change", () => {
+                target.querySelectorAll(".option-card").forEach((card) => {
+                    card.classList.toggle("is-selected", card.dataset.optionNumber === input.value);
+                });
+                submitButton.disabled = false;
+            });
+        });
+    }
+
+    function renderFeedback(target, payload) {
+        target.hidden = false;
+        target.innerHTML = `
+            <h3>${payload.targetCountryName} 결과</h3>
+            <p>내 선택: ${formatPopulation(payload.selectedPopulation)}</p>
+            <p>정답: ${formatPopulation(payload.correctPopulation)}</p>
+            <p>판정: ${payload.correct ? "Correct" : "Wrong"}</p>
+            <p>획득 점수: ${payload.awardedScore}</p>
+            <p>현재 총점: ${payload.totalScore}</p>
+        `;
+    }
+
+    function hidePopulationFeedback(target) {
+        target.hidden = true;
+        target.innerHTML = "";
+    }
+
+    function showNextStageAction() {
+        nextStageButton.hidden = false;
+        nextStageButton.disabled = false;
+        submitButton.disabled = true;
+        optionsBox.querySelectorAll("input[name='population-option']").forEach((input) => {
+            input.disabled = true;
+        });
+    }
+
+    function hideNextStageAction() {
+        nextStageButton.hidden = true;
+        nextStageButton.disabled = true;
+    }
+
+    function clearOptionSelection() {
+        optionsBox.querySelectorAll("input[name='population-option']").forEach((input) => {
+            input.checked = false;
+            input.disabled = false;
+        });
+
+        optionsBox.querySelectorAll(".option-card").forEach((card) => {
+            card.classList.remove("is-selected");
+        });
+
+        submitButton.disabled = true;
+    }
+
+    function renderStageOverlay(target, title, detail, tone) {
+        target.hidden = false;
+        target.dataset.tone = tone;
+        target.innerHTML = `<strong>${title}</strong><span>${detail}</span>`;
+    }
+
+    function renderHearts(livesRemaining) {
+        return Array.from({length: 3}, (_, index) => {
+            const active = index < livesRemaining;
+            return `<span class="heart ${active ? "is-active" : "is-empty"}">♥</span>`;
+        }).join("");
+    }
+
+    function showGameOverModal(payload) {
+        gameOverSummary.textContent = `Stage ${payload.stageNumber}에서 탈락했습니다. 현재 총점 ${payload.totalScore}점, 다시 시작하면 같은 세션으로 Stage 1부터 이어집니다.`;
+        gameOverModal.hidden = false;
+    }
+
+    function hideGameOverModal() {
+        gameOverModal.hidden = true;
+    }
+
+    function lockInteraction(locked) {
+        interactionLocked = locked;
+        submitButton.disabled = locked || !form.querySelector("input[name='population-option']:checked");
+        nextStageButton.disabled = locked || nextStageButton.hidden;
+        optionsBox.querySelectorAll("input[name='population-option']").forEach((input) => {
+            input.disabled = locked;
+        });
     }
 }
 
-function renderPopulationStatus(target, payload) {
-    const nextRound = payload.roundNumber || 1;
-    const remainingRounds = payload.totalRounds - payload.answeredRoundCount;
-
-    target.innerHTML = `
-        <article class="stat-card">
-            <span class="subtitle">진행 라운드</span>
-            <strong>${nextRound} / ${payload.totalRounds}</strong>
-        </article>
-        <article class="stat-card">
-            <span class="subtitle">누적 점수</span>
-            <strong>${payload.totalScore}</strong>
-        </article>
-        <article class="stat-card">
-            <span class="subtitle">완료 수</span>
-            <strong>${payload.answeredRoundCount}</strong>
-        </article>
-        <article class="stat-card">
-            <span class="subtitle">남은 라운드</span>
-            <strong>${remainingRounds}</strong>
-        </article>
-    `;
-}
-
-function renderPopulationOptions(target, options) {
-    target.innerHTML = options.map((option) => `
-        <label class="option-card">
-            <input type="radio" name="population-option" value="${option.optionNumber}">
-            <span>${option.population.toLocaleString()}명</span>
-        </label>
-    `).join("");
-}
-
-function renderPopulationFeedback(target, payload) {
-    target.hidden = false;
-    target.innerHTML = `
-        <h3>${payload.targetCountryName} 결과</h3>
-        <p>내 선택: ${Number(payload.selectedPopulation).toLocaleString()}명</p>
-        <p>정답: ${Number(payload.correctPopulation).toLocaleString()}명</p>
-        <p>판정: ${payload.correct ? "Correct" : "Wrong"}</p>
-        <p>획득 점수: ${payload.awardedScore}</p>
-        <p>현재 총점: ${payload.totalScore}</p>
-    `;
+function formatPopulation(population) {
+    return `${Number(population).toLocaleString()}명`;
 }
 
 function showPopulationMessage(target, message) {

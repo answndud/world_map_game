@@ -3,6 +3,8 @@ package com.worldmap.game.population.domain;
 import com.worldmap.country.domain.Country;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -16,15 +18,15 @@ import java.util.List;
 
 @Entity
 @Table(
-	name = "population_game_round",
+	name = "population_game_stage",
 	uniqueConstraints = {
 		@UniqueConstraint(
-			name = "uk_population_game_round_session_round",
-			columnNames = {"session_id", "round_number"}
+			name = "uk_population_game_stage_session_stage",
+			columnNames = {"session_id", "stage_number"}
 		)
 	}
 )
-public class PopulationGameRound {
+public class PopulationGameStage {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -34,8 +36,8 @@ public class PopulationGameRound {
 	@JoinColumn(name = "session_id", nullable = false)
 	private PopulationGameSession session;
 
-	@Column(name = "round_number", nullable = false)
-	private Integer roundNumber;
+	@Column(name = "stage_number", nullable = false)
+	private Integer stageNumber;
 
 	@Column(name = "country_id", nullable = false)
 	private Long countryId;
@@ -67,33 +69,31 @@ public class PopulationGameRound {
 	@Column(name = "correct_option_number", nullable = false)
 	private Integer correctOptionNumber;
 
-	@Column(name = "selected_option_number")
-	private Integer selectedOptionNumber;
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false, length = 20)
+	private PopulationGameStageStatus status;
 
-	@Column(name = "selected_population")
-	private Long selectedPopulation;
-
-	@Column(name = "correct")
-	private Boolean correct;
+	@Column(name = "attempt_count", nullable = false)
+	private Integer attemptCount;
 
 	@Column(name = "awarded_score")
 	private Integer awardedScore;
 
-	@Column(name = "answered_at")
-	private LocalDateTime answeredAt;
+	@Column(name = "cleared_at")
+	private LocalDateTime clearedAt;
 
-	protected PopulationGameRound() {
+	protected PopulationGameStage() {
 	}
 
-	private PopulationGameRound(
+	private PopulationGameStage(
 		PopulationGameSession session,
-		Integer roundNumber,
+		Integer stageNumber,
 		Country country,
 		List<Long> options,
 		Integer correctOptionNumber
 	) {
 		this.session = session;
-		this.roundNumber = roundNumber;
+		this.stageNumber = stageNumber;
 		this.countryId = country.getId();
 		this.countryIso3Code = country.getIso3Code();
 		this.targetCountryName = country.getNameKr();
@@ -104,32 +104,44 @@ public class PopulationGameRound {
 		this.optionThreePopulation = options.get(2);
 		this.optionFourPopulation = options.get(3);
 		this.correctOptionNumber = correctOptionNumber;
+		this.status = PopulationGameStageStatus.PENDING;
+		this.attemptCount = 0;
 	}
 
-	public static PopulationGameRound create(
+	public static PopulationGameStage create(
 		PopulationGameSession session,
-		Integer roundNumber,
+		Integer stageNumber,
 		Country country,
 		List<Long> options,
 		Integer correctOptionNumber
 	) {
-		return new PopulationGameRound(session, roundNumber, country, options, correctOptionNumber);
+		return new PopulationGameStage(session, stageNumber, country, options, correctOptionNumber);
 	}
 
-	public void submit(Integer selectedOptionNumber, Long selectedPopulation, Boolean correct, Integer awardedScore, LocalDateTime answeredAt) {
-		if (isAnswered()) {
-			throw new IllegalStateException("이미 제출한 라운드입니다.");
+	public int nextAttemptNumber() {
+		return attemptCount + 1;
+	}
+
+	public void recordAttempt(boolean correct, Integer awardedScore, LocalDateTime attemptedAt) {
+		if (status != PopulationGameStageStatus.PENDING) {
+			throw new IllegalStateException("이미 종료된 Stage입니다.");
 		}
 
-		this.selectedOptionNumber = selectedOptionNumber;
-		this.selectedPopulation = selectedPopulation;
-		this.correct = correct;
-		this.awardedScore = awardedScore;
-		this.answeredAt = answeredAt;
+		this.attemptCount += 1;
+
+		if (correct) {
+			this.status = PopulationGameStageStatus.CLEARED;
+			this.awardedScore = awardedScore;
+			this.clearedAt = attemptedAt;
+		}
 	}
 
-	public boolean isAnswered() {
-		return answeredAt != null;
+	public void markFailed() {
+		if (status == PopulationGameStageStatus.CLEARED) {
+			throw new IllegalStateException("이미 클리어한 Stage는 실패 처리할 수 없습니다.");
+		}
+
+		this.status = PopulationGameStageStatus.FAILED;
 	}
 
 	public Long getId() {
@@ -140,12 +152,16 @@ public class PopulationGameRound {
 		return session;
 	}
 
-	public Integer getRoundNumber() {
-		return roundNumber;
+	public Integer getStageNumber() {
+		return stageNumber;
 	}
 
 	public String getTargetCountryName() {
 		return targetCountryName;
+	}
+
+	public String getCountryIso3Code() {
+		return countryIso3Code;
 	}
 
 	public Long getTargetPopulation() {
@@ -156,44 +172,24 @@ public class PopulationGameRound {
 		return populationYear;
 	}
 
-	public Long getOptionOnePopulation() {
-		return optionOnePopulation;
-	}
-
-	public Long getOptionTwoPopulation() {
-		return optionTwoPopulation;
-	}
-
-	public Long getOptionThreePopulation() {
-		return optionThreePopulation;
-	}
-
-	public Long getOptionFourPopulation() {
-		return optionFourPopulation;
-	}
-
 	public Integer getCorrectOptionNumber() {
 		return correctOptionNumber;
 	}
 
-	public Integer getSelectedOptionNumber() {
-		return selectedOptionNumber;
+	public PopulationGameStageStatus getStatus() {
+		return status;
 	}
 
-	public Long getSelectedPopulation() {
-		return selectedPopulation;
-	}
-
-	public Boolean getCorrect() {
-		return correct;
+	public Integer getAttemptCount() {
+		return attemptCount;
 	}
 
 	public Integer getAwardedScore() {
 		return awardedScore;
 	}
 
-	public LocalDateTime getAnsweredAt() {
-		return answeredAt;
+	public LocalDateTime getClearedAt() {
+		return clearedAt;
 	}
 
 	public List<Long> getOptions() {

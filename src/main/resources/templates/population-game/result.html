@@ -13,16 +13,18 @@
         <p class="eyebrow">Population Game Result</p>
         <h1>게임 결과</h1>
         <p class="hero-copy">
-            같은 세션 구조를 재사용하면서도, 라운드별로는 보기형 퀴즈 결과를 남깁니다.
+            Session, Stage, Attempt, 하트 상태를 서버가 저장한 그대로 보여줍니다.
         </p>
     </header>
 
     <main class="layout">
         <section class="panel game-panel">
-            <article class="result-banner success">
+            <article class="result-banner" th:classappend="${result.status.name() == 'GAME_OVER'} ? ' danger' : ' success'">
                 <p class="subtitle">Scan Result</p>
-                <h2>Debrief Complete</h2>
-                <p>보기형 퀴즈지만, 점수와 라운드 진행은 위치 게임과 같은 세션 구조 위에서 서버가 기록합니다.</p>
+                <h2 th:text="${result.status.name() == 'GAME_OVER' ? 'Run Over' : 'Mission Debrief'}">Run Over</h2>
+                <p th:text="${result.status.name() == 'GAME_OVER' ? '마지막 Stage에서 하트를 모두 잃었습니다. 어떤 인구 규모 문제에서 막혔는지 Attempt 기록으로 다시 설명할 수 있습니다.' : '현재까지 진행된 엔드리스 인구수 러닝 기록입니다.'}">
+                    마지막 Stage에서 하트를 모두 잃었습니다.
+                </p>
             </article>
             <div class="stats-grid">
                 <article class="stat-card">
@@ -38,36 +40,50 @@
                     <strong th:text="${result.totalScore}">500</strong>
                 </article>
                 <article class="stat-card">
-                    <span class="subtitle">완료 라운드</span>
-                    <strong th:text="${result.answeredRoundCount + ' / ' + result.totalRounds}">5 / 5</strong>
+                    <span class="subtitle">클리어 Stage</span>
+                    <strong th:text="${result.clearedStageCount}">5</strong>
+                </article>
+                <article class="stat-card">
+                    <span class="subtitle">도달 Stage</span>
+                    <strong th:text="${result.currentStageNumber}">6</strong>
+                </article>
+                <article class="stat-card">
+                    <span class="subtitle">남은 하트</span>
+                    <strong th:text="${result.livesRemaining}">0</strong>
                 </article>
             </div>
 
             <div class="panel-head">
-                <h2>라운드별 기록</h2>
-                <p>Level 1은 보기형이라 정답이면 100점, 오답이면 0점으로 계산합니다.</p>
+                <h2>Stage별 기록</h2>
+                <p>한 Stage 안에 여러 번의 Attempt가 쌓이고, 하트가 0이 되면 해당 Stage에서 게임이 종료됩니다.</p>
             </div>
 
             <div class="table-shell">
                 <table class="result-table">
                     <thead>
                     <tr>
-                        <th>라운드</th>
+                        <th>Stage</th>
                         <th>국가</th>
-                        <th>선택값</th>
-                        <th>정답값</th>
-                        <th>판정</th>
+                        <th>상태</th>
+                        <th>시도 기록</th>
                         <th>점수</th>
                     </tr>
                     </thead>
                     <tbody>
-                    <tr th:each="round : ${result.rounds}">
-                        <td th:text="${round.roundNumber}">1</td>
-                        <td th:text="${round.targetCountryName + ' (' + round.populationYear + ')'}">대한민국 (2024)</td>
-                        <td th:text="${round.selectedPopulation}">51751065</td>
-                        <td th:text="${round.correctPopulation}">51751065</td>
-                        <td th:text="${round.correct ? 'Correct' : 'Wrong'}">Correct</td>
-                        <td th:text="${round.awardedScore}">100</td>
+                    <tr th:each="stage : ${result.stages}">
+                        <td th:text="${stage.stageNumber}">1</td>
+                        <td th:text="${stage.targetCountryName + ' (' + stage.populationYear + ')'}">대한민국 (2024)</td>
+                        <td th:text="${stage.status}">CLEARED</td>
+                        <td>
+                            <div class="attempt-log" th:if="${!#lists.isEmpty(stage.attempts)}">
+                                <p th:each="attempt : ${stage.attempts}"
+                                   th:text="${attempt.attemptNumber + '차: ' + attempt.selectedPopulation + '명 / ' + (attempt.correct ? 'Correct' : 'Wrong') + ' / 하트 ' + attempt.livesRemainingAfter}">
+                                    1차: 51,751,065명 / Wrong / 하트 2
+                                </p>
+                            </div>
+                            <span th:if="${#lists.isEmpty(stage.attempts)}">-</span>
+                        </td>
+                        <td th:text="${stage.awardedScore != null ? stage.awardedScore : '-'}">100</td>
                     </tr>
                     </tbody>
                 </table>

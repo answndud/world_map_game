@@ -4,15 +4,22 @@ import com.worldmap.common.exception.ResourceNotFoundException;
 import com.worldmap.country.domain.Country;
 import com.worldmap.country.domain.CountryRepository;
 import com.worldmap.game.common.domain.GameSessionStatus;
-import com.worldmap.game.population.domain.PopulationGameRound;
-import com.worldmap.game.population.domain.PopulationGameRoundRepository;
+import com.worldmap.game.population.domain.PopulationGameAttempt;
+import com.worldmap.game.population.domain.PopulationGameAttemptRepository;
 import com.worldmap.game.population.domain.PopulationGameSession;
 import com.worldmap.game.population.domain.PopulationGameSessionRepository;
+import com.worldmap.game.population.domain.PopulationGameStage;
+import com.worldmap.game.population.domain.PopulationGameStageRepository;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,55 +27,44 @@ import org.springframework.transaction.annotation.Transactional;
 public class PopulationGameService {
 
 	private static final int MINIMUM_COUNTRY_COUNT = 4;
-	private static final int DEFAULT_ROUND_COUNT = 5;
 
 	private final CountryRepository countryRepository;
 	private final PopulationGameSessionRepository populationGameSessionRepository;
-	private final PopulationGameRoundRepository populationGameRoundRepository;
+	private final PopulationGameStageRepository populationGameStageRepository;
+	private final PopulationGameAttemptRepository populationGameAttemptRepository;
 	private final PopulationGameOptionGenerator populationGameOptionGenerator;
+	private final PopulationGameDifficultyPolicy populationGameDifficultyPolicy;
 	private final PopulationGameScoringPolicy populationGameScoringPolicy;
 
 	public PopulationGameService(
 		CountryRepository countryRepository,
 		PopulationGameSessionRepository populationGameSessionRepository,
-		PopulationGameRoundRepository populationGameRoundRepository,
+		PopulationGameStageRepository populationGameStageRepository,
+		PopulationGameAttemptRepository populationGameAttemptRepository,
 		PopulationGameOptionGenerator populationGameOptionGenerator,
+		PopulationGameDifficultyPolicy populationGameDifficultyPolicy,
 		PopulationGameScoringPolicy populationGameScoringPolicy
 	) {
 		this.countryRepository = countryRepository;
 		this.populationGameSessionRepository = populationGameSessionRepository;
-		this.populationGameRoundRepository = populationGameRoundRepository;
+		this.populationGameStageRepository = populationGameStageRepository;
+		this.populationGameAttemptRepository = populationGameAttemptRepository;
 		this.populationGameOptionGenerator = populationGameOptionGenerator;
+		this.populationGameDifficultyPolicy = populationGameDifficultyPolicy;
 		this.populationGameScoringPolicy = populationGameScoringPolicy;
 	}
 
 	@Transactional
 	public PopulationGameStartView startGame(String nickname) {
-		List<Country> countries = new ArrayList<>(countryRepository.findAll());
+		List<Country> countries = getCountriesSortedByPopulation();
 
 		if (countries.size() < MINIMUM_COUNTRY_COUNT) {
 			throw new IllegalStateException("인구수 게임을 시작하기 위한 국가 데이터가 충분하지 않습니다.");
 		}
 
-		Collections.shuffle(countries);
-		int totalRounds = Math.min(DEFAULT_ROUND_COUNT, countries.size());
-		PopulationGameSession session = PopulationGameSession.ready(normalizeNickname(nickname), totalRounds);
-		populationGameSessionRepository.save(session);
-
-		for (int index = 0; index < totalRounds; index++) {
-			Country targetCountry = countries.get(index);
-			PopulationRoundOptions roundOptions = populationGameOptionGenerator.generate(targetCountry, countries);
-			populationGameRoundRepository.save(
-				PopulationGameRound.create(
-					session,
-					index + 1,
-					targetCountry,
-					roundOptions.options(),
-					roundOptions.correctOptionNumber()
-				)
-			);
-		}
-
+		PopulationGameSession session = PopulationGameSession.ready(normalizeNickname(nickname), 1);
+		session = populationGameSessionRepository.save(session);
+		createNextStage(session, 1, countries, List.of());
 		session.startGame(LocalDateTime.now());
 
 		return new PopulationGameStartView(
@@ -76,77 +72,142 @@ public class PopulationGameService {
 			session.getPlayerNickname(),
 			session.getStatus(),
 			session.getTotalRounds(),
+			session.getLivesRemaining(),
 			"/games/population/play/" + session.getId()
 		);
 	}
 
 	@Transactional(readOnly = true)
-	public PopulationGameCurrentRoundView getCurrentRound(UUID sessionId) {
+	public PopulationGameStateView getCurrentState(UUID sessionId) {
 		PopulationGameSession session = getSession(sessionId);
 
-		if (session.getStatus() == GameSessionStatus.FINISHED) {
+		if (session.getStatus() != GameSessionStatus.IN_PROGRESS) {
 			throw new IllegalStateException("이미 종료된 게임입니다.");
 		}
 
-		PopulationGameRound round = getRound(sessionId, session.getCurrentRoundNumber());
+		PopulationGameStage stage = getStage(sessionId, session.getCurrentStageNumber());
+		PopulationGameDifficultyPlan difficultyPlan = resolveDifficulty(stage.getStageNumber());
 
-		return new PopulationGameCurrentRoundView(
+		return new PopulationGameStateView(
 			session.getId(),
-			round.getRoundNumber(),
-			session.getTotalRounds(),
-			session.getAnsweredRoundCount(),
+			stage.getStageNumber(),
+			difficultyPlan.label(),
+			session.getClearedStageCount(),
 			session.getTotalScore(),
-			round.getTargetCountryName(),
-			round.getPopulationYear(),
-			toOptionViews(round)
+			session.getLivesRemaining(),
+			stage.getTargetCountryName(),
+			stage.getPopulationYear(),
+			toOptionViews(stage),
+			session.getStatus()
 		);
 	}
 
 	@Transactional
-	public PopulationGameAnswerView submitAnswer(UUID sessionId, Integer roundNumber, Integer selectedOptionNumber) {
-		if (selectedOptionNumber < 1 || selectedOptionNumber > 4) {
-			throw new IllegalArgumentException("selectedOptionNumber는 1에서 4 사이여야 합니다.");
+	public PopulationGameStartView restartGame(UUID sessionId) {
+		PopulationGameSession session = getSession(sessionId);
+
+		if (session.getStatus() != GameSessionStatus.GAME_OVER && session.getStatus() != GameSessionStatus.FINISHED) {
+			throw new IllegalStateException("종료된 게임만 다시 시작할 수 있습니다.");
 		}
 
+		List<Country> countries = getCountriesSortedByPopulation();
+		if (countries.size() < MINIMUM_COUNTRY_COUNT) {
+			throw new IllegalStateException("인구수 게임을 시작하기 위한 국가 데이터가 충분하지 않습니다.");
+		}
+
+		populationGameAttemptRepository.deleteAllByStageSessionId(sessionId);
+		populationGameAttemptRepository.flush();
+		populationGameStageRepository.deleteAllBySessionId(sessionId);
+		populationGameStageRepository.flush();
+
+		session.restart(1);
+		createNextStage(session, 1, countries, List.of());
+		session.startGame(LocalDateTime.now());
+
+		return new PopulationGameStartView(
+			session.getId(),
+			session.getPlayerNickname(),
+			session.getStatus(),
+			session.getTotalRounds(),
+			session.getLivesRemaining(),
+			"/games/population/play/" + session.getId()
+		);
+	}
+
+	@Transactional
+	public PopulationGameAnswerView submitAnswer(UUID sessionId, Integer stageNumber, Integer selectedOptionNumber) {
 		PopulationGameSession session = getSession(sessionId);
 
 		if (session.getStatus() != GameSessionStatus.IN_PROGRESS) {
 			throw new IllegalStateException("진행 중인 게임만 답안을 제출할 수 있습니다.");
 		}
 
-		if (!session.getCurrentRoundNumber().equals(roundNumber)) {
-			throw new IllegalStateException("현재 진행 중인 라운드와 일치하지 않습니다.");
+		if (!session.getCurrentStageNumber().equals(stageNumber)) {
+			throw new IllegalStateException("현재 진행 중인 Stage와 일치하지 않습니다.");
 		}
 
-		PopulationGameRound round = getRound(sessionId, roundNumber);
-		PopulationAnswerJudgement judgement = populationGameScoringPolicy.judge(selectedOptionNumber, round.getCorrectOptionNumber());
-		Long selectedPopulation = round.getOptions().get(selectedOptionNumber - 1);
-
-		round.submit(
+		PopulationGameStage stage = getStage(sessionId, stageNumber);
+		int attemptNumber = stage.nextAttemptNumber();
+		LocalDateTime attemptedAt = LocalDateTime.now();
+		PopulationAnswerJudgement judgement = populationGameScoringPolicy.judge(
 			selectedOptionNumber,
-			selectedPopulation,
-			judgement.correct(),
-			judgement.awardedScore(),
-			LocalDateTime.now()
+			stage.getCorrectOptionNumber(),
+			stageNumber,
+			attemptNumber,
+			session.getLivesRemaining()
 		);
-		session.completeRound(roundNumber, judgement.awardedScore(), LocalDateTime.now());
+		Long selectedPopulation = stage.getOptions().get(selectedOptionNumber - 1);
+
+		stage.recordAttempt(judgement.correct(), judgement.awardedScore(), attemptedAt);
+
+		if (judgement.correct()) {
+			List<Country> countries = getCountriesSortedByPopulation();
+			List<PopulationGameStage> existingStages = populationGameStageRepository.findAllBySessionIdOrderByStageNumber(sessionId);
+			createNextStage(session, stageNumber + 1, countries, existingStages);
+			session.clearCurrentStage(stageNumber, judgement.awardedScore(), attemptedAt);
+		} else {
+			session.recordWrongAttempt(stageNumber, attemptedAt);
+
+			if (session.getStatus() == GameSessionStatus.GAME_OVER) {
+				stage.markFailed();
+			}
+		}
+
+		populationGameAttemptRepository.save(
+			PopulationGameAttempt.create(
+				stage,
+				attemptNumber,
+				selectedOptionNumber,
+				selectedPopulation,
+				judgement.correct(),
+				session.getLivesRemaining(),
+				attemptedAt
+			)
+		);
+
+		PopulationGameAnswerOutcome outcome = determineOutcome(judgement.correct(), session.getStatus());
+		PopulationGameDifficultyPlan nextDifficultyPlan = session.getStatus() == GameSessionStatus.IN_PROGRESS
+			? resolveDifficulty(session.getCurrentStageNumber())
+			: null;
 
 		return new PopulationGameAnswerView(
 			session.getId(),
-			round.getRoundNumber(),
-			round.getTargetCountryName(),
-			round.getPopulationYear(),
-			round.getSelectedOptionNumber(),
-			round.getSelectedPopulation(),
-			round.getCorrectOptionNumber(),
-			round.getTargetPopulation(),
-			round.getCorrect(),
-			round.getAwardedScore(),
+			stage.getStageNumber(),
+			stage.getTargetCountryName(),
+			stage.getPopulationYear(),
+			selectedOptionNumber,
+			selectedPopulation,
+			stage.getCorrectOptionNumber(),
+			stage.getTargetPopulation(),
+			judgement.correct(),
+			judgement.awardedScore(),
 			session.getTotalScore(),
-			session.getAnsweredRoundCount(),
-			session.getTotalRounds() - session.getAnsweredRoundCount(),
-			session.getStatus() == GameSessionStatus.FINISHED ? null : session.getCurrentRoundNumber(),
+			session.getClearedStageCount(),
+			session.getLivesRemaining(),
+			session.getStatus() == GameSessionStatus.IN_PROGRESS ? session.getCurrentStageNumber() : null,
+			nextDifficultyPlan != null ? nextDifficultyPlan.label() : null,
 			session.getStatus(),
+			outcome,
 			"/games/population/result/" + session.getId()
 		);
 	}
@@ -154,20 +215,31 @@ public class PopulationGameService {
 	@Transactional(readOnly = true)
 	public PopulationGameSessionResultView getSessionResult(UUID sessionId) {
 		PopulationGameSession session = getSession(sessionId);
-		List<PopulationGameRoundResultView> rounds = populationGameRoundRepository.findAllBySessionIdOrderByRoundNumber(sessionId)
+		Map<Long, List<PopulationGameAttemptResultView>> attemptsByStageId = new LinkedHashMap<>();
+
+		populationGameAttemptRepository.findAllByStageSessionIdOrderByStageStageNumberAscAttemptNumberAsc(sessionId)
+			.forEach(attempt -> attemptsByStageId.computeIfAbsent(attempt.getStage().getId(), ignored -> new ArrayList<>())
+				.add(new PopulationGameAttemptResultView(
+					attempt.getAttemptNumber(),
+					attempt.getSelectedOptionNumber(),
+					attempt.getSelectedPopulation(),
+					attempt.getCorrect(),
+					attempt.getLivesRemainingAfter(),
+					attempt.getAttemptedAt()
+				)));
+
+		List<PopulationGameStageResultView> stages = populationGameStageRepository.findAllBySessionIdOrderByStageNumber(sessionId)
 			.stream()
-			.map(round -> new PopulationGameRoundResultView(
-				round.getRoundNumber(),
-				round.getTargetCountryName(),
-				round.getPopulationYear(),
-				round.getTargetPopulation(),
-				round.getSelectedOptionNumber(),
-				round.getSelectedPopulation(),
-				round.getCorrectOptionNumber(),
-				round.getTargetPopulation(),
-				round.getCorrect(),
-				round.getAwardedScore(),
-				round.getAnsweredAt()
+			.map(stage -> new PopulationGameStageResultView(
+				stage.getStageNumber(),
+				stage.getTargetCountryName(),
+				stage.getPopulationYear(),
+				stage.getTargetPopulation(),
+				stage.getStatus(),
+				stage.getAttemptCount(),
+				stage.getAwardedScore(),
+				stage.getClearedAt(),
+				attemptsByStageId.getOrDefault(stage.getId(), List.of())
 			))
 			.toList();
 
@@ -176,12 +248,13 @@ public class PopulationGameService {
 			session.getPlayerNickname(),
 			session.getStatus(),
 			session.getTotalRounds(),
-			session.getAnsweredRoundCount(),
+			session.getClearedStageCount(),
 			session.getTotalScore(),
-			session.getCurrentRoundNumber(),
+			session.getCurrentStageNumber(),
+			session.getLivesRemaining(),
 			session.getStartedAt(),
 			session.getFinishedAt(),
-			rounds
+			stages
 		);
 	}
 
@@ -190,9 +263,9 @@ public class PopulationGameService {
 			.orElseThrow(() -> new ResourceNotFoundException("게임 세션을 찾을 수 없습니다: " + sessionId));
 	}
 
-	private PopulationGameRound getRound(UUID sessionId, Integer roundNumber) {
-		return populationGameRoundRepository.findBySessionIdAndRoundNumber(sessionId, roundNumber)
-			.orElseThrow(() -> new ResourceNotFoundException("게임 라운드를 찾을 수 없습니다."));
+	private PopulationGameStage getStage(UUID sessionId, Integer stageNumber) {
+		return populationGameStageRepository.findBySessionIdAndStageNumber(sessionId, stageNumber)
+			.orElseThrow(() -> new ResourceNotFoundException("게임 Stage를 찾을 수 없습니다."));
 	}
 
 	private String normalizeNickname(String nickname) {
@@ -203,14 +276,113 @@ public class PopulationGameService {
 		return nickname.trim();
 	}
 
-	private List<PopulationOptionView> toOptionViews(PopulationGameRound round) {
-		List<Long> options = round.getOptions();
+	private List<Country> getCountriesSortedByPopulation() {
+		return countryRepository.findAll()
+			.stream()
+			.sorted(
+				Comparator.comparing(Country::getPopulation, Comparator.reverseOrder())
+					.thenComparing(Country::getNameKr)
+			)
+			.toList();
+	}
+
+	private PopulationGameDifficultyPlan resolveDifficulty(Integer stageNumber) {
+		return populationGameDifficultyPolicy.resolve(stageNumber, (int) countryRepository.count());
+	}
+
+	private List<PopulationOptionView> toOptionViews(PopulationGameStage stage) {
 		List<PopulationOptionView> optionViews = new ArrayList<>();
+		List<Long> options = stage.getOptions();
 
 		for (int index = 0; index < options.size(); index++) {
 			optionViews.add(new PopulationOptionView(index + 1, options.get(index)));
 		}
 
 		return List.copyOf(optionViews);
+	}
+
+	private void createNextStage(
+		PopulationGameSession session,
+		Integer stageNumber,
+		List<Country> sortedCountries,
+		List<PopulationGameStage> existingStages
+	) {
+		if (populationGameStageRepository.findBySessionIdAndStageNumber(session.getId(), stageNumber).isPresent()) {
+			return;
+		}
+
+		PopulationGameDifficultyPlan difficultyPlan = populationGameDifficultyPolicy.resolve(stageNumber, sortedCountries.size());
+		List<Country> difficultyPool = new ArrayList<>(sortedCountries.subList(0, difficultyPlan.candidatePoolSize()));
+		Country nextCountry = selectCountryForStage(sortedCountries, existingStages, difficultyPool);
+		PopulationRoundOptions roundOptions = populationGameOptionGenerator.generate(nextCountry, sortedCountries);
+		populationGameStageRepository.save(
+			PopulationGameStage.create(
+				session,
+				stageNumber,
+				nextCountry,
+				roundOptions.options(),
+				roundOptions.correctOptionNumber()
+			)
+		);
+		session.planNextStage(stageNumber);
+	}
+
+	private Country selectCountryForStage(
+		List<Country> sortedCountries,
+		List<PopulationGameStage> existingStages,
+		List<Country> difficultyPool
+	) {
+		Set<String> usedIso3Codes = new HashSet<>();
+		String lastCountryIso3Code = null;
+
+		for (PopulationGameStage existingStage : existingStages) {
+			usedIso3Codes.add(existingStage.getCountryIso3Code());
+			lastCountryIso3Code = existingStage.getCountryIso3Code();
+		}
+
+		List<Country> freshCandidates = difficultyPool.stream()
+			.filter(country -> !usedIso3Codes.contains(country.getIso3Code()))
+			.toList();
+
+		if (!freshCandidates.isEmpty()) {
+			return pickRandomCountry(freshCandidates);
+		}
+
+		List<Country> widerFreshCandidates = sortedCountries.stream()
+			.filter(country -> !usedIso3Codes.contains(country.getIso3Code()))
+			.toList();
+
+		if (!widerFreshCandidates.isEmpty()) {
+			return pickRandomCountry(widerFreshCandidates);
+		}
+
+		if (lastCountryIso3Code != null) {
+			String recentCountryIso3Code = lastCountryIso3Code;
+			List<Country> withoutImmediateRepeat = difficultyPool.stream()
+				.filter(country -> !country.getIso3Code().equals(recentCountryIso3Code))
+				.toList();
+
+			if (!withoutImmediateRepeat.isEmpty()) {
+				return pickRandomCountry(withoutImmediateRepeat);
+			}
+		}
+
+		return pickRandomCountry(difficultyPool);
+	}
+
+	private Country pickRandomCountry(List<Country> candidates) {
+		return candidates.get(ThreadLocalRandom.current().nextInt(candidates.size()));
+	}
+
+	private PopulationGameAnswerOutcome determineOutcome(boolean correct, GameSessionStatus status) {
+		if (correct) {
+			return status == GameSessionStatus.FINISHED
+				? PopulationGameAnswerOutcome.FINISHED
+				: PopulationGameAnswerOutcome.CORRECT;
+		}
+
+		return status == GameSessionStatus.GAME_OVER
+			? PopulationGameAnswerOutcome.GAME_OVER
+			: PopulationGameAnswerOutcome.WRONG;
 	}
 }

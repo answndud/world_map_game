@@ -9,12 +9,13 @@ public record PopulationGameSessionResultView(
 	UUID sessionId,
 	String playerNickname,
 	GameSessionStatus status,
-	Integer totalRounds,
-	Integer answeredRoundCount,
+	Integer totalStages,
+	Integer clearedStageCount,
 	Integer totalScore,
-	Integer currentRoundNumber,
+	Integer currentStageNumber,
+	Integer livesRemaining,
 	LocalDateTime startedAt,
 	LocalDateTime finishedAt,
-	List<PopulationGameRoundResultView> rounds
+	List<PopulationGameStageResultView> stages
 ) {
 }

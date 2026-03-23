@@ -5,7 +5,7 @@ import java.util.UUID;
 
 public record PopulationGameAnswerView(
 	UUID sessionId,
-	Integer roundNumber,
+	Integer stageNumber,
 	String targetCountryName,
 	Integer populationYear,
 	Integer selectedOptionNumber,
@@ -15,10 +15,12 @@ public record PopulationGameAnswerView(
 	Boolean correct,
 	Integer awardedScore,
 	Integer totalScore,
-	Integer answeredRoundCount,
-	Integer remainingRounds,
-	Integer nextRoundNumber,
+	Integer clearedStageCount,
+	Integer livesRemaining,
+	Integer nextStageNumber,
+	String nextDifficultyLabel,
 	GameSessionStatus gameStatus,
+	PopulationGameAnswerOutcome outcome,
 	String resultPageUrl
 ) {
 }

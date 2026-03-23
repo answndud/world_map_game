@@ -7,7 +7,8 @@ public record PopulationGameStartView(
 	UUID sessionId,
 	String playerNickname,
 	GameSessionStatus status,
-	Integer totalRounds,
+	Integer totalStages,
+	Integer livesRemaining,
 	String playPageUrl
 ) {
 }

@@ -1,10 +1,10 @@
 package com.worldmap.game.population.web;
 
 import com.worldmap.game.population.application.PopulationGameAnswerView;
-import com.worldmap.game.population.application.PopulationGameCurrentRoundView;
 import com.worldmap.game.population.application.PopulationGameService;
 import com.worldmap.game.population.application.PopulationGameSessionResultView;
 import com.worldmap.game.population.application.PopulationGameStartView;
+import com.worldmap.game.population.application.PopulationGameStateView;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -32,9 +32,19 @@ public class PopulationGameApiController {
 		return populationGameService.startGame(request.nickname());
 	}
 
+	@GetMapping("/{sessionId}/state")
+	public PopulationGameStateView currentState(@PathVariable UUID sessionId) {
+		return populationGameService.getCurrentState(sessionId);
+	}
+
 	@GetMapping("/{sessionId}/round")
-	public PopulationGameCurrentRoundView currentRound(@PathVariable UUID sessionId) {
-		return populationGameService.getCurrentRound(sessionId);
+	public PopulationGameStateView currentRoundAlias(@PathVariable UUID sessionId) {
+		return populationGameService.getCurrentState(sessionId);
+	}
+
+	@PostMapping("/{sessionId}/restart")
+	public PopulationGameStartView restart(@PathVariable UUID sessionId) {
+		return populationGameService.restartGame(sessionId);
 	}
 
 	@PostMapping("/{sessionId}/answer")
@@ -44,7 +54,7 @@ public class PopulationGameApiController {
 	) {
 		return populationGameService.submitAnswer(
 			sessionId,
-			request.roundNumber(),
+			request.stageNumber(),
 			request.selectedOptionNumber()
 		);
 	}
