@@ -649,6 +649,23 @@ button:disabled {
     gap: 12px;
 }
 
+.ranking-sync-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    align-items: stretch;
+    margin-bottom: 18px;
+}
+
+.ranking-sync-bar .stat-card {
+    min-width: 220px;
+    flex: 1;
+}
+
+.ranking-sync-bar .action-buttons {
+    align-self: stretch;
+}
+
 .inline-action {
     margin-top: 12px;
 }

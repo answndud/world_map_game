@@ -1,8 +1,10 @@
 package com.worldmap.ranking;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -114,6 +116,7 @@ class LeaderboardIntegrationTest {
 		mockMvc.perform(get("/ranking"))
 			.andExpect(status().isOk())
 			.andExpect(view().name("ranking/index"))
+			.andExpect(content().string(containsString("지금 새로고침")))
 			.andExpect(model().attributeExists("locationAll"))
 			.andExpect(model().attributeExists("populationAll"));
 

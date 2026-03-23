@@ -5,8 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>실시간 랭킹</title>
     <link rel="stylesheet" th:href="@{/css/site.css}">
+    <script th:src="@{/js/ranking.js}" defer></script>
 </head>
-<body>
+<body data-page="ranking">
 <div class="page-shell">
     <th:block th:replace="~{fragments/site-header :: siteHeader('ranking')}"></th:block>
     <header class="hero compact-hero">
@@ -20,6 +21,21 @@
 
     <main class="layout">
         <section class="panel">
+            <div class="ranking-sync-bar">
+                <article class="stat-card">
+                    <span class="subtitle">자동 갱신</span>
+                    <strong id="ranking-auto-refresh-status">15초 간격 ON</strong>
+                </article>
+                <article class="stat-card">
+                    <span class="subtitle">마지막 갱신</span>
+                    <strong id="ranking-last-updated">SSR 초기 로드 기준</strong>
+                </article>
+                <div class="action-buttons">
+                    <button id="ranking-refresh-button" class="secondary-button" type="button">지금 새로고침</button>
+                </div>
+            </div>
+            <p id="ranking-refresh-message" class="message-box" hidden></p>
+
             <div class="panel-head">
                 <h2>All Time Top 10</h2>
                 <p>Level 1 기준 전체 누적 랭킹입니다.</p>
@@ -41,7 +57,7 @@
                                 <th>시도 수</th>
                             </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="ranking-location-all-body" data-game-mode="location" data-scope="ALL">
                             <tr th:each="entry : ${locationAll.entries}">
                                 <td th:text="${entry.rank}">1</td>
                                 <td th:text="${entry.playerNickname}">Guest</td>
@@ -73,7 +89,7 @@
                                 <th>시도 수</th>
                             </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="ranking-population-all-body" data-game-mode="population" data-scope="ALL">
                             <tr th:each="entry : ${populationAll.entries}">
                                 <td th:text="${entry.rank}">1</td>
                                 <td th:text="${entry.playerNickname}">Guest</td>
@@ -113,7 +129,7 @@
                                 <th>시도 수</th>
                             </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="ranking-location-daily-body" data-game-mode="location" data-scope="DAILY">
                             <tr th:each="entry : ${locationDaily.entries}">
                                 <td th:text="${entry.rank}">1</td>
                                 <td th:text="${entry.playerNickname}">Guest</td>
@@ -145,7 +161,7 @@
                                 <th>시도 수</th>
                             </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="ranking-population-daily-body" data-game-mode="population" data-scope="DAILY">
                             <tr th:each="entry : ${populationDaily.entries}">
                                 <td th:text="${entry.rank}">1</td>
                                 <td th:text="${entry.playerNickname}">Guest</td>
