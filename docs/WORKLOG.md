@@ -973,3 +973,23 @@
 - 테스트 내용: `./gradlew test --tests com.worldmap.ranking.LeaderboardIntegrationTest` 통과, `./gradlew test` 전체 통과. 통합 테스트에서는 실제 게임오버를 발생시켜 랭킹 레코드 생성, `/api/rankings/location` 조회, `/api/rankings/population`의 DB fallback 복구, `/ranking` 페이지 렌더링을 확인했다.
 - 면접에서 30초 안에 설명하는 요약: 랭킹은 세션을 그대로 재사용하지 않고, 종료된 게임 run을 `leaderboard_record`로 따로 저장했습니다. 게임오버가 되면 먼저 RDB에 기록하고, 커밋이 끝난 뒤 Redis Sorted Set의 전체/일간 키에 record id를 반영합니다. 조회는 Redis에서 상위 id를 빠르게 가져오고, 상세 정보는 RDB에서 채워서 보여줍니다.
 - 아직 내가 이해가 부족한 부분: 현재는 Level 1 전체/일간 top 10까지만 구현했고, 동점 처리 규칙과 실시간 갱신 체감은 더 다듬을 수 있다. 이후 SSE를 붙일 때 지금의 SSR 화면을 어떻게 부드럽게 갱신할지도 한 번 더 설계해야 한다.
+
+## 2026-03-24 - 랭킹 페이지 짧은 주기 폴링 추가
+
+- 단계: 5. Redis 랭킹 시스템
+- 목적: `/ranking`이 처음 렌더링된 뒤 멈춰 있는 정적 화면처럼 보이지 않게 하고, Redis 랭킹의 장점을 사용자가 바로 체감할 수 있도록 짧은 주기 자동 갱신을 붙인다.
+- 변경 파일:
+  - `src/main/resources/templates/ranking/index.html`
+  - `src/main/resources/static/js/ranking.js`
+  - `src/main/resources/static/css/site.css`
+  - `src/test/java/com/worldmap/ranking/LeaderboardIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: `/ranking`은 SSR로 처음 렌더링된 뒤, 브라우저가 `ranking.js`에서 15초마다 `/api/rankings/location`, `/api/rankings/population`의 전체/일간 API를 다시 호출한다. 응답을 받으면 프론트가 각 표의 `tbody`만 다시 그려 전체 페이지 새로고침 없이 랭킹을 갱신한다. 탭이 비활성화되면 폴링을 잠시 멈추고, 다시 활성화되면 즉시 한 번 새로고침한 뒤 주기를 재개한다.
+- 데이터 / 상태 변화: 서버 도메인과 DB 스키마는 바뀌지 않았다. 바뀐 것은 `/ranking` 페이지의 조회 후처리 방식이다. SSR 초기 HTML은 그대로 유지하고, 이후 갱신은 API 응답으로 표만 교체한다.
+- 핵심 도메인 개념: 이 단계에서는 SSE보다 짧은 주기 폴링이 더 설명하기 쉽다. 이유는 기존 랭킹 API를 그대로 재사용하면서도 “Redis로 빨리 읽어온 상위 N명을 화면에 주기적으로 반영한다”는 흐름을 단순하게 보여줄 수 있기 때문이다. 즉 저장과 정렬의 핵심은 여전히 서버/Redis에 있고, 프론트는 이미 만들어진 API를 주기적으로 읽어 표현만 갱신한다.
+- 예외 상황 또는 엣지 케이스: 자동 갱신 중 에러가 나면 기존 표 내용은 유지하고 상단 메시지 박스에 오류만 띄운다. 같은 탭이 백그라운드에 있을 때는 불필요한 호출을 줄이기 위해 폴링을 멈춘다. 현재는 모든 보드를 한 번에 갱신하므로, 이후 모드/범위 필터가 들어가면 호출 범위를 다시 좁힐 수 있다.
+- 테스트 내용: `node --check src/main/resources/static/js/ranking.js` 통과, `./gradlew test --tests com.worldmap.ranking.LeaderboardIntegrationTest` 통과, `./gradlew test` 전체 통과. 랭킹 통합 테스트에는 `/ranking` 페이지가 새로고침 버튼을 포함해 렌더링되는지 확인을 추가했다. 랭킹 전용 테스트를 전체 테스트와 동시에 돌렸을 때는 Gradle 결과 파일 충돌이 있었지만, 단독 재실행으로 정상 통과를 확인했다.
+- 면접에서 30초 안에 설명하는 요약: 랭킹 1차는 저장과 조회 구조까지였고, 이번에는 `/ranking` 화면에 15초 간격 폴링을 붙여 실시간 갱신 체감을 만들었습니다. 프론트는 기존 랭킹 API를 주기적으로 다시 읽어 표만 바꾸고, 탭 비활성화 시에는 호출을 멈춰 불필요한 트래픽도 줄였습니다.
+- 아직 내가 이해가 부족한 부분: 지금은 짧은 주기 폴링으로 충분하지만, 이후 사용자가 많아지거나 더 즉각적인 반영이 필요하면 SSE와 어떤 기준으로 갈아탈지 판단 기준을 더 명확히 해야 한다.

@@ -205,6 +205,7 @@
 - RDB 저장이 끝난 뒤 `after commit` 시점에 Redis Sorted Set의 전체 / 일간 키에 반영한다.
 - 조회는 `Redis 상위 record id 조회 -> RDB 상세 조회` 순서로 처리한다.
 - Redis 키가 비어 있으면 RDB를 source of truth로 사용해 상위 기록을 다시 읽고, Redis 키를 재구성한다.
+- `/ranking` 화면은 15초 간격 짧은 주기 폴링으로 자동 갱신되고, 사용자가 수동 새로고침도 할 수 있다.
 - 현재 제공 경로:
   - `/api/rankings/location`
   - `/api/rankings/population`
