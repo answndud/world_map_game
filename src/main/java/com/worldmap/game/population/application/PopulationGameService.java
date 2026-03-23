@@ -10,6 +10,7 @@ import com.worldmap.game.population.domain.PopulationGameSession;
 import com.worldmap.game.population.domain.PopulationGameSessionRepository;
 import com.worldmap.game.population.domain.PopulationGameStage;
 import com.worldmap.game.population.domain.PopulationGameStageRepository;
+import com.worldmap.game.population.domain.PopulationGameStageStatus;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -249,6 +250,13 @@ public class PopulationGameService {
 				attemptsByStageId.getOrDefault(stage.getId(), List.of())
 			))
 			.toList();
+		int totalAttemptCount = attemptsByStageId.values().stream()
+			.mapToInt(List::size)
+			.sum();
+		int firstTryClearCount = (int) stages.stream()
+			.filter(stage -> stage.status() == PopulationGameStageStatus.CLEARED)
+			.filter(stage -> stage.attemptCount() == 1)
+			.count();
 
 		return new PopulationGameSessionResultView(
 			session.getId(),
@@ -256,6 +264,8 @@ public class PopulationGameService {
 			session.getStatus(),
 			session.getTotalRounds(),
 			session.getClearedStageCount(),
+			totalAttemptCount,
+			firstTryClearCount,
 			session.getTotalScore(),
 			session.getCurrentStageNumber(),
 			session.getLivesRemaining(),

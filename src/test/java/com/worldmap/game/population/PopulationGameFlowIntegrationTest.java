@@ -77,6 +77,8 @@ class PopulationGameFlowIntegrationTest {
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.status").value("IN_PROGRESS"))
 			.andExpect(jsonPath("$.clearedStageCount").value(7))
+			.andExpect(jsonPath("$.totalAttemptCount").value(7))
+			.andExpect(jsonPath("$.firstTryClearCount").value(7))
 			.andExpect(jsonPath("$.stages", hasSize(8)));
 	}
 

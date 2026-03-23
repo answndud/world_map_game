@@ -55,6 +55,8 @@ function initPlayPage() {
     const feedback = document.getElementById("population-answer-feedback");
     const overlay = document.getElementById("population-stage-overlay");
     const messageBox = document.getElementById("population-play-message");
+    const selectionLabel = document.getElementById("population-selection-label");
+    const stageHint = document.getElementById("population-stage-hint");
     const submitButton = document.getElementById("population-submit-button");
     const nextStageButton = document.getElementById("population-next-stage-button");
     const gameOverModal = document.getElementById("population-game-over-modal");
@@ -123,6 +125,8 @@ function initPlayPage() {
             if (payload.correct) {
                 renderFeedback(feedback, payload);
                 renderStageOverlay(overlay, "정답", `+${payload.awardedScore}`, "success");
+                setSelectionState(`선택 완료: ${payload.selectedOptionLabel}`);
+                setStageHint("정답입니다. 결과를 확인한 뒤 다음 Stage 버튼으로 직접 넘어가세요.");
 
                 if (payload.outcome === "FINISHED") {
                     setTimeout(() => {
@@ -142,6 +146,12 @@ function initPlayPage() {
                 payload.outcome === "GAME_OVER" ? "하트를 모두 잃었습니다" : `하트 ${payload.livesRemaining}개 남음`,
                 "danger"
             );
+            setSelectionState(`직전 선택: ${payload.selectedOptionLabel}`);
+            setStageHint(
+                payload.outcome === "GAME_OVER"
+                    ? "하트를 모두 잃었습니다. 다음 행동을 선택하세요."
+                    : "오답입니다. 같은 Stage에서 다시 고르세요."
+            );
 
             if (payload.outcome === "GAME_OVER") {
                 lockInteraction(true);
@@ -159,6 +169,7 @@ function initPlayPage() {
             setTimeout(() => {
                 overlay.hidden = true;
                 clearOptionSelection();
+                setSelectionState("새 구간을 다시 골라보세요.");
                 lockInteraction(false);
             }, 950);
         } catch (error) {
@@ -193,6 +204,7 @@ function initPlayPage() {
         hideGameOverModal();
         lockInteraction(false);
         submitButton.disabled = true;
+        resetHudGuidance(payload);
     }
 
     async function restartCurrentSession() {
@@ -252,8 +264,8 @@ function initPlayPage() {
 
     function renderOptions(target, options) {
         target.innerHTML = options.map((option) => `
-            <label class="option-card" data-option-number="${option.optionNumber}">
-                <input type="radio" name="population-option" value="${option.optionNumber}">
+            <label class="option-card" data-option-number="${option.optionNumber}" data-option-label="${option.label}">
+                <input type="radio" name="population-option" value="${option.optionNumber}" data-option-label="${option.label}">
                 <span class="subtitle">Choice ${option.optionNumber}</span>
                 <strong>${option.label}</strong>
             </label>
@@ -264,6 +276,8 @@ function initPlayPage() {
                 target.querySelectorAll(".option-card").forEach((card) => {
                     card.classList.toggle("is-selected", card.dataset.optionNumber === input.value);
                 });
+                setSelectionState(`선택 중: ${input.dataset.optionLabel}`);
+                setStageHint("선택 제출을 누르면 서버가 정답 여부와 점수를 판정합니다.");
                 submitButton.disabled = false;
             });
         });
@@ -311,6 +325,23 @@ function initPlayPage() {
         });
 
         submitButton.disabled = true;
+    }
+
+    function resetHudGuidance(payload) {
+        setSelectionState("아직 선택하지 않았습니다.");
+        setStageHint(`${payload.difficultyLabel} 구간입니다. 가장 가까운 인구 규모대를 고른 뒤 제출하세요.`);
+    }
+
+    function setSelectionState(text) {
+        if (selectionLabel) {
+            selectionLabel.textContent = text;
+        }
+    }
+
+    function setStageHint(text) {
+        if (stageHint) {
+            stageHint.textContent = text;
+        }
     }
 
     function renderStageOverlay(target, title, detail, tone) {
