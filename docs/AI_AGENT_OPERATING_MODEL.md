@@ -33,7 +33,7 @@
 현재 실제로 만든 커스텀 스킬은 아래 하나다.
 
 - `/Users/alex/project/worldmap/.agents/skills/worldmap-doc-sync`
-  - 기능 작업 이후 `docs/WORKLOG.md`, `docs/PORTFOLIO_PLAYBOOK.md`, `README.md`, `blog/` 업데이트 필요 여부를 판단하고 문서 동기화를 돕는 스킬
+  - 기능 작업 이후 `docs/WORKLOG.md`, `docs/PORTFOLIO_PLAYBOOK.md`, `README.md`, `blog/` 업데이트를 판단하고 동기화하는 스킬
 
 나머지 추천 스킬은 아직 설계 후보 상태다.
 
@@ -123,6 +123,7 @@
   - 실제 설계 근거, 단계, AI 운영 정책, 작업 기록
 - `blog/`
   - 초보자 기준의 공개용 설명 문서
+  - 의미 있는 기능 조각은 구현과 같은 턴에 같이 남기는 공개 설명 레이어
 
 즉, `AGENTS.md`에 모든 세부 규칙을 우겨넣지 않는다.
 
@@ -138,7 +139,7 @@
 - 공식 문서 / 레퍼런스 조사
 - 국가 데이터 출처 조사와 정규화
 - 구현 후 read-only 리뷰
-- 구현 완료 후 블로그/문서 초안 작성
+- 구현 완료 후 블로그/문서 동시 작성
 
 반대로 아래 작업은 기본적으로 단일 흐름이 더 낫다.
 
@@ -171,7 +172,8 @@
 
 - `docs/PORTFOLIO_PLAYBOOK.md` 상태 갱신
 - `docs/WORKLOG.md` 템플릿에 맞춰 기록
-- 필요하면 `README.md` / `blog/` 문서 갱신 포인트 제안
+- 공개 설명이 필요한 기능 조각이면 `blog/NN-*.md`를 같은 턴에 작성 또는 갱신
+- 필요하면 `README.md` 갱신 포인트 제안
 
 번들 리소스 후보:
 

@@ -993,3 +993,27 @@
 - 테스트 내용: `node --check src/main/resources/static/js/ranking.js` 통과, `./gradlew test --tests com.worldmap.ranking.LeaderboardIntegrationTest` 통과, `./gradlew test` 전체 통과. 랭킹 통합 테스트에는 `/ranking` 페이지가 새로고침 버튼을 포함해 렌더링되는지 확인을 추가했다. 랭킹 전용 테스트를 전체 테스트와 동시에 돌렸을 때는 Gradle 결과 파일 충돌이 있었지만, 단독 재실행으로 정상 통과를 확인했다.
 - 면접에서 30초 안에 설명하는 요약: 랭킹 1차는 저장과 조회 구조까지였고, 이번에는 `/ranking` 화면에 15초 간격 폴링을 붙여 실시간 갱신 체감을 만들었습니다. 프론트는 기존 랭킹 API를 주기적으로 다시 읽어 표만 바꾸고, 탭 비활성화 시에는 호출을 멈춰 불필요한 트래픽도 줄였습니다.
 - 아직 내가 이해가 부족한 부분: 지금은 짧은 주기 폴링으로 충분하지만, 이후 사용자가 많아지거나 더 즉각적인 반영이 필요하면 SSE와 어떤 기준으로 갈아탈지 판단 기준을 더 명확히 해야 한다.
+
+## 2026-03-24 - blog 동시 작성 규칙 정리와 랭킹 글 백필
+
+- 단계: 0. 문서와 규칙 정리 / 5. Redis 랭킹 시스템 설명 보강
+- 목적: 최근 랭킹 기능은 코드, 플레이북, 워크로그까지는 남았지만 `blog/` 공개 설명 글이 같은 턴에 작성되지 않았다. 그래서 “의미 있는 기능 조각은 docs와 함께 blog도 동시에 남긴다”는 규칙을 문서와 로컬 스킬에 명시하고, 누락된 랭킹 글 2개를 실제 코드 기준으로 백필한다.
+- 변경 파일:
+  - `AGENTS.md`
+  - `.agents/skills/worldmap-doc-sync/SKILL.md`
+  - `.agents/skills/worldmap-doc-sync/references/blog-update-rules.md`
+  - `.agents/skills/worldmap-doc-sync/references/doc-impact-map.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/AI_AGENT_OPERATING_MODEL.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/06-redis-leaderboard-vertical-slice.md`
+  - `blog/07-leaderboard-polling-refresh.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 이번 변경은 애플리케이션 런타임 흐름을 바꾸지 않는다. 대신 저장소의 문서 흐름을 바꾼다. 앞으로 의미 있는 기능 조각이 끝나면 `코드 + 테스트 + docs + blog`를 같은 턴 기본값으로 삼고, `worldmap-doc-sync`도 그 기준으로 문서 영향 범위를 판단한다. 동시에 랭킹 관련 blog 글은 이미 구현된 `LeaderboardService`, `/api/rankings/*`, `/ranking`, `ranking.js` 흐름을 각각 “저장/조회 구조”와 “화면 갱신 구조”로 나눠 설명한다.
+- 데이터 / 상태 변화: DB 스키마나 Redis 키는 바뀌지 않았다. 바뀐 것은 저장소의 기록 정책이다. `docs/`는 내부 SSOT 역할을 유지하고, `blog/`는 의미 있는 기능 조각마다 같은 턴에 따라오는 공개 설명 레이어로 기준이 강화됐다.
+- 핵심 도메인 개념: 이 프로젝트는 AI 도움을 받아 개발하더라도 사용자가 구현 이유를 직접 설명할 수 있어야 한다. 그래서 `WORKLOG`만으로 내부 메모를 남기는 데 그치지 않고, 초보자도 읽을 수 있는 공개 설명 글까지 같은 시점에 남겨야 이해 공백이 줄어든다. 특히 랭킹처럼 “RDB source of truth + Redis read model + polling UI”가 겹치는 주제는 블로그 분리가 설명력을 크게 높인다.
+- 예외 상황 또는 엣지 케이스: 모든 변경에 블로그를 강제하면 문서가 과도하게 불어난다. 그래서 버튼 문구, 오타, 아주 작은 CSS 조정처럼 설명 가치가 낮은 수정은 예외로 두고, 이런 경우에는 블로그를 생략한 이유를 워크로그나 최종 설명에 짧게 남기도록 규칙을 잡았다.
+- 테스트 내용: 코드 동작 변경은 없는 문서 작업이므로 애플리케이션 테스트는 별도로 실행하지 않았다. 대신 새 blog 글은 이미 통과했던 `LeaderboardIntegrationTest`, `./gradlew test`, `node --check src/main/resources/static/js/ranking.js` 결과를 근거로 작성했다.
+- 면접에서 30초 안에 설명하는 요약: 이 프로젝트는 AI 도움을 받더라도 나중에 제가 직접 설명할 수 있어야 해서, 의미 있는 기능 조각은 코드와 내부 문서뿐 아니라 blog 글도 같은 턴에 같이 남기도록 운영 규칙을 강화했습니다. 이번에는 빠져 있던 Redis 랭킹 저장 구조와 랭킹 폴링 UI 글을 백필해, 랭킹 기능을 문서와 공개 글 기준으로 모두 설명 가능하게 맞췄습니다.
+- 아직 내가 이해가 부족한 부분: 어디까지를 “설명 가치가 있는 기능 조각”으로 보고 blog를 반드시 써야 하는지는 아직 약간의 판단 여지가 있다. 특히 작은 UX 수정이 누적돼 게임 루프 체감이 크게 달라지는 경우, 어느 시점에서 하나의 blog 글로 묶는 것이 가장 좋은지 경험이 더 필요하다.

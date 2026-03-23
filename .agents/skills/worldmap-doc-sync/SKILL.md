@@ -20,7 +20,7 @@ Invoke it explicitly as `$worldmap-doc-sync`; implicit invocation should stay di
    - `docs/WORKLOG.md`
    - `docs/PORTFOLIO_PLAYBOOK.md` when stage/status/criteria changed
    - `README.md` when public architecture, feature scope, API, or domain explanation changed
-   - `blog/*` only when the user asks for publish-style documentation or a milestone deserves a dedicated explanatory post
+   - `blog/*` for every completed feature slice that has real code, request flow, and tests to explain
 5. State what tests ran, or explicitly state that tests were not run.
 
 ## Workflow
@@ -48,7 +48,8 @@ Default rule:
 - Always update `docs/WORKLOG.md` after any meaningful code, design, or documentation change.
 - Update `docs/PORTFOLIO_PLAYBOOK.md` only if the current phase status, completion criteria, scope, or next-step guidance changed.
 - Update `README.md` only if a reader should understand the project differently afterward.
-- Update `blog/` only when there is enough real code, tests, and reasoning to support a proper post.
+- Update `blog/` in the same turn when the work is a completed feature slice with enough real code, request flow, and tests to explain.
+- Skip `blog/` only for tiny fixes such as copy changes, narrow CSS tweaks, or other edits with low teaching value.
 
 Do not duplicate every detail everywhere.
 
@@ -75,6 +76,7 @@ For `README.md`:
 For `blog/`:
 
 - Read `references/blog-update-rules.md`.
+- Prefer creating or extending a concrete post in the same turn as the implementation.
 - Do not write speculative implementation posts without real files, classes, and tests.
 
 ### 4. Run a consistency pass

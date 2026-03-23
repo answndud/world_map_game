@@ -52,8 +52,8 @@ Update when one of these changed:
 Update when one of these is true:
 
 - The user explicitly asks for a blog-style explanation
-- A milestone is complete and real code/test evidence exists
-- A concept now has enough depth to support a standalone post
+- A completed feature slice has real code/test evidence and changes API, domain, request flow, ranking, or game loop
+- A milestone is complete and can teach a beginner something concrete
 
 Do not create implementation posts from plans alone.
 
@@ -62,7 +62,7 @@ Do not create implementation posts from plans alone.
 | Change type | Work Log | Playbook | README | Blog |
 | --- | --- | --- | --- | --- |
 | Small code fix | Yes | Usually no | No | No |
-| New feature slice | Yes | Maybe | Maybe | Maybe |
+| New feature slice | Yes | Maybe | Maybe | Yes |
 | Phase completion | Yes | Yes | Maybe | Maybe |
 | Architecture change | Yes | Yes | Yes | Maybe |
 | Skill / agent policy change | Yes | Maybe | No | No |

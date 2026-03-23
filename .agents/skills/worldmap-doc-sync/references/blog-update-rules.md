@@ -4,13 +4,15 @@ Use this file only when deciding whether to create or update a `blog/` post.
 
 ## Write a blog update when
 
+- A completed feature slice changed API, domain model, request flow, game loop, ranking flow, or test surface
+- The work has real files, real classes, and real tests to explain
+- A beginner can learn something concrete from this slice
 - The user explicitly asks for a blog-style write-up
-- A completed feature has real files, real classes, and real tests to explain
-- A milestone can teach a beginner something concrete
 
 ## Do not write a blog update when
 
 - The work is only planning or brainstorming
+- The change is a tiny wording fix, very small CSS tweak, or other low-signal patch
 - The implementation is not finished enough to explain clearly
 - The post would repeat `README.md` without code evidence
 
@@ -37,3 +39,8 @@ Prefer one clear post per milestone:
 - LLM explanation
 
 Do not combine too many unrelated milestones into one post.
+
+## Operating rule for this repository
+
+- For `/Users/alex/project/worldmap`, meaningful feature work should default to `code + tests + docs + blog` in the same turn.
+- If you skip a blog update, leave a short reason in the work log or final summary.
