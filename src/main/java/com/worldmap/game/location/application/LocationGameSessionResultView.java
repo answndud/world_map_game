@@ -11,6 +11,8 @@ public record LocationGameSessionResultView(
 	GameSessionStatus status,
 	Integer totalStages,
 	Integer clearedStageCount,
+	Integer totalAttemptCount,
+	Integer firstTryClearCount,
 	Integer totalScore,
 	Integer currentStageNumber,
 	Integer livesRemaining,

@@ -66,6 +66,7 @@ function initPlayPage() {
     const statusBox = document.getElementById("location-game-status");
     const countryName = document.getElementById("target-country-name");
     const selectedCountryNameBox = document.getElementById("selected-country-name");
+    const stageHintBox = document.getElementById("location-stage-hint");
     const submitButton = document.getElementById("location-submit-button");
     const cancelButton = document.getElementById("location-cancel-button");
     const globeStage = document.getElementById("globe-stage");
@@ -93,7 +94,13 @@ function initPlayPage() {
         startY: 0
     };
 
-    cancelButton.addEventListener("click", clearSelection);
+    cancelButton.addEventListener("click", () => {
+        clearSelection();
+
+        if (currentState) {
+            resetLocationGuidance(currentState);
+        }
+    });
     window.addEventListener("pageshow", hideGameOverModal);
     restartButton?.addEventListener("click", restartCurrentSession);
 
@@ -145,6 +152,7 @@ function initPlayPage() {
                 highlightedCorrectIso3Code = payload.selectedCountryIso3Code;
                 highlightedWrongIso3Code = null;
                 renderStageOverlay(stageOverlay, "정답", `+${payload.awardedScore}`, "success");
+                setLocationStageHint("정답입니다. 잠시 후 다음 Stage로 자동 이동합니다.");
                 refreshGlobe();
 
                 if (payload.outcome === "FINISHED") {
@@ -168,6 +176,11 @@ function initPlayPage() {
                 payload.outcome === "GAME_OVER" ? "하트를 모두 잃었습니다" : `하트 ${payload.livesRemaining}개 남음`,
                 "danger"
             );
+            setLocationStageHint(
+                payload.outcome === "GAME_OVER"
+                    ? "하트를 모두 잃었습니다. 모달에서 다음 행동을 선택하세요."
+                    : "오답입니다. 같은 Stage에서 다시 국가를 찾아보세요."
+            );
             refreshGlobe();
 
             if (payload.outcome === "GAME_OVER") {
@@ -183,6 +196,7 @@ function initPlayPage() {
                 stageOverlay.hidden = true;
                 feedback.hidden = true;
                 clearSelection();
+                setLocationStageHint("오답 처리 완료. 같은 Stage에서 다시 국가를 찾은 뒤 제출하세요.");
                 renderStatus(statusBox, {
                     stageNumber: currentState.stageNumber,
                     difficultyLabel: currentState.difficultyLabel,
@@ -248,6 +262,7 @@ function initPlayPage() {
         currentState = payload;
         countryName.textContent = payload.targetCountryName;
         renderStatus(statusBox, payload);
+        resetLocationGuidance(payload);
         refreshGlobe();
     }
 
@@ -385,6 +400,7 @@ function initPlayPage() {
         hideLocationMessage(messageBox);
         selectedCountryIso3Code = iso3Code;
         renderSelectedCountry(selectedCountryNameBox, true);
+        setLocationStageHint("국가가 선택됐습니다. 이름은 제출 후 공개됩니다. 제출하거나 취소하세요.");
         submitButton.disabled = false;
         cancelButton.disabled = false;
         refreshGlobe();
@@ -436,6 +452,16 @@ function initPlayPage() {
         }
 
         gameOverModal.hidden = true;
+    }
+
+    function resetLocationGuidance(payload) {
+        setLocationStageHint(`${payload.difficultyLabel} 구간입니다. 지구본에서 국가를 찾고 제출하세요.`);
+    }
+
+    function setLocationStageHint(text) {
+        if (stageHintBox) {
+            stageHintBox.textContent = text;
+        }
     }
 
     function syncGlobeSize() {

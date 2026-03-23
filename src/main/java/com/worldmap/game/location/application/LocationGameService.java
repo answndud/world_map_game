@@ -10,6 +10,7 @@ import com.worldmap.game.location.domain.LocationGameStage;
 import com.worldmap.game.location.domain.LocationGameStageRepository;
 import com.worldmap.game.location.domain.LocationGameSession;
 import com.worldmap.game.location.domain.LocationGameSessionRepository;
+import com.worldmap.game.location.domain.LocationGameStageStatus;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -242,6 +243,13 @@ public class LocationGameService {
 				attemptsByStageId.getOrDefault(stage.getId(), List.of())
 			))
 			.toList();
+		int totalAttemptCount = attemptsByStageId.values().stream()
+			.mapToInt(List::size)
+			.sum();
+		int firstTryClearCount = (int) stages.stream()
+			.filter(stage -> stage.status() == LocationGameStageStatus.CLEARED)
+			.filter(stage -> stage.attemptCount() == 1)
+			.count();
 
 		return new LocationGameSessionResultView(
 			session.getId(),
@@ -249,6 +257,8 @@ public class LocationGameService {
 			session.getStatus(),
 			session.getTotalRounds(),
 			session.getClearedStageCount(),
+			totalAttemptCount,
+			firstTryClearCount,
 			session.getTotalScore(),
 			session.getCurrentStageNumber(),
 			session.getLivesRemaining(),
