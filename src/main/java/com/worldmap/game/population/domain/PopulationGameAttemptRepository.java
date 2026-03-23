@@ -8,5 +8,7 @@ public interface PopulationGameAttemptRepository extends JpaRepository<Populatio
 
 	List<PopulationGameAttempt> findAllByStageSessionIdOrderByStageStageNumberAscAttemptNumberAsc(UUID sessionId);
 
+	long countByStageSessionId(UUID sessionId);
+
 	void deleteAllByStageSessionId(UUID sessionId);
 }

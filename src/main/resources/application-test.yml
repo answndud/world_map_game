@@ -12,5 +12,11 @@ spring:
       ddl-auto: create-drop
   data:
     redis:
+      host: localhost
+      port: 6379
       repositories:
         enabled: false
+
+worldmap:
+  ranking:
+    key-prefix: test:leaderboard

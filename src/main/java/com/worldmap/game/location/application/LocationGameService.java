@@ -11,6 +11,7 @@ import com.worldmap.game.location.domain.LocationGameStageRepository;
 import com.worldmap.game.location.domain.LocationGameSession;
 import com.worldmap.game.location.domain.LocationGameSessionRepository;
 import com.worldmap.game.location.domain.LocationGameStageStatus;
+import com.worldmap.ranking.application.LeaderboardService;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -37,6 +38,7 @@ public class LocationGameService {
 	private final LocationGameAttemptRepository locationGameAttemptRepository;
 	private final LocationGameDifficultyPolicy locationGameDifficultyPolicy;
 	private final LocationGameScoringPolicy locationGameScoringPolicy;
+	private final LeaderboardService leaderboardService;
 
 	public LocationGameService(
 		CountryRepository countryRepository,
@@ -44,7 +46,8 @@ public class LocationGameService {
 		LocationGameStageRepository locationGameStageRepository,
 		LocationGameAttemptRepository locationGameAttemptRepository,
 		LocationGameDifficultyPolicy locationGameDifficultyPolicy,
-		LocationGameScoringPolicy locationGameScoringPolicy
+		LocationGameScoringPolicy locationGameScoringPolicy,
+		LeaderboardService leaderboardService
 	) {
 		this.countryRepository = countryRepository;
 		this.locationGameSessionRepository = locationGameSessionRepository;
@@ -52,6 +55,7 @@ public class LocationGameService {
 		this.locationGameAttemptRepository = locationGameAttemptRepository;
 		this.locationGameDifficultyPolicy = locationGameDifficultyPolicy;
 		this.locationGameScoringPolicy = locationGameScoringPolicy;
+		this.leaderboardService = leaderboardService;
 	}
 
 	@Transactional
@@ -189,6 +193,13 @@ public class LocationGameService {
 				attemptedAt
 			)
 		);
+
+		if (session.getStatus() != GameSessionStatus.IN_PROGRESS) {
+			leaderboardService.recordLocationLevelOneResult(
+				session,
+				Math.toIntExact(locationGameAttemptRepository.countByStageSessionId(sessionId))
+			);
+		}
 
 		LocationGameAnswerOutcome outcome = determineOutcome(judgement.correct(), session.getStatus());
 		LocationGameDifficultyPlan nextDifficultyPlan = session.getStatus() == GameSessionStatus.IN_PROGRESS

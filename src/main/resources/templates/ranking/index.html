@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>실시간 랭킹</title>
+    <link rel="stylesheet" th:href="@{/css/site.css}">
+</head>
+<body>
+<div class="page-shell">
+    <th:block th:replace="~{fragments/site-header :: siteHeader('ranking')}"></th:block>
+    <header class="hero compact-hero">
+        <p class="eyebrow">Redis Leaderboard</p>
+        <h1>실시간 랭킹</h1>
+        <p class="hero-copy">
+            게임오버 시점 점수를 RDB에 먼저 기록하고, 커밋 이후 Redis Sorted Set에 반영합니다.
+            조회는 Redis에서 상위 record id를 가져오고, 상세 정보는 RDB에서 채우는 방식입니다.
+        </p>
+    </header>
+
+    <main class="layout">
+        <section class="panel">
+            <div class="panel-head">
+                <h2>All Time Top 10</h2>
+                <p>Level 1 기준 전체 누적 랭킹입니다.</p>
+            </div>
+            <div class="card-grid">
+                <article class="panel">
+                    <div class="panel-head">
+                        <h2>Location</h2>
+                        <p>지구본 위치 찾기 전체 기록</p>
+                    </div>
+                    <div class="table-shell">
+                        <table class="result-table">
+                            <thead>
+                            <tr>
+                                <th>순위</th>
+                                <th>플레이어</th>
+                                <th>점수</th>
+                                <th>클리어</th>
+                                <th>시도 수</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="entry : ${locationAll.entries}">
+                                <td th:text="${entry.rank}">1</td>
+                                <td th:text="${entry.playerNickname}">Guest</td>
+                                <td th:text="${entry.totalScore}">420</td>
+                                <td th:text="${entry.clearedStageCount}">5</td>
+                                <td th:text="${entry.totalAttemptCount}">7</td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(locationAll.entries)}">
+                                <td colspan="5">아직 기록이 없습니다.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </article>
+
+                <article class="panel">
+                    <div class="panel-head">
+                        <h2>Population</h2>
+                        <p>인구 규모 퀴즈 전체 기록</p>
+                    </div>
+                    <div class="table-shell">
+                        <table class="result-table">
+                            <thead>
+                            <tr>
+                                <th>순위</th>
+                                <th>플레이어</th>
+                                <th>점수</th>
+                                <th>클리어</th>
+                                <th>시도 수</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="entry : ${populationAll.entries}">
+                                <td th:text="${entry.rank}">1</td>
+                                <td th:text="${entry.playerNickname}">Guest</td>
+                                <td th:text="${entry.totalScore}">420</td>
+                                <td th:text="${entry.clearedStageCount}">5</td>
+                                <td th:text="${entry.totalAttemptCount}">7</td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(populationAll.entries)}">
+                                <td colspan="5">아직 기록이 없습니다.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-head">
+                <h2>Daily Top 10</h2>
+                <p th:text="${'오늘 기준 날짜: ' + locationDaily.targetDate}">오늘 기준 날짜: 2026-03-24</p>
+            </div>
+            <div class="card-grid">
+                <article class="panel">
+                    <div class="panel-head">
+                        <h2>Location Today</h2>
+                        <p>오늘 기록된 위치 게임 점수</p>
+                    </div>
+                    <div class="table-shell">
+                        <table class="result-table">
+                            <thead>
+                            <tr>
+                                <th>순위</th>
+                                <th>플레이어</th>
+                                <th>점수</th>
+                                <th>클리어</th>
+                                <th>시도 수</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="entry : ${locationDaily.entries}">
+                                <td th:text="${entry.rank}">1</td>
+                                <td th:text="${entry.playerNickname}">Guest</td>
+                                <td th:text="${entry.totalScore}">420</td>
+                                <td th:text="${entry.clearedStageCount}">5</td>
+                                <td th:text="${entry.totalAttemptCount}">7</td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(locationDaily.entries)}">
+                                <td colspan="5">아직 기록이 없습니다.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </article>
+
+                <article class="panel">
+                    <div class="panel-head">
+                        <h2>Population Today</h2>
+                        <p>오늘 기록된 인구수 게임 점수</p>
+                    </div>
+                    <div class="table-shell">
+                        <table class="result-table">
+                            <thead>
+                            <tr>
+                                <th>순위</th>
+                                <th>플레이어</th>
+                                <th>점수</th>
+                                <th>클리어</th>
+                                <th>시도 수</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="entry : ${populationDaily.entries}">
+                                <td th:text="${entry.rank}">1</td>
+                                <td th:text="${entry.playerNickname}">Guest</td>
+                                <td th:text="${entry.totalScore}">420</td>
+                                <td th:text="${entry.clearedStageCount}">5</td>
+                                <td th:text="${entry.totalAttemptCount}">7</td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(populationDaily.entries)}">
+                                <td colspan="5">아직 기록이 없습니다.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </article>
+            </div>
+        </section>
+    </main>
+</div>
+</body>
+</html>

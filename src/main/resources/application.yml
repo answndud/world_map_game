@@ -29,3 +29,5 @@ worldmap:
     countries:
       enabled: true
       location: classpath:data/countries.json
+  ranking:
+    key-prefix: leaderboard

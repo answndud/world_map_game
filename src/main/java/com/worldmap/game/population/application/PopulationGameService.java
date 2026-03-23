@@ -11,6 +11,7 @@ import com.worldmap.game.population.domain.PopulationGameSessionRepository;
 import com.worldmap.game.population.domain.PopulationGameStage;
 import com.worldmap.game.population.domain.PopulationGameStageRepository;
 import com.worldmap.game.population.domain.PopulationGameStageStatus;
+import com.worldmap.ranking.application.LeaderboardService;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -37,6 +38,7 @@ public class PopulationGameService {
 	private final PopulationGameDifficultyPolicy populationGameDifficultyPolicy;
 	private final PopulationGameScoringPolicy populationGameScoringPolicy;
 	private final PopulationOptionLabelFormatter populationOptionLabelFormatter;
+	private final LeaderboardService leaderboardService;
 
 	public PopulationGameService(
 		CountryRepository countryRepository,
@@ -46,7 +48,8 @@ public class PopulationGameService {
 		PopulationGameOptionGenerator populationGameOptionGenerator,
 		PopulationGameDifficultyPolicy populationGameDifficultyPolicy,
 		PopulationGameScoringPolicy populationGameScoringPolicy,
-		PopulationOptionLabelFormatter populationOptionLabelFormatter
+		PopulationOptionLabelFormatter populationOptionLabelFormatter,
+		LeaderboardService leaderboardService
 	) {
 		this.countryRepository = countryRepository;
 		this.populationGameSessionRepository = populationGameSessionRepository;
@@ -56,6 +59,7 @@ public class PopulationGameService {
 		this.populationGameDifficultyPolicy = populationGameDifficultyPolicy;
 		this.populationGameScoringPolicy = populationGameScoringPolicy;
 		this.populationOptionLabelFormatter = populationOptionLabelFormatter;
+		this.leaderboardService = leaderboardService;
 	}
 
 	@Transactional
@@ -188,6 +192,13 @@ public class PopulationGameService {
 				attemptedAt
 			)
 		);
+
+		if (session.getStatus() != GameSessionStatus.IN_PROGRESS) {
+			leaderboardService.recordPopulationLevelOneResult(
+				session,
+				Math.toIntExact(populationGameAttemptRepository.countByStageSessionId(sessionId))
+			);
+		}
 
 		PopulationGameAnswerOutcome outcome = determineOutcome(judgement.correct(), session.getStatus());
 		PopulationGameDifficultyPlan nextDifficultyPlan = session.getStatus() == GameSessionStatus.IN_PROGRESS

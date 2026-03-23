@@ -17,6 +17,9 @@
             <a class="site-nav-link"
                th:classappend="${activeSection == 'population'} ? ' is-active'"
                th:href="@{/games/population/start}">Population</a>
+            <a class="site-nav-link"
+               th:classappend="${activeSection == 'ranking'} ? ' is-active'"
+               th:href="@{/ranking}">Ranking</a>
         </nav>
     </header>
 </th:block>

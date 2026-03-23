@@ -8,5 +8,7 @@ public interface LocationGameAttemptRepository extends JpaRepository<LocationGam
 
 	List<LocationGameAttempt> findAllByStageSessionIdOrderByStageStageNumberAscAttemptNumberAsc(UUID sessionId);
 
+	long countByStageSessionId(UUID sessionId);
+
 	void deleteAllByStageSessionId(UUID sessionId);
 }

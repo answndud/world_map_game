@@ -43,8 +43,8 @@ public class HomeController {
 			new ModeCardView(
 				"실시간 랭킹",
 				"Redis Sorted Set",
-				"모드별, 레벨별, 일간/전체 랭킹을 빠르게 집계하고 조회하는 구조를 목표로 합니다.",
-				"Planned",
+				"게임오버 시점 결과를 RDB와 Redis Sorted Set에 함께 반영하고, 전체/일간 랭킹을 조회합니다.",
+				"Live",
 				"/ranking"
 			)
 		);
@@ -64,7 +64,8 @@ public class HomeController {
 			"Spring Boot 3 기반 프로젝트 뼈대와 SSR 홈 화면 구성",
 			"국가 시드 데이터와 country 도메인 추가 완료",
 			"위치 찾기 게임 Level 1 세션/라운드 흐름 구현 완료",
-			"인구수 맞추기 게임 Level 1 구현 완료, 이후 Redis 랭킹 확장 예정"
+			"인구수 맞추기 게임 Level 1 구현 완료",
+			"Redis 기반 전체/일간 랭킹 1차 구현"
 		);
 	}
 }
