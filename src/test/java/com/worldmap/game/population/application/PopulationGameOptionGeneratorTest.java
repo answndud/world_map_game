@@ -14,7 +14,7 @@ class PopulationGameOptionGeneratorTest {
 	private final PopulationGameOptionGenerator optionGenerator = new PopulationGameOptionGenerator();
 
 	@Test
-	void optionsContainCorrectPopulationAndFourUniqueChoices() {
+	void optionsContainCorrectScaleBandAndFourUniqueChoices() {
 		Country target = country("KOR", "대한민국", 51751065L);
 		List<Country> countries = List.of(
 			country("USA", "미국", 340110988L),
@@ -26,11 +26,13 @@ class PopulationGameOptionGeneratorTest {
 		);
 
 		PopulationRoundOptions options = optionGenerator.generate(target, countries);
+		Long correctBandLowerBound = PopulationScaleBandCatalog.resolveByPopulation(target.getPopulation()).lowerBoundInclusive();
 
 		assertThat(options.options()).hasSize(4);
 		assertThat(options.options()).doesNotHaveDuplicates();
-		assertThat(options.options()).contains(target.getPopulation());
+		assertThat(options.options()).contains(correctBandLowerBound);
 		assertThat(options.correctOptionNumber()).isBetween(1, 4);
+		assertThat(options.options().get(options.correctOptionNumber() - 1)).isEqualTo(correctBandLowerBound);
 	}
 
 	private Country country(String iso3Code, String nameKr, Long population) {

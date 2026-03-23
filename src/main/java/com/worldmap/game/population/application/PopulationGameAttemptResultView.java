@@ -6,6 +6,7 @@ public record PopulationGameAttemptResultView(
 	Integer attemptNumber,
 	Integer selectedOptionNumber,
 	Long selectedPopulation,
+	String selectedOptionLabel,
 	Boolean correct,
 	Integer livesRemainingAfter,
 	LocalDateTime attemptedAt

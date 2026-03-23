@@ -35,6 +35,7 @@ public class PopulationGameService {
 	private final PopulationGameOptionGenerator populationGameOptionGenerator;
 	private final PopulationGameDifficultyPolicy populationGameDifficultyPolicy;
 	private final PopulationGameScoringPolicy populationGameScoringPolicy;
+	private final PopulationOptionLabelFormatter populationOptionLabelFormatter;
 
 	public PopulationGameService(
 		CountryRepository countryRepository,
@@ -43,7 +44,8 @@ public class PopulationGameService {
 		PopulationGameAttemptRepository populationGameAttemptRepository,
 		PopulationGameOptionGenerator populationGameOptionGenerator,
 		PopulationGameDifficultyPolicy populationGameDifficultyPolicy,
-		PopulationGameScoringPolicy populationGameScoringPolicy
+		PopulationGameScoringPolicy populationGameScoringPolicy,
+		PopulationOptionLabelFormatter populationOptionLabelFormatter
 	) {
 		this.countryRepository = countryRepository;
 		this.populationGameSessionRepository = populationGameSessionRepository;
@@ -52,6 +54,7 @@ public class PopulationGameService {
 		this.populationGameOptionGenerator = populationGameOptionGenerator;
 		this.populationGameDifficultyPolicy = populationGameDifficultyPolicy;
 		this.populationGameScoringPolicy = populationGameScoringPolicy;
+		this.populationOptionLabelFormatter = populationOptionLabelFormatter;
 	}
 
 	@Transactional
@@ -197,8 +200,10 @@ public class PopulationGameService {
 			stage.getPopulationYear(),
 			selectedOptionNumber,
 			selectedPopulation,
+			populationOptionLabelFormatter.labelForLowerBound(selectedPopulation),
 			stage.getCorrectOptionNumber(),
 			stage.getTargetPopulation(),
+			populationOptionLabelFormatter.labelForLowerBound(stage.getOptions().get(stage.getCorrectOptionNumber() - 1)),
 			judgement.correct(),
 			judgement.awardedScore(),
 			session.getTotalScore(),
@@ -223,6 +228,7 @@ public class PopulationGameService {
 					attempt.getAttemptNumber(),
 					attempt.getSelectedOptionNumber(),
 					attempt.getSelectedPopulation(),
+					populationOptionLabelFormatter.labelForLowerBound(attempt.getSelectedPopulation()),
 					attempt.getCorrect(),
 					attempt.getLivesRemainingAfter(),
 					attempt.getAttemptedAt()
@@ -235,6 +241,7 @@ public class PopulationGameService {
 				stage.getTargetCountryName(),
 				stage.getPopulationYear(),
 				stage.getTargetPopulation(),
+				populationOptionLabelFormatter.labelForLowerBound(stage.getOptions().get(stage.getCorrectOptionNumber() - 1)),
 				stage.getStatus(),
 				stage.getAttemptCount(),
 				stage.getAwardedScore(),
@@ -295,7 +302,12 @@ public class PopulationGameService {
 		List<Long> options = stage.getOptions();
 
 		for (int index = 0; index < options.size(); index++) {
-			optionViews.add(new PopulationOptionView(index + 1, options.get(index)));
+			Long population = options.get(index);
+			optionViews.add(new PopulationOptionView(
+				index + 1,
+				population,
+				populationOptionLabelFormatter.labelForLowerBound(population)
+			));
 		}
 
 		return List.copyOf(optionViews);

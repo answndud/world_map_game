@@ -255,7 +255,7 @@ function initPlayPage() {
             <label class="option-card" data-option-number="${option.optionNumber}">
                 <input type="radio" name="population-option" value="${option.optionNumber}">
                 <span class="subtitle">Choice ${option.optionNumber}</span>
-                <strong>${formatPopulation(option.population)}</strong>
+                <strong>${option.label}</strong>
             </label>
         `).join("");
 
@@ -273,9 +273,9 @@ function initPlayPage() {
         target.hidden = false;
         target.innerHTML = `
             <h3>${payload.targetCountryName} 결과</h3>
-            <p>내 선택: ${formatPopulation(payload.selectedPopulation)}</p>
-            <p>정답: ${formatPopulation(payload.correctPopulation)}</p>
-            <p>판정: ${payload.correct ? "Correct" : "Wrong"}</p>
+            <p>내 선택 구간: ${payload.selectedOptionLabel}</p>
+            <p>정답 구간: ${payload.correctOptionLabel}</p>
+            <p>실제 인구: ${formatPopulation(payload.correctPopulation)}</p>
             <p>획득 점수: ${payload.awardedScore}</p>
             <p>현재 총점: ${payload.totalScore}</p>
         `;

@@ -9,6 +9,7 @@ public record PopulationGameStageResultView(
 	String targetCountryName,
 	Integer populationYear,
 	Long targetPopulation,
+	String correctOptionLabel,
 	PopulationGameStageStatus status,
 	Integer attemptCount,
 	Integer awardedScore,

@@ -22,7 +22,7 @@
             <article class="result-banner" th:classappend="${result.status.name() == 'GAME_OVER'} ? ' danger' : ' success'">
                 <p class="subtitle">Scan Result</p>
                 <h2 th:text="${result.status.name() == 'GAME_OVER' ? 'Run Over' : 'Mission Debrief'}">Run Over</h2>
-                <p th:text="${result.status.name() == 'GAME_OVER' ? '마지막 Stage에서 하트를 모두 잃었습니다. 어떤 인구 규모 문제에서 막혔는지 Attempt 기록으로 다시 설명할 수 있습니다.' : '현재까지 진행된 엔드리스 인구수 러닝 기록입니다.'}">
+                <p th:text="${result.status.name() == 'GAME_OVER' ? '마지막 Stage에서 하트를 모두 잃었습니다. 어떤 인구 규모 구간에서 막혔는지 Attempt 기록으로 다시 설명할 수 있습니다.' : '현재까지 진행된 엔드리스 인구 규모 러닝 기록입니다.'}">
                     마지막 Stage에서 하트를 모두 잃었습니다.
                 </p>
             </article>
@@ -64,6 +64,7 @@
                     <tr>
                         <th>Stage</th>
                         <th>국가</th>
+                        <th>정답 구간</th>
                         <th>상태</th>
                         <th>시도 기록</th>
                         <th>점수</th>
@@ -73,12 +74,13 @@
                     <tr th:each="stage : ${result.stages}">
                         <td th:text="${stage.stageNumber}">1</td>
                         <td th:text="${stage.targetCountryName + ' (' + stage.populationYear + ')'}">대한민국 (2024)</td>
+                        <td th:text="${stage.correctOptionLabel}">3천만 ~ 7천만</td>
                         <td th:text="${stage.status}">CLEARED</td>
                         <td>
                             <div class="attempt-log" th:if="${!#lists.isEmpty(stage.attempts)}">
                                 <p th:each="attempt : ${stage.attempts}"
-                                   th:text="${attempt.attemptNumber + '차: ' + attempt.selectedPopulation + '명 / ' + (attempt.correct ? 'Correct' : 'Wrong') + ' / 하트 ' + attempt.livesRemainingAfter}">
-                                    1차: 51,751,065명 / Wrong / 하트 2
+                                   th:text="${attempt.attemptNumber + '차: ' + attempt.selectedOptionLabel + ' / ' + (attempt.correct ? 'Correct' : 'Wrong') + ' / 하트 ' + attempt.livesRemainingAfter}">
+                                    1차: 3천만 ~ 7천만 / Wrong / 하트 2
                                 </p>
                             </div>
                             <span th:if="${#lists.isEmpty(stage.attempts)}">-</span>
