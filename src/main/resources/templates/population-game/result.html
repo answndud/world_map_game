@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>국가 인구수 맞추기 결과</title>
+    <link rel="stylesheet" th:href="@{/css/site.css}">
+</head>
+<body>
+<div class="page-shell">
+    <th:block th:replace="~{fragments/site-header :: siteHeader('population')}"></th:block>
+    <header class="hero compact-hero">
+        <p class="eyebrow">Population Game Result</p>
+        <h1>게임 결과</h1>
+        <p class="hero-copy">
+            같은 세션 구조를 재사용하면서도, 라운드별로는 보기형 퀴즈 결과를 남깁니다.
+        </p>
+    </header>
+
+    <main class="layout">
+        <section class="panel game-panel">
+            <article class="result-banner success">
+                <p class="subtitle">Scan Result</p>
+                <h2>Debrief Complete</h2>
+                <p>보기형 퀴즈지만, 점수와 라운드 진행은 위치 게임과 같은 세션 구조 위에서 서버가 기록합니다.</p>
+            </article>
+            <div class="stats-grid">
+                <article class="stat-card">
+                    <span class="subtitle">플레이어</span>
+                    <strong th:text="${result.playerNickname}">Guest</strong>
+                </article>
+                <article class="stat-card">
+                    <span class="subtitle">상태</span>
+                    <strong th:text="${result.status}">FINISHED</strong>
+                </article>
+                <article class="stat-card">
+                    <span class="subtitle">총 점수</span>
+                    <strong th:text="${result.totalScore}">500</strong>
+                </article>
+                <article class="stat-card">
+                    <span class="subtitle">완료 라운드</span>
+                    <strong th:text="${result.answeredRoundCount + ' / ' + result.totalRounds}">5 / 5</strong>
+                </article>
+            </div>
+
+            <div class="panel-head">
+                <h2>라운드별 기록</h2>
+                <p>Level 1은 보기형이라 정답이면 100점, 오답이면 0점으로 계산합니다.</p>
+            </div>
+
+            <div class="table-shell">
+                <table class="result-table">
+                    <thead>
+                    <tr>
+                        <th>라운드</th>
+                        <th>국가</th>
+                        <th>선택값</th>
+                        <th>정답값</th>
+                        <th>판정</th>
+                        <th>점수</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="round : ${result.rounds}">
+                        <td th:text="${round.roundNumber}">1</td>
+                        <td th:text="${round.targetCountryName + ' (' + round.populationYear + ')'}">대한민국 (2024)</td>
+                        <td th:text="${round.selectedPopulation}">51751065</td>
+                        <td th:text="${round.correctPopulation}">51751065</td>
+                        <td th:text="${round.correct ? 'Correct' : 'Wrong'}">Correct</td>
+                        <td th:text="${round.awardedScore}">100</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="page-actions">
+                <a class="primary-link" th:href="@{/games/population/start}">다시 플레이</a>
+                <a class="ghost-link" th:href="@{/}">메인으로 돌아가기</a>
+            </div>
+        </section>
+    </main>
+</div>
+</body>
+</html>

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>국가 인구수 맞추기 플레이</title>
+    <link rel="stylesheet" th:href="@{/css/site.css}">
+    <script th:src="@{/js/population-game.js}" defer></script>
+</head>
+<body data-page="population-play" th:attr="data-session-id=${sessionId}">
+<div class="page-shell">
+    <th:block th:replace="~{fragments/site-header :: siteHeader('population')}"></th:block>
+    <header class="hero compact-hero">
+        <p class="eyebrow">Server-Driven Population Scan</p>
+        <h1>가장 맞는 인구수를 고르세요</h1>
+        <p class="hero-copy">
+            보기 생성, 정답 선택, 점수 계산은 모두 서버가 담당합니다.
+        </p>
+    </header>
+
+    <main class="layout">
+        <section class="panel game-panel">
+            <div id="population-game-status" class="stats-grid"></div>
+            <article class="question-card">
+                <p class="subtitle">Current Target</p>
+                <h2 id="population-target-country-name">문제를 불러오는 중...</h2>
+                <p id="population-year" class="hint"></p>
+            </article>
+
+            <form id="population-answer-form" class="game-form">
+                <div id="population-options" class="options-grid"></div>
+                <button class="primary-button" type="submit">정답 제출</button>
+            </form>
+
+            <div id="population-answer-feedback" class="feedback-card" hidden></div>
+            <button id="load-next-population-round-button" class="secondary-button" type="button" hidden>다음 라운드 불러오기</button>
+            <p id="population-play-message" class="message-box" hidden></p>
+        </section>
+    </main>
+</div>
+</body>
+</html>

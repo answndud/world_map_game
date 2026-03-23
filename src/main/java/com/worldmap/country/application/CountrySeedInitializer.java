@@ -5,7 +5,13 @@ import com.worldmap.country.domain.CountryRepository;
 import com.worldmap.country.infrastructure.CountrySeedReader;
 import com.worldmap.country.infrastructure.CountrySeedReader.CountrySeedDocument;
 import jakarta.transaction.Transactional;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
@@ -42,16 +48,44 @@ public class CountrySeedInitializer implements ApplicationRunner {
 			return;
 		}
 
-		if (countryRepository.count() > 0) {
-			log.info("Country table already has data. Seed loading skipped.");
-			return;
-		}
-
 		CountrySeedDocument document = countrySeedReader.read(countrySeedProperties.getLocation());
 		countrySeedValidator.validate(document);
 
-		List<Country> countries = document.countries().stream()
-			.map(item -> Country.create(
+		Map<String, Country> existingCountriesByIso3 = countryRepository.findAll().stream()
+			.collect(Collectors.toMap(
+				Country::getIso3Code,
+				Function.identity()
+			));
+
+		Set<String> seedIso3Codes = new HashSet<>();
+		List<Country> countriesToPersist = new ArrayList<>();
+		int insertedCount = 0;
+		int updatedCount = 0;
+
+		for (var item : document.countries()) {
+			seedIso3Codes.add(item.iso3Code());
+
+			Country existingCountry = existingCountriesByIso3.get(item.iso3Code());
+
+			if (existingCountry == null) {
+				countriesToPersist.add(Country.create(
+					item.iso2Code(),
+					item.iso3Code(),
+					item.nameKr(),
+					item.nameEn(),
+					item.continent(),
+					item.capitalCity(),
+					item.referenceLatitude(),
+					item.referenceLongitude(),
+					item.referenceType(),
+					item.population(),
+					document.metadata().populationYear()
+				));
+				insertedCount++;
+				continue;
+			}
+
+			existingCountry.synchronize(
 				item.iso2Code(),
 				item.iso3Code(),
 				item.nameKr(),
@@ -63,10 +97,27 @@ public class CountrySeedInitializer implements ApplicationRunner {
 				item.referenceType(),
 				item.population(),
 				document.metadata().populationYear()
-			))
+			);
+			countriesToPersist.add(existingCountry);
+			updatedCount++;
+		}
+
+		List<Country> countriesToDelete = existingCountriesByIso3.values().stream()
+			.filter(country -> !seedIso3Codes.contains(country.getIso3Code()))
 			.toList();
 
-		countryRepository.saveAll(countries);
-		log.info("Loaded {} countries from {}.", countries.size(), countrySeedProperties.getLocation());
+		if (!countriesToDelete.isEmpty()) {
+			countryRepository.deleteAllInBatch(countriesToDelete);
+		}
+
+		countryRepository.saveAll(countriesToPersist);
+		log.info(
+			"Synchronized {} countries from {}. inserted={}, updated={}, deleted={}.",
+			countriesToPersist.size(),
+			countrySeedProperties.getLocation(),
+			insertedCount,
+			updatedCount,
+			countriesToDelete.size()
+		);
 	}
 }

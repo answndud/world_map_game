@@ -22,15 +22,15 @@ public class HomeController {
 			new ModeCardView(
 				"국가 위치 찾기",
 				"Level 1~2",
-				"서버가 라운드를 출제하고 사용자의 지도 클릭 좌표를 정답 반경과 비교합니다.",
-				"Planned",
+				"3D 지구본에서 국가를 클릭하면 서버가 정답 국가와 비교해 판정하는 첫 번째 플레이 가능 모드입니다.",
+				"Playable",
 				"/games/location/start"
 			),
 			new ModeCardView(
 				"국가 인구수 맞추기",
 				"Level 1~2",
-				"보기형 문제와 수치 입력형 문제를 나눠 오차율 기반 점수 계산으로 확장합니다.",
-				"Planned",
+				"보기형 Level 1에서 시작해 이후 수치 입력형 Level 2로 확장할 수 있게 세션 구조를 재사용합니다.",
+				"Playable",
 				"/games/population/start"
 			),
 			new ModeCardView(
@@ -62,9 +62,9 @@ public class HomeController {
 	private List<String> roadmap() {
 		return List.of(
 			"Spring Boot 3 기반 프로젝트 뼈대와 SSR 홈 화면 구성",
-			"국가 시드 데이터와 country 도메인 추가",
-			"위치 찾기 게임 Level 1 세션/라운드 흐름 구현",
-			"인구수 맞추기 게임과 Redis 랭킹 확장"
+			"국가 시드 데이터와 country 도메인 추가 완료",
+			"위치 찾기 게임 Level 1 세션/라운드 흐름 구현 완료",
+			"인구수 맞추기 게임 Level 1 구현 완료, 이후 Redis 랭킹 확장 예정"
 		);
 	}
 }

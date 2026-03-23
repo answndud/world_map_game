@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:fragment="siteHeader(activeSection)">
+    <header class="site-header">
+        <a class="site-brand" th:href="@{/}">
+            <span class="site-brand-mark">WorldMap</span>
+            <strong>Command</strong>
+        </a>
+        <nav class="site-nav" aria-label="메인 이동">
+            <a class="site-nav-link"
+               th:classappend="${activeSection == 'home'} ? ' is-active'"
+               th:href="@{/}">Home</a>
+            <a class="site-nav-link"
+               th:classappend="${activeSection == 'location'} ? ' is-active'"
+               th:href="@{/games/location/start}">Location</a>
+            <a class="site-nav-link"
+               th:classappend="${activeSection == 'population'} ? ' is-active'"
+               th:href="@{/games/population/start}">Population</a>
+        </nav>
+    </header>
+</th:block>
+</body>
+</html>

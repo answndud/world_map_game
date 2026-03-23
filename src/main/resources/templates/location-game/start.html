@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>국가 위치 찾기 시작</title>
+    <link rel="stylesheet" th:href="@{/css/site.css}">
+    <script th:src="@{/js/location-game.js}" defer></script>
+</head>
+<body data-page="location-start">
+<div class="page-shell">
+    <th:block th:replace="~{fragments/site-header :: siteHeader('location')}"></th:block>
+    <header class="hero compact-hero">
+        <p class="eyebrow">Orbital Mission Level 1</p>
+        <h1>국가 위치 찾기</h1>
+        <p class="hero-copy">
+            3D 지구본을 회전하며 목표 국가를 찾는 엔드리스 아케이드 모드입니다.
+            하트, 점수, Stage, 난이도 확장, 정답 판정은 모두 서버가 관리합니다.
+        </p>
+    </header>
+
+    <main class="layout">
+        <section class="panel game-panel">
+            <div class="panel-head">
+                <h2>게임 시작</h2>
+                <p>닉네임은 선택 입력입니다. 비워 두면 `Guest`로 시작합니다.</p>
+            </div>
+
+            <form id="location-start-form" class="game-form">
+                <label class="field">
+                    <span>닉네임</span>
+                    <input id="nickname" type="text" maxlength="20" placeholder="예: backend_learner">
+                </label>
+                <button id="location-start-submit" class="primary-button" type="submit">게임 시작하기</button>
+            </form>
+
+            <div class="rule-grid">
+                <article class="rule-card">
+                    <span class="subtitle">Lives</span>
+                    <strong>3 Hearts</strong>
+                </article>
+                <article class="rule-card">
+                    <span class="subtitle">Loop</span>
+                    <strong>Endless Run</strong>
+                </article>
+                <article class="rule-card">
+                    <span class="subtitle">Difficulty</span>
+                    <strong>Top 72 First</strong>
+                </article>
+            </div>
+            <p id="location-start-message" class="message-box" hidden></p>
+        </section>
+    </main>
+</div>
+</body>
+</html>

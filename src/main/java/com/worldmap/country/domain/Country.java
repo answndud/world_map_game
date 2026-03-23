@@ -117,6 +117,32 @@ public class Country {
 		);
 	}
 
+	public void synchronize(
+		String iso2Code,
+		String iso3Code,
+		String nameKr,
+		String nameEn,
+		Continent continent,
+		String capitalCity,
+		BigDecimal referenceLatitude,
+		BigDecimal referenceLongitude,
+		CountryReferenceType referenceType,
+		Long population,
+		Integer populationYear
+	) {
+		this.iso2Code = iso2Code;
+		this.iso3Code = iso3Code;
+		this.nameKr = nameKr;
+		this.nameEn = nameEn;
+		this.continent = continent;
+		this.capitalCity = capitalCity;
+		this.referenceLatitude = referenceLatitude;
+		this.referenceLongitude = referenceLongitude;
+		this.referenceType = referenceType;
+		this.population = population;
+		this.populationYear = populationYear;
+	}
+
 	public Long getId() {
 		return id;
 	}

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>국가 인구수 맞추기 시작</title>
+    <link rel="stylesheet" th:href="@{/css/site.css}">
+    <script th:src="@{/js/population-game.js}" defer></script>
+</head>
+<body data-page="population-start">
+<div class="page-shell">
+    <th:block th:replace="~{fragments/site-header :: siteHeader('population')}"></th:block>
+    <header class="hero compact-hero">
+        <p class="eyebrow">Population Scan Level 1</p>
+        <h1>국가 인구수 맞추기</h1>
+        <p class="hero-copy">
+            서버가 국가와 보기 4개를 만들고, 프론트는 선택과 제출만 담당하는 4지선다 퀴즈 모드입니다.
+        </p>
+    </header>
+
+    <main class="layout">
+        <section class="panel game-panel">
+            <div class="panel-head">
+                <h2>게임 시작</h2>
+                <p>위치 게임과 같은 세션 구조를 쓰되, 라운드마다 인구수 보기 4개를 서버가 생성합니다.</p>
+            </div>
+
+            <form id="population-start-form" class="game-form">
+                <label class="field">
+                    <span>닉네임</span>
+                    <input id="population-nickname" type="text" maxlength="20" placeholder="예: data_quizzer">
+                </label>
+                <button class="primary-button" type="submit">세션 시작하기</button>
+            </form>
+
+            <div class="rule-grid">
+                <article class="rule-card">
+                    <span class="subtitle">Format</span>
+                    <strong>4 Choices</strong>
+                </article>
+                <article class="rule-card">
+                    <span class="subtitle">Scoring</span>
+                    <strong>Correct = 100</strong>
+                </article>
+                <article class="rule-card">
+                    <span class="subtitle">Server</span>
+                    <strong>Options Generated</strong>
+                </article>
+            </div>
+            <p id="population-start-message" class="message-box" hidden></p>
+        </section>
+    </main>
+</div>
+</body>
+</html>

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>국가 위치 찾기 결과</title>
+    <link rel="stylesheet" th:href="@{/css/site.css}">
+</head>
+<body>
+<div class="page-shell">
+    <th:block th:replace="~{fragments/site-header :: siteHeader('location')}"></th:block>
+    <header class="hero compact-hero">
+        <p class="eyebrow">Location Game Result</p>
+        <h1>게임 결과</h1>
+        <p class="hero-copy">
+            엔드리스 러닝 동안 서버가 저장한 Session, Stage, Attempt, 하트 상태를 그대로 보여줍니다.
+        </p>
+    </header>
+
+    <main class="layout">
+        <section class="panel game-panel">
+            <article class="result-banner" th:classappend="${result.status.name() == 'GAME_OVER'} ? ' danger' : ' success'">
+                <p class="subtitle">Mission Status</p>
+                <h2 th:text="${result.status.name() == 'GAME_OVER' ? 'Run Over' : 'Mission Debrief'}">Run Over</h2>
+                <p th:text="${result.status.name() == 'GAME_OVER' ? '마지막 Stage에서 하트를 모두 잃었습니다. Attempt 기록을 보고 어떤 국가군에서 막혔는지 확인할 수 있습니다.' : '현재까지 진행된 엔드리스 러닝 기록입니다. 서버가 저장한 Stage와 Attempt 흐름을 그대로 다시 설명할 수 있습니다.'}">
+                    마지막 Stage에서 하트를 모두 잃었습니다.
+                </p>
+            </article>
+            <div class="stats-grid">
+                <article class="stat-card">
+                    <span class="subtitle">플레이어</span>
+                    <strong th:text="${result.playerNickname}">Guest</strong>
+                </article>
+                <article class="stat-card">
+                    <span class="subtitle">상태</span>
+                    <strong th:text="${result.status}">FINISHED</strong>
+                </article>
+                <article class="stat-card">
+                    <span class="subtitle">총 점수</span>
+                    <strong th:text="${result.totalScore}">500</strong>
+                </article>
+                <article class="stat-card">
+                    <span class="subtitle">클리어 Stage</span>
+                    <strong th:text="${result.clearedStageCount}">5</strong>
+                </article>
+                <article class="stat-card">
+                    <span class="subtitle">도달 Stage</span>
+                    <strong th:text="${result.currentStageNumber}">6</strong>
+                </article>
+                <article class="stat-card">
+                    <span class="subtitle">남은 하트</span>
+                    <strong th:text="${result.livesRemaining}">2</strong>
+                </article>
+            </div>
+
+            <div class="panel-head">
+                <h2>Stage별 기록</h2>
+                <p>각 Stage 안에 여러 번의 Attempt가 쌓이고, 하트가 0이 되면 해당 Stage에서 게임이 종료됩니다.</p>
+            </div>
+
+            <div class="table-shell">
+                <table class="result-table">
+                    <thead>
+                    <tr>
+                        <th>Stage</th>
+                        <th>문제 국가</th>
+                        <th>상태</th>
+                        <th>시도 기록</th>
+                        <th>점수</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="stage : ${result.stages}">
+                        <td th:text="${stage.stageNumber}">1</td>
+                        <td th:text="${stage.targetCountryName}">대한민국</td>
+                        <td th:text="${stage.status}">CLEARED</td>
+                        <td>
+                            <div class="attempt-log" th:if="${!#lists.isEmpty(stage.attempts)}">
+                                <p th:each="attempt : ${stage.attempts}"
+                                   th:text="${attempt.attemptNumber + '차: ' + attempt.selectedCountryName + ' / ' + (attempt.correct ? 'Correct' : 'Wrong') + ' / 하트 ' + attempt.livesRemainingAfter}">
+                                    1차: 일본 / Wrong / 하트 2
+                                </p>
+                            </div>
+                            <span th:if="${#lists.isEmpty(stage.attempts)}">-</span>
+                        </td>
+                        <td th:text="${stage.awardedScore != null ? stage.awardedScore : '-'}">100</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="page-actions">
+                <a class="primary-link" th:href="@{/games/location/start}">다시 플레이</a>
+                <a class="ghost-link" th:href="@{/}">메인으로 돌아가기</a>
+            </div>
+        </section>
+    </main>
+</div>
+</body>
+</html>

@@ -49,6 +49,21 @@ public class GlobalApiExceptionHandler {
 		);
 	}
 
+	@ExceptionHandler(IllegalStateException.class)
+	public ResponseEntity<ApiErrorResponse> handleIllegalState(
+		IllegalStateException ex,
+		HttpServletRequest request
+	) {
+		return ResponseEntity.status(HttpStatus.CONFLICT).body(
+			ApiErrorResponse.of(
+				HttpStatus.CONFLICT.value(),
+				HttpStatus.CONFLICT.getReasonPhrase(),
+				ex.getMessage(),
+				request.getRequestURI()
+			)
+		);
+	}
+
 	@ExceptionHandler(NoResourceFoundException.class)
 	public ResponseEntity<ApiErrorResponse> handleNotFound(
 		NoResourceFoundException ex,
