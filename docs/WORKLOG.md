@@ -914,3 +914,24 @@
 - 테스트 내용: `node --check src/main/resources/static/js/population-game.js` 통과, `./gradlew test --tests com.worldmap.game.population.PopulationGameFlowIntegrationTest` 통과, `./gradlew test` 전체 통과. 통합 테스트에는 인구수 결과 응답의 `totalAttemptCount`, `firstTryClearCount` 확인을 추가했다.
 - 면접에서 30초 안에 설명하는 요약: 인구수 게임의 게임 루프는 이미 서버 주도로 정리돼 있었고, 이번에는 사용자가 현재 선택 상태와 결과를 더 잘 읽을 수 있게 polish 했습니다. 플레이 화면은 선택한 구간과 다음 행동을 바로 보여주고, 결과 화면은 Stage/Attempt 기록에서 계산한 총 시도 수와 1트 클리어 수를 서버가 내려줘서 디브리프 화면으로 설명 가능하게 만들었습니다.
 - 아직 내가 이해가 부족한 부분: 현재 HUD 문구와 결과 지표는 첫 버전이라, 실제 플레이 기준으로 어떤 정보가 과하고 어떤 정보가 부족한지는 한 번 더 조정할 수 있다. 특히 모바일에서는 선택 상태 카드와 버튼 간격이 얼마나 읽기 좋은지 추가 확인이 필요하다.
+
+## 2026-03-24 - 위치 게임 HUD / 결과 디브리프 1차 polish
+
+- 단계: 3. 국가 위치 찾기 게임 Level 1 리부트 보강
+- 목적: 위치 게임은 클릭 안정화와 재시작 루프는 갖췄지만, 플레이 중 “지금 무엇을 해야 하는지”와 결과 화면의 요약 밀도가 아직 약했다. 그래서 제출 전후 행동을 안내하는 HUD를 추가하고, 결과 화면에는 런 전체를 짧게 요약하는 지표를 넣는다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/game/location/application/LocationGameService.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameSessionResultView.java`
+  - `src/main/resources/templates/location-game/play.html`
+  - `src/main/resources/templates/location-game/result.html`
+  - `src/main/resources/static/js/location-game.js`
+  - `src/test/java/com/worldmap/game/location/LocationGameFlowIntegrationTest.java`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 플레이 화면은 기존처럼 `GET /api/games/location/sessions/{sessionId}/state`로 현재 Stage와 난이도를 받고, `POST /answer`로 선택한 ISO3 코드를 제출한다. 프론트는 이제 제출 전에는 여전히 국가명을 숨기되, 클릭 완료 / 정답 / 오답 / 게임오버 시점마다 `진행 가이드` 텍스트를 바꿔 사용자가 다음 행동을 바로 이해할 수 있게 했다. 결과 화면은 `GET /api/games/location/sessions/{sessionId}/result` 응답에 서버가 계산한 `totalAttemptCount`, `firstTryClearCount`를 포함해 디브리프 카드에 표시한다.
+- 데이터 / 상태 변화: DB 스키마는 바뀌지 않았다. 새 요약값은 기존 `LocationGameStage`, `LocationGameAttempt` 기록을 읽어 서비스가 계산한다. 즉 영속 데이터는 그대로 두고, 결과 조회 응답만 더 설명 가능하게 만든 것이다.
+- 핵심 도메인 개념: 위치 게임은 제출 전 국가명을 숨겨야 하므로, 플레이 HUD는 “선택 여부와 다음 행동”만 알려주는 것이 맞고, 정답/오답 이후에만 실제 국가명을 feedback 카드에서 공개한다. 반면 총 시도 수와 1트 클리어 수 같은 러닝 요약은 Stage/Attempt 전체 기록을 기준으로 서버가 계산해야 일관성이 생긴다. 그래서 행동 안내는 JS, 러닝 지표는 서비스로 역할을 분리했다.
+- 예외 상황 또는 엣지 케이스: 선택 취소를 눌렀을 때는 제출 버튼뿐 아니라 진행 가이드도 현재 Stage 기본 상태로 되돌려야 한다. 또한 게임오버 직후에는 선택 상태를 비우되, 안내 문구는 모달 선택을 유도하는 방향으로 남기는 편이 흐름상 더 자연스럽다.
+- 테스트 내용: `node --check src/main/resources/static/js/location-game.js` 통과, `./gradlew test --tests com.worldmap.game.location.LocationGameFlowIntegrationTest` 통과, `./gradlew test` 전체 통과. 통합 테스트에는 위치 게임 결과 응답의 `totalAttemptCount`, `firstTryClearCount` 확인을 추가했다.
+- 면접에서 30초 안에 설명하는 요약: 위치 게임은 국가명을 숨긴 채 플레이해야 해서, 사용자가 헷갈리지 않게 행동 안내를 별도로 두는 게 중요했습니다. 이번에는 프론트에 선택 상태와 진행 가이드를 추가하고, 결과 화면에는 서버가 계산한 총 시도 수와 1트 클리어 수를 넣어서 한 판의 러닝을 더 짧게 설명할 수 있게 만들었습니다.
+- 아직 내가 이해가 부족한 부분: 현재 가이드 문구는 1차 버전이라, 실제 플레이 감각 기준으로 문장이 너무 많거나 적은지 더 조정할 수 있다. 모바일에서 선택 상태 카드와 버튼들이 한 줄에 얼마나 자연스럽게 배치되는지도 추가 확인이 필요하다.
