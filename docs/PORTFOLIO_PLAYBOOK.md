@@ -27,7 +27,7 @@
 | 2 | 국가 데이터와 시드 적재 | Done |
 | 3 | 국가 위치 찾기 게임 Level 1 | Reworking |
 | 4 | 국가 인구수 맞추기 게임 Level 1 | Reworking |
-| 5 | Redis 랭킹 시스템 | Not Started |
+| 5 | Redis 랭킹 시스템 | In Progress |
 | 6 | 설문 기반 추천 엔진 | Not Started |
 | 7 | LLM 설명 생성 | Not Started |
 | 8 | 인증, 전적, 마이페이지 | Not Started |
@@ -326,7 +326,7 @@
 
 ### 5. Redis 랭킹 시스템
 
-상태: Not Started
+상태: In Progress
 
 목표:
 
@@ -341,17 +341,40 @@
 - 랭킹 조회 API
 - 랭킹 화면 표시
 
+현재까지 완료된 항목:
+
+- `leaderboard_record` 테이블로 게임 종료 run을 별도 저장
+- 위치 게임 / 인구수 게임 `GAME_OVER` 시점에 랭킹 레코드 생성
+- 같은 `sessionId` 재시작 구조와 충돌하지 않도록 `runSignature` 기준 중복 방지
+- `LeaderboardRankingPolicy`로 총점, 클리어 수, 총 시도 수를 합친 내부 정렬 점수 정의
+- RDB 저장 후 `after commit` 시점에 Redis Sorted Set 전체 / 일간 키 반영
+- `GET /api/rankings/{gameMode}` 조회 API 추가
+- `/ranking` SSR 화면 추가
+- Redis 키가 비어 있을 때 RDB 상위 기록으로 fallback 조회 후 Redis 재구성
+- 랭킹 통합 테스트 통과
+
+이 단계에서 남은 일:
+
+- 랭킹 화면 필터를 더 세분화하기
+- 동점 처리 규칙을 화면에서도 더 분명히 설명하기
+- SSE 또는 짧은 주기 폴링으로 랭킹 갱신 체감 만들기
+- 이후 인증/전적 기능과 연결해 닉네임 외 식별자 정책 정리하기
+
 반드시 이해할 것:
 
 - 왜 RDB만으로 랭킹을 만들지 않았는가
 - Sorted Set의 score/member 구조
 - Redis 장애 시 어떤 문제가 생기는가
+- 왜 세션 재시작이 가능한 구조에서는 `게임 세션`과 `랭킹 run 결과`를 분리해야 하는가
+- 왜 Redis 반영을 DB 저장 `after commit` 뒤로 미루는가
+- 왜 조회 경로를 `Redis 상위 id -> RDB 상세 조회`로 나눴는가
 
 면접 포인트:
 
 - 왜 Redis를 썼는가
 - 점수 저장의 진실 공급원(source of truth)은 어디인가
 - 동점자 처리 규칙은 무엇인가
+- Redis 키가 날아가면 어떻게 복구하는가
 
 완료 기준:
 

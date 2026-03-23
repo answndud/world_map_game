@@ -935,3 +935,41 @@
 - 테스트 내용: `node --check src/main/resources/static/js/location-game.js` 통과, `./gradlew test --tests com.worldmap.game.location.LocationGameFlowIntegrationTest` 통과, `./gradlew test` 전체 통과. 통합 테스트에는 위치 게임 결과 응답의 `totalAttemptCount`, `firstTryClearCount` 확인을 추가했다.
 - 면접에서 30초 안에 설명하는 요약: 위치 게임은 국가명을 숨긴 채 플레이해야 해서, 사용자가 헷갈리지 않게 행동 안내를 별도로 두는 게 중요했습니다. 이번에는 프론트에 선택 상태와 진행 가이드를 추가하고, 결과 화면에는 서버가 계산한 총 시도 수와 1트 클리어 수를 넣어서 한 판의 러닝을 더 짧게 설명할 수 있게 만들었습니다.
 - 아직 내가 이해가 부족한 부분: 현재 가이드 문구는 1차 버전이라, 실제 플레이 감각 기준으로 문장이 너무 많거나 적은지 더 조정할 수 있다. 모바일에서 선택 상태 카드와 버튼들이 한 줄에 얼마나 자연스럽게 배치되는지도 추가 확인이 필요하다.
+
+## 2026-03-24 - Redis 랭킹 1차 구현
+
+- 단계: 5. Redis 랭킹 시스템
+- 목적: 게임오버 시점 점수를 단순히 결과 페이지에서만 끝내지 않고, `RDB에 영속 저장 + Redis Sorted Set 반영 + 상위 N명 조회`까지 이어지는 랭킹 vertical slice를 만든다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/ranking/domain/LeaderboardGameMode.java`
+  - `src/main/java/com/worldmap/ranking/domain/LeaderboardGameLevel.java`
+  - `src/main/java/com/worldmap/ranking/domain/LeaderboardScope.java`
+  - `src/main/java/com/worldmap/ranking/domain/LeaderboardRecord.java`
+  - `src/main/java/com/worldmap/ranking/domain/LeaderboardRecordRepository.java`
+  - `src/main/java/com/worldmap/ranking/application/LeaderboardRankingPolicy.java`
+  - `src/main/java/com/worldmap/ranking/application/LeaderboardEntryView.java`
+  - `src/main/java/com/worldmap/ranking/application/LeaderboardView.java`
+  - `src/main/java/com/worldmap/ranking/application/LeaderboardService.java`
+  - `src/main/java/com/worldmap/ranking/web/LeaderboardApiController.java`
+  - `src/main/java/com/worldmap/ranking/web/LeaderboardPageController.java`
+  - `src/main/resources/templates/ranking/index.html`
+  - `src/main/resources/templates/fragments/site-header.html`
+  - `src/main/resources/templates/home.html`
+  - `src/main/java/com/worldmap/web/HomeController.java`
+  - `src/main/resources/application.yml`
+  - `src/main/resources/application-test.yml`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameService.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationGameService.java`
+  - `src/main/java/com/worldmap/game/location/domain/LocationGameAttemptRepository.java`
+  - `src/main/java/com/worldmap/game/population/domain/PopulationGameAttemptRepository.java`
+  - `src/test/java/com/worldmap/ranking/LeaderboardIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 위치 게임과 인구수 게임은 `POST /answer`에서 하트를 모두 잃어 세션이 종료되면, 서비스가 현재 run의 점수/클리어 수/총 시도 수를 모아 `LeaderboardService`에 전달한다. `LeaderboardService`는 우선 `leaderboard_record`에 종료 run을 저장하고, 트랜잭션 커밋 이후 Redis Sorted Set의 전체 키와 일간 키에 record id를 반영한다. 조회 시에는 `GET /api/rankings/{gameMode}`가 먼저 Redis에서 상위 record id를 가져오고, 그 id로 RDB 상세 정보를 읽어 응답을 만든다. `/ranking` 화면은 같은 서비스를 직접 호출해 전체/일간 top 10을 SSR로 보여준다.
+- 데이터 / 상태 변화: 이제 게임 세션 외에 `leaderboard_record`가 생겼다. 중요한 점은 랭킹이 `세션`을 그대로 재사용하지 않고, 종료된 `run 결과`를 별도 레코드로 저장한다는 것이다. 이유는 현재 게임들이 같은 `sessionId`로 재시작될 수 있어서, 세션 자체를 랭킹 row로 쓰면 이전 게임 기록이 덮어써질 수 있기 때문이다.
+- 핵심 도메인 개념: Redis는 정렬과 top N 조회를 빠르게 하기 위한 read model이고, 진실 공급원은 RDB의 `leaderboard_record`다. 그래서 저장은 항상 RDB가 먼저고, Redis 반영은 `after commit` 뒤에 수행한다. 또한 Redis key가 비어 있거나 유실되면 `LeaderboardService`가 RDB 상위 기록을 다시 읽어 키를 재구성하도록 만들어, “Redis가 날아가도 랭킹은 복구 가능하다”는 설명이 가능해졌다.
+- 예외 상황 또는 엣지 케이스: 같은 세션을 재시작하면 새로운 run이 시작되므로, 랭킹도 별도 레코드로 남겨야 한다. 같은 종료 시점을 두 번 반영하지 않도록 `runSignature`를 두었다. Redis 반영이 실패해도 RDB에는 기록이 남으므로, 다음 조회 시 fallback으로 복구할 수 있다. 현재 일간 랭킹은 `finishedAt.toLocalDate()` 기준으로 계산하고, 레벨은 아직 `LEVEL_1`만 지원한다.
+- 테스트 내용: `./gradlew test --tests com.worldmap.ranking.LeaderboardIntegrationTest` 통과, `./gradlew test` 전체 통과. 통합 테스트에서는 실제 게임오버를 발생시켜 랭킹 레코드 생성, `/api/rankings/location` 조회, `/api/rankings/population`의 DB fallback 복구, `/ranking` 페이지 렌더링을 확인했다.
+- 면접에서 30초 안에 설명하는 요약: 랭킹은 세션을 그대로 재사용하지 않고, 종료된 게임 run을 `leaderboard_record`로 따로 저장했습니다. 게임오버가 되면 먼저 RDB에 기록하고, 커밋이 끝난 뒤 Redis Sorted Set의 전체/일간 키에 record id를 반영합니다. 조회는 Redis에서 상위 id를 빠르게 가져오고, 상세 정보는 RDB에서 채워서 보여줍니다.
+- 아직 내가 이해가 부족한 부분: 현재는 Level 1 전체/일간 top 10까지만 구현했고, 동점 처리 규칙과 실시간 갱신 체감은 더 다듬을 수 있다. 이후 SSE를 붙일 때 지금의 SSR 화면을 어떻게 부드럽게 갱신할지도 한 번 더 설계해야 한다.

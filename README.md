@@ -198,6 +198,18 @@
 4. Redis 랭킹 갱신
 5. 랭킹 페이지 또는 실시간 이벤트로 반영
 
+### 현재 1차 구현 상태
+
+- 각 게임 종료 run을 `leaderboard_record`로 별도 저장한다.
+- 같은 `sessionId`를 재시작해도 이전 run이 덮어써지지 않도록, 랭킹은 세션 자체가 아니라 `종료된 run 결과`를 기준으로 저장한다.
+- RDB 저장이 끝난 뒤 `after commit` 시점에 Redis Sorted Set의 전체 / 일간 키에 반영한다.
+- 조회는 `Redis 상위 record id 조회 -> RDB 상세 조회` 순서로 처리한다.
+- Redis 키가 비어 있으면 RDB를 source of truth로 사용해 상위 기록을 다시 읽고, Redis 키를 재구성한다.
+- 현재 제공 경로:
+  - `/api/rankings/location`
+  - `/api/rankings/population`
+  - `/ranking`
+
 ### 실시간 전달 방식
 
 - 1차: 클라이언트 주기 조회
