@@ -754,3 +754,111 @@
 - 테스트 내용: `LocationGameFlowIntegrationTest`에 restart 시나리오를 추가해, 3회 오답으로 게임오버 후 `POST /restart`를 호출하면 같은 `sessionId`가 유지되고, lives=3 / score=0 / stage=1 / attempt 비움 상태로 복구되는지 확인했다. `./gradlew test` 통과.
 - 면접에서 30초 안에 설명하는 요약: 탈락 후 다시 시작을 새 세션 생성으로 처리하면 같은 런의 흐름이 끊기고 프론트도 다시 시작 페이지를 거쳐야 했습니다. 그래서 별도 restart API를 두고, 서비스에서 기존 attempt와 stage를 지운 뒤 같은 sessionId의 상태를 초기화하고 Stage 1을 다시 생성하도록 바꿨습니다.
 - 아직 내가 이해가 부족한 부분: 현재는 restart 시 이전 플레이 기록을 세션 안에 남기지 않는다. 나중에 “한 세션 안의 여러 러닝”까지 분석하고 싶다면 run 단위를 따로 분리할지 고민이 필요하다.
+
+## 2026-03-23 - 인구수 게임 Level 1 리부트 기획 시작
+
+- 단계: 4. 국가 인구수 맞추기 게임 Level 1 리부트 기획
+- 목적: 현재 인구수 게임이 `고정 5라운드 숫자 보기형 퀴즈`에 머물러 있어, 위치 게임처럼 하트 기반 아케이드 모드로 다시 설계할 기준 문서를 만든다.
+- 변경 파일:
+  - `docs/POPULATION_GAME_ARCADE_REBOOT.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `README.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 이번 작업은 코드 구현이 아니라 리부트 방향 고정이다. 현재 구현을 기준으로 `start -> get round -> submit answer -> next round button -> result` 흐름이 어디서 게임성을 잃는지 분석하고, 앞으로는 `start -> get state -> submit answer -> auto next stage / retry -> game over -> restart` 구조로 옮기기로 정리했다.
+- 데이터 / 상태 변화: 실제 DB 스키마는 아직 바뀌지 않았다. 다만 다음 리부트에서 `PopulationGameRound 1회 제출형`만으로는 부족하다고 판단했고, 위치 게임처럼 `Session / Stage / Attempt` 구조로 갈 가능성을 플레이북과 설계 문서에 명시했다.
+- 핵심 도메인 개념: 인구수 게임도 위치 게임과 마찬가지로 “문제를 제출하고 끝나는 폼”이 아니라 “서버가 하트, 점수, 진행 상태를 관리하는 게임 루프”가 되어야 한다. 따라서 현재의 `5문제 고정`, `100/0 점수`, `다음 라운드 버튼`은 프로토타입 단계의 흔적으로 본다.
+- 예외 상황 또는 엣지 케이스: 현재 Level 1은 정확 숫자 4개 보기라 읽기 피로도가 높다. 리부트 시 Level 1은 구간형 또는 압축 표현형으로 다시 정의하고, 정확 수치 / 오차율 입력은 Level 2로 올리는 것이 더 자연스럽다고 판단했다.
+- 테스트 내용: 이번 작업은 문서 설계 단계라 테스트는 실행하지 않았다.
+- 면접에서 30초 안에 설명하는 요약: 인구수 게임은 공통 세션 구조를 검증하는 데는 성공했지만, 실제 게임으로는 아직 약했습니다. 그래서 위치 게임을 리부트했던 것처럼 인구수 게임도 하트, 재시도, 자동 다음 Stage, 게임오버, 같은 세션 재시작이 있는 아케이드 루프로 다시 설계하기로 했고, 그 기준 문서를 먼저 만들었습니다.
+- 아직 내가 이해가 부족한 부분: Level 1을 `구간형`으로 갈지, `압축된 근사 수치 보기형`으로 갈지는 아직 확정하지 않았다. 둘 다 장단점이 있어 실제 구현 전에 한 번 더 선택해야 한다.
+
+## 2026-03-23 - 인구수 게임 Level 1 아케이드 리부트 1차 구현
+
+- 단계: 4. 국가 인구수 맞추기 게임 Level 1 리부트
+- 목적: 기존 `고정 5라운드 + 다음 라운드 버튼 + 100/0 점수` 구조를 버리고, 위치 게임과 같은 서버 주도 아케이드 루프로 옮긴다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/game/population/domain/PopulationGameSession.java`
+  - `src/main/java/com/worldmap/game/population/domain/PopulationGameStage.java`
+  - `src/main/java/com/worldmap/game/population/domain/PopulationGameStageStatus.java`
+  - `src/main/java/com/worldmap/game/population/domain/PopulationGameStageRepository.java`
+  - `src/main/java/com/worldmap/game/population/domain/PopulationGameAttempt.java`
+  - `src/main/java/com/worldmap/game/population/domain/PopulationGameAttemptRepository.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationGameService.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationGameDifficultyPolicy.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationGameDifficultyPlan.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationGameScoringPolicy.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationGameStateView.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationGameAnswerView.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationGameAnswerOutcome.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationGameSessionResultView.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationGameStageResultView.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationGameAttemptResultView.java`
+  - `src/main/java/com/worldmap/game/population/web/PopulationGameApiController.java`
+  - `src/main/java/com/worldmap/game/population/web/SubmitPopulationAnswerRequest.java`
+  - `src/main/resources/templates/population-game/start.html`
+  - `src/main/resources/templates/population-game/play.html`
+  - `src/main/resources/templates/population-game/result.html`
+  - `src/main/resources/static/js/population-game.js`
+  - `src/main/resources/static/css/site.css`
+  - `src/test/java/com/worldmap/game/population/PopulationGameFlowIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/POPULATION_GAME_ARCADE_REBOOT.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 시작 페이지에서 닉네임을 제출하면 `POST /api/games/population/sessions`가 같은 `BaseGameSession` 위에 `PopulationGameSession`을 만들고, 서버가 첫 `PopulationGameStage`와 보기 4개를 생성한다. 플레이 화면은 `GET /state`로 현재 Stage, 하트, 점수, 보기 4개를 받고, `POST /answer`로 선택한 보기 번호를 제출한다. 서비스는 `PopulationGameScoringPolicy`와 `PopulationGameDifficultyPolicy`를 이용해 정답 여부, 점수, 다음 Stage 생성 여부를 계산하고, `PopulationGameAttempt`를 저장한다. 하트가 모두 사라지면 `GAME_OVER`가 되며, `POST /restart`로 같은 `sessionId`를 초기화해 Stage 1부터 다시 시작한다.
+- 데이터 / 상태 변화: `population_game_round` 1회 제출형 구조 대신 `population_game_stage`, `population_game_attempt` 구조를 사용하게 됐다. 세션에는 `livesRemaining`이 추가됐고, 상태 전이는 `READY -> IN_PROGRESS -> GAME_OVER` 중심으로 바뀌었다. Stage는 정답 시 `CLEARED`, 하트 소진 시 `FAILED`가 되고, 정답일 때마다 다음 Stage가 추가되어 `totalRounds`는 “현재까지 계획된 Stage 수” 의미로 확장된다.
+- 핵심 도메인 개념: 인구수 게임도 위치 게임처럼 “한 문제를 제출하고 끝나는 퀴즈”가 아니라 “한 Stage 안에서 여러 번 시도할 수 있는 게임”으로 보는 것이 핵심이다. 그래서 정답 데이터와 보기 4개는 `PopulationGameStage`에 두고, 사용자의 실제 선택 기록은 `PopulationGameAttempt`로 분리했다. 이 로직이 컨트롤러가 아니라 서비스에 있어야 하는 이유는, 답안 제출 한 번이 `세션 하트 감소`, `점수 계산`, `Stage 상태 변경`, `다음 Stage 생성`, `Attempt 저장`을 한 트랜잭션 안에서 함께 일으키기 때문이다.
+- 예외 상황 또는 엣지 케이스: 진행 중이 아닌 세션에는 답안을 제출할 수 없고, 현재 Stage 번호와 다른 값을 제출하면 충돌로 막는다. 재시작은 종료된 세션에서만 허용하며, 기존 attempt/stage를 먼저 지우고 flush한 뒤 같은 sessionId를 초기화해 unique constraint 충돌을 피한다. 아직 보기 표현은 `정확 숫자 4개`라서 읽기 피로도가 남아 있고, 이 부분은 다음 단계에서 다시 다듬어야 한다.
+- 테스트 내용: `./gradlew test --tests com.worldmap.game.population.PopulationGameFlowIntegrationTest` 통과, `./gradlew test` 전체 통과, `node --check src/main/resources/static/js/population-game.js` 통과. 로컬 실행 후 `POST /api/games/population/sessions`, `GET /state`, 결과 페이지 `200` 응답도 확인했다.
+- 면접에서 30초 안에 설명하는 요약: 인구수 게임도 위치 게임처럼 서버가 하트, 점수, 진행 상태를 관리하도록 리부트했습니다. 기존 5라운드 퀴즈 구조를 `세션 / Stage / Attempt`로 바꾸고, 오답이면 같은 Stage 재시도, 하트 3개 소진 시 게임오버, 같은 sessionId 재시작, 정답 시 자동 다음 Stage 생성까지 모두 서비스에서 처리하도록 옮겼습니다.
+- 아직 내가 이해가 부족한 부분: 이번 1차 리부트는 게임 루프와 상태 전이에 집중했고, 보기 표현은 아직 정확 숫자 4개다. Level 1을 구간형으로 바꿀지 압축 수치형으로 유지할지는 실제 플레이 피드백을 보고 한 번 더 판단해야 한다.
+
+## 2026-03-23 - 인구수 게임 오답 시 하단 결과 카드 비노출 처리
+
+- 단계: 4. 국가 인구수 맞추기 게임 Level 1 리부트 보강
+- 목적: 오답을 냈을 때 하단에 정답/선택값 결과 카드까지 뜨면 아케이드 게임보다 해설형 퀴즈처럼 느껴져, 실패 피드백을 오버레이 중심으로 단순화한다.
+- 변경 파일:
+  - `src/main/resources/static/js/population-game.js`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: `POST /api/games/population/sessions/{sessionId}/answer` 응답을 받은 뒤, 프론트는 이제 정답일 때만 하단 feedback 카드를 렌더링한다. 오답 또는 게임오버일 때는 하단 카드를 비우고, 상단 오버레이만 보여준 뒤 같은 Stage 재시도 또는 게임오버 모달로 넘어간다.
+- 데이터 / 상태 변화: 서버 상태와 DB는 바뀌지 않았다. 바뀐 것은 프론트 피드백 강도와 노출 방식이다.
+- 핵심 도메인 개념: 오답 피드백은 “상태 전이 알림”만 주고, 상세 결과 카드는 정답 보상에만 쓰는 편이 현재 아케이드 루프에 더 맞는다. 즉 서버가 판정한 결과는 같지만, 프론트는 `correct` 여부에 따라 다른 UI 채널로 보여준다.
+- 예외 상황 또는 엣지 케이스: 게임오버도 오답의 연장선이므로, 하단 카드 대신 게임오버 모달만 띄우도록 유지한다.
+- 테스트 내용: `node --check src/main/resources/static/js/population-game.js` 통과, `./gradlew test` 전체 통과 상태 유지.
+- 면접에서 30초 안에 설명하는 요약: 오답 때마다 하단 결과 카드까지 뜨면 게임 흐름이 끊겨서, 인구수 게임은 정답일 때만 결과 카드를 보여주고 오답은 오버레이만 남기도록 바꿨습니다. 서버 응답은 그대로 두고, 프론트에서 `correct` 여부에 따라 피드백 채널만 분기한 것입니다.
+- 아직 내가 이해가 부족한 부분: 지금은 오답 상세 해설을 숨겼지만, 나중에 학습형 모드와 아케이드 모드를 분리할 때는 결과 노출 정책을 다시 나눌 필요가 있다.
+
+## 2026-03-23 - 인구수 게임 오답 시 화면 재조회 제거
+
+- 단계: 4. 국가 인구수 맞추기 게임 Level 1 리부트 보강
+- 목적: 오답 뒤 같은 Stage를 다시 시도하는 상황인데도 프론트가 `GET /state`를 다시 호출해 화면이 깜빡이고 새로고침처럼 보이는 문제를 제거한다.
+- 변경 파일:
+  - `src/main/resources/static/js/population-game.js`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: `POST /api/games/population/sessions/{sessionId}/answer` 응답이 `WRONG`일 때는 이제 추가 `GET /state` 요청을 보내지 않는다. 프론트는 서버 응답에 포함된 `livesRemaining`, `totalScore`, `clearedStageCount`만 현재 HUD에 반영하고, 같은 보기 목록은 그대로 둔 채 선택 상태만 지우고 다시 입력을 받는다.
+- 데이터 / 상태 변화: 서버 상태와 DB는 바뀌지 않았다. 바뀐 것은 오답 후 프론트의 후처리 경로다. 이전에는 `WRONG -> overlay -> GET /state -> 전체 재렌더링`, 지금은 `WRONG -> overlay -> 선택 초기화 -> 같은 화면 유지` 흐름이다.
+- 핵심 도메인 개념: 같은 Stage 재시도는 상태상 “새 문제 로딩”이 아니라 “현재 문제 유지”이므로, 프론트도 전체 재조회보다 현재 상태 보정이 맞다. 즉 서버는 여전히 정답 판정과 하트 감소를 관리하지만, 프론트는 Stage가 안 바뀐 경우 불필요한 새 요청을 줄여야 한다.
+- 예외 상황 또는 엣지 케이스: 정답일 때는 다음 Stage와 보기 4개가 바뀌므로 여전히 `GET /state`를 다시 호출한다. `GAME_OVER`는 재시도가 아니라 종료이므로 모달 흐름을 유지한다.
+- 테스트 내용: `node --check src/main/resources/static/js/population-game.js` 통과, `./gradlew test` 전체 통과.
+- 면접에서 30초 안에 설명하는 요약: 오답은 같은 Stage를 다시 푸는 상황인데도 화면 전체를 다시 불러오고 있어서 UX가 깜빡였습니다. 그래서 오답일 때는 서버 재조회 없이 응답에 담긴 하트/점수만 HUD에 반영하고, 선택만 초기화해서 같은 문제를 자연스럽게 이어가도록 바꿨습니다.
+- 아직 내가 이해가 부족한 부분: 지금은 “같은 Stage면 재조회하지 않는다”가 충분하지만, 나중에 서버가 오답 시 힌트나 옵션 순서를 바꾸는 규칙을 넣으면 이 분기 기준을 다시 검토해야 한다.
+
+## 2026-03-23 - 인구수 게임 정답 후 Next Stage 수동 진행으로 변경
+
+- 단계: 4. 국가 인구수 맞추기 게임 Level 1 리부트 보강
+- 목적: 정답 직후 자동으로 다음 문제로 넘어가면 결과를 볼 시간이 너무 짧고, 사용자가 리듬을 직접 조절하기 어렵다. 그래서 정답 후에는 `다음 Stage` 버튼으로 직접 진행하게 바꾼다.
+- 변경 파일:
+  - `src/main/resources/templates/population-game/play.html`
+  - `src/main/resources/static/js/population-game.js`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: `POST /api/games/population/sessions/{sessionId}/answer` 응답이 `CORRECT`면, 프론트는 하단 결과 카드와 성공 오버레이를 보여주고 자동 `GET /state`를 호출하지 않는다. 대신 `선택 제출` 옆에 `다음 Stage` 버튼을 노출하고, 사용자가 이 버튼을 눌렀을 때만 `GET /state`로 다음 문제를 받아온다.
+- 데이터 / 상태 변화: 서버 상태와 DB는 바뀌지 않았다. 정답 시점에 이미 다음 Stage는 서버가 생성해 두고 있으므로, 바뀐 것은 프론트 전환 타이밍뿐이다. 이전에는 `CORRECT -> 잠시 후 자동 state 재조회`, 지금은 `CORRECT -> Next Stage 버튼 노출 -> 버튼 클릭 시 state 재조회` 흐름이다.
+- 핵심 도메인 개념: “다음 Stage 생성” 책임은 여전히 서버에 있고, “언제 화면을 넘길지”만 프론트 UX 정책으로 분리한 것이다. 즉 상태 전이는 서버가 유지하고, 사용자의 템포 조절은 클라이언트가 맡는다.
+- 예외 상황 또는 엣지 케이스: `GAME_OVER`는 여전히 모달 흐름을 유지하고, 정답이더라도 `FINISHED`가 생기는 모드라면 결과 화면으로 넘어가는 분기를 그대로 쓸 수 있다.
+- 테스트 내용: `node --check src/main/resources/static/js/population-game.js` 통과, `./gradlew test` 전체 통과.
+- 면접에서 30초 안에 설명하는 요약: 인구수 게임은 정답을 맞힌 직후 결과를 읽을 시간이 필요해서 자동 다음 Stage 이동을 없앴습니다. 서버는 여전히 정답 시 다음 Stage를 생성하지만, 프론트는 `다음 Stage` 버튼을 보여주고 사용자가 눌렀을 때만 새 상태를 받아오도록 바꿔 UX 템포를 분리했습니다.
+- 아직 내가 이해가 부족한 부분: 지금은 정답마다 사용자가 직접 넘기는 방식이지만, 나중에 속도감을 더 중시하는 모드가 생기면 자동 전환 옵션을 따로 둘지 다시 판단해야 한다.
