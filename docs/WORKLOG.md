@@ -862,3 +862,34 @@
 - 테스트 내용: `node --check src/main/resources/static/js/population-game.js` 통과, `./gradlew test` 전체 통과.
 - 면접에서 30초 안에 설명하는 요약: 인구수 게임은 정답을 맞힌 직후 결과를 읽을 시간이 필요해서 자동 다음 Stage 이동을 없앴습니다. 서버는 여전히 정답 시 다음 Stage를 생성하지만, 프론트는 `다음 Stage` 버튼을 보여주고 사용자가 눌렀을 때만 새 상태를 받아오도록 바꿔 UX 템포를 분리했습니다.
 - 아직 내가 이해가 부족한 부분: 지금은 정답마다 사용자가 직접 넘기는 방식이지만, 나중에 속도감을 더 중시하는 모드가 생기면 자동 전환 옵션을 따로 둘지 다시 판단해야 한다.
+
+## 2026-03-24 - 인구수 게임 Level 1을 구간형 보기로 전환
+
+- 단계: 4. 국가 인구수 맞추기 게임 Level 1 리부트 보강
+- 목적: 현재 Level 1은 숫자 4개를 그대로 읽는 방식보다, 사용자가 `어느 인구 규모대인지`를 빠르게 판단하는 구간형이 더 게임답고 설명하기 쉽다. 그래서 서버가 인구 규모 구간 4개를 만들고 프론트는 구간 라벨만 보여주도록 바꾼다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/game/population/application/PopulationScaleBand.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationScaleBandCatalog.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationOptionLabelFormatter.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationGameOptionGenerator.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationOptionView.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationGameAnswerView.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationGameAttemptResultView.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationGameStageResultView.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationGameService.java`
+  - `src/main/resources/static/js/population-game.js`
+  - `src/main/resources/templates/population-game/start.html`
+  - `src/main/resources/templates/population-game/play.html`
+  - `src/main/resources/templates/population-game/result.html`
+  - `src/test/java/com/worldmap/game/population/application/PopulationGameOptionGeneratorTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/POPULATION_GAME_ARCADE_REBOOT.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: `POST /api/games/population/sessions`와 `GET /state` 흐름은 유지되지만, 서버는 이제 target population이 속한 `PopulationScaleBand`를 찾고 그 주변 4개 구간을 보기로 생성한다. 플레이 화면은 `PopulationOptionView.label`만 렌더링하고, `POST /answer` 응답에는 `selectedOptionLabel`, `correctOptionLabel`도 같이 들어와 정답 카드와 결과 화면에서 구간 중심으로 보여준다.
+- 데이터 / 상태 변화: DB 스키마는 바꾸지 않았고, 기존 option population 칼럼에는 각 구간의 시작값(lower bound)을 저장한다. 즉 저장 구조는 유지하면서 의미만 “정확 숫자”에서 “구간 키”로 바뀌었다. 실제 국가 인구수는 여전히 `targetPopulation`으로 따로 유지해 결과 설명과 Level 2 확장에 쓸 수 있다.
+- 핵심 도메인 개념: Level 1은 “정확 수치 기억력”보다 “인구 규모 감각”을 보는 편이 맞다. 그래서 서버가 `PopulationScaleBandCatalog`로 전역 구간 체계를 관리하고, 각 Stage는 그중 어떤 4개 구간을 보기로 썼는지 저장한다. 이 방식이 서비스에 있어야 하는 이유는, 같은 target country라도 어떤 구간 창(window)을 줄지와 정답 옵션 번호를 서버가 일관되게 결정해야 하기 때문이다.
+- 예외 상황 또는 엣지 케이스: 구간이 고정되어 있기 때문에 어떤 국가는 경계값 근처에서 체감 난이도가 높아질 수 있다. 예를 들어 7천만 바로 아래/위 국가는 인접 구간 구분이 어렵게 느껴질 수 있어, 다음 단계에서 경계 조정 여지가 있다.
+- 테스트 내용: `node --check src/main/resources/static/js/population-game.js` 통과, `./gradlew test --tests com.worldmap.game.population.application.PopulationGameOptionGeneratorTest --tests com.worldmap.game.population.PopulationGameFlowIntegrationTest` 통과.
+- 면접에서 30초 안에 설명하는 요약: 인구수 게임 Level 1은 정확 숫자 4개를 읽게 하면 피로도가 높아서, 서버가 인구 규모 구간 4개를 생성하는 방식으로 바꿨습니다. 구간 정의는 공통 카탈로그로 두고 Stage에는 구간 키를 저장해, 플레이 화면과 결과 화면 모두 같은 구간 언어로 설명 가능하게 만들었습니다.
+- 아직 내가 이해가 부족한 부분: 현재 구간 경계는 첫 버전이라 실제 플레이 감각 기준으로는 더 다듬을 수 있다. 특히 7천만, 1억 5천만 같은 경계 근처 국가들이 체감상 어느 정도 헷갈리는지는 플레이 데이터를 보고 다시 판단해야 한다.
