@@ -1234,3 +1234,26 @@
 - 테스트 내용: `./gradlew test --tests com.worldmap.recommendation.application.RecommendationCountryProfileCatalogTest --tests com.worldmap.recommendation.application.RecommendationSurveyServiceTest` 통과, `./gradlew test --tests com.worldmap.recommendation.RecommendationPageIntegrationTest --tests com.worldmap.recommendation.application.RecommendationCountryProfileCatalogTest --tests com.worldmap.recommendation.application.RecommendationSurveyServiceTest` 통과. 카탈로그 테스트는 30개 / 중복 없음 / 시드 ISO 존재 여부를 검증했고, 서비스 테스트는 확장 후보 풀에서 `말레이시아` 같은 신규 후보가 실제 1위로 올라오는 시나리오를 고정했다.
 - 면접에서 30초 안에 설명하는 요약: 추천 엔진은 계산식만큼 후보 데이터가 중요해서, 이번에는 점수 공식을 바꾸지 않고 추천 프로필 카탈로그를 12개에서 30개로 넓혔습니다. 북미, 유럽, 동남아, 남미, 아프리카까지 후보를 분산시킨 뒤, ISO 유효성과 실제 추천 결과 상위권 진입 여부를 테스트로 고정해 추천 다양성을 먼저 높였습니다.
 - 아직 내가 이해가 부족한 부분: 지금은 프로필 값을 수작업으로 관리하므로, 이후 후보 국가가 더 늘어나면 어떤 기준으로 값을 보정하고 versioning할지 더 정리할 필요가 있다.
+
+## 2026-03-24 - 추천 가중치 튜닝과 경계값 조정 1차
+
+- 단계: 6. 설문 기반 추천 엔진
+- 목적: 후보 국가 풀을 넓힌 뒤에도 영어 친화도나 최우선 기준 점수가 강하게 작용하면, 저물가·음식 중심 취향에서도 싱가포르 같은 일부 국가가 계속 상단에 남을 수 있었다. 이번 단계에서는 점수식의 경계값과 보조 정렬 기준을 조정해 추천 결과가 설문 의도를 더 직접 반영하도록 튜닝한다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationSurveyService.java`
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationCandidateView.java`
+  - `src/test/java/com/worldmap/recommendation/application/RecommendationSurveyServiceTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/10-expand-recommendation-candidate-pool.md`
+  - `blog/11-recommendation-weight-tuning.md`
+- 요청 흐름 / 데이터 흐름: 추천 요청 흐름은 그대로 `RecommendationSurveyForm -> RecommendationSurveyAnswers -> RecommendationSurveyService.recommend()`이다. 바뀐 것은 서비스 내부 점수 계산과 정렬 규칙이다. 서비스는 각 후보에 대해 기후/속도/물가/도시성/영어/우선순위 점수를 계산한 뒤, 이제는 `정확 일치 보너스`, `초과 물가 패널티`, `핵심 생활 조건 coherence bonus`까지 합산하고, 동점 시에는 `강한 신호 개수 -> 정확 일치 개수 -> 국가명` 순으로 정렬한다.
+- 데이터 / 상태 변화: DB와 설문 입력 구조는 바뀌지 않았다. 변한 것은 추천 계산식과 view 모델에 실어 두는 보조 비교 정보다. `RecommendationCandidateView`에는 이제 `strongSignalCount`, `exactMatchCount`도 함께 담긴다.
+- 핵심 도메인 개념: 추천 품질은 후보 데이터뿐 아니라 경계값 설계에도 크게 좌우된다. 특히 물가처럼 사용자 제약에 가까운 항목은 단순한 거리 점수만으로는 부족하므로, “허용 범위를 초과했는가” 같은 규칙을 별도 패널티로 드러내는 편이 더 설명 가능하고 납득 가능한 결과를 만든다.
+- 예외 상황 또는 엣지 케이스: 점수식이 복잡해질수록 왜 한 나라가 위로 갔는지 설명하기 어려워질 수 있다. 그래서 이번 단계에서는 너무 많은 축을 새로 만들지 않고, 기존 축 위에 exact match / over-budget penalty / coherence bonus만 얹는 선에서 멈췄다. 이렇게 해야 테스트와 면접 설명이 함께 유지된다.
+- 테스트 내용: `./gradlew test --tests com.worldmap.recommendation.application.RecommendationSurveyServiceTest` 통과, `./gradlew test --tests com.worldmap.recommendation.RecommendationPageIntegrationTest --tests com.worldmap.recommendation.application.RecommendationCountryProfileCatalogTest --tests com.worldmap.recommendation.application.RecommendationSurveyServiceTest` 통과, `./gradlew test` 전체 통과. 서비스 테스트는 `저물가 + 음식 중심` 시나리오에서 `말레이시아`가 `싱가포르`보다 앞서도록 기대값을 고정했다.
+- 면접에서 30초 안에 설명하는 요약: 추천 후보 풀을 넓힌 뒤에는 점수식도 한 번 다듬었습니다. 이번에는 정확 일치 보너스, 물가 초과 패널티, 생활 조건 coherence bonus를 추가하고, 동점 비교 기준도 `강한 신호 개수`와 `정확 일치 개수`까지 보게 해서 설문 의도가 결과에 더 직접 반영되도록 조정했습니다.
+- 아직 내가 이해가 부족한 부분: 지금 경계값은 서비스 내부 상수로 관리되는데, 이후 추천 품질을 더 높이려면 실제 사용자 피드백이나 저장된 추천 이력을 기준으로 어떤 값을 재조정할지 실험 체계가 더 필요하다.

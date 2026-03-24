@@ -413,6 +413,7 @@
 - `RecommendationCountryProfileCatalog`로 추천 계산에 쓰는 국가 프로필 30개 정의
 - `RecommendationSurveyForm`으로 요청 바인딩 및 답변 유효성 검증 추가
 - `RecommendationSurveyService.recommend()`에서 가중치 기반 상위 3개 국가 계산 구현
+- `RecommendationSurveyService` 점수식을 sharper하게 조정해 정확 일치 보너스, 초과 물가 패널티, coherence bonus, 동점 보조 비교 기준을 추가
 - `/recommendation/survey` 설문 페이지와 `/recommendation/survey` POST 결과 페이지 SSR 흐름 추가
 - 결과 페이지에서 설문 입력 요약, top 3 국가, 서버 계산 이유 3개 노출
 - 추천 기능을 홈 화면과 공통 헤더 내비게이션에 연결
@@ -423,7 +424,6 @@
 
 - 추천 결과 저장 구조를 DB까지 확장할지 결정
 - 후보 풀이 넓어진 뒤에도 결과가 특정 지역으로 치우치지 않는지 확인
-- 가중치 튜닝과 경계값 조정
 - 다음 단계에서 LLM 설명 프롬프트로 넘길 구조화 입력 고정
 
 반드시 이해할 것:

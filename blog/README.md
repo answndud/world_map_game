@@ -73,13 +73,14 @@
 13. [랭킹 화면에 모드/범위 필터와 동점 규칙 정리하기](./08-ranking-filter-and-tie-rule.md)
 14. [설문 기반 나라 추천 엔진 만들기](./09-survey-recommendation-engine.md)
 15. [추천 후보 국가 풀을 30개로 넓히기](./10-expand-recommendation-candidate-pool.md)
-16. LLM으로 추천 결과 설명 붙이기
+16. [추천 가중치와 경계값 튜닝하기](./11-recommendation-weight-tuning.md)
+17. LLM으로 추천 결과 설명 붙이기
 
 ### Part E. 확장과 포트폴리오 정리
 
-17. 인증과 내 전적 조회 붙이기
-18. Level 2와 실시간 전달 방식 고도화하기
-19. 테스트, 아키텍처, 면접 패키지로 프로젝트 마감하기
+18. 인증과 내 전적 조회 붙이기
+19. Level 2와 실시간 전달 방식 고도화하기
+20. 테스트, 아키텍처, 면접 패키지로 프로젝트 마감하기
 
 ## 읽는 순서
 
