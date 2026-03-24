@@ -1,10 +1,12 @@
 package com.worldmap.game.location.web;
 
+import com.worldmap.auth.application.GuestSessionKeyManager;
 import com.worldmap.game.location.application.LocationGameAnswerView;
 import com.worldmap.game.location.application.LocationGameService;
 import com.worldmap.game.location.application.LocationGameSessionResultView;
 import com.worldmap.game.location.application.LocationGameStartView;
 import com.worldmap.game.location.application.LocationGameStateView;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -21,15 +23,23 @@ import org.springframework.web.bind.annotation.RestController;
 public class LocationGameApiController {
 
 	private final LocationGameService locationGameService;
+	private final GuestSessionKeyManager guestSessionKeyManager;
 
-	public LocationGameApiController(LocationGameService locationGameService) {
+	public LocationGameApiController(
+		LocationGameService locationGameService,
+		GuestSessionKeyManager guestSessionKeyManager
+	) {
 		this.locationGameService = locationGameService;
+		this.guestSessionKeyManager = guestSessionKeyManager;
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	public LocationGameStartView start(@Valid @RequestBody StartLocationGameRequest request) {
-		return locationGameService.startGame(request.nickname());
+	public LocationGameStartView start(@Valid @RequestBody StartLocationGameRequest request, HttpSession httpSession) {
+		return locationGameService.startGame(
+			request.nickname(),
+			guestSessionKeyManager.ensureGuestSessionKey(httpSession)
+		);
 	}
 
 	@GetMapping("/{sessionId}/state")

@@ -20,13 +20,22 @@ public class LocationGameSession extends BaseGameSession {
 	protected LocationGameSession() {
 	}
 
-	private LocationGameSession(UUID id, String playerNickname, Integer totalRounds) {
-		super(id, playerNickname, totalRounds);
+	private LocationGameSession(UUID id, String playerNickname, Long memberId, String guestSessionKey, Integer totalRounds) {
+		super(id, playerNickname, memberId, guestSessionKey, totalRounds);
 		this.livesRemaining = DEFAULT_LIVES;
 	}
 
 	public static LocationGameSession ready(String playerNickname, Integer totalRounds) {
-		return new LocationGameSession(UUID.randomUUID(), playerNickname, totalRounds);
+		return new LocationGameSession(UUID.randomUUID(), playerNickname, null, null, totalRounds);
+	}
+
+	public static LocationGameSession ready(
+		String playerNickname,
+		Long memberId,
+		String guestSessionKey,
+		Integer totalRounds
+	) {
+		return new LocationGameSession(UUID.randomUUID(), playerNickname, memberId, guestSessionKey, totalRounds);
 	}
 
 	public void planNextStage(Integer nextStageNumber) {

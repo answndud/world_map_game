@@ -1,10 +1,12 @@
 package com.worldmap.game.population.web;
 
+import com.worldmap.auth.application.GuestSessionKeyManager;
 import com.worldmap.game.population.application.PopulationGameAnswerView;
 import com.worldmap.game.population.application.PopulationGameService;
 import com.worldmap.game.population.application.PopulationGameSessionResultView;
 import com.worldmap.game.population.application.PopulationGameStartView;
 import com.worldmap.game.population.application.PopulationGameStateView;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -21,15 +23,23 @@ import org.springframework.web.bind.annotation.RestController;
 public class PopulationGameApiController {
 
 	private final PopulationGameService populationGameService;
+	private final GuestSessionKeyManager guestSessionKeyManager;
 
-	public PopulationGameApiController(PopulationGameService populationGameService) {
+	public PopulationGameApiController(
+		PopulationGameService populationGameService,
+		GuestSessionKeyManager guestSessionKeyManager
+	) {
 		this.populationGameService = populationGameService;
+		this.guestSessionKeyManager = guestSessionKeyManager;
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	public PopulationGameStartView start(@Valid @RequestBody StartPopulationGameRequest request) {
-		return populationGameService.startGame(request.nickname());
+	public PopulationGameStartView start(@Valid @RequestBody StartPopulationGameRequest request, HttpSession httpSession) {
+		return populationGameService.startGame(
+			request.nickname(),
+			guestSessionKeyManager.ensureGuestSessionKey(httpSession)
+		);
 	}
 
 	@GetMapping("/{sessionId}/state")

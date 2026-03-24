@@ -20,13 +20,22 @@ public class PopulationGameSession extends BaseGameSession {
 	protected PopulationGameSession() {
 	}
 
-	private PopulationGameSession(UUID id, String playerNickname, Integer totalRounds) {
-		super(id, playerNickname, totalRounds);
+	private PopulationGameSession(UUID id, String playerNickname, Long memberId, String guestSessionKey, Integer totalRounds) {
+		super(id, playerNickname, memberId, guestSessionKey, totalRounds);
 		this.livesRemaining = DEFAULT_LIVES;
 	}
 
 	public static PopulationGameSession ready(String playerNickname, Integer totalRounds) {
-		return new PopulationGameSession(UUID.randomUUID(), playerNickname, totalRounds);
+		return new PopulationGameSession(UUID.randomUUID(), playerNickname, null, null, totalRounds);
+	}
+
+	public static PopulationGameSession ready(
+		String playerNickname,
+		Long memberId,
+		String guestSessionKey,
+		Integer totalRounds
+	) {
+		return new PopulationGameSession(UUID.randomUUID(), playerNickname, memberId, guestSessionKey, totalRounds);
 	}
 
 	public void planNextStage(Integer nextStageNumber) {

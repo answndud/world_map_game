@@ -44,6 +44,12 @@ public class LeaderboardRecord {
 	@Column(name = "player_nickname", nullable = false, length = 20)
 	private String playerNickname;
 
+	@Column(name = "member_id")
+	private Long memberId;
+
+	@Column(name = "guest_session_key", length = 64)
+	private String guestSessionKey;
+
 	@Column(name = "total_score", nullable = false)
 	private Integer totalScore;
 
@@ -71,6 +77,8 @@ public class LeaderboardRecord {
 		LeaderboardGameMode gameMode,
 		LeaderboardGameLevel gameLevel,
 		String playerNickname,
+		Long memberId,
+		String guestSessionKey,
 		Integer totalScore,
 		Long rankingScore,
 		Integer clearedStageCount,
@@ -83,6 +91,8 @@ public class LeaderboardRecord {
 		this.gameMode = gameMode;
 		this.gameLevel = gameLevel;
 		this.playerNickname = playerNickname;
+		this.memberId = memberId;
+		this.guestSessionKey = guestSessionKey;
 		this.totalScore = totalScore;
 		this.rankingScore = rankingScore;
 		this.clearedStageCount = clearedStageCount;
@@ -97,6 +107,8 @@ public class LeaderboardRecord {
 		LeaderboardGameMode gameMode,
 		LeaderboardGameLevel gameLevel,
 		String playerNickname,
+		Long memberId,
+		String guestSessionKey,
 		Integer totalScore,
 		Long rankingScore,
 		Integer clearedStageCount,
@@ -109,6 +121,8 @@ public class LeaderboardRecord {
 			gameMode,
 			gameLevel,
 			playerNickname,
+			memberId,
+			guestSessionKey,
 			totalScore,
 			rankingScore,
 			clearedStageCount,
@@ -140,6 +154,14 @@ public class LeaderboardRecord {
 
 	public String getPlayerNickname() {
 		return playerNickname;
+	}
+
+	public Long getMemberId() {
+		return memberId;
+	}
+
+	public String getGuestSessionKey() {
+		return guestSessionKey;
 	}
 
 	public Integer getTotalScore() {

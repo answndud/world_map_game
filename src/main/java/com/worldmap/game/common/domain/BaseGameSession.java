@@ -21,6 +21,12 @@ public abstract class BaseGameSession implements Persistable<UUID> {
 	@Column(name = "player_nickname", nullable = false, length = 20)
 	private String playerNickname;
 
+	@Column(name = "member_id")
+	private Long memberId;
+
+	@Column(name = "guest_session_key", length = 64)
+	private String guestSessionKey;
+
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false, length = 20)
 	private GameSessionStatus status;
@@ -49,9 +55,11 @@ public abstract class BaseGameSession implements Persistable<UUID> {
 	protected BaseGameSession() {
 	}
 
-	protected BaseGameSession(UUID id, String playerNickname, Integer totalRounds) {
+	protected BaseGameSession(UUID id, String playerNickname, Long memberId, String guestSessionKey, Integer totalRounds) {
 		this.id = id;
 		this.playerNickname = playerNickname;
+		this.memberId = memberId;
+		this.guestSessionKey = guestSessionKey;
 		this.status = GameSessionStatus.READY;
 		this.totalRounds = totalRounds;
 		this.currentRoundNumber = 1;
@@ -140,6 +148,14 @@ public abstract class BaseGameSession implements Persistable<UUID> {
 
 	public String getPlayerNickname() {
 		return playerNickname;
+	}
+
+	public Long getMemberId() {
+		return memberId;
+	}
+
+	public String getGuestSessionKey() {
+		return guestSessionKey;
 	}
 
 	public GameSessionStatus getStatus() {
