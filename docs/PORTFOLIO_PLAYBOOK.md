@@ -530,7 +530,7 @@
 - 내 랭킹 확인
 - admin 라우트 접근 제어
 - 운영용 대시보드 권한 분리
-- 현재는 public 헤더 정리를 위해 `/mypage` placeholder shell만 먼저 추가했고, 실제 사용자 데이터와 인증은 아직 붙이지 않았다
+- 게스트 플레이 유지 + 로그인 시 현재 브라우저 기록 귀속
 
 현재까지 완료된 항목:
 
@@ -548,11 +548,17 @@
 - 로그인 사용자가 새로 시작하는 위치/인구수 게임은 request nickname 대신 계정 닉네임을 사용하고, 세션/랭킹 기록을 `memberId` ownership으로 저장하도록 연결했다
 - `GuestProgressClaimService`를 추가해 회원가입/로그인 직후 현재 브라우저의 `guestSessionKey` 기록을 계정 ownership으로 귀속하도록 연결했다
 - guest로 저장됐던 게임 세션 / 랭킹 레코드는 claim 시 `memberId`를 채우고 `guestSessionKey`는 비워 ownership을 단일화한다
+- `MyPageService`를 추가해 `/mypage`가 로그인 사용자의 `leaderboard_record`를 읽어 총 완료 플레이 수, 모드별 최고 점수, 최고 랭킹, 최근 플레이 10개를 보여주도록 연결했다
+- `/mypage`는 raw game session 전체보다 먼저 `leaderboard_record`를 읽는다. 완료된 run 단위가 이미 정규화돼 있어 최고 기록과 최근 기록을 설명하기 쉽고, 당시 랭킹 위치도 바로 연결할 수 있기 때문이다
+- guest로 한 판 끝낸 뒤 회원가입하면, 귀속된 `leaderboard_record`가 즉시 `/mypage` 최근 플레이와 최고 기록에 반영되는 통합 테스트를 고정했다
 
 이 단계에서 남은 일:
 
-- `/mypage`에 내 최고 점수 / 최근 플레이 / 내 랭킹 연결
 - admin 화면 접근 제어 구현
+- `/mypage` 세부 지표 확장 여부 결정
+  - 연속 최고 기록
+  - 모드별 누적 플레이 시간
+  - 정확도 / 평균 시도 수 같은 원본 세션 기반 지표
 
 반드시 이해할 것:
 
@@ -561,11 +567,13 @@
 - 왜 이메일 없는 단순 계정으로도 현재 서비스 목적을 충족할 수 있는지
 - 로그인 전 guest 기록과 로그인 후 member 기록이 어떻게 달라지는지
 - 왜 guest 기록 귀속 시 `playerNickname`은 바꾸지 않고 ownership만 바꾸는지
+- 왜 `/mypage` 첫 구현은 raw 세션 테이블보다 `leaderboard_record`에서 시작하는지
 
 면접 포인트:
 
 - 인증 추가 전후로 데이터 모델이 어떻게 바뀌는가
 - 왜 비회원 플레이를 버리지 않고 유지했는가
+- 왜 내 기록 허브 첫 버전은 `leaderboard_record` 기반으로 만드는 것이 설명과 구현 모두에 유리한가
 
 완료 기준:
 

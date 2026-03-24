@@ -1689,3 +1689,32 @@
 - 테스트 내용: `./gradlew test --tests com.worldmap.auth.AuthFlowIntegrationTest --tests com.worldmap.auth.GuestSessionOwnershipIntegrationTest` 통과 후 `./gradlew test` 전체 통과. 새 시나리오에서는 guest로 위치 게임을 시작하고 게임오버까지 간 뒤, 같은 `MockHttpSession`으로 회원가입하면 기존 게임 세션과 랭킹 레코드가 모두 `memberId` ownership으로 바뀌고 `guestSessionKey`는 제거되는지 검증했다.
 - 면접에서 30초 안에 설명하는 요약: 로그인 화면만 붙이면 이전 guest 기록은 따로 놀게 됩니다. 그래서 회원가입/로그인 직후 현재 브라우저의 `guestSessionKey` 기록만 찾아 `memberId`로 ownership을 바꾸는 `GuestProgressClaimService`를 추가했습니다. 이때 당시 닉네임 snapshot은 유지하고, 소유자 필드만 바꿔 과거 기록 표시와 계정 귀속을 동시에 만족시켰습니다.
 - 아직 내가 이해가 부족한 부분: claim 이후 `/mypage`에서 어떤 집계부터 우선 보여줄지, 그리고 guest 기록을 언제까지 브라우저 세션 기준으로만 제한할지 다음 조각에서 더 정해야 한다. admin 접근 제어를 같은 세션 모델 위에 얹을지, 별도 보안 계층으로 분리할지도 후속 판단이 필요하다.
+
+## 2026-03-24 - `leaderboard_record` 기반 `/mypage` 기록 대시보드 연결
+
+- 단계: 8. 인증, 전적, 마이페이지
+- 목적: 이전 단계까지는 로그인과 guest 기록 귀속까지만 끝나서, 사용자가 계정으로 무엇을 얻는지 화면에서 바로 느끼기 어려웠다. 그래서 이번 조각은 `/mypage`를 placeholder에서 실제 기록 허브로 바꾸고, 계정에 귀속된 완료 run을 읽어 가장 먼저 보여줄 지표를 고정하는 데 집중한다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/mypage/application/MyPageService.java`
+  - `src/main/java/com/worldmap/mypage/application/MyPageDashboardView.java`
+  - `src/main/java/com/worldmap/mypage/application/MyPageBestRunView.java`
+  - `src/main/java/com/worldmap/mypage/application/MyPageRecentPlayView.java`
+  - `src/main/java/com/worldmap/ranking/domain/LeaderboardRecordRepository.java`
+  - `src/main/java/com/worldmap/web/MyPageController.java`
+  - `src/main/resources/templates/mypage.html`
+  - `src/main/resources/static/css/site.css`
+  - `src/test/java/com/worldmap/web/MyPageControllerTest.java`
+  - `src/test/java/com/worldmap/auth/AuthFlowIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/26-build-mypage-from-member-leaderboard-runs.md`
+- 요청 흐름 / 데이터 흐름: `GET /mypage`는 `MyPageController.myPage()`에서 시작한다. 컨트롤러는 `MemberSessionManager.currentMember()`로 로그인 사용자를 확인하고, 로그인 상태면 `MyPageService.loadDashboard(memberId)`를 호출한다. `MyPageService`는 `LeaderboardRecordRepository`에서 현재 member의 완료 run 개수, 모드별 최고 기록, 최근 완료 run 10개를 읽고 `MyPageDashboardView`로 묶어 템플릿에 넘긴다. 따라서 public 요청은 그대로 SSR이지만, 실제 상태 조회는 `leaderboard_record` 집계 계층에서 이루어진다.
+- 데이터 / 상태 변화: 이번 단계는 새로운 상태 전이보다 “어떤 완료 기록을 먼저 보여줄지”를 정하는 read 모델 추가다. `leaderboard_record`는 이미 게임오버 시점 점수, 시도 수, 클리어 Stage, 모드, ownership을 한 행에 담고 있으므로 `/mypage` 첫 버전에서 다시 원본 세션을 조립하지 않아도 된다. 로그인 사용자의 경우 `memberId` 기준으로만 읽고, guest 사용자는 여전히 로그인 유도 화면을 본다.
+- 핵심 도메인 개념: `/mypage` 첫 구현을 raw 게임 세션이 아니라 `leaderboard_record`에서 시작한 이유는 “완료된 run 단위의 설명 가능성” 때문이다. 최고 점수, 최고 랭킹, 최근 플레이는 모두 완료된 run 집계이므로 이미 정규화된 랭킹 레코드를 읽는 편이 서비스 책임이 더 명확하다. 컨트롤러는 로그인 여부와 뷰 분기만 맡고, 최고 기록 선택과 랭킹 계산, 최근 플레이 조합은 `MyPageService`가 맡는다.
+- 예외 상황 또는 엣지 케이스: 아직 완료된 run이 없는 member는 `/mypage`에서 최고 기록 대신 `기록 없음`, 최근 플레이 영역에서는 안내 메시지를 본다. 최고 랭킹은 현재 record id를 기준으로 전체 정렬 목록에서 순서를 찾기 때문에, 데이터가 매우 커지면 이후 dedicated rank query나 cache를 고려할 수 있다. 또한 현재는 `LEVEL_1` 기록만 읽는다.
+- 테스트 내용: `./gradlew test --tests com.worldmap.web.MyPageControllerTest --tests com.worldmap.auth.AuthFlowIntegrationTest` 통과 후 `./gradlew test` 전체 통과. `MyPageControllerTest`는 로그인 사용자에게 최고 점수 / 최근 플레이 / 로그아웃이 보이는지 검증하고, `AuthFlowIntegrationTest`는 guest로 플레이 후 회원가입하면 귀속된 기록이 `/mypage`에서 바로 보이는지 확인한다.
+- 면접에서 30초 안에 설명하는 요약: `/mypage` 첫 버전은 원본 게임 세션을 다시 조립하지 않고, 게임오버 시점에 이미 정규화된 `leaderboard_record`를 읽어 만들었습니다. 그래서 총 완료 플레이 수, 모드별 최고 점수, 당시 최고 랭킹, 최근 완료 이력을 한 번에 보여줄 수 있습니다. 컨트롤러는 로그인 세션만 확인하고, 어떤 기록을 고를지는 `MyPageService`가 맡아 read 모델 책임을 분리했습니다.
+- 아직 내가 이해가 부족한 부분: 지금은 `leaderboard_record`만 읽기 때문에 정확도, 평균 시도 수, 실패한 run까지 포함한 누적 통계는 아직 없다. 이런 지표를 추가할 때는 raw 게임 세션 기반 read model을 따로 둘지, 현재 대시보드에 혼합할지를 다음 조각에서 더 판단해야 한다.
