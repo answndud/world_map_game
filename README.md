@@ -185,6 +185,7 @@
 - 결과 페이지는 서버가 계산한 매칭 점수와 핵심 이유 3개를 deterministic하게 보여준다.
 - 추천 결과 자체는 저장하지 않고, 결과 페이지에서 `1~5점 만족도 + surveyVersion + engineVersion + 사용자가 선택한 8개 답변`만 익명 피드백으로 수집한다.
 - `/recommendation/feedback-insights`와 `/api/recommendation/feedback/summary`에서 `surveyVersion + engineVersion` 기준 평균 점수, 응답 수, 1~5점 분포를 읽어 설문 개선 기준으로 사용한다.
+- 홈, 추천, 랭킹 public 화면은 내부 구현 용어보다 플레이어가 바로 이해할 수 있는 제품 언어로 다시 정리했고, 버전/집계/로드맵 같은 내부 정보는 `/admin`으로 분리하는 방향으로 간다.
 - 현재 public 화면과 내부 운영 정보는 분리 설계를 진행 중이며, 버전/집계/로드맵 같은 내부 정보는 이후 `/admin` read-only 대시보드로 이동할 계획이다.
 - 이 피드백은 설문 문항과 가중치를 계속 개선하기 위한 신호로 사용하고, 오프라인 AI-assisted 평가 루프는 `docs/recommendation/OFFLINE_AI_SURVEY_IMPROVEMENT.md`와 `docs/recommendation/PERSONA_EVAL_SET.md`에서 관리한다.
 - `RecommendationOfflinePersonaCoverageTest`로 18개 페르소나 baseline을 자동 평가하고, 현재 엔진이 최소 15개 시나리오에서 기대 후보 1개 이상을 top 3에 포함하는지를 품질 하한으로 고정했다.

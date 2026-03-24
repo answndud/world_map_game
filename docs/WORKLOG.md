@@ -1471,3 +1471,31 @@
 - 테스트 내용: 설계 문서 작업이라 애플리케이션 테스트는 실행하지 않았다.
 - 면접에서 30초 안에 설명하는 요약: 사용자 화면에 개발 중인 프로젝트 냄새가 나면 제품 몰입이 깨지기 때문에, public 문구와 admin 운영 화면을 분리하는 설계를 먼저 잡았습니다. 앞으로는 홈/추천/랭킹 public 화면에서는 게임 경험만 보여 주고, 버전/집계/로드맵 같은 정보는 `/admin` read-only 대시보드로 옮길 예정입니다.
 - 아직 내가 이해가 부족한 부분: admin 1차를 추천 운영 화면만 먼저 만들지, 홈의 빌드/로드맵까지 한 번에 옮길지는 실제 구현 범위를 더 잘게 자르며 판단해야 한다. 또 auth 전 단계에서 admin 링크를 어떻게 숨길지도 함께 정해야 한다.
+
+## 2026-03-24 - public 화면 문구를 제품 언어로 전면 보정
+
+- 단계: 6. 설문 기반 추천 엔진
+- 목적: 플레이어가 보는 홈, 추천, 랭킹 화면에서 내부 개발 언어가 새어 나오지 않게 정리한다. 지금까지는 `Spring Boot`, `Current Build`, `Redis Leaderboard`, `deterministic`, `Offline Eval`, `만족도 집계 보기` 같은 표현이 public 화면에 남아 있어 서비스보다 데모처럼 보이는 문제가 있었다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/web/HomeController.java`
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationQuestionCatalog.java`
+  - `src/main/resources/templates/home.html`
+  - `src/main/resources/templates/recommendation/survey.html`
+  - `src/main/resources/templates/recommendation/result.html`
+  - `src/main/resources/templates/ranking/index.html`
+  - `src/test/java/com/worldmap/web/HomeControllerTest.java`
+  - `src/test/java/com/worldmap/recommendation/RecommendationPageIntegrationTest.java`
+  - `src/test/java/com/worldmap/ranking/LeaderboardIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/19-refresh-public-copy-before-admin-split.md`
+- 요청 흐름 / 데이터 흐름: 요청 흐름과 상태 변화는 바뀌지 않았다. 홈은 여전히 `HomeController -> home.html`, 추천은 `RecommendationPageController -> survey/result`, 랭킹은 `LeaderboardPageController -> ranking/index.html`로 간다. 이번 단계는 같은 요청 흐름 위에서 public copy만 다시 썼다. 추천 결과 화면에서는 `feedback-insights`로 가는 링크를 제거해, 플레이어가 내부 운영 페이지로 진입하지 않게 했다.
+- 데이터 / 상태 변화: DB, 엔티티, API 응답 구조는 그대로다. 바뀐 것은 public 템플릿과 홈 화면 view model의 언어다. 추천 결과 hidden payload의 `surveyVersion`, `engineVersion`은 피드백 API 용도로만 유지되고, 화면 설명에서는 노출하지 않는다.
+- 핵심 도메인 개념: “무엇을 계산하느냐”와 “그 계산을 사용자에게 어떤 언어로 보여 주느냐”는 별개다. 추천 집계와 랭킹 계산은 그대로 서버가 맡더라도, public 화면은 플레이어의 행동과 보상 중심 언어로 다시 써야 제품처럼 보인다. 그래서 이번에는 서비스 로직을 건드리지 않고 copy와 view model만 손봤다.
+- 예외 상황 또는 엣지 케이스: `/recommendation/feedback-insights` 자체는 아직 남아 있다. 이번 단계에서는 public 링크만 제거했고, 실제 route 분리와 `/admin` 이동은 다음 단계에서 한다. 또한 hidden field 안의 `surveyVersion`, `engineVersion`은 UI용이 아니라 피드백 저장용이라 유지했다.
+- 테스트 내용: `./gradlew test --tests com.worldmap.web.HomeControllerTest --tests com.worldmap.recommendation.RecommendationPageIntegrationTest --tests com.worldmap.ranking.LeaderboardIntegrationTest` 통과, `./gradlew test` 전체 통과.
+- 면접에서 30초 안에 설명하는 요약: public 화면에 개발 용어가 남아 있으면 서비스보다 포트폴리오 데모처럼 보이기 때문에, 홈·추천·랭킹 copy를 제품 언어로 다시 썼습니다. 요청 흐름과 서버 계산은 그대로 두고, view model과 템플릿만 바꿔 플레이어가 바로 이해할 수 있는 화면으로 정리했고, 내부 운영 페이지로 가는 링크도 public 결과 화면에서 제거했습니다.
+- 아직 내가 이해가 부족한 부분: 이번에는 public copy만 정리했기 때문에, 내부 운영 정보를 실제 `/admin` 라우트로 옮기는 작업이 아직 남아 있다. 다음 단계에서 admin 대시보드 1차를 만들 때 어떤 데이터까지 한 화면에 모을지 더 정해야 한다.

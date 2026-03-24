@@ -422,6 +422,7 @@
 - 추천 기능을 홈 화면과 공통 헤더 내비게이션에 연결
 - 공통 CSS에서 버튼, 패널, 입력창, 모달, 테이블 셸, 배지의 모서리를 완전한 사각형으로 통일하고, 스타일 버전 쿼리까지 적용해 실제 반영 경로를 함께 정리
 - public 화면에서 내부 구현 문구를 제거하고, 버전/집계/로드맵은 별도 admin 화면으로 옮기기 위한 `/Users/alex/project/worldmap/docs/PLAYER_COPY_AND_ADMIN_SPLIT_PLAN.md` 설계 초안 작성
+- 홈, 추천 설문/결과, 랭킹 public 화면의 copy를 제품 언어 중심으로 다시 쓰고, 추천 결과 화면에서 내부 운영 페이지 링크를 제거
 - 추천 페이지 통합 테스트와 추천 서비스 단위 테스트 통과
 
 이 단계에서 남은 일:
@@ -430,6 +431,7 @@
 - 낮은 만족도 응답을 답변 조합 단위로 더 내려다볼지 결정
 - public 추천 화면의 helper text와 설명 문구를 제품 언어로 전면 보정
 - `/recommendation/feedback-insights`를 public에서 떼고 `/admin/recommendation/feedback`으로 옮기는 read-only admin 1차
+- 홈의 빌드/로드맵 영역을 실제 `/admin` 화면으로 옮기기
 - 다음 단계에서 서브 에이전트 평가에 사용할 설문 버전/시나리오 자산 고정
 
 반드시 이해할 것:
