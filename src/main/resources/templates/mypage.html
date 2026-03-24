@@ -17,7 +17,7 @@
             <strong th:text="${currentMember.nickname}">player</strong>
             님의 계정이 연결되었습니다. 지금부터 시작하는 게임 기록은 이 계정에 누적됩니다.
             이 브라우저에서 만들었던 비회원 기록도 현재 계정으로 이어집니다.
-            상세 전적, 최고 점수, 최근 플레이는 다음 조각에서 이 화면에 이어 붙입니다.
+            현재는 모드별 최고 점수, 내 최고 랭킹, 최근 플레이까지 먼저 확인할 수 있습니다.
         </p>
         <p class="hero-copy" th:unless="${isAuthenticated}">
             비회원은 지금처럼 바로 플레이할 수 있지만, 브라우저 세션이 바뀌면 기록이 이어지지 않습니다.
@@ -26,43 +26,95 @@
     </header>
 
     <main class="layout">
-        <section class="panel game-panel">
+        <section class="panel game-panel" th:if="${isAuthenticated}">
             <div class="panel-head">
-                <h2 th:if="${isAuthenticated}">현재 연결 상태</h2>
-                <h2 th:unless="${isAuthenticated}">계정 연결</h2>
-                <p th:if="${isAuthenticated}">닉네임 유지와 점수 누적을 위한 단순 계정이 연결된 상태입니다.</p>
-                <p th:unless="${isAuthenticated}">계정은 닉네임과 비밀번호만 사용합니다. 커뮤니티 기능 없이 기록 유지에만 집중합니다.</p>
+                <h2>내 기록 요약</h2>
+                <p>완료된 run 기준으로 최고 점수, 최고 랭킹, 최근 플레이를 보여줍니다.</p>
             </div>
 
             <div class="stats-grid">
                 <article class="stat-card">
                     <span class="subtitle">PROFILE</span>
-                    <strong th:if="${isAuthenticated}" th:text="${currentMember.nickname}">준비 중</strong>
-                    <strong th:unless="${isAuthenticated}">Guest</strong>
+                    <strong th:text="${dashboard.nickname}">준비 중</strong>
+                </article>
+                <article class="stat-card">
+                    <span class="subtitle">총 완료 플레이</span>
+                    <strong th:text="${dashboard.totalCompletedRuns} + '회'">0회</strong>
+                </article>
+                <article class="stat-card">
+                    <span class="subtitle">LOCATION BEST</span>
+                    <strong th:if="${dashboard.locationBest != null}"
+                            th:text="|${dashboard.locationBest.totalScore}점 / #${dashboard.locationBest.bestRank}|">0점 / #0</strong>
+                    <strong th:unless="${dashboard.locationBest != null}">기록 없음</strong>
+                </article>
+                <article class="stat-card">
+                    <span class="subtitle">POPULATION BEST</span>
+                    <strong th:if="${dashboard.populationBest != null}"
+                            th:text="|${dashboard.populationBest.totalScore}점 / #${dashboard.populationBest.bestRank}|">0점 / #0</strong>
+                    <strong th:unless="${dashboard.populationBest != null}">기록 없음</strong>
+                </article>
+            </div>
+
+            <section class="panel nested-panel">
+                <div class="panel-head">
+                    <h2>최근 플레이</h2>
+                    <p>계정에 귀속된 최근 완료 run 10개를 최신순으로 보여줍니다.</p>
+                </div>
+
+                <div class="history-list" th:if="${!dashboard.recentPlays.isEmpty()}">
+                    <article class="history-item" th:each="play : ${dashboard.recentPlays}">
+                        <div class="history-main">
+                            <strong th:text="${play.gameModeLabel}">국가 위치 찾기</strong>
+                            <span class="subtitle" th:text="${#temporals.format(play.finishedAt, 'yyyy-MM-dd HH:mm')}">2026-03-24 18:30</span>
+                        </div>
+                        <div class="history-metrics">
+                            <span th:text="${play.totalScore} + '점'">0점</span>
+                            <span th:text="'#' + ${play.rankAtRecordTime}">#1</span>
+                            <span th:text="'Stage ' + ${play.clearedStageCount}">Stage 0</span>
+                            <span th:text="'시도 ' + ${play.totalAttemptCount} + '회'">시도 0회</span>
+                        </div>
+                    </article>
+                </div>
+
+                <p class="message-box" th:unless="${!dashboard.recentPlays.isEmpty()}">
+                    아직 완료된 플레이 기록이 없습니다. 게임을 한 번 끝까지 진행하면 여기에서 내 기록을 볼 수 있습니다.
+                </p>
+            </section>
+
+            <div class="page-actions">
+                <a class="primary-link" th:href="@{/games/location/start}">위치 게임 시작</a>
+                <a class="secondary-button" th:href="@{/games/population/start}">인구수 게임 시작</a>
+                <a class="secondary-button" th:href="@{/ranking}">랭킹 보기</a>
+                <form class="inline-form" th:action="@{/logout}" method="post">
+                    <button class="secondary-button" type="submit">로그아웃</button>
+                </form>
+            </div>
+        </section>
+
+        <section class="panel game-panel" th:unless="${isAuthenticated}">
+            <div class="panel-head">
+                <h2>계정 연결</h2>
+                <p>계정은 닉네임과 비밀번호만 사용합니다. 커뮤니티 기능 없이 기록 유지에만 집중합니다.</p>
+            </div>
+
+            <div class="stats-grid">
+                <article class="stat-card">
+                    <span class="subtitle">PROFILE</span>
+                    <strong>Guest</strong>
                 </article>
                 <article class="stat-card">
                     <span class="subtitle">ACCOUNT</span>
-                    <strong th:if="${isAuthenticated}">Active Session</strong>
-                    <strong th:unless="${isAuthenticated}">로그인 필요</strong>
+                    <strong>로그인 필요</strong>
                 </article>
                 <article class="stat-card">
                     <span class="subtitle">NEXT</span>
-                    <strong th:if="${isAuthenticated}">전적 연결 예정</strong>
-                    <strong th:unless="${isAuthenticated}">점수 유지 시작</strong>
+                    <strong>점수 유지 시작</strong>
                 </article>
             </div>
 
             <div class="page-actions">
-                <th:block th:if="${isAuthenticated}">
-                    <a class="primary-link" th:href="@{/}">메인으로 돌아가기</a>
-                    <form class="inline-form" th:action="@{/logout}" method="post">
-                        <button class="secondary-button" type="submit">로그아웃</button>
-                    </form>
-                </th:block>
-                <th:block th:unless="${isAuthenticated}">
-                    <a class="primary-link" th:href="@{/signup}">회원가입</a>
-                    <a class="secondary-button" th:href="@{/login}">로그인</a>
-                </th:block>
+                <a class="primary-link" th:href="@{/signup}">회원가입</a>
+                <a class="secondary-button" th:href="@{/login}">로그인</a>
             </div>
         </section>
     </main>

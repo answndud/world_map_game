@@ -661,6 +661,49 @@ button:disabled {
     display: inline-flex;
 }
 
+.nested-panel {
+    margin-top: 18px;
+    padding: 18px 20px;
+    background: rgba(5, 12, 22, 0.62);
+    border-color: rgba(141, 224, 255, 0.12);
+    box-shadow: none;
+}
+
+.history-list {
+    display: grid;
+    gap: 12px;
+}
+
+.history-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: center;
+    padding: 14px 16px;
+    border: 1px solid var(--line);
+    background: rgba(8, 16, 30, 0.6);
+}
+
+.history-main {
+    display: grid;
+    gap: 6px;
+}
+
+.history-main strong {
+    font-family: "Orbitron", "Space Grotesk", sans-serif;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.history-metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: flex-end;
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
 .ranking-sync-bar {
     display: flex;
     flex-wrap: wrap;
@@ -1154,5 +1197,14 @@ button:disabled {
     .modal-actions .primary-button,
     .modal-actions .secondary-button {
         width: 100%;
+    }
+
+    .history-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .history-metrics {
+        justify-content: flex-start;
     }
 }

@@ -146,6 +146,15 @@ class AuthFlowIntegrationTest {
 		assertThat(claimedRecord.getMemberId()).isEqualTo(member.getId());
 		assertThat(claimedRecord.getGuestSessionKey()).isNull();
 		assertThat(claimedRecord.getPlayerNickname()).isEqualTo("guest_runner");
+
+		mockMvc.perform(get("/mypage").session(browserSession))
+			.andExpect(status().isOk())
+			.andExpect(view().name("mypage"))
+			.andExpect(content().string(containsString("총 완료 플레이")))
+			.andExpect(content().string(containsString("1회")))
+			.andExpect(content().string(containsString("국가 위치 찾기")))
+			.andExpect(content().string(containsString("최근 플레이")))
+			.andExpect(content().string(containsString("#1")));
 	}
 
 	private String startLocationGame(String nickname, MockHttpSession browserSession) throws Exception {
