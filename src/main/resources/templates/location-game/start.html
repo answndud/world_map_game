@@ -23,7 +23,12 @@
         <section class="panel game-panel">
             <div class="panel-head">
                 <h2>게임 시작</h2>
-                <p>닉네임은 선택 입력입니다. 비워 두면 `Guest`로 시작합니다.</p>
+                <p th:if="${authenticatedNickname != null}">
+                    현재 로그인 상태에서는
+                    <strong th:text="${authenticatedNickname}">player</strong>
+                    닉네임으로 기록됩니다. 아래 입력값은 비회원 플레이에서만 사용됩니다.
+                </p>
+                <p th:unless="${authenticatedNickname != null}">닉네임은 선택 입력입니다. 비워 두면 `Guest`로 시작합니다.</p>
             </div>
 
             <form id="location-start-form" class="game-form">

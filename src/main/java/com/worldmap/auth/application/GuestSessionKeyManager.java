@@ -19,4 +19,10 @@ public class GuestSessionKeyManager {
 		httpSession.setAttribute(GUEST_SESSION_KEY_ATTRIBUTE, guestSessionKey);
 		return guestSessionKey;
 	}
+
+	public String rotateGuestSessionKey(HttpSession httpSession) {
+		String guestSessionKey = "guest-" + UUID.randomUUID();
+		httpSession.setAttribute(GUEST_SESSION_KEY_ATTRIBUTE, guestSessionKey);
+		return guestSessionKey;
+	}
 }

@@ -1,6 +1,8 @@
 package com.worldmap.game.location.web;
 
+import com.worldmap.auth.application.AuthenticatedMemberSession;
 import com.worldmap.auth.application.GuestSessionKeyManager;
+import com.worldmap.auth.application.MemberSessionManager;
 import com.worldmap.game.location.application.LocationGameAnswerView;
 import com.worldmap.game.location.application.LocationGameService;
 import com.worldmap.game.location.application.LocationGameSessionResultView;
@@ -24,22 +26,27 @@ public class LocationGameApiController {
 
 	private final LocationGameService locationGameService;
 	private final GuestSessionKeyManager guestSessionKeyManager;
+	private final MemberSessionManager memberSessionManager;
 
 	public LocationGameApiController(
 		LocationGameService locationGameService,
-		GuestSessionKeyManager guestSessionKeyManager
+		GuestSessionKeyManager guestSessionKeyManager,
+		MemberSessionManager memberSessionManager
 	) {
 		this.locationGameService = locationGameService;
 		this.guestSessionKeyManager = guestSessionKeyManager;
+		this.memberSessionManager = memberSessionManager;
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	public LocationGameStartView start(@Valid @RequestBody StartLocationGameRequest request, HttpSession httpSession) {
-		return locationGameService.startGame(
-			request.nickname(),
-			guestSessionKeyManager.ensureGuestSessionKey(httpSession)
-		);
+		AuthenticatedMemberSession currentMember = memberSessionManager.currentMember(httpSession).orElse(null);
+		if (currentMember != null) {
+			return locationGameService.startMemberGame(currentMember.memberId(), currentMember.nickname());
+		}
+
+		return locationGameService.startGuestGame(request.nickname(), guestSessionKeyManager.ensureGuestSessionKey(httpSession));
 	}
 
 	@GetMapping("/{sessionId}/state")

@@ -1,6 +1,8 @@
 package com.worldmap.game.population.web;
 
+import com.worldmap.auth.application.AuthenticatedMemberSession;
 import com.worldmap.auth.application.GuestSessionKeyManager;
+import com.worldmap.auth.application.MemberSessionManager;
 import com.worldmap.game.population.application.PopulationGameAnswerView;
 import com.worldmap.game.population.application.PopulationGameService;
 import com.worldmap.game.population.application.PopulationGameSessionResultView;
@@ -24,19 +26,27 @@ public class PopulationGameApiController {
 
 	private final PopulationGameService populationGameService;
 	private final GuestSessionKeyManager guestSessionKeyManager;
+	private final MemberSessionManager memberSessionManager;
 
 	public PopulationGameApiController(
 		PopulationGameService populationGameService,
-		GuestSessionKeyManager guestSessionKeyManager
+		GuestSessionKeyManager guestSessionKeyManager,
+		MemberSessionManager memberSessionManager
 	) {
 		this.populationGameService = populationGameService;
 		this.guestSessionKeyManager = guestSessionKeyManager;
+		this.memberSessionManager = memberSessionManager;
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	public PopulationGameStartView start(@Valid @RequestBody StartPopulationGameRequest request, HttpSession httpSession) {
-		return populationGameService.startGame(
+		AuthenticatedMemberSession currentMember = memberSessionManager.currentMember(httpSession).orElse(null);
+		if (currentMember != null) {
+			return populationGameService.startMemberGame(currentMember.memberId(), currentMember.nickname());
+		}
+
+		return populationGameService.startGuestGame(
 			request.nickname(),
 			guestSessionKeyManager.ensureGuestSessionKey(httpSession)
 		);

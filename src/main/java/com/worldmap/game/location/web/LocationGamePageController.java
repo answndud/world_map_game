@@ -1,5 +1,7 @@
 package com.worldmap.game.location.web;
 
+import com.worldmap.auth.application.MemberSessionManager;
+import jakarta.servlet.http.HttpSession;
 import com.worldmap.game.location.application.LocationGameService;
 import java.util.UUID;
 import org.springframework.stereotype.Controller;
@@ -11,13 +13,17 @@ import org.springframework.web.bind.annotation.PathVariable;
 public class LocationGamePageController {
 
 	private final LocationGameService locationGameService;
+	private final MemberSessionManager memberSessionManager;
 
-	public LocationGamePageController(LocationGameService locationGameService) {
+	public LocationGamePageController(LocationGameService locationGameService, MemberSessionManager memberSessionManager) {
 		this.locationGameService = locationGameService;
+		this.memberSessionManager = memberSessionManager;
 	}
 
 	@GetMapping("/games/location/start")
-	public String startPage() {
+	public String startPage(HttpSession httpSession, Model model) {
+		memberSessionManager.currentMember(httpSession)
+			.ifPresent(currentMember -> model.addAttribute("authenticatedNickname", currentMember.nickname()));
 		return "location-game/start";
 	}
 

@@ -59,14 +59,23 @@ public class LocationGameService {
 	}
 
 	@Transactional
-	public LocationGameStartView startGame(String nickname, String guestSessionKey) {
+	public LocationGameStartView startGuestGame(String nickname, String guestSessionKey) {
+		return startGame(normalizeNickname(nickname), null, guestSessionKey);
+	}
+
+	@Transactional
+	public LocationGameStartView startMemberGame(Long memberId, String memberNickname) {
+		return startGame(memberNickname, memberId, null);
+	}
+
+	private LocationGameStartView startGame(String playerNickname, Long memberId, String guestSessionKey) {
 		List<Country> countries = getCountriesSortedByPopulation();
 
 		if (countries.size() < MINIMUM_COUNTRY_COUNT) {
 			throw new IllegalStateException("위치 찾기 게임을 시작하기 위한 국가 데이터가 충분하지 않습니다.");
 		}
 
-		LocationGameSession session = LocationGameSession.ready(normalizeNickname(nickname), null, guestSessionKey, 1);
+		LocationGameSession session = LocationGameSession.ready(playerNickname, memberId, guestSessionKey, 1);
 		session = locationGameSessionRepository.save(session);
 		createNextStage(session, 1, countries, List.of());
 		session.startGame(LocalDateTime.now());

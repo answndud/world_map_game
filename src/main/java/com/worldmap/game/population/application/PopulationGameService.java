@@ -63,14 +63,23 @@ public class PopulationGameService {
 	}
 
 	@Transactional
-	public PopulationGameStartView startGame(String nickname, String guestSessionKey) {
+	public PopulationGameStartView startGuestGame(String nickname, String guestSessionKey) {
+		return startGame(normalizeNickname(nickname), null, guestSessionKey);
+	}
+
+	@Transactional
+	public PopulationGameStartView startMemberGame(Long memberId, String memberNickname) {
+		return startGame(memberNickname, memberId, null);
+	}
+
+	private PopulationGameStartView startGame(String playerNickname, Long memberId, String guestSessionKey) {
 		List<Country> countries = getCountriesSortedByPopulation();
 
 		if (countries.size() < MINIMUM_COUNTRY_COUNT) {
 			throw new IllegalStateException("인구수 게임을 시작하기 위한 국가 데이터가 충분하지 않습니다.");
 		}
 
-		PopulationGameSession session = PopulationGameSession.ready(normalizeNickname(nickname), null, guestSessionKey, 1);
+		PopulationGameSession session = PopulationGameSession.ready(playerNickname, memberId, guestSessionKey, 1);
 		session = populationGameSessionRepository.save(session);
 		createNextStage(session, 1, countries, List.of());
 		session.startGame(LocalDateTime.now());
