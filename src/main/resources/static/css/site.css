@@ -612,6 +612,13 @@ button:disabled {
     color: var(--ink);
 }
 
+.stat-card-copy {
+    margin: 8px 0 0;
+    color: var(--text-muted);
+    line-height: 1.65;
+    font-size: 0.92rem;
+}
+
 .table-shell {
     overflow-x: auto;
     border: 1px solid var(--line);
