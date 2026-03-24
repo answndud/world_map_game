@@ -1865,3 +1865,41 @@
 - 테스트 내용: `./gradlew test --tests com.worldmap.admin.AdminPageIntegrationTest --tests com.worldmap.auth.AuthFlowIntegrationTest --tests com.worldmap.web.HomeControllerTest` 통과 후 `./gradlew test` 전체 통과. `AdminPageIntegrationTest`에서 회원 2명, 오늘 시작된 member 세션 1개, guest 세션 1개, 오늘 완료된 위치/인구 run 각 1개를 직접 넣고 `/dashboard` HTML에 `TOTAL MEMBERS`, `TODAY ACTIVE MEMBERS`, `TODAY ACTIVE GUESTS`, `TODAY COMPLETED RUNS`, `L 1 / P 1`이 실제로 보이는지 확인했다.
 - 면접에서 30초 안에 설명하는 요약: Dashboard에 운영 수치를 붙일 때 한 테이블에서 다 읽지 않았습니다. 총 회원 수는 `member_account`, 오늘 활성 회원/게스트는 각 게임 세션의 `startedAt`, 오늘 완료된 게임 수는 `leaderboard_record.finishedAt`를 source of truth로 삼았습니다. 그리고 위치/인구수 두 모드에서 중복된 회원이나 guest를 중복 집계하지 않도록 distinct id를 서비스에서 합쳐 `AdminDashboardActivityView`로 만들었습니다.
 - 아직 내가 이해가 부족한 부분: 지금은 snapshot 카드만 있고 기간별 추이는 없다. 다음 단계에서는 `최근 7일 활성 수`, `일간 완료 run 추이`, `추천 피드백 추이`처럼 시계열 지표를 어떤 저장소에서 얼마나 단순하게 읽을지 더 정해야 한다.
+
+## 2026-03-24 - 공개 `/stats` 페이지와 local demo 계정 / 샘플 데이터 bootstrap
+
+- 단계: 8. 인증, 전적, 마이페이지
+- 목적: Dashboard는 운영자에게만 보여 주는 편이 맞지만, 일반 사용자에게도 “이 서비스가 실제로 돌아가고 있다”는 신호는 필요했다. 그래서 이번 조각은 공개 가능한 운영 수치만 보여 주는 `/stats` 페이지를 따로 만들고, local 환경에서 admin / user / 샘플 플레이 기록을 항상 같은 상태로 재현할 수 있는 demo bootstrap을 추가하는 데 집중한다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/auth/domain/Member.java`
+  - `src/main/java/com/worldmap/country/application/CountrySeedInitializer.java`
+  - `src/main/java/com/worldmap/admin/application/AdminBootstrapInitializer.java`
+  - `src/main/java/com/worldmap/admin/application/AdminDashboardService.java`
+  - `src/main/java/com/worldmap/admin/application/AdminDashboardView.java`
+  - `src/main/java/com/worldmap/demo/application/DemoBootstrapProperties.java`
+  - `src/main/java/com/worldmap/demo/application/DemoBootstrapService.java`
+  - `src/main/java/com/worldmap/demo/application/DemoBootstrapInitializer.java`
+  - `src/main/java/com/worldmap/stats/application/ServiceActivityService.java`
+  - `src/main/java/com/worldmap/stats/application/ServiceActivityView.java`
+  - `src/main/java/com/worldmap/stats/web/StatsPageController.java`
+  - `src/main/resources/application-local.yml`
+  - `src/main/resources/application-test.yml`
+  - `src/main/resources/templates/fragments/site-header.html`
+  - `src/main/resources/templates/stats/index.html`
+  - `src/test/java/com/worldmap/demo/DemoBootstrapIntegrationTest.java`
+  - `src/test/java/com/worldmap/stats/StatsPageControllerTest.java`
+  - `README.md`
+  - `docs/LOCAL_DEMO_BOOTSTRAP.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/32-make-public-stats-page-from-dashboard-metrics.md`
+  - `blog/33-bootstrap-local-demo-accounts-and-sample-runs.md`
+- 요청 흐름 / 데이터 흐름: 공개 통계는 `GET /stats -> StatsPageController -> ServiceActivityService.loadTodayActivity() + LeaderboardService.getLeaderboard(...) -> stats/index.html` 흐름으로 렌더링된다. Dashboard도 같은 `ServiceActivityService`를 재사용하므로, 공개 숫자와 운영 숫자가 서로 다른 기준으로 어긋나지 않는다. local demo 데이터는 HTTP가 아니라 애플리케이션 시작에서 들어온다. 서버가 local profile로 뜨면 `CountrySeedInitializer -> AdminBootstrapInitializer -> DemoBootstrapInitializer` 순서로 실행되고, `DemoBootstrapService`가 `orbit_runner` 계정, 샘플 leaderboard run 2개, 진행 중 guest 세션 1개를 보장한다.
+- 데이터 / 상태 변화: 이번 단계는 새 공개 페이지와 local용 재현 데이터 추가가 핵심이다. `/stats`는 `member_account`, 각 게임 세션의 `startedAt`, `leaderboard_record.finishedAt`를 읽어 총 가입자 수 / 오늘 활성 플레이어 수 / 오늘 시작된 세션 수 / 오늘 완료된 run 수 / 오늘 모드별 완료 수 / 일간 Top 3를 보여 준다. local demo bootstrap은 `member_account`에 `worldmap_admin(ADMIN)`, `orbit_runner(USER)`를 만들고, `leaderboard_record`에 demo 위치 run / demo 인구수 run을 저장하며, 위치 게임 세션 테이블에는 `demo-guest-live` 진행 중 세션을 남긴다.
+- 핵심 도메인 개념: `/stats`와 `/dashboard`를 같은 화면으로 합치지 않은 이유는 공개 정보와 운영 정보의 목적이 다르기 때문이다. `/stats`는 사회적 증거와 서비스 활성 감각을 주는 public read model이고, `/dashboard`는 추천 품질과 운영 판단용 내부 read model이다. 또 local demo 계정 생성은 signup이나 SQL 초기 스크립트가 아니라 startup runner + service 조합으로 두었다. 현재 구조에서는 국가 시드가 준비된 뒤 도메인 규칙을 이용해 session / stage / attempt / leaderboard record를 설명 가능한 상태로 만드는 편이 더 자연스럽기 때문이다.
+- 예외 상황 또는 엣지 케이스: demo bootstrap은 country 시드가 없으면 동작할 수 없으므로, runner 순서를 `country -> admin -> demo`로 명시적으로 고정했다. 이미 데이터가 있는 상태에서 서버를 다시 띄워도 `runSignature`, `guestSessionKey`, `nickname`을 기준으로 중복 생성은 피한다. 공개 `/stats`에서는 추천 만족도 집계, surveyVersion, persona baseline처럼 내부 운영 판단용 정보는 숨기고 `Dashboard`에만 남긴다.
+- 테스트 내용: `./gradlew test --tests com.worldmap.stats.StatsPageControllerTest --tests com.worldmap.demo.DemoBootstrapIntegrationTest --tests com.worldmap.admin.AdminPageIntegrationTest --tests com.worldmap.web.HomeControllerTest` 통과 후 `./gradlew test` 전체 통과. 추가로 local profile로 `./gradlew bootRun --args='--spring.profiles.active=local --server.port=8081'`을 실행해 `/stats` 응답과 PostgreSQL 실데이터를 확인했다. 실제 DB에서 `worldmap_admin / orbit_runner` 계정, demo leaderboard run 2개, `demo-guest-live` 진행 중 세션 1개가 생성되는 것을 확인했다.
+- 면접에서 30초 안에 설명하는 요약: 운영 Dashboard를 일반 사용자에게 그대로 열기보다, 공개 가능한 숫자만 보여 주는 `/stats`를 따로 만들었습니다. 이때 Dashboard와 Stats가 다른 숫자를 보여 주지 않도록 `ServiceActivityService`라는 공통 read model 서비스로 활동 지표를 분리했습니다. 또 local 환경에서는 `worldmap_admin`, `orbit_runner`, 샘플 run 2개, guest 진행 중 세션 1개를 startup runner에서 자동으로 만들어서, DB를 지워도 같은 시연 상태를 다시 재현할 수 있게 했습니다.
+- 아직 내가 이해가 부족한 부분: 현재 demo bootstrap은 local 시연 편의성을 최우선으로 둔 구조라, 나중에 샘플 데이터를 더 늘릴지 아니면 fixture 수준으로만 유지할지 경계를 더 정해야 한다. 또 `/stats`는 snapshot 카드와 일간 Top 3까지만 있으므로, 추세 그래프나 최근 7일 활성 변화는 9단계나 10단계에서 얼마나 확장할지 추가 판단이 필요하다.

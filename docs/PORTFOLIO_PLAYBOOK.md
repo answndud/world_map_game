@@ -568,6 +568,12 @@
 - `/dashboard` 첫 화면에 `총 회원 수`, `오늘 활성 회원`, `오늘 활성 게스트`, `오늘 시작된 세션`, `오늘 완료된 게임`, `오늘 모드별 완료 수` 카드를 추가했다
 - Dashboard 수치는 한 저장소에서 다 읽지 않는다. 회원 수는 `MemberRepository`, 오늘 활성 수는 각 게임 세션 repository의 `startedAt` distinct 집계, 오늘 완료 수는 `LeaderboardRecordRepository.finishedAt` 집계에서 읽는다
 - `AdminPageIntegrationTest`로 Dashboard 수치 카드가 실제 데이터 기준으로 렌더링되는지 고정했다
+- `ServiceActivityService`와 `ServiceActivityView`로 활동 지표 read model을 분리해 `/dashboard`와 공개 `/stats`가 같은 기준의 숫자를 재사용하도록 정리했다
+- `/stats` 공개 페이지를 추가해 일반 사용자도 `총 가입자 수`, `오늘 활성 플레이어 수`, `오늘 시작된 세션 수`, `오늘 완료된 게임 수`, `오늘 위치/인구수 Top 3`를 볼 수 있게 했다
+- 공개 `/stats`는 서비스 활성을 보여 주는 숫자만 노출하고, 추천 만족도 집계 / persona baseline / surveyVersion 같은 내부 운영 정보는 계속 `/dashboard`에만 남긴다
+- `DemoBootstrapProperties`, `DemoBootstrapService`, `DemoBootstrapInitializer`를 추가해 local profile 시작 시 `worldmap_admin(ADMIN)`, `orbit_runner(USER)`, 샘플 완료 run 2개, 진행 중 guest 세션 1개를 자동 생성하도록 연결했다
+- local demo bootstrap은 `country seed -> admin bootstrap -> demo bootstrap` 순서를 `@Order`로 고정해, DB를 비운 뒤 서버를 다시 띄워도 같은 확인용 상태를 재생성하게 했다
+- `DemoBootstrapIntegrationTest`, `StatsPageControllerTest`로 local dummy data bootstrap과 public stats 렌더링을 고정했다
 
 이후 고도화 아이디어:
 
@@ -596,6 +602,9 @@
 - 왜 public에 `/admin` 링크를 노출하지 않고, `ADMIN` 로그인 상태에서만 `Dashboard` 버튼을 보여주는 것이 더 자연스러운지
 - 왜 `/admin`을 바로 삭제하지 않고 legacy redirect를 한 번 두는 것이 현재 운영 안정성에 유리한지
 - 왜 Dashboard 지표를 한 테이블에서 억지로 읽지 않고, member / game session / leaderboard_record read model을 나눠 쓰는 것이 더 설명 가능한지
+- 왜 공개 `/stats`와 내부 `/dashboard`를 같은 화면으로 합치지 않고 분리하는 것이 더 맞는지
+- 왜 local demo 계정 / 샘플 run 생성은 signup이나 SQL seed보다 startup runner + service 조합으로 두는 것이 현재 구조에 더 맞는지
+- 왜 demo bootstrap은 country seed 이후에만 돌도록 순서를 고정해야 하는지
 
 면접 포인트:
 
@@ -607,6 +616,8 @@
 - 왜 admin 계정은 공개 회원가입이 아니라 환경변수 bootstrap 방식으로 운영하는가
 - 왜 운영 화면 URL을 `/admin`보다 `/dashboard`로 바꾸었는가
 - 왜 `오늘 활성 수`는 session 시작 기준, `오늘 완료 수`는 leaderboard record 기준으로 분리했는가
+- 왜 일반 사용자에게는 `/dashboard` 대신 공개 `/stats`를 별도로 열어 두었는가
+- DB가 비어도 local demo 계정과 샘플 run을 어떻게 다시 재현하는가
 
 완료 기준:
 
@@ -614,6 +625,7 @@
 - 인증 흐름을 설명할 수 있다.
 - admin 화면이 public과 분리된 권한으로 보호된다.
 - 운영자가 실제로 로그인 가능한 admin 계정을 배포 설정으로 만들 수 있다.
+- 일반 사용자도 공개 가능한 서비스 활동 수치를 `/stats`에서 볼 수 있다.
 
 ### 9. Level 2와 실시간성 고도화
 
