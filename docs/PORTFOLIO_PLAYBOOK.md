@@ -421,12 +421,15 @@
 - `/recommendation/feedback-insights` SSR 페이지와 `/api/recommendation/feedback/summary` API로 버전 조합별 평균 점수, 응답 수, 점수 분포 조회 추가
 - 추천 기능을 홈 화면과 공통 헤더 내비게이션에 연결
 - 공통 CSS에서 버튼, 패널, 입력창, 모달, 테이블 셸, 배지의 모서리를 완전한 사각형으로 통일하고, 스타일 버전 쿼리까지 적용해 실제 반영 경로를 함께 정리
+- public 화면에서 내부 구현 문구를 제거하고, 버전/집계/로드맵은 별도 admin 화면으로 옮기기 위한 `/Users/alex/project/worldmap/docs/PLAYER_COPY_AND_ADMIN_SPLIT_PLAN.md` 설계 초안 작성
 - 추천 페이지 통합 테스트와 추천 서비스 단위 테스트 통과
 
 이 단계에서 남은 일:
 
 - 후보 풀이 넓어진 뒤에도 결과가 특정 지역으로 치우치지 않는지 확인
 - 낮은 만족도 응답을 답변 조합 단위로 더 내려다볼지 결정
+- public 추천 화면의 helper text와 설명 문구를 제품 언어로 전면 보정
+- `/recommendation/feedback-insights`를 public에서 떼고 `/admin/recommendation/feedback`으로 옮기는 read-only admin 1차
 - 다음 단계에서 서브 에이전트 평가에 사용할 설문 버전/시나리오 자산 고정
 
 반드시 이해할 것:
@@ -447,6 +450,7 @@
 
 - 동일한 입력에 동일한 추천 결과가 나온다.
 - 추천 근거를 설명할 수 있다.
+- 플레이어용 추천 화면과 내부 운영 화면을 분리할 설계 기준이 있다.
 
 ### 7. AI-assisted 설문 개선 체계
 
@@ -473,6 +477,7 @@
 - `RecommendationOfflinePersonaSnapshotTest`로 현재 추천 엔진의 18개 시나리오 top 3 순서를 snapshot으로 고정
 - 기존 14개 중립 baseline 외에, 새 두 문항을 적극적으로 쓰는 `P15~P18` 비교 시나리오를 추가해 `EXPERIENCE / TRANSIT_FIRST`와 `STABILITY / SPACE_FIRST`가 실제 후보 구성을 바꾸는지 검증
 - `docs/recommendation/SURVEY_V2_PROPOSAL.md`로 우선 개선 대상 시나리오와 v2 개정안 초안 정리
+- `/Users/alex/project/worldmap/docs/PLAYER_COPY_AND_ADMIN_SPLIT_PLAN.md`로 public copy와 admin 운영 화면 분리 설계 정리
 
 반드시 이해할 것:
 
@@ -496,7 +501,8 @@
 
 - `engine-v2` 후보 가중치와 penalty 실험
 - 실험 결과를 snapshot과 비교해 어떤 시나리오 순위가 움직였는지 문서화
-- `survey-v2` helper text와 선택지 문구 개정안 반영 여부 결정
+- `survey-v2` helper text와 선택지 문구 개정안 반영
+- public에 노출된 운영 정보와 버전 정보를 admin 화면으로 이동
 - baseline 15/18을 더 높일 실제 개선 적용
 
 ### 8. 인증, 전적, 마이페이지
@@ -513,6 +519,8 @@
 - 사용자별 게임 기록 조회
 - 추천 기록 조회
 - 내 랭킹 확인
+- admin 라우트 접근 제어
+- 운영용 대시보드 권한 분리
 
 반드시 이해할 것:
 
@@ -527,6 +535,7 @@
 
 - 사용자 단위의 기록 조회가 가능하다.
 - 인증 흐름을 설명할 수 있다.
+- admin 화면이 public과 분리된 권한으로 보호된다.
 
 ### 9. Level 2와 실시간성 고도화
 

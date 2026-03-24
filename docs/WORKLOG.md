@@ -1454,3 +1454,20 @@
 - 테스트 내용: `./gradlew test --tests com.worldmap.recommendation.application.RecommendationOfflinePersonaCoverageTest --tests com.worldmap.recommendation.application.RecommendationOfflinePersonaSnapshotTest --tests com.worldmap.recommendation.application.RecommendationSurveyServiceTest` 통과, `./gradlew test` 전체 통과.
 - 면접에서 30초 안에 설명하는 요약: 설문을 8문항으로 늘린 뒤에도 오프라인 baseline이 새 문항을 실제로 쓰지 않으면 품질 평가가 공허해집니다. 그래서 기존 14개 중립 시나리오 외에, 같은 기본 취향에서 `정착 성향`과 `이동 생활 방식`만 바꾼 4개 active-signal 시나리오를 추가했습니다. 이제 추천 엔진 실험에서 coverage 숫자뿐 아니라 새 문항이 실제 후보 구성을 어떻게 바꾸는지도 테스트와 snapshot으로 같이 볼 수 있습니다.
 - 아직 내가 이해가 부족한 부분: 현재는 새 두 문항이 주로 2~3위 후보를 바꾸는 정도로 작동한다. 이 신호를 더 강하게 키워야 할지, 아니면 보조 신호로만 유지할지는 다음 `engine-v2` 실험에서 만족도와 weak scenario 개선 폭을 같이 보고 판단해야 한다.
+
+## 2026-03-24 - public 문구와 admin 운영 화면 분리 설계
+
+- 단계: 6. 설문 기반 추천 엔진 / 7. AI-assisted 설문 개선 체계 / 8. 인증, 전적, 마이페이지
+- 목적: 사용자에게는 완성된 게임 서비스처럼 보이게 하고, 버전/집계/로드맵 같은 내부 운영 정보는 별도 관리자 화면에서만 보이게 구조를 다시 나눈다. 현재 홈과 추천 화면에는 `Spring Boot`, `Current Build`, `Prototype`, `deterministic`, `surveyVersion` 같은 내부 개발 언어가 섞여 있어 제품 경험을 해친다.
+- 변경 파일:
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `docs/PLAYER_COPY_AND_ADMIN_SPLIT_PLAN.md`
+- 요청 흐름 / 데이터 흐름: 이번 단계는 구현이 아니라 설계 고정이다. public 요청 흐름은 그대로 `HomeController -> home.html`, `RecommendationPageController -> survey/result`, `RecommendationFeedbackService -> feedback-insights` 구조를 유지한다. 대신 다음 구현에서 `feedback-insights`를 `/admin/recommendation/feedback`으로 옮기고, 홈/추천/랭킹 public 화면에서는 내부 버전과 운영 정보 노출을 제거하는 방향을 문서로 확정했다.
+- 데이터 / 상태 변화: 운영 DB나 서비스 상태는 바뀌지 않았다. 바뀐 것은 정보 구조와 역할 구분이다. public은 게임/추천/랭킹 경험만 보여 주고, admin은 버전/집계/로드맵/weak scenario 같은 운영 정보만 본다.
+- 핵심 도메인 개념: 정보 노출도 설계 경계다. 추천 만족도 집계는 계속 `RecommendationFeedbackService`가 계산하더라도, 그 값을 누구에게 어떤 언어로 보여줄지는 별도 레이어 문제다. 그래서 컨트롤러나 템플릿 수정 전에 public copy 원칙과 admin route 구조를 먼저 문서로 고정했다.
+- 예외 상황 또는 엣지 케이스: 지금 단계의 `/admin`은 화면 분리 설계이지 보안 완료 기능이 아니다. 실제 접근 제어는 8단계 인증에서 붙여야 한다. 즉, 1차 구현 목표는 “헤더에서 숨김 + internal route 분리”이고, 이것만으로 보안이 끝난 것은 아니다.
+- 테스트 내용: 설계 문서 작업이라 애플리케이션 테스트는 실행하지 않았다.
+- 면접에서 30초 안에 설명하는 요약: 사용자 화면에 개발 중인 프로젝트 냄새가 나면 제품 몰입이 깨지기 때문에, public 문구와 admin 운영 화면을 분리하는 설계를 먼저 잡았습니다. 앞으로는 홈/추천/랭킹 public 화면에서는 게임 경험만 보여 주고, 버전/집계/로드맵 같은 정보는 `/admin` read-only 대시보드로 옮길 예정입니다.
+- 아직 내가 이해가 부족한 부분: admin 1차를 추천 운영 화면만 먼저 만들지, 홈의 빌드/로드맵까지 한 번에 옮길지는 실제 구현 범위를 더 잘게 자르며 판단해야 한다. 또 auth 전 단계에서 admin 링크를 어떻게 숨길지도 함께 정해야 한다.
