@@ -3,21 +3,25 @@
 <body>
 <th:block th:fragment="adminHeader(activeSection)">
     <header class="site-header">
-        <a class="site-brand" th:href="@{/admin}">
+        <a class="site-brand" th:href="@{/dashboard}">
             <span class="site-brand-mark">WorldMap</span>
-            <strong>Admin</strong>
+            <strong>Dashboard</strong>
         </a>
         <nav class="site-nav" aria-label="관리자 이동">
             <a class="site-nav-link"
+               th:href="@{/}">Home</a>
+            <a class="site-nav-link"
                th:classappend="${activeSection == 'dashboard'} ? ' is-active'"
-               th:href="@{/admin}">Dashboard</a>
+               th:href="@{/dashboard}">Dashboard</a>
+            <a class="site-nav-link"
+               th:classappend="${activeSection == 'mypage'} ? ' is-active'"
+               th:href="@{/mypage}">My Page</a>
             <a class="site-nav-link"
                th:classappend="${activeSection == 'recommendation-feedback'} ? ' is-active'"
-               th:href="@{/admin/recommendation/feedback}">Recommendation</a>
+               th:href="@{/dashboard/recommendation/feedback}">Recommendation</a>
             <a class="site-nav-link"
                th:classappend="${activeSection == 'persona-baseline'} ? ' is-active'"
-               th:href="@{/admin/recommendation/persona-baseline}">Baseline</a>
-            <a class="site-nav-link" th:href="@{/}">Public Home</a>
+               th:href="@{/dashboard/recommendation/persona-baseline}">Baseline</a>
         </nav>
     </header>
 </th:block>

@@ -5,6 +5,7 @@ import java.util.List;
 public record AdminDashboardView(
 	String currentSurveyVersion,
 	String currentEngineVersion,
+	AdminDashboardActivityView activity,
 	int recommendationQuestionCount,
 	int recommendationCandidateCount,
 	long totalFeedbackResponses,

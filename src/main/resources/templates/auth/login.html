@@ -35,7 +35,7 @@
                     <input type="password" th:field="*{password}" maxlength="100" placeholder="비밀번호 입력">
                 </label>
                 <p class="message-box" th:if="${returnTo}">
-                    로그인 후 원래 보려던 운영 화면으로 다시 이동합니다.
+                    로그인 후 원래 보려던 Dashboard 화면으로 다시 이동합니다.
                 </p>
                 <p class="message-box" th:if="${#fields.hasErrors('*')}" th:text="${#fields.errors('*')[0]}"></p>
                 <p class="message-box" th:if="${authErrorMessage}" th:text="${authErrorMessage}"></p>

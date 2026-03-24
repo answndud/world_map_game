@@ -1,26 +1,48 @@
 package com.worldmap.admin.application;
 
+import com.worldmap.auth.domain.MemberRepository;
+import com.worldmap.game.location.domain.LocationGameSessionRepository;
+import com.worldmap.game.population.domain.PopulationGameSessionRepository;
 import com.worldmap.recommendation.application.RecommendationCountryProfileCatalog;
 import com.worldmap.recommendation.application.RecommendationFeedbackInsightsView;
 import com.worldmap.recommendation.application.RecommendationFeedbackService;
 import com.worldmap.recommendation.application.RecommendationQuestionCatalog;
 import com.worldmap.recommendation.application.RecommendationSurveyService;
+import com.worldmap.ranking.domain.LeaderboardGameMode;
+import com.worldmap.ranking.domain.LeaderboardRecordRepository;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AdminDashboardService {
 
+	private final MemberRepository memberRepository;
+	private final LocationGameSessionRepository locationGameSessionRepository;
+	private final PopulationGameSessionRepository populationGameSessionRepository;
+	private final LeaderboardRecordRepository leaderboardRecordRepository;
 	private final RecommendationFeedbackService recommendationFeedbackService;
 	private final RecommendationQuestionCatalog recommendationQuestionCatalog;
 	private final RecommendationCountryProfileCatalog recommendationCountryProfileCatalog;
 
 	public AdminDashboardService(
+		MemberRepository memberRepository,
+		LocationGameSessionRepository locationGameSessionRepository,
+		PopulationGameSessionRepository populationGameSessionRepository,
+		LeaderboardRecordRepository leaderboardRecordRepository,
 		RecommendationFeedbackService recommendationFeedbackService,
 		RecommendationQuestionCatalog recommendationQuestionCatalog,
 		RecommendationCountryProfileCatalog recommendationCountryProfileCatalog
 	) {
+		this.memberRepository = memberRepository;
+		this.locationGameSessionRepository = locationGameSessionRepository;
+		this.populationGameSessionRepository = populationGameSessionRepository;
+		this.leaderboardRecordRepository = leaderboardRecordRepository;
 		this.recommendationFeedbackService = recommendationFeedbackService;
 		this.recommendationQuestionCatalog = recommendationQuestionCatalog;
 		this.recommendationCountryProfileCatalog = recommendationCountryProfileCatalog;
@@ -29,9 +51,11 @@ public class AdminDashboardService {
 	@Transactional(readOnly = true)
 	public AdminDashboardView loadDashboard() {
 		RecommendationFeedbackInsightsView feedbackInsights = recommendationFeedbackService.summarizeByVersion();
+		AdminDashboardActivityView activity = loadTodayActivity();
 		return new AdminDashboardView(
 			RecommendationSurveyService.SURVEY_VERSION,
 			RecommendationSurveyService.ENGINE_VERSION,
+			activity,
 			recommendationQuestionCatalog.questions().size(),
 			recommendationCountryProfileCatalog.profiles().size(),
 			feedbackInsights.totalResponses(),
@@ -42,17 +66,59 @@ public class AdminDashboardService {
 		);
 	}
 
+	private AdminDashboardActivityView loadTodayActivity() {
+		LocalDateTime todayStart = LocalDate.now().atStartOfDay();
+		LocalDateTime tomorrowStart = todayStart.plusDays(1);
+
+		Set<Long> activeMemberIds = Stream.concat(
+			locationGameSessionRepository.findDistinctMemberIdsByStartedAtBetween(todayStart, tomorrowStart).stream(),
+			populationGameSessionRepository.findDistinctMemberIdsByStartedAtBetween(todayStart, tomorrowStart).stream()
+		).collect(Collectors.toSet());
+
+		Set<String> activeGuestKeys = Stream.concat(
+			locationGameSessionRepository.findDistinctGuestSessionKeysByStartedAtBetween(todayStart, tomorrowStart).stream(),
+			populationGameSessionRepository.findDistinctGuestSessionKeysByStartedAtBetween(todayStart, tomorrowStart).stream()
+		).collect(Collectors.toSet());
+
+		long todayStartedSessionCount =
+			locationGameSessionRepository.countByStartedAtGreaterThanEqualAndStartedAtLessThan(todayStart, tomorrowStart)
+				+ populationGameSessionRepository.countByStartedAtGreaterThanEqualAndStartedAtLessThan(todayStart, tomorrowStart);
+
+		long todayCompletedRunCount = leaderboardRecordRepository.countByFinishedAtGreaterThanEqualAndFinishedAtLessThan(
+			todayStart,
+			tomorrowStart
+		);
+
+		return new AdminDashboardActivityView(
+			memberRepository.count(),
+			activeMemberIds.size(),
+			activeGuestKeys.size(),
+			todayStartedSessionCount,
+			todayCompletedRunCount,
+			leaderboardRecordRepository.countByGameModeAndFinishedAtGreaterThanEqualAndFinishedAtLessThan(
+				LeaderboardGameMode.LOCATION,
+				todayStart,
+				tomorrowStart
+			),
+			leaderboardRecordRepository.countByGameModeAndFinishedAtGreaterThanEqualAndFinishedAtLessThan(
+				LeaderboardGameMode.POPULATION,
+				todayStart,
+				tomorrowStart
+			)
+		);
+	}
+
 	private List<AdminDashboardRouteView> adminRoutes() {
 		return List.of(
 			new AdminDashboardRouteView(
 				"추천 만족도 집계",
 				"설문 버전과 엔진 버전 조합별 평균 점수와 응답 수를 확인합니다.",
-				"/admin/recommendation/feedback"
+				"/dashboard/recommendation/feedback"
 			),
 			new AdminDashboardRouteView(
 				"페르소나 baseline",
 				"18개 평가 시나리오와 weak scenario를 기준으로 다음 개정 대상을 확인합니다.",
-				"/admin/recommendation/persona-baseline"
+				"/dashboard/recommendation/persona-baseline"
 			),
 			new AdminDashboardRouteView(
 				"공개 홈 점검",
@@ -78,8 +144,12 @@ public class AdminDashboardService {
 				"설문 개선 신호는 surveyVersion, engineVersion, 만족도 점수, 답변 스냅샷으로만 남깁니다."
 			),
 			new AdminDashboardFocusView(
-				"권한 제어는 8단계에서 추가",
-				"지금 admin은 정보 구조를 분리한 read-only 운영 화면이며, 인증과 권한은 다음 단계에서 붙입니다."
+				"Dashboard는 ADMIN role 세션으로만 접근",
+				"운영 화면은 public과 분리된 경로에 두고, bootstrap admin 계정 또는 기존 ADMIN 계정으로만 접근합니다."
+			),
+			new AdminDashboardFocusView(
+				"오늘 활성 수는 game session 시작 기준",
+				"회원은 memberId, 비회원은 guestSessionKey를 distinct로 집계하고, 완료 게임 수는 leaderboard_record finishedAt 기준으로 계산합니다."
 			)
 		);
 	}

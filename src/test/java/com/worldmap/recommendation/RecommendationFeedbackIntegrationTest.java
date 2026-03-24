@@ -121,10 +121,10 @@ class RecommendationFeedbackIntegrationTest {
 	}
 
 	@Test
-	void legacyFeedbackInsightsRouteRedirectsToAdminRecommendationFeedbackPage() throws Exception {
+	void legacyFeedbackInsightsRouteRedirectsToDashboardRecommendationFeedbackPage() throws Exception {
 		mockMvc.perform(get("/recommendation/feedback-insights"))
 			.andExpect(status().is3xxRedirection())
-			.andExpect(redirectedUrl("/admin/recommendation/feedback"));
+			.andExpect(redirectedUrl("/dashboard/recommendation/feedback"));
 	}
 
 	private void saveFeedback(String surveyVersion, String engineVersion, int score) {

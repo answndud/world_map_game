@@ -46,6 +46,7 @@ class MyPageControllerTest {
 			.andExpect(content().string(containsString("기록을 남기려면 로그인")))
 			.andExpect(content().string(containsString("회원가입")))
 			.andExpect(content().string(containsString(">My Page<")))
+			.andExpect(content().string(not(containsString(">Dashboard<"))))
 			.andExpect(content().string(not(containsString(">Location<"))))
 			.andExpect(content().string(not(containsString(">Population<"))));
 	}

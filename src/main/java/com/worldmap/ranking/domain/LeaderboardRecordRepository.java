@@ -1,6 +1,7 @@
 package com.worldmap.ranking.domain;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
@@ -16,6 +17,14 @@ public interface LeaderboardRecordRepository extends JpaRepository<LeaderboardRe
 	long countByMemberId(Long memberId);
 
 	Page<LeaderboardRecord> findByMemberIdOrderByFinishedAtDesc(Long memberId, Pageable pageable);
+
+	long countByFinishedAtGreaterThanEqualAndFinishedAtLessThan(LocalDateTime startInclusive, LocalDateTime endExclusive);
+
+	long countByGameModeAndFinishedAtGreaterThanEqualAndFinishedAtLessThan(
+		LeaderboardGameMode gameMode,
+		LocalDateTime startInclusive,
+		LocalDateTime endExclusive
+	);
 
 	Optional<LeaderboardRecord> findFirstByMemberIdAndGameModeAndGameLevelOrderByRankingScoreDescFinishedAtAsc(
 		Long memberId,

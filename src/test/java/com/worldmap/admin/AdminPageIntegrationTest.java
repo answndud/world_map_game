@@ -13,9 +13,20 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
+import com.worldmap.auth.domain.Member;
+import com.worldmap.auth.domain.MemberRepository;
+import com.worldmap.game.location.domain.LocationGameSession;
+import com.worldmap.game.location.domain.LocationGameSessionRepository;
+import com.worldmap.game.population.domain.PopulationGameSession;
+import com.worldmap.game.population.domain.PopulationGameSessionRepository;
+import com.worldmap.ranking.domain.LeaderboardGameLevel;
+import com.worldmap.ranking.domain.LeaderboardGameMode;
+import com.worldmap.ranking.domain.LeaderboardRecord;
+import com.worldmap.ranking.domain.LeaderboardRecordRepository;
 import com.worldmap.recommendation.domain.RecommendationFeedback;
 import com.worldmap.recommendation.domain.RecommendationFeedbackRepository;
 import com.worldmap.recommendation.domain.RecommendationSurveyAnswers;
+import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,22 +47,87 @@ class AdminPageIntegrationTest {
 	@Autowired
 	private RecommendationFeedbackRepository recommendationFeedbackRepository;
 
+	@Autowired
+	private MemberRepository memberRepository;
+
+	@Autowired
+	private LocationGameSessionRepository locationGameSessionRepository;
+
+	@Autowired
+	private PopulationGameSessionRepository populationGameSessionRepository;
+
+	@Autowired
+	private LeaderboardRecordRepository leaderboardRecordRepository;
+
 	@BeforeEach
 	void setUp() {
 		recommendationFeedbackRepository.deleteAll();
+		leaderboardRecordRepository.deleteAll();
+		locationGameSessionRepository.deleteAll();
+		populationGameSessionRepository.deleteAll();
+		memberRepository.deleteAll();
 	}
 
 	@Test
 	void adminDashboardRendersCurrentRecommendationOpsOverview() throws Exception {
-		mockMvc.perform(get("/admin").session(adminSession()))
+		memberRepository.save(Member.create("member_one", "hash", USER));
+		memberRepository.save(Member.create("member_two", "hash", USER));
+
+		LocationGameSession activeMemberLocation = LocationGameSession.ready("member_one", 1L, null, 5);
+		activeMemberLocation.startGame(LocalDateTime.now().minusHours(2));
+		locationGameSessionRepository.save(activeMemberLocation);
+
+		PopulationGameSession activeGuestPopulation = PopulationGameSession.ready("guest_one", null, "guest-key-1", 5);
+		activeGuestPopulation.startGame(LocalDateTime.now().minusHours(1));
+		populationGameSessionRepository.save(activeGuestPopulation);
+
+		LeaderboardRecord todayLocationRun = LeaderboardRecord.create(
+			"run-location-today",
+			activeMemberLocation.getId(),
+			LeaderboardGameMode.LOCATION,
+			LeaderboardGameLevel.LEVEL_1,
+			"member_one",
+			1L,
+			null,
+			320,
+			320004L,
+			4,
+			6,
+			LocalDateTime.now().minusMinutes(30)
+		);
+		LeaderboardRecord todayPopulationRun = LeaderboardRecord.create(
+			"run-population-today",
+			activeGuestPopulation.getId(),
+			LeaderboardGameMode.POPULATION,
+			LeaderboardGameLevel.LEVEL_1,
+			"guest_one",
+			null,
+			"guest-key-1",
+			280,
+			280004L,
+			3,
+			5,
+			LocalDateTime.now().minusMinutes(10)
+		);
+		leaderboardRecordRepository.save(todayLocationRun);
+		leaderboardRecordRepository.save(todayPopulationRun);
+
+		mockMvc.perform(get("/dashboard").session(adminSession()))
 			.andExpect(status().isOk())
 			.andExpect(view().name("admin/index"))
 			.andExpect(model().attributeExists("dashboard"))
-			.andExpect(content().string(containsString("관리자 대시보드")))
+			.andExpect(content().string(containsString("운영 Dashboard")))
+			.andExpect(content().string(containsString("서비스 활동 요약")))
+			.andExpect(content().string(containsString("TOTAL MEMBERS")))
+			.andExpect(content().string(containsString(">2<")))
+			.andExpect(content().string(containsString("TODAY ACTIVE MEMBERS")))
+			.andExpect(content().string(containsString("TODAY ACTIVE GUESTS")))
+			.andExpect(content().string(containsString("TODAY COMPLETED RUNS")))
+			.andExpect(content().string(containsString("L 1 / P 1")))
 			.andExpect(content().string(containsString("추천 운영 상태")))
 			.andExpect(content().string(containsString("survey-v2")))
 			.andExpect(content().string(containsString("engine-v2")))
-			.andExpect(content().string(containsString("ADMIN` role 세션으로만 접근 가능")));
+			.andExpect(content().string(containsString("Dashboard 화면은 `ADMIN` role 세션으로만 접근 가능하게 보호한다.")));
 	}
 
 	@Test
@@ -59,7 +135,7 @@ class AdminPageIntegrationTest {
 		saveFeedback("survey-v1", "engine-v1", 5);
 		saveFeedback("survey-v1", "engine-v1", 4);
 
-		mockMvc.perform(get("/admin/recommendation/feedback").session(adminSession()))
+		mockMvc.perform(get("/dashboard/recommendation/feedback").session(adminSession()))
 			.andExpect(status().isOk())
 			.andExpect(view().name("admin/recommendation-feedback"))
 			.andExpect(model().attributeExists("dashboard"))
@@ -72,7 +148,7 @@ class AdminPageIntegrationTest {
 
 	@Test
 	void adminPersonaBaselinePageRendersWeakAndActiveSignalSections() throws Exception {
-		mockMvc.perform(get("/admin/recommendation/persona-baseline").session(adminSession()))
+		mockMvc.perform(get("/dashboard/recommendation/persona-baseline").session(adminSession()))
 			.andExpect(status().isOk())
 			.andExpect(view().name("admin/recommendation-persona-baseline"))
 			.andExpect(model().attributeExists("dashboard"))
@@ -85,15 +161,22 @@ class AdminPageIntegrationTest {
 
 	@Test
 	void adminRoutesRedirectUnauthenticatedUsersToLogin() throws Exception {
-		mockMvc.perform(get("/admin"))
+		mockMvc.perform(get("/dashboard"))
 			.andExpect(status().is3xxRedirection())
-			.andExpect(redirectedUrl("/login?returnTo=/admin"));
+			.andExpect(redirectedUrl("/login?returnTo=/dashboard"));
 	}
 
 	@Test
 	void adminRoutesRejectNonAdminMembers() throws Exception {
-		mockMvc.perform(get("/admin").session(userSession()))
+		mockMvc.perform(get("/dashboard").session(userSession()))
 			.andExpect(status().isForbidden());
+	}
+
+	@Test
+	void legacyAdminRouteRedirectsAdminSessionToDashboard() throws Exception {
+		mockMvc.perform(get("/admin").session(adminSession()))
+			.andExpect(status().is3xxRedirection())
+			.andExpect(redirectedUrl("/dashboard"));
 	}
 
 	private void saveFeedback(String surveyVersion, String engineVersion, int score) {

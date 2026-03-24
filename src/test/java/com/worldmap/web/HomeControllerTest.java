@@ -2,16 +2,21 @@ package com.worldmap.web;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
+import static com.worldmap.auth.application.MemberSessionManager.MEMBER_ID_ATTRIBUTE;
+import static com.worldmap.auth.application.MemberSessionManager.MEMBER_NICKNAME_ATTRIBUTE;
+import static com.worldmap.auth.application.MemberSessionManager.MEMBER_ROLE_ATTRIBUTE;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
+import com.worldmap.auth.domain.MemberRole;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(HomeController.class)
@@ -31,6 +36,7 @@ class HomeControllerTest {
 			.andExpect(model().attributeExists("roadmap"))
 			.andExpect(content().string(containsString("플레이 방식")))
 			.andExpect(content().string(containsString(">My Page<")))
+			.andExpect(content().string(not(containsString(">Dashboard<"))))
 			.andExpect(content().string(not(containsString(">Location<"))))
 			.andExpect(content().string(not(containsString(">Population<"))))
 			.andExpect(content().string(not(containsString("오늘의 추천 플레이"))))
@@ -38,5 +44,17 @@ class HomeControllerTest {
 			.andExpect(content().string(not(containsString("Current Build"))))
 			.andExpect(content().string(not(containsString("ORBIT 0.4"))))
 			.andExpect(content().string(not(containsString("현재 로드맵"))));
+	}
+
+	@Test
+	void homePageShowsDashboardLinkForAdminSession() throws Exception {
+		MockHttpSession session = new MockHttpSession();
+		session.setAttribute(MEMBER_ID_ATTRIBUTE, 1L);
+		session.setAttribute(MEMBER_NICKNAME_ATTRIBUTE, "worldmap_admin");
+		session.setAttribute(MEMBER_ROLE_ATTRIBUTE, MemberRole.ADMIN.name());
+
+		mockMvc.perform(get("/").session(session))
+			.andExpect(status().isOk())
+			.andExpect(content().string(containsString(">Dashboard<")));
 	}
 }

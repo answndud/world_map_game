@@ -53,6 +53,6 @@ public class RecommendationPageController {
 
 	@GetMapping("/feedback-insights")
 	public String feedbackInsightsRedirect() {
-		return "redirect:/admin/recommendation/feedback";
+		return "redirect:/dashboard/recommendation/feedback";
 	}
 }

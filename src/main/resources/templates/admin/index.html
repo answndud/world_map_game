@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>관리자 대시보드</title>
+    <title>운영 Dashboard</title>
     <link rel="stylesheet" th:href="@{/css/site.css(v='20260324-square-ui-1')}">
 </head>
 <body>
@@ -11,13 +11,47 @@
     <th:block th:replace="~{fragments/admin-header :: adminHeader('dashboard')}"></th:block>
     <header class="hero compact-hero">
         <p class="eyebrow">Operations</p>
-        <h1>관리자 대시보드</h1>
+        <h1>운영 Dashboard</h1>
         <p class="hero-copy">
             플레이어 화면에 직접 노출하지 않는 운영 정보와 추천 품질 신호를 읽는 read-only 화면입니다.
         </p>
     </header>
 
     <main class="layout">
+        <section class="panel game-panel">
+            <div class="panel-head">
+                <h2>서비스 활동 요약</h2>
+                <p>회원 수, 오늘 활성 플레이어, 오늘 시작된 세션과 완료된 게임 수를 현재 운영 화면에서 바로 확인합니다.</p>
+            </div>
+
+            <div class="stats-grid">
+                <article class="stat-card">
+                    <span class="subtitle">TOTAL MEMBERS</span>
+                    <strong th:text="${dashboard.activity.totalMemberCount}">0</strong>
+                </article>
+                <article class="stat-card">
+                    <span class="subtitle">TODAY ACTIVE MEMBERS</span>
+                    <strong th:text="${dashboard.activity.todayActiveMemberCount}">0</strong>
+                </article>
+                <article class="stat-card">
+                    <span class="subtitle">TODAY ACTIVE GUESTS</span>
+                    <strong th:text="${dashboard.activity.todayActiveGuestCount}">0</strong>
+                </article>
+                <article class="stat-card">
+                    <span class="subtitle">TODAY STARTED SESSIONS</span>
+                    <strong th:text="${dashboard.activity.todayStartedSessionCount}">0</strong>
+                </article>
+                <article class="stat-card">
+                    <span class="subtitle">TODAY COMPLETED RUNS</span>
+                    <strong th:text="${dashboard.activity.todayCompletedRunCount}">0</strong>
+                </article>
+                <article class="stat-card">
+                    <span class="subtitle">TODAY MODE SPLIT</span>
+                    <strong th:text="|L ${dashboard.activity.todayLocationCompletedRunCount} / P ${dashboard.activity.todayPopulationCompletedRunCount}|">L 0 / P 0</strong>
+                </article>
+            </div>
+        </section>
+
         <section class="panel game-panel">
             <div class="panel-head">
                 <h2>추천 운영 상태</h2>
@@ -55,13 +89,13 @@
         <section class="panel">
             <div class="panel-head">
                 <h2>운영 바로 가기</h2>
-                <p>현재 1차 admin은 추천 운영과 public 화면 점검에 집중한 read-only 허브입니다.</p>
+                <p>현재 1차 dashboard는 추천 운영과 public 화면 점검에 집중한 read-only 허브입니다.</p>
             </div>
 
             <div class="card-grid">
                 <article class="mode-card" th:each="route : ${dashboard.adminRoutes}">
                     <div class="card-top">
-                        <span class="status">Admin</span>
+                        <span class="status">Dashboard</span>
                     </div>
                     <h3 th:text="${route.title}">추천 만족도 집계</h3>
                     <p th:text="${route.description}">운영 화면으로 이동합니다.</p>
@@ -89,8 +123,8 @@
                 </div>
                 <ol class="roadmap">
                     <li>public 화면과 운영 화면의 정보 구조를 분리했다.</li>
-                    <li>추천 만족도 집계를 `/admin/recommendation/feedback`으로 옮겼다.</li>
-                    <li>admin 화면은 `ADMIN` role 세션으로만 접근 가능하게 보호한다.</li>
+                    <li>추천 만족도 집계를 `/dashboard/recommendation/feedback`으로 옮겼다.</li>
+                    <li>Dashboard 화면은 `ADMIN` role 세션으로만 접근 가능하게 보호한다.</li>
                 </ol>
             </article>
         </section>

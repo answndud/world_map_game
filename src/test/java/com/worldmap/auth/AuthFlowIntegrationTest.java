@@ -101,7 +101,7 @@ class AuthFlowIntegrationTest {
 	}
 
 	@Test
-	void adminLoginRedirectsBackToRequestedAdminRoute() throws Exception {
+	void adminLoginRedirectsBackToRequestedDashboardRoute() throws Exception {
 		memberRepository.save(
 			Member.create(
 				"worldmap_admin",
@@ -114,10 +114,10 @@ class AuthFlowIntegrationTest {
 			post("/login")
 				.param("nickname", "worldmap_admin")
 				.param("password", "secret123")
-				.param("returnTo", "/admin")
+				.param("returnTo", "/dashboard")
 		)
 			.andExpect(status().is3xxRedirection())
-			.andExpect(redirectedUrl("/admin"));
+			.andExpect(redirectedUrl("/dashboard"));
 	}
 
 	@Test
