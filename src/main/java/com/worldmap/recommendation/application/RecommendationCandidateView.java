@@ -11,6 +11,8 @@ public record RecommendationCandidateView(
 	String capitalCity,
 	String populationLabel,
 	int matchScore,
+	int strongSignalCount,
+	int exactMatchCount,
 	String headline,
 	List<String> reasons
 ) {

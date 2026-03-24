@@ -57,6 +57,7 @@ class RecommendationSurveyServiceTest {
 	void recommendCanSurfaceExpandedPoolCandidates() {
 		CountryRepository countryRepository = mock(CountryRepository.class);
 		when(countryRepository.findAllByOrderByNameKrAsc()).thenReturn(List.of(
+			country("SGP", "싱가포르", "Singapore", Continent.ASIA, "싱가포르", 5_900_000L),
 			country("THA", "태국", "Thailand", Continent.ASIA, "방콕", 71_000_000L),
 			country("MYS", "말레이시아", "Malaysia", Continent.ASIA, "쿠알라룸푸르", 35_000_000L),
 			country("VNM", "베트남", "Vietnam", Continent.ASIA, "하노이", 101_000_000L),
@@ -84,6 +85,7 @@ class RecommendationSurveyServiceTest {
 
 		assertThat(result.recommendations()).hasSize(3);
 		assertThat(result.recommendations().getFirst().countryNameKr()).isEqualTo("말레이시아");
+		assertThat(result.recommendations().getFirst().countryNameKr()).isNotEqualTo("싱가포르");
 	}
 
 	private Country country(

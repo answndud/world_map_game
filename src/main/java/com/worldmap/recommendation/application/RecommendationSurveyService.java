@@ -17,10 +17,13 @@ import org.springframework.transaction.annotation.Transactional;
 public class RecommendationSurveyService {
 
 	private static final int CLIMATE_WEIGHT = 5;
-	private static final int PACE_WEIGHT = 5;
-	private static final int BUDGET_WEIGHT = 4;
-	private static final int ENVIRONMENT_WEIGHT = 5;
-	private static final int PRIORITY_WEIGHT = 7;
+	private static final int PACE_WEIGHT = 4;
+	private static final int BUDGET_WEIGHT = 5;
+	private static final int ENVIRONMENT_WEIGHT = 4;
+	private static final int PRIORITY_WEIGHT = 6;
+	private static final int EXACT_MATCH_BONUS = 3;
+	private static final int COHERENCE_BONUS = 6;
+	private static final int OVER_BUDGET_PENALTY = 5;
 	private static final NumberFormat NUMBER_FORMAT = NumberFormat.getInstance(Locale.KOREA);
 
 	private final RecommendationCountryProfileCatalog profileCatalog;
@@ -45,6 +48,8 @@ public class RecommendationSurveyService {
 			.filter(candidate -> candidate != null)
 			.sorted(Comparator
 				.comparingInt(RecommendationCandidateView::matchScore).reversed()
+				.thenComparingInt(RecommendationCandidateView::strongSignalCount).reversed()
+				.thenComparingInt(RecommendationCandidateView::exactMatchCount).reversed()
 				.thenComparing(RecommendationCandidateView::countryNameKr))
 			.limit(3)
 			.toList();
@@ -61,6 +66,8 @@ public class RecommendationSurveyService {
 				candidate.capitalCity(),
 				candidate.populationLabel(),
 				candidate.matchScore(),
+				candidate.strongSignalCount(),
+				candidate.exactMatchCount(),
 				candidate.headline(),
 				candidate.reasons()
 			));
@@ -82,35 +89,39 @@ public class RecommendationSurveyService {
 		}
 
 		List<MatchSignal> signals = new ArrayList<>();
-		int climatePoints = closenessScore(
+		int climateDistance = distance(
 			answers.climatePreference().targetValue(),
-			profile.climateValue(),
-			CLIMATE_WEIGHT
+			profile.climateValue()
 		);
+		int climatePoints = closenessScore(climateDistance, CLIMATE_WEIGHT) + exactMatchBonus(climateDistance);
 		signals.add(new MatchSignal(climatePoints, answers.climatePreference().label() + " 취향과 기후 방향이 가깝습니다."));
 
-		int pacePoints = closenessScore(
+		int paceDistance = distance(
 			answers.pacePreference().targetValue(),
-			profile.paceValue(),
-			PACE_WEIGHT
+			profile.paceValue()
 		);
+		int pacePoints = closenessScore(paceDistance, PACE_WEIGHT) + exactMatchBonus(paceDistance);
 		signals.add(new MatchSignal(pacePoints, answers.pacePreference().label() + " 생활 리듬과 잘 맞습니다."));
 
-		int budgetPoints = closenessScore(
+		int budgetDistance = distance(
+			answers.budgetPreference().targetPriceLevel(),
+			profile.priceLevel()
+		);
+		int budgetPoints = budgetScore(
 			answers.budgetPreference().targetPriceLevel(),
 			profile.priceLevel(),
-			BUDGET_WEIGHT
+			budgetDistance
 		);
 		signals.add(new MatchSignal(budgetPoints, "물가 허용 범위와 실제 생활비 부담이 크게 어긋나지 않습니다."));
 
-		int environmentPoints = closenessScore(
+		int environmentDistance = distance(
 			answers.environmentPreference().targetUrbanity(),
-			profile.urbanityValue(),
-			ENVIRONMENT_WEIGHT
+			profile.urbanityValue()
 		);
+		int environmentPoints = closenessScore(environmentDistance, ENVIRONMENT_WEIGHT) + exactMatchBonus(environmentDistance);
 		signals.add(new MatchSignal(environmentPoints, "도시와 자연의 균형 감각이 원하는 방향과 비슷합니다."));
 
-		int englishPoints = profile.englishSupport() * answers.englishImportance().weight();
+		int englishPoints = englishPoints(profile.englishSupport(), answers.englishImportance());
 		if (answers.englishImportance().weight() > 0) {
 			signals.add(new MatchSignal(englishPoints, "영어 친화도가 초반 적응 장벽을 낮춰 줄 가능성이 큽니다."));
 		}
@@ -118,12 +129,20 @@ public class RecommendationSurveyService {
 		int priorityPoints = priorityPoints(profile, answers.priorityFocus());
 		signals.add(new MatchSignal(priorityPoints, answers.priorityFocus().label() + " 기준에서 강점을 보입니다."));
 
+		int coherencePoints = coherenceBonus(climateDistance, paceDistance, environmentDistance);
+		signals.add(new MatchSignal(coherencePoints, "핵심 생활 조건들이 전반적으로 크게 어긋나지 않습니다."));
+
 		int totalScore = signals.stream()
 			.mapToInt(MatchSignal::points)
 			.sum();
+		int strongSignalCount = (int) signals.stream()
+			.filter(signal -> signal.points() >= 20)
+			.count();
+		int exactMatchCount = exactMatchCount(climateDistance, paceDistance, budgetDistance, environmentDistance);
 
 		List<String> topReasons = signals.stream()
 			.sorted(Comparator.comparingInt(MatchSignal::points).reversed())
+			.filter(signal -> signal.points() > 0)
 			.map(MatchSignal::message)
 			.distinct()
 			.limit(3)
@@ -138,6 +157,8 @@ public class RecommendationSurveyService {
 			country.getCapitalCity(),
 			NUMBER_FORMAT.format(country.getPopulation()) + "명 (" + country.getPopulationYear() + ")",
 			totalScore,
+			strongSignalCount,
+			exactMatchCount,
 			profile.hookLine(),
 			topReasons
 		);
@@ -151,8 +172,62 @@ public class RecommendationSurveyService {
 		return countriesByIso;
 	}
 
-	private int closenessScore(int preferredValue, int actualValue, int weight) {
-		return Math.max(0, 5 - Math.abs(preferredValue - actualValue)) * weight;
+	private int distance(int preferredValue, int actualValue) {
+		return Math.abs(preferredValue - actualValue);
+	}
+
+	private int closenessScore(int distance, int weight) {
+		return switch (distance) {
+			case 0 -> 5 * weight;
+			case 1 -> 3 * weight;
+			case 2 -> weight;
+			default -> 0;
+		};
+	}
+
+	private int exactMatchBonus(int distance) {
+		return distance == 0 ? EXACT_MATCH_BONUS : 0;
+	}
+
+	private int budgetScore(int preferredPriceLevel, int actualPriceLevel, int distance) {
+		int score = switch (distance) {
+			case 0 -> (6 * BUDGET_WEIGHT) + EXACT_MATCH_BONUS;
+			case 1 -> 2 * BUDGET_WEIGHT;
+			default -> 0;
+		};
+
+		if (actualPriceLevel > preferredPriceLevel) {
+			score -= (actualPriceLevel - preferredPriceLevel) * OVER_BUDGET_PENALTY;
+		}
+
+		return Math.max(0, score);
+	}
+
+	private int englishPoints(
+		int englishSupport,
+		RecommendationSurveyAnswers.EnglishImportance englishImportance
+	) {
+		return switch (englishImportance) {
+			case HIGH -> englishSupport * 4;
+			case MEDIUM -> englishSupport * 2;
+			case LOW -> 0;
+		};
+	}
+
+	private int coherenceBonus(int climateDistance, int paceDistance, int environmentDistance) {
+		return (climateDistance <= 1 && paceDistance <= 1 && environmentDistance <= 1)
+			? COHERENCE_BONUS
+			: 0;
+	}
+
+	private int exactMatchCount(int... distances) {
+		int exactMatchCount = 0;
+		for (int distance : distances) {
+			if (distance == 0) {
+				exactMatchCount++;
+			}
+		}
+		return exactMatchCount;
 	}
 
 	private int priorityPoints(
