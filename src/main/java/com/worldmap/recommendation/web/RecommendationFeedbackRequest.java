@@ -38,6 +38,12 @@ public class RecommendationFeedbackRequest {
 	@NotNull(message = "최우선 기준이 필요합니다.")
 	private RecommendationSurveyAnswers.PriorityFocus priorityFocus;
 
+	@NotNull(message = "정착 성향이 필요합니다.")
+	private RecommendationSurveyAnswers.SettlementPreference settlementPreference;
+
+	@NotNull(message = "이동 생활 방식이 필요합니다.")
+	private RecommendationSurveyAnswers.MobilityPreference mobilityPreference;
+
 	public RecommendationFeedbackSubmission toSubmission() {
 		return new RecommendationFeedbackSubmission(
 			surveyVersion,
@@ -49,7 +55,9 @@ public class RecommendationFeedbackRequest {
 				budgetPreference,
 				environmentPreference,
 				englishImportance,
-				priorityFocus
+				priorityFocus,
+				settlementPreference,
+				mobilityPreference
 			)
 		);
 	}
@@ -124,5 +132,21 @@ public class RecommendationFeedbackRequest {
 
 	public void setPriorityFocus(RecommendationSurveyAnswers.PriorityFocus priorityFocus) {
 		this.priorityFocus = priorityFocus;
+	}
+
+	public RecommendationSurveyAnswers.SettlementPreference getSettlementPreference() {
+		return settlementPreference;
+	}
+
+	public void setSettlementPreference(RecommendationSurveyAnswers.SettlementPreference settlementPreference) {
+		this.settlementPreference = settlementPreference;
+	}
+
+	public RecommendationSurveyAnswers.MobilityPreference getMobilityPreference() {
+		return mobilityPreference;
+	}
+
+	public void setMobilityPreference(RecommendationSurveyAnswers.MobilityPreference mobilityPreference) {
+		this.mobilityPreference = mobilityPreference;
 	}
 }

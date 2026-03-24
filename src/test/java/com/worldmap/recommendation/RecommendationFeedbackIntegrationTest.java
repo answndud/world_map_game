@@ -45,29 +45,33 @@ class RecommendationFeedbackIntegrationTest {
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("""
 					{
-					  "surveyVersion": "survey-v1",
-					  "engineVersion": "engine-v1",
+					  "surveyVersion": "survey-v2",
+					  "engineVersion": "engine-v2",
 					  "satisfactionScore": 4,
 					  "climatePreference": "WARM",
 					  "pacePreference": "BALANCED",
 					  "budgetPreference": "LOW",
 					  "environmentPreference": "CITY",
 					  "englishImportance": "MEDIUM",
-					  "priorityFocus": "FOOD"
+					  "priorityFocus": "FOOD",
+					  "settlementPreference": "BALANCED",
+					  "mobilityPreference": "BALANCED"
 					}
 					"""))
 			.andExpect(status().isCreated())
 			.andExpect(jsonPath("$.satisfactionScore").value(4))
-			.andExpect(jsonPath("$.surveyVersion").value("survey-v1"))
-			.andExpect(jsonPath("$.engineVersion").value("engine-v1"));
+			.andExpect(jsonPath("$.surveyVersion").value("survey-v2"))
+			.andExpect(jsonPath("$.engineVersion").value("engine-v2"));
 
 		assertThat(recommendationFeedbackRepository.findAll()).hasSize(1);
 		RecommendationFeedback feedback = recommendationFeedbackRepository.findAll().getFirst();
 		assertThat(feedback.getSatisfactionScore()).isEqualTo(4);
-		assertThat(feedback.getSurveyVersion()).isEqualTo("survey-v1");
-		assertThat(feedback.getEngineVersion()).isEqualTo("engine-v1");
+		assertThat(feedback.getSurveyVersion()).isEqualTo("survey-v2");
+		assertThat(feedback.getEngineVersion()).isEqualTo("engine-v2");
 		assertThat(feedback.getClimatePreference().name()).isEqualTo("WARM");
 		assertThat(feedback.getPriorityFocus().name()).isEqualTo("FOOD");
+		assertThat(feedback.getSettlementPreference().name()).isEqualTo("BALANCED");
+		assertThat(feedback.getMobilityPreference().name()).isEqualTo("BALANCED");
 	}
 
 	@Test
@@ -76,15 +80,17 @@ class RecommendationFeedbackIntegrationTest {
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("""
 					{
-					  "surveyVersion": "survey-v1",
-					  "engineVersion": "engine-v1",
+					  "surveyVersion": "survey-v2",
+					  "engineVersion": "engine-v2",
 					  "satisfactionScore": 6,
 					  "climatePreference": "WARM",
 					  "pacePreference": "BALANCED",
 					  "budgetPreference": "LOW",
 					  "environmentPreference": "CITY",
 					  "englishImportance": "MEDIUM",
-					  "priorityFocus": "FOOD"
+					  "priorityFocus": "FOOD",
+					  "settlementPreference": "BALANCED",
+					  "mobilityPreference": "BALANCED"
 					}
 					"""))
 			.andExpect(status().isBadRequest())
@@ -140,7 +146,9 @@ class RecommendationFeedbackIntegrationTest {
 					RecommendationSurveyAnswers.BudgetPreference.LOW,
 					RecommendationSurveyAnswers.EnvironmentPreference.CITY,
 					RecommendationSurveyAnswers.EnglishImportance.MEDIUM,
-					RecommendationSurveyAnswers.PriorityFocus.FOOD
+					RecommendationSurveyAnswers.PriorityFocus.FOOD,
+					RecommendationSurveyAnswers.SettlementPreference.BALANCED,
+					RecommendationSurveyAnswers.MobilityPreference.BALANCED
 				)
 			)
 		);

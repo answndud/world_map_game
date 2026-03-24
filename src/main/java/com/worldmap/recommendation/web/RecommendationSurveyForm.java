@@ -23,6 +23,12 @@ public class RecommendationSurveyForm {
 	@NotNull(message = "가장 중요한 기준을 선택해주세요.")
 	private RecommendationSurveyAnswers.PriorityFocus priorityFocus;
 
+	@NotNull(message = "정착 성향을 선택해주세요.")
+	private RecommendationSurveyAnswers.SettlementPreference settlementPreference;
+
+	@NotNull(message = "이동 생활 방식을 선택해주세요.")
+	private RecommendationSurveyAnswers.MobilityPreference mobilityPreference;
+
 	public RecommendationSurveyAnswers toAnswers() {
 		return new RecommendationSurveyAnswers(
 			climatePreference,
@@ -30,7 +36,9 @@ public class RecommendationSurveyForm {
 			budgetPreference,
 			environmentPreference,
 			englishImportance,
-			priorityFocus
+			priorityFocus,
+			settlementPreference,
+			mobilityPreference
 		);
 	}
 
@@ -42,6 +50,8 @@ public class RecommendationSurveyForm {
 			case "environmentPreference" -> environmentPreference != null ? environmentPreference.name() : null;
 			case "englishImportance" -> englishImportance != null ? englishImportance.name() : null;
 			case "priorityFocus" -> priorityFocus != null ? priorityFocus.name() : null;
+			case "settlementPreference" -> settlementPreference != null ? settlementPreference.name() : null;
+			case "mobilityPreference" -> mobilityPreference != null ? mobilityPreference.name() : null;
 			default -> null;
 		};
 
@@ -94,5 +104,21 @@ public class RecommendationSurveyForm {
 
 	public void setPriorityFocus(RecommendationSurveyAnswers.PriorityFocus priorityFocus) {
 		this.priorityFocus = priorityFocus;
+	}
+
+	public RecommendationSurveyAnswers.SettlementPreference getSettlementPreference() {
+		return settlementPreference;
+	}
+
+	public void setSettlementPreference(RecommendationSurveyAnswers.SettlementPreference settlementPreference) {
+		this.settlementPreference = settlementPreference;
+	}
+
+	public RecommendationSurveyAnswers.MobilityPreference getMobilityPreference() {
+		return mobilityPreference;
+	}
+
+	public void setMobilityPreference(RecommendationSurveyAnswers.MobilityPreference mobilityPreference) {
+		this.mobilityPreference = mobilityPreference;
 	}
 }

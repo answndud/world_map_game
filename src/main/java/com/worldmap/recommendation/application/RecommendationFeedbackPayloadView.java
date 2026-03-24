@@ -8,6 +8,8 @@ public record RecommendationFeedbackPayloadView(
 	String budgetPreference,
 	String environmentPreference,
 	String englishImportance,
-	String priorityFocus
+	String priorityFocus,
+	String settlementPreference,
+	String mobilityPreference
 ) {
 }

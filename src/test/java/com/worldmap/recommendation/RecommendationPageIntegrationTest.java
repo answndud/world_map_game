@@ -41,14 +41,16 @@ class RecommendationPageIntegrationTest {
 				.param("budgetPreference", "HIGH")
 				.param("environmentPreference", "CITY")
 				.param("englishImportance", "HIGH")
-				.param("priorityFocus", "DIVERSITY"))
+				.param("priorityFocus", "DIVERSITY")
+				.param("settlementPreference", "BALANCED")
+				.param("mobilityPreference", "BALANCED"))
 			.andExpect(status().isOk())
 			.andExpect(view().name("recommendation/result"))
 			.andExpect(model().attributeExists("result"))
 			.andExpect(content().string(containsString("Top 3 국가")))
 			.andExpect(content().string(containsString("싱가포르")))
 			.andExpect(content().string(containsString("추천 만족도")))
-			.andExpect(content().string(containsString("survey-v1")))
-			.andExpect(content().string(containsString("engine-v1")));
+			.andExpect(content().string(containsString("survey-v2")))
+			.andExpect(content().string(containsString("engine-v2")));
 	}
 }

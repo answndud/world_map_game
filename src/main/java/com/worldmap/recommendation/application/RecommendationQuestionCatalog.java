@@ -44,6 +44,18 @@ public class RecommendationQuestionCatalog {
 				"마지막으로 가장 중요한 한 가지를 고른다면?",
 				"치안, 복지, 음식, 문화 다양성 중 무엇이 결정타인지 고릅니다.",
 				optionViews(RecommendationSurveyAnswers.PriorityFocus.values())
+			),
+			new RecommendationQuestionView(
+				"settlementPreference",
+				"이번 선택은 어느 쪽에 더 가까운가요?",
+				"짧게 살아보는 경험인지, 장기 정착 안정성까지 보는지에 따라 후보가 달라집니다.",
+				optionViews(RecommendationSurveyAnswers.SettlementPreference.values())
+			),
+			new RecommendationQuestionView(
+				"mobilityPreference",
+				"일상 이동 방식은 어느 쪽이 더 편한가요?",
+				"대중교통과 도보 생활이 중요한지, 넓은 공간과 느긋한 이동도 괜찮은지 반영합니다.",
+				optionViews(RecommendationSurveyAnswers.MobilityPreference.values())
 			)
 		);
 	}
@@ -55,7 +67,9 @@ public class RecommendationQuestionCatalog {
 			new RecommendationPreferenceSummaryView("물가 허용", answers.budgetPreference().label()),
 			new RecommendationPreferenceSummaryView("환경 취향", answers.environmentPreference().label()),
 			new RecommendationPreferenceSummaryView("영어 중요도", answers.englishImportance().label()),
-			new RecommendationPreferenceSummaryView("최우선 기준", answers.priorityFocus().label())
+			new RecommendationPreferenceSummaryView("최우선 기준", answers.priorityFocus().label()),
+			new RecommendationPreferenceSummaryView("정착 성향", answers.settlementPreference().label()),
+			new RecommendationPreferenceSummaryView("이동 방식", answers.mobilityPreference().label())
 		);
 	}
 

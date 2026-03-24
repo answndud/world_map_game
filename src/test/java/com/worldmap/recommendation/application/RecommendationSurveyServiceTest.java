@@ -45,12 +45,14 @@ class RecommendationSurveyServiceTest {
 			RecommendationSurveyAnswers.BudgetPreference.HIGH,
 			RecommendationSurveyAnswers.EnvironmentPreference.CITY,
 			RecommendationSurveyAnswers.EnglishImportance.HIGH,
-			RecommendationSurveyAnswers.PriorityFocus.DIVERSITY
+			RecommendationSurveyAnswers.PriorityFocus.DIVERSITY,
+			RecommendationSurveyAnswers.SettlementPreference.BALANCED,
+			RecommendationSurveyAnswers.MobilityPreference.BALANCED
 		));
 
 		assertThat(result.recommendations()).hasSize(3);
 		assertThat(result.recommendations().getFirst().countryNameKr()).isEqualTo("싱가포르");
-		assertThat(result.submittedPreferences()).hasSize(6);
+		assertThat(result.submittedPreferences()).hasSize(8);
 	}
 
 	@Test
@@ -80,12 +82,45 @@ class RecommendationSurveyServiceTest {
 			RecommendationSurveyAnswers.BudgetPreference.LOW,
 			RecommendationSurveyAnswers.EnvironmentPreference.CITY,
 			RecommendationSurveyAnswers.EnglishImportance.MEDIUM,
-			RecommendationSurveyAnswers.PriorityFocus.FOOD
+			RecommendationSurveyAnswers.PriorityFocus.FOOD,
+			RecommendationSurveyAnswers.SettlementPreference.BALANCED,
+			RecommendationSurveyAnswers.MobilityPreference.BALANCED
 		));
 
 		assertThat(result.recommendations()).hasSize(3);
 		assertThat(result.recommendations().getFirst().countryNameKr()).isEqualTo("말레이시아");
 		assertThat(result.recommendations().getFirst().countryNameKr()).isNotEqualTo("싱가포르");
+	}
+
+	@Test
+	void recommendCanReflectNewSettlementAndMobilityQuestions() {
+		CountryRepository countryRepository = mock(CountryRepository.class);
+		when(countryRepository.findAllByOrderByNameKrAsc()).thenReturn(List.of(
+			country("CAN", "캐나다", "Canada", Continent.NORTH_AMERICA, "오타와", 40_000_000L),
+			country("NZL", "뉴질랜드", "New Zealand", Continent.OCEANIA, "웰링턴", 5_000_000L),
+			country("SGP", "싱가포르", "Singapore", Continent.ASIA, "싱가포르", 5_900_000L),
+			country("GBR", "영국", "United Kingdom", Continent.EUROPE, "런던", 68_000_000L)
+		));
+
+		RecommendationSurveyService service = new RecommendationSurveyService(
+			new RecommendationCountryProfileCatalog(),
+			new RecommendationQuestionCatalog(),
+			countryRepository
+		);
+
+		RecommendationSurveyResultView result = service.recommend(new RecommendationSurveyAnswers(
+			RecommendationSurveyAnswers.ClimatePreference.MILD,
+			RecommendationSurveyAnswers.PacePreference.BALANCED,
+			RecommendationSurveyAnswers.BudgetPreference.HIGH,
+			RecommendationSurveyAnswers.EnvironmentPreference.MIXED,
+			RecommendationSurveyAnswers.EnglishImportance.HIGH,
+			RecommendationSurveyAnswers.PriorityFocus.SAFETY,
+			RecommendationSurveyAnswers.SettlementPreference.STABILITY,
+			RecommendationSurveyAnswers.MobilityPreference.SPACE_FIRST
+		));
+
+		assertThat(result.recommendations()).hasSize(3);
+		assertThat(result.recommendations().getFirst().countryNameKr()).isEqualTo("캐나다");
 	}
 
 	private Country country(

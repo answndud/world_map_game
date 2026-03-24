@@ -58,6 +58,14 @@ public class RecommendationFeedback {
 	@Column(name = "priority_focus", nullable = false, length = 30)
 	private RecommendationSurveyAnswers.PriorityFocus priorityFocus;
 
+	@Enumerated(EnumType.STRING)
+	@Column(name = "settlement_preference", length = 30)
+	private RecommendationSurveyAnswers.SettlementPreference settlementPreference;
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "mobility_preference", length = 30)
+	private RecommendationSurveyAnswers.MobilityPreference mobilityPreference;
+
 	@Column(name = "created_at", nullable = false)
 	private LocalDateTime createdAt;
 
@@ -80,6 +88,8 @@ public class RecommendationFeedback {
 		this.environmentPreference = answers.environmentPreference();
 		this.englishImportance = answers.englishImportance();
 		this.priorityFocus = answers.priorityFocus();
+		this.settlementPreference = answers.settlementPreference();
+		this.mobilityPreference = answers.mobilityPreference();
 		this.createdAt = createdAt;
 	}
 
@@ -136,6 +146,14 @@ public class RecommendationFeedback {
 
 	public RecommendationSurveyAnswers.PriorityFocus getPriorityFocus() {
 		return priorityFocus;
+	}
+
+	public RecommendationSurveyAnswers.SettlementPreference getSettlementPreference() {
+		return settlementPreference;
+	}
+
+	public RecommendationSurveyAnswers.MobilityPreference getMobilityPreference() {
+		return mobilityPreference;
 	}
 
 	public LocalDateTime getCreatedAt() {

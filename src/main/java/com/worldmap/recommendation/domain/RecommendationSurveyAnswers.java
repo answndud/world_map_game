@@ -6,7 +6,9 @@ public record RecommendationSurveyAnswers(
 	BudgetPreference budgetPreference,
 	EnvironmentPreference environmentPreference,
 	EnglishImportance englishImportance,
-	PriorityFocus priorityFocus
+	PriorityFocus priorityFocus,
+	SettlementPreference settlementPreference,
+	MobilityPreference mobilityPreference
 ) {
 
 	public interface SurveyOption {
@@ -176,6 +178,54 @@ public record RecommendationSurveyAnswers(
 		private final String description;
 
 		PriorityFocus(String label, String description) {
+			this.label = label;
+			this.description = description;
+		}
+
+		@Override
+		public String label() {
+			return label;
+		}
+
+		@Override
+		public String description() {
+			return description;
+		}
+	}
+
+	public enum SettlementPreference implements SurveyOption {
+		EXPERIENCE("가볍게 살아보기", "짧게 경험하거나 일단 살아보며 판단하는 쪽에 가깝습니다."),
+		BALANCED("둘 다 고려", "경험과 장기 정착 가능성을 함께 봅니다."),
+		STABILITY("장기 정착 안정성", "오래 머물 가능성을 고려해 안전망과 정착 안정성을 더 중시합니다.");
+
+		private final String label;
+		private final String description;
+
+		SettlementPreference(String label, String description) {
+			this.label = label;
+			this.description = description;
+		}
+
+		@Override
+		public String label() {
+			return label;
+		}
+
+		@Override
+		public String description() {
+			return description;
+		}
+	}
+
+	public enum MobilityPreference implements SurveyOption {
+		TRANSIT_FIRST("대중교통 / 도보 중심", "지하철, 버스, 도보 생활이 잘 되는 환경을 선호합니다."),
+		BALANCED("둘 다 괜찮음", "대중교통과 개인 이동 방식 모두 크게 상관없습니다."),
+		SPACE_FIRST("여유 공간 / 차량 이동도 괜찮음", "넓은 공간과 상대적으로 느긋한 이동 방식도 괜찮습니다.");
+
+		private final String label;
+		private final String description;
+
+		MobilityPreference(String label, String description) {
 			this.label = label;
 			this.description = description;
 		}

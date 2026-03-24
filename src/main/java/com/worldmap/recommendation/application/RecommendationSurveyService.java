@@ -16,13 +16,15 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class RecommendationSurveyService {
 
-	public static final String SURVEY_VERSION = "survey-v1";
-	public static final String ENGINE_VERSION = "engine-v1";
+	public static final String SURVEY_VERSION = "survey-v2";
+	public static final String ENGINE_VERSION = "engine-v2";
 	private static final int CLIMATE_WEIGHT = 5;
 	private static final int PACE_WEIGHT = 4;
 	private static final int BUDGET_WEIGHT = 5;
 	private static final int ENVIRONMENT_WEIGHT = 4;
 	private static final int PRIORITY_WEIGHT = 6;
+	private static final int SETTLEMENT_WEIGHT = 2;
+	private static final int MOBILITY_WEIGHT = 2;
 	private static final int EXACT_MATCH_BONUS = 3;
 	private static final int COHERENCE_BONUS = 6;
 	private static final int OVER_BUDGET_PENALTY = 5;
@@ -86,7 +88,9 @@ public class RecommendationSurveyService {
 				answers.budgetPreference().name(),
 				answers.environmentPreference().name(),
 				answers.englishImportance().name(),
-				answers.priorityFocus().name()
+				answers.priorityFocus().name(),
+				answers.settlementPreference().name(),
+				answers.mobilityPreference().name()
 			),
 			questionCatalog.summariesOf(answers),
 			List.copyOf(rankedCandidates)
@@ -142,6 +146,12 @@ public class RecommendationSurveyService {
 
 		int priorityPoints = priorityPoints(profile, answers.priorityFocus());
 		signals.add(new MatchSignal(priorityPoints, answers.priorityFocus().label() + " 기준에서 강점을 보입니다."));
+
+		int settlementPoints = settlementPoints(profile, answers.settlementPreference());
+		signals.add(new MatchSignal(settlementPoints, answers.settlementPreference().label() + " 기준에서 생활 안정성과 적응 난도를 함께 반영했습니다."));
+
+		int mobilityPoints = mobilityPoints(profile, answers.mobilityPreference());
+		signals.add(new MatchSignal(mobilityPoints, answers.mobilityPreference().label() + " 이동 방식과 일상 생활 리듬에 가까운 후보입니다."));
 
 		int coherencePoints = coherenceBonus(climateDistance, paceDistance, environmentDistance);
 		signals.add(new MatchSignal(coherencePoints, "핵심 생활 조건들이 전반적으로 크게 어긋나지 않습니다."));
@@ -253,6 +263,29 @@ public class RecommendationSurveyService {
 			case WELFARE -> profile.welfare() * PRIORITY_WEIGHT;
 			case FOOD -> profile.food() * PRIORITY_WEIGHT;
 			case DIVERSITY -> profile.diversity() * PRIORITY_WEIGHT;
+		};
+	}
+
+	private int settlementPoints(
+		RecommendationCountryProfile profile,
+		RecommendationSurveyAnswers.SettlementPreference settlementPreference
+	) {
+		return switch (settlementPreference) {
+			case EXPERIENCE -> (profile.diversity() * SETTLEMENT_WEIGHT) + profile.food();
+			case BALANCED -> 0;
+			case STABILITY -> (profile.safety() * SETTLEMENT_WEIGHT) + (profile.welfare() * SETTLEMENT_WEIGHT)
+				+ (profile.englishSupport() >= 4 ? 2 : 0);
+		};
+	}
+
+	private int mobilityPoints(
+		RecommendationCountryProfile profile,
+		RecommendationSurveyAnswers.MobilityPreference mobilityPreference
+	) {
+		return switch (mobilityPreference) {
+			case TRANSIT_FIRST -> (profile.urbanityValue() * MOBILITY_WEIGHT) + (profile.paceValue() >= 3 ? 2 : 0);
+			case BALANCED -> 0;
+			case SPACE_FIRST -> ((6 - profile.urbanityValue()) * MOBILITY_WEIGHT) + profile.safety();
 		};
 	}
 
