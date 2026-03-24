@@ -1235,6 +1235,40 @@
 - 면접에서 30초 안에 설명하는 요약: 추천 엔진은 계산식만큼 후보 데이터가 중요해서, 이번에는 점수 공식을 바꾸지 않고 추천 프로필 카탈로그를 12개에서 30개로 넓혔습니다. 북미, 유럽, 동남아, 남미, 아프리카까지 후보를 분산시킨 뒤, ISO 유효성과 실제 추천 결과 상위권 진입 여부를 테스트로 고정해 추천 다양성을 먼저 높였습니다.
 - 아직 내가 이해가 부족한 부분: 지금은 프로필 값을 수작업으로 관리하므로, 이후 후보 국가가 더 늘어나면 어떤 기준으로 값을 보정하고 versioning할지 더 정리할 필요가 있다.
 
+## 2026-03-24 - 추천 결과 비저장 원칙과 만족도 피드백 수집 1차
+
+- 단계: 6. 설문 기반 추천 엔진
+- 목적: 추천 결과 자체를 DB에 저장하지 않겠다는 방향을 명확히 하고, 대신 설문 개선을 위한 최소 신호만 남기는 구조를 만든다. 이번 조각에서는 결과 페이지에서 `1~5점 만족도`, `surveyVersion`, `engineVersion`, 사용자가 고른 6개 답변만 익명으로 저장한다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationSurveyService.java`
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationSurveyResultView.java`
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationFeedbackPayloadView.java`
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationFeedbackSubmission.java`
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationFeedbackService.java`
+  - `src/main/java/com/worldmap/recommendation/domain/RecommendationFeedback.java`
+  - `src/main/java/com/worldmap/recommendation/domain/RecommendationFeedbackRepository.java`
+  - `src/main/java/com/worldmap/recommendation/web/RecommendationFeedbackRequest.java`
+  - `src/main/java/com/worldmap/recommendation/web/RecommendationFeedbackSavedResponse.java`
+  - `src/main/java/com/worldmap/recommendation/web/RecommendationFeedbackApiController.java`
+  - `src/main/resources/templates/recommendation/result.html`
+  - `src/main/resources/static/js/recommendation-feedback.js`
+  - `src/main/resources/static/css/site.css`
+  - `src/test/java/com/worldmap/recommendation/RecommendationFeedbackIntegrationTest.java`
+  - `src/test/java/com/worldmap/recommendation/RecommendationPageIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/12-collect-recommendation-feedback.md`
+- 요청 흐름 / 데이터 흐름: 사용자는 `POST /recommendation/survey`로 추천 결과 페이지를 받는다. 이때 서버는 `RecommendationSurveyResultView` 안에 `surveyVersion`, `engineVersion`, 그리고 선택한 6개 답변 코드로 이루어진 feedback payload를 같이 넣어 준다. 결과 페이지에서 사용자가 만족도 1~5점을 고르면 브라우저가 `POST /api/recommendation/feedback`를 호출하고, 서버는 `RecommendationFeedbackRequest -> RecommendationFeedbackSubmission -> RecommendationFeedbackService` 순서로 익명 피드백 레코드를 저장한다.
+- 데이터 / 상태 변화: 추천 결과 top 3 자체는 저장하지 않는다. 저장되는 것은 `surveyVersion`, `engineVersion`, `satisfactionScore`, 그리고 6개 답변 enum 스냅샷이다. 즉 “결과 저장”이 아니라 “설문 개선 신호 저장”으로 범위를 제한했다.
+- 핵심 도메인 개념: 이번 설계의 핵심은 “추천 결과를 기록하지 않아도 설문을 개선할 수 있다”는 점이다. 어떤 설문 버전과 엔진 버전에서 만족도가 높거나 낮았는지, 그리고 어떤 답변 조합에서 만족도가 낮은지를 보려면 결과 자체보다 `답변 스냅샷 + 만족도 점수`가 더 중요할 수 있다. 그래서 결과 저장은 생략하고, 개선용 피드백만 최소 구조로 남겼다.
+- 예외 상황 또는 엣지 케이스: 만족도 점수는 1~5 범위만 허용한다. 결과 페이지에서 아무 점수도 선택하지 않으면 JS가 제출을 막고, 서버도 `@Min/@Max` 검증으로 한 번 더 막는다. 지금은 중복 제출 방지를 프론트 단의 버튼 잠금으로만 처리하고 있으며, 사용자 식별이나 결과 dedupe는 일부러 넣지 않았다.
+- 테스트 내용: `./gradlew test --tests com.worldmap.recommendation.RecommendationPageIntegrationTest --tests com.worldmap.recommendation.RecommendationFeedbackIntegrationTest --tests com.worldmap.recommendation.application.RecommendationCountryProfileCatalogTest --tests com.worldmap.recommendation.application.RecommendationSurveyServiceTest` 통과, `./gradlew test` 전체 통과. 피드백 통합 테스트는 `POST /api/recommendation/feedback`가 실제 레코드를 저장하는지와 6점 같은 잘못된 점수를 400으로 거절하는지를 검증했다.
+- 면접에서 30초 안에 설명하는 요약: 추천 결과는 저장하지 않기로 했고, 대신 설문을 개선할 수 있는 최소 신호만 남겼습니다. 결과 페이지에서 1~5점 만족도와 설문/엔진 버전, 사용자가 고른 6개 답변만 익명으로 저장하고, 이 데이터를 기준으로 어떤 설문 버전이 더 만족도가 높은지 나중에 비교할 수 있게 했습니다.
+- 아직 내가 이해가 부족한 부분: 지금은 피드백을 저장만 하고 집계 조회는 아직 없다. 다음 단계에서 버전별 평균 점수, 응답 수, 특정 답변 조합별 만족도 같은 집계 기준을 어디까지 보여줄지 더 정리해야 한다.
+
 ## 2026-03-24 - 추천 가중치 튜닝과 경계값 조정 1차
 
 - 단계: 6. 설문 기반 추천 엔진
