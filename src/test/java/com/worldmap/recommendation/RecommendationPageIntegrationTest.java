@@ -1,5 +1,6 @@
 package com.worldmap.recommendation;
 
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -30,7 +31,10 @@ class RecommendationPageIntegrationTest {
 			.andExpect(view().name("recommendation/survey"))
 			.andExpect(model().attributeExists("surveyForm"))
 			.andExpect(model().attributeExists("surveyQuestions"))
-			.andExpect(content().string(containsString("어울리는 나라 추천")));
+			.andExpect(content().string(containsString("어울리는 나라 추천")))
+			.andExpect(content().string(containsString("Find Your Match")))
+			.andExpect(content().string(not(containsString("deterministic"))))
+			.andExpect(content().string(not(containsString("Offline Eval"))));
 	}
 
 	@Test
@@ -47,10 +51,12 @@ class RecommendationPageIntegrationTest {
 			.andExpect(status().isOk())
 			.andExpect(view().name("recommendation/result"))
 			.andExpect(model().attributeExists("result"))
-			.andExpect(content().string(containsString("Top 3 국가")))
+			.andExpect(content().string(containsString("잘 맞는 나라 3곳")))
 			.andExpect(content().string(containsString("싱가포르")))
 			.andExpect(content().string(containsString("추천 만족도")))
 			.andExpect(content().string(containsString("survey-v2")))
-			.andExpect(content().string(containsString("engine-v2")));
+			.andExpect(content().string(containsString("engine-v2")))
+			.andExpect(content().string(not(containsString("deterministic"))))
+			.andExpect(content().string(not(containsString("만족도 집계 보기"))));
 	}
 }

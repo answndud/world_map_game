@@ -11,19 +11,19 @@
 <div class="page-shell">
     <th:block th:replace="~{fragments/site-header :: siteHeader('recommendation')}"></th:block>
     <header class="hero compact-hero">
-        <p class="eyebrow">Recommendation Result</p>
+        <p class="eyebrow">Your Match</p>
         <h1>추천 결과</h1>
         <p class="hero-copy">
-            서버는 8개 설문 답변을 가중치로 바꾼 뒤, 국가 프로필과 비교해 상위 3개 국가를 계산했습니다.
-            아직 설명 문장은 정적이지만, 계산 결과 자체는 서버가 deterministic하게 만든 값입니다.
+            8개 답변을 바탕으로
+            지금 생활 취향과 잘 맞는 나라 3곳을 골랐습니다.
         </p>
     </header>
 
     <main class="layout">
         <section class="panel game-panel">
             <div class="panel-head">
-                <h2>내 설문 기준</h2>
-                <p>아래 8개 답변이 추천 점수 계산의 입력이 됩니다. 이 입력은 개발 단계에서 설문 버전 평가 시나리오와도 비교해 개선 기준으로 사용합니다.</p>
+                <h2>내가 고른 취향</h2>
+                <p>아래 답변을 기준으로 기후, 생활 속도, 비용 부담, 도시/자연 취향이 잘 맞는 나라를 찾았습니다.</p>
             </div>
 
             <div class="stats-grid">
@@ -36,8 +36,8 @@
 
         <section class="panel game-panel">
             <div class="panel-head">
-                <h2>Top 3 국가</h2>
-                <p>순위는 총점 기준이며, 각 카드는 현재 설문 답변과 가장 잘 맞은 이유 3개를 같이 보여줍니다.</p>
+                <h2>잘 맞는 나라 3곳</h2>
+                <p>각 카드에는 잘 맞는 이유와 기본 정보를 함께 정리했습니다.</p>
             </div>
 
             <div class="card-grid">
@@ -54,7 +54,7 @@
                     <div class="recommendation-meta">
                         <p th:text="${'수도 · ' + candidate.capitalCity}">수도 · 싱가포르</p>
                         <p th:text="${'인구 · ' + candidate.populationLabel}">인구 · 5,900,000명</p>
-                        <p th:text="${'매칭 점수 · ' + candidate.matchScore}">매칭 점수 · 182</p>
+                        <p th:text="${'잘 맞는 정도 · ' + candidate.matchScore}">잘 맞는 정도 · 182</p>
                     </div>
                     <ul class="check-list recommendation-reason-list">
                         <li th:each="reason : ${candidate.reasons}" th:text="${reason}">
@@ -66,7 +66,6 @@
 
             <div class="page-actions">
                 <a class="primary-link" th:href="@{/recommendation/survey}">설문 다시 하기</a>
-                <a class="ghost-link" th:href="@{/recommendation/feedback-insights}">만족도 집계 보기</a>
                 <a class="ghost-link" th:href="@{/}">메인으로 돌아가기</a>
             </div>
         </section>
@@ -74,7 +73,7 @@
         <section class="panel game-panel">
             <div class="panel-head">
                 <h2>추천 만족도</h2>
-                <p>추천 결과 자체는 저장하지 않고, 설문 개선을 위한 익명 만족도 점수만 수집합니다.</p>
+                <p>이번 결과가 얼마나 만족스러웠는지 별점으로 알려주세요.</p>
             </div>
 
             <form id="recommendation-feedback-form" class="game-form">

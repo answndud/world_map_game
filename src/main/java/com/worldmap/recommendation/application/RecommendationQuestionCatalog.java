@@ -12,49 +12,49 @@ public class RecommendationQuestionCatalog {
 			new RecommendationQuestionView(
 				"climatePreference",
 				"어떤 기후가 더 오래 머물기 편한가요?",
-				"나라의 날씨 방향을 먼저 정하면 추천 후보 풀이 크게 달라집니다.",
+				"오래 머물 때 더 편하게 느껴질 날씨를 떠올리면 됩니다.",
 				optionViews(RecommendationSurveyAnswers.ClimatePreference.values())
 			),
 			new RecommendationQuestionView(
 				"pacePreference",
 				"생활 속도는 어느 정도가 맞나요?",
-				"도시 리듬과 여유의 균형은 추천 결과에서 큰 비중을 차지합니다.",
+				"활기 있는 도시 생활이 좋은지, 조금 더 여유로운 일상이 좋은지 골라주세요.",
 				optionViews(RecommendationSurveyAnswers.PacePreference.values())
 			),
 			new RecommendationQuestionView(
 				"budgetPreference",
 				"물가 허용 범위는 어느 정도인가요?",
-				"생활비 허용 범위는 상위 국가를 가르는 중요한 기준입니다.",
+				"생활비 부담을 얼마나 감수할 수 있는지에 따라 추천이 달라집니다.",
 				optionViews(RecommendationSurveyAnswers.BudgetPreference.values())
 			),
 			new RecommendationQuestionView(
 				"environmentPreference",
 				"도시와 자연 중 어느 쪽이 더 중요한가요?",
-				"대도시 중심인지, 자연과의 거리까지 보는지에 따라 점수가 달라집니다.",
+				"바쁜 도시 중심이 좋은지, 자연과 가까운 생활이 좋은지 생각해보세요.",
 				optionViews(RecommendationSurveyAnswers.EnvironmentPreference.values())
 			),
 			new RecommendationQuestionView(
 				"englishImportance",
 				"영어 친화도는 얼마나 중요한가요?",
-				"초기 적응 난도를 낮추고 싶다면 이 가중치가 더 크게 반영됩니다.",
+				"처음 적응할 때 영어가 얼마나 중요할지 기준을 정해보세요.",
 				optionViews(RecommendationSurveyAnswers.EnglishImportance.values())
 			),
 			new RecommendationQuestionView(
 				"priorityFocus",
 				"마지막으로 가장 중요한 한 가지를 고른다면?",
-				"치안, 복지, 음식, 문화 다양성 중 무엇이 결정타인지 고릅니다.",
+				"치안, 공공 서비스, 음식, 문화 분위기 중 가장 놓치고 싶지 않은 기준을 고릅니다.",
 				optionViews(RecommendationSurveyAnswers.PriorityFocus.values())
 			),
 			new RecommendationQuestionView(
 				"settlementPreference",
 				"이번 선택은 어느 쪽에 더 가까운가요?",
-				"짧게 살아보는 경험인지, 장기 정착 안정성까지 보는지에 따라 후보가 달라집니다.",
+				"짧게 살아보는 느낌인지, 오래 머무를 가능성까지 보는지에 따라 결과가 달라집니다.",
 				optionViews(RecommendationSurveyAnswers.SettlementPreference.values())
 			),
 			new RecommendationQuestionView(
 				"mobilityPreference",
 				"일상 이동 방식은 어느 쪽이 더 편한가요?",
-				"대중교통과 도보 생활이 중요한지, 넓은 공간과 느긋한 이동도 괜찮은지 반영합니다.",
+				"대중교통과 도보 중심이 좋은지, 넓은 공간과 느긋한 이동이 좋은지 골라주세요.",
 				optionViews(RecommendationSurveyAnswers.MobilityPreference.values())
 			)
 		);

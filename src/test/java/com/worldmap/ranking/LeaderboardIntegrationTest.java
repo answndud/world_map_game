@@ -1,5 +1,6 @@
 package com.worldmap.ranking;
 
+import static org.hamcrest.Matchers.not;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -119,7 +120,8 @@ class LeaderboardIntegrationTest {
 			.andExpect(content().string(containsString("지금 새로고침")))
 			.andExpect(content().string(containsString("게임 모드")))
 			.andExpect(content().string(containsString("동점 처리")))
-			.andExpect(content().string(containsString("15초 Polling")))
+			.andExpect(content().string(containsString("15초마다 갱신")))
+			.andExpect(content().string(not(containsString("Redis Leaderboard"))))
 			.andExpect(model().attributeExists("locationAll"))
 			.andExpect(model().attributeExists("populationAll"));
 
