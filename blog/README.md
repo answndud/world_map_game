@@ -83,12 +83,13 @@
 23. [새 추천 문항을 실제로 쓰는 active-signal 페르소나 추가하기](./18-activate-new-recommendation-signals-in-persona-eval.md)
 24. [public 화면 문구를 제품 언어로 정리하기](./19-refresh-public-copy-before-admin-split.md)
 25. [public 운영 정보를 `/admin` read-only 화면으로 옮기기](./20-move-ops-insights-into-admin-surface.md)
+26. [추천 baseline 운영 화면과 public 헤더를 정리하기](./21-add-admin-persona-baseline-and-simplify-public-header.md)
 
 ### Part E. 확장과 포트폴리오 정리
 
-26. 인증과 내 전적 조회 붙이기
-27. Level 2와 실시간 전달 방식 고도화하기
-28. 테스트, 아키텍처, 면접 패키지로 프로젝트 마감하기
+27. 인증과 내 전적 조회 붙이기
+28. Level 2와 실시간 전달 방식 고도화하기
+29. 테스트, 아키텍처, 면접 패키지로 프로젝트 마감하기
 
 ## 읽는 순서
 

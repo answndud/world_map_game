@@ -1529,3 +1529,35 @@
 - 테스트 내용: `./gradlew test --tests com.worldmap.admin.AdminPageIntegrationTest --tests com.worldmap.recommendation.RecommendationFeedbackIntegrationTest --tests com.worldmap.recommendation.RecommendationPageIntegrationTest` 통과. `AdminPageIntegrationTest`는 `/admin` 대시보드와 `/admin/recommendation/feedback` 운영 화면 SSR을 검증하고, `RecommendationFeedbackIntegrationTest`는 legacy public route redirect를 검증한다.
 - 면접에서 30초 안에 설명하는 요약: public 화면과 운영 화면을 실제 라우트 수준에서 나누기 위해 `/admin` read-only 대시보드와 `/admin/recommendation/feedback`을 추가했습니다. 만족도 집계 계산은 그대로 `RecommendationFeedbackService`가 맡고, `AdminDashboardService`가 현재 설문/엔진 버전과 피드백 요약을 한 번에 묶어 운영 화면 모델을 만듭니다. 기존 public 운영 route는 admin으로 redirect해 사용자 경험과 운영 정보를 분리했습니다.
 - 아직 내가 이해가 부족한 부분: 현재 admin 대시보드는 추천 운영과 public 점검에만 초점을 둔다. 다음에는 `persona baseline`, `build 상태`, 더 세밀한 버전 비교까지 이 화면에 얼마나 확장할지 기준을 더 정해야 한다.
+
+## 2026-03-24 - baseline 운영 화면 추가와 public 헤더 단순화
+
+- 단계: 7. AI-assisted 설문 개선 체계 / 8. 인증, 전적, 마이페이지
+- 목적: 추천 운영에서는 만족도 집계뿐 아니라 오프라인 페르소나 baseline도 같이 봐야 하므로 `/admin/recommendation/persona-baseline`을 추가한다. 동시에 public 헤더는 게임별 직접 이동을 줄이고 `Home / My Page`만 남겨 상단 구조를 단순화한다. `My Page`는 아직 인증 전 단계라 placeholder shell만 먼저 만든다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/admin/application/AdminPersonaBaselineService.java`
+  - `src/main/java/com/worldmap/admin/application/AdminPersonaBaselineView.java`
+  - `src/main/java/com/worldmap/admin/application/AdminPersonaBaselineScenarioView.java`
+  - `src/main/java/com/worldmap/admin/web/AdminPageController.java`
+  - `src/main/java/com/worldmap/web/MyPageController.java`
+  - `src/main/resources/templates/admin/recommendation-persona-baseline.html`
+  - `src/main/resources/templates/fragments/site-header.html`
+  - `src/main/resources/templates/fragments/admin-header.html`
+  - `src/main/resources/templates/home.html`
+  - `src/main/resources/templates/mypage.html`
+  - `src/test/java/com/worldmap/admin/AdminPageIntegrationTest.java`
+  - `src/test/java/com/worldmap/web/HomeControllerTest.java`
+  - `src/test/java/com/worldmap/web/MyPageControllerTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/21-add-admin-persona-baseline-and-simplify-public-header.md`
+- 요청 흐름 / 데이터 흐름: `GET /admin/recommendation/persona-baseline`은 `AdminPageController.recommendationPersonaBaseline() -> AdminDashboardService.loadDashboard() + AdminPersonaBaselineService.loadBaseline()` 흐름으로 처리된다. `AdminPersonaBaselineService`는 baseline 18개, 현재 하한 `15 / 18`, weak scenario 3개, active-signal 4개를 운영 화면 모델로 묶는다. `GET /mypage`는 `MyPageController.myPage()`가 placeholder 템플릿만 렌더링한다. public 헤더는 이제 모든 public 페이지에서 `Home`, `My Page`만 보여 주고, 게임별 이동은 본문 CTA에 남긴다.
+- 데이터 / 상태 변화: 운영 DB나 추천 계산 자체는 바뀌지 않았다. 새로 생긴 것은 운영 읽기 모델과 public shell 구조다. `My Page`는 아직 사용자 데이터 저장이나 조회가 없고, 다음 8단계에서 auth/전적 기능이 들어올 자리만 먼저 고정한 상태다.
+- 핵심 도메인 개념: admin baseline 화면은 테스트 자산 전체를 노출하는 것이 아니라, 운영자가 봐야 하는 “현재 품질 하한 / weak scenario / active-signal 비교”만 읽기 모델로 다시 묶는다. 그래서 이 조합 책임은 컨트롤러보다 `AdminPersonaBaselineService`가 맡는다. 반면 `My Page`는 지금 상태 변화가 전혀 없으므로 서비스 없이 컨트롤러와 SSR 템플릿만 둔다.
+- 예외 상황 또는 엣지 케이스: `My Page`는 실제 로그인/내 기록 화면이 아니다. 사용자가 오해하지 않도록 템플릿에 “준비 중” 상태를 분명히 넣었다. 또한 header에서 게임 직접 이동을 제거했기 때문에, 홈 CTA와 각 모드 시작 화면 링크가 public 주요 진입점이 된다.
+- 테스트 내용: `./gradlew test --tests com.worldmap.admin.AdminPageIntegrationTest --tests com.worldmap.web.HomeControllerTest --tests com.worldmap.web.MyPageControllerTest --tests com.worldmap.recommendation.RecommendationFeedbackIntegrationTest` 통과. admin baseline page 렌더링, 홈 화면에서 `오늘의 추천 플레이` 제거, header의 `My Page` 노출, `/mypage` placeholder 렌더링을 확인했다.
+- 면접에서 30초 안에 설명하는 요약: 추천 운영에서는 만족도 집계만 보면 부족해서 `/admin/recommendation/persona-baseline`을 추가해 18개 시나리오 baseline과 weak scenario를 같이 보게 만들었습니다. 동시에 public 헤더는 `Home / My Page`만 남겨 상단 이동 구조를 단순화했고, `My Page`는 아직 인증 전 단계라 placeholder shell만 먼저 고정했습니다.
+- 아직 내가 이해가 부족한 부분: `My Page`를 지금처럼 가벼운 placeholder로 유지할지, 다음 단계에서 게스트 전적 일부라도 먼저 붙일지는 8단계 설계에서 더 정해야 한다. 또 admin baseline 화면을 향후 실제 테스트 결과와 완전히 같은 데이터 원천으로 연결할지도 후속 판단이 필요하다.

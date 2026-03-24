@@ -425,6 +425,9 @@
 - 홈, 추천 설문/결과, 랭킹 public 화면의 copy를 제품 언어 중심으로 다시 쓰고, 추천 결과 화면에서 내부 운영 페이지 링크를 제거
 - `/admin` read-only 대시보드와 `AdminDashboardService`, `AdminPageController`를 추가해 public과 내부 운영 화면을 실제 라우트 수준에서 분리
 - 기존 `/recommendation/feedback-insights` public route는 `/admin/recommendation/feedback`으로 redirect해 북마크 호환성을 유지
+- `/admin/recommendation/persona-baseline` read-only 화면으로 weak scenario와 active-signal 비교 시나리오를 운영 화면에 노출
+- public 헤더는 `Home / My Page`만 남기고, 게임별 직접 이동은 본문 CTA로만 남겨 진입 구조를 단순화
+- `/mypage` placeholder SSR 화면을 먼저 추가해 다음 8단계 인증/전적 확장의 진입점을 미리 고정
 - 추천 페이지 통합 테스트와 추천 서비스 단위 테스트 통과
 
 이 단계에서 남은 일:
@@ -432,7 +435,7 @@
 - 후보 풀이 넓어진 뒤에도 결과가 특정 지역으로 치우치지 않는지 확인
 - 낮은 만족도 응답을 답변 조합 단위로 더 내려다볼지 결정
 - public 추천 화면의 helper text와 설명 문구를 제품 언어로 전면 보정
-- `/admin/recommendation/persona-baseline`, `/admin/build` 같은 후속 운영 화면을 확장
+- `/admin/build`처럼 남은 운영 화면을 더 확장
 - 다음 단계에서 서브 에이전트 평가에 사용할 설문 버전/시나리오 자산 고정
 
 반드시 이해할 것:
@@ -481,6 +484,7 @@
 - 기존 14개 중립 baseline 외에, 새 두 문항을 적극적으로 쓰는 `P15~P18` 비교 시나리오를 추가해 `EXPERIENCE / TRANSIT_FIRST`와 `STABILITY / SPACE_FIRST`가 실제 후보 구성을 바꾸는지 검증
 - `docs/recommendation/SURVEY_V2_PROPOSAL.md`로 우선 개선 대상 시나리오와 v2 개정안 초안 정리
 - `/Users/alex/project/worldmap/docs/PLAYER_COPY_AND_ADMIN_SPLIT_PLAN.md`로 public copy와 admin 운영 화면 분리 설계 정리
+- `/admin/recommendation/persona-baseline` read-only 화면으로 baseline 15/18, weak scenario 3개, active-signal 4개를 운영 화면에서 바로 확인
 - `/admin` read-only 대시보드를 추가해 현재 survey/engine 버전, 질문 수, 후보 국가 수, 만족도 수집 현황을 한 화면에서 조회
 - `/admin/recommendation/feedback`로 버전별 만족도 집계를 실제 운영 화면으로 이동
 
@@ -526,6 +530,7 @@
 - 내 랭킹 확인
 - admin 라우트 접근 제어
 - 운영용 대시보드 권한 분리
+- 현재는 public 헤더 정리를 위해 `/mypage` placeholder shell만 먼저 추가했고, 실제 사용자 데이터와 인증은 아직 붙이지 않았다
 
 반드시 이해할 것:
 
