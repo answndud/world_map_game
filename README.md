@@ -181,18 +181,20 @@
 
 ### 현재 1차 구현 상태
 
-- `/recommendation/survey`에서 SSR 설문 8문항을 제공한다.
+- `/recommendation/survey`에서 SSR 설문 12문항을 제공한다.
 - 서버는 `RecommendationQuestionCatalog`로 문항과 선택지를 관리한다.
 - 제출된 답변은 `RecommendationSurveyForm -> RecommendationSurveyAnswers` 구조로 검증하고 변환한다.
 - `RecommendationSurveyService`가 30개 국가 프로필 카탈로그와 비교해 가중치 점수를 계산하고 상위 3개 국가를 반환한다.
-- 현재 설문은 기존 6개 문항에 `정착 성향`, `이동 생활 방식` 2개를 더해 사용자가 체감하는 추천 입력 밀도를 높였다.
+- 현재 설문은 단순 선호보다 `비용을 더 내고 생활 품질을 얻을 의향`, `기후 적응 성향`, `치안/공공 서비스/음식/다양성 중요도`를 묻는 12문항 trade-off 구조로 다시 설계했다.
 - 추천 후보 풀은 북미, 유럽, 동아시아, 동남아, 중동, 남미, 아프리카, 오세아니아까지 분산해 한 지역에만 결과가 몰리지 않도록 넓혔다.
-- 현재 점수식은 `정확 일치 보너스`, `저물가 선호 시 초과 물가 패널티`, `핵심 생활 조건 coherence bonus`를 포함하도록 한 번 더 조정했다.
+- 현재 점수식은 `정확 일치 보너스`, `초과 물가 패널티`, `영어 지원 필요도 가중치`, `극단 기후 mismatch penalty`, `핵심 생활 조건 coherence bonus`를 포함하도록 다시 조정했다.
 - 정렬은 총점 우선이지만, 동점 구간에서는 `강한 신호 개수 -> 정확 일치 개수 -> 국가명` 순으로 보조 비교한다.
 - 결과 페이지는 서버가 계산한 매칭 점수와 핵심 이유 3개를 deterministic하게 보여준다.
-- 추천 결과 자체는 저장하지 않고, 결과 페이지에서 `1~5점 만족도 + surveyVersion + engineVersion + 사용자가 선택한 8개 답변`만 익명 피드백으로 수집한다.
+- 추천 결과 자체는 저장하지 않고, 결과 페이지에서 `1~5점 만족도 + surveyVersion + engineVersion + 사용자가 선택한 12개 답변`만 익명 피드백으로 수집한다.
 - `/dashboard/recommendation/feedback`와 `/api/recommendation/feedback/summary`에서 `surveyVersion + engineVersion` 기준 평균 점수, 응답 수, 1~5점 분포를 읽어 설문 개선 기준으로 사용한다.
 - `/dashboard/recommendation/persona-baseline`에서 18개 페르소나 baseline 중 weak scenario와 active-signal 비교 시나리오를 운영 화면으로 확인한다.
+- 오프라인 baseline과 snapshot은 현재 `survey-v3 / engine-v3` 기준으로 다시 고정했다.
+- 공통 shell은 다크/라이트 테마 토글을 제공하고, 사용자가 고른 테마는 `localStorage`의 `worldmap-theme`로 유지한다.
 - 홈, 추천, 랭킹 public 화면은 내부 구현 용어보다 플레이어가 바로 이해할 수 있는 제품 언어로 다시 정리했고, 버전/집계/로드맵 같은 내부 정보는 `/dashboard` 운영 화면으로 분리하는 방향으로 간다.
 - 현재는 `/dashboard` read-only 운영 화면과 `/dashboard/recommendation/feedback` 운영 화면을 두고, `ADMIN` role 세션 기반 접근 제어까지 연결했다.
 - public 헤더는 기본 `Home`, `My Page`를 유지하고, `ADMIN` 로그인일 때만 `Dashboard` 버튼을 추가로 노출한다.
@@ -221,7 +223,7 @@
 - 이 피드백은 설문 문항과 가중치를 계속 개선하기 위한 신호로 사용하고, 오프라인 AI-assisted 평가 루프는 `docs/recommendation/OFFLINE_AI_SURVEY_IMPROVEMENT.md`와 `docs/recommendation/PERSONA_EVAL_SET.md`에서 관리한다.
 - `RecommendationOfflinePersonaCoverageTest`로 18개 페르소나 baseline을 자동 평가하고, 현재 엔진이 최소 15개 시나리오에서 기대 후보 1개 이상을 top 3에 포함하는지를 품질 하한으로 고정했다.
 - baseline은 기존 14개 중립 시나리오와, 새 두 문항을 적극적으로 쓰는 `P15~P18` 비교 시나리오로 나뉜다.
-- `RecommendationOfflinePersonaSnapshotTest`로 18개 페르소나의 현재 top 3 추천 순서를 snapshot으로 고정해, 다음 `engine-v2` 실험에서 coverage뿐 아니라 순위 변화 자체도 비교할 수 있게 했다.
+- `RecommendationOfflinePersonaSnapshotTest`로 18개 페르소나의 현재 top 3 추천 순서를 snapshot으로 고정해, 다음 실험에서 coverage뿐 아니라 순위 변화 자체도 비교할 수 있게 했다.
 - 현재 baseline 결과를 바탕으로 `docs/recommendation/SURVEY_V2_PROPOSAL.md`에 `복지형`, `저예산 안전형`, `온화한 고도시 다양성형` 시나리오를 우선 개선 대상으로 정리했다.
 
 ## 7. 랭킹 시스템 설계

@@ -97,12 +97,14 @@
 37. [Dashboard 지표 중 공개 가능한 것만 `/stats`로 분리하기](./32-make-public-stats-page-from-dashboard-metrics.md)
 38. [local 프로필에서 admin / user 계정과 샘플 run 자동 생성하기](./33-bootstrap-local-demo-accounts-and-sample-runs.md)
 39. [홈 첫 화면에 로그인 / 회원가입 진입점 추가하기](./34-add-home-auth-entry-points.md)
+40. [추천 설문을 12문항 trade-off 구조로 다시 설계하기](./35-redesign-recommendation-survey-with-twelve-questions.md)
+41. [공통 셸에 다크/라이트 테마 토글 붙이기](./36-add-sitewide-light-mode-toggle.md)
 
 ### Part E. 확장과 포트폴리오 정리
 
-40. 인증과 내 전적 조회 고도화하기
-41. Level 2와 실시간 전달 방식 고도화하기
-42. 테스트, 아키텍처, 면접 패키지로 프로젝트 마감하기
+42. 인증과 내 전적 조회 고도화하기
+43. Level 2와 실시간 전달 방식 고도화하기
+44. 테스트, 아키텍처, 면접 패키지로 프로젝트 마감하기
 
 ## 읽는 순서
 

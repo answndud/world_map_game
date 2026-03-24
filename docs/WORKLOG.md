@@ -1944,3 +1944,62 @@
 - 테스트 내용: `./gradlew test --tests com.worldmap.web.HomeControllerTest --tests com.worldmap.auth.AuthFlowIntegrationTest` 통과. `HomeControllerTest`는 guest 홈에서 `로그인`, `회원가입`이 보이고 `로그아웃`은 안 보이는지, ADMIN 세션 홈에서는 `Dashboard`, `로그아웃`이 보이고 guest용 `회원가입`은 숨겨지는지 확인했다.
 - 면접에서 30초 안에 설명하는 요약: 계정 기능이 있어도 홈에서 바로 들어갈 수 없으면 사용자 경험이 끊깁니다. 그래서 홈 템플릿이 현재 세션을 보고, guest면 `로그인 / 회원가입`, 로그인 상태면 `My Page / 로그아웃`을 보여 주도록 바꿨습니다. 상태 변경 로직은 기존 auth 흐름을 그대로 쓰고, 홈은 그 상태를 SSR에서 어떻게 표현할지만 맡게 해서 책임을 나눴습니다.
 - 아직 내가 이해가 부족한 부분: 지금은 홈 첫 화면에서만 계정 CTA를 더 강하게 노출한다. 이후 위치/인구수 시작 화면에도 같은 수준으로 로그인 유도를 둘지, 아니면 홈만 메인 진입점으로 유지할지는 한 번 더 정리할 필요가 있다.
+
+## 2026-03-24 - 추천 설문을 12문항 trade-off 구조로 재설계
+
+- 단계: 6. 설문 기반 추천 엔진
+- 목적: 기존 추천 설문은 문항 수가 적고 질문이 너무 단순했다. 특히 `물가 허용 범위`처럼 대부분이 낮은 물가를 고를 수밖에 없는 질문은 실제 취향을 잘 가르지 못했다. 그래서 이번 조각은 질문 수를 12개로 늘리는 것과 동시에, `비용을 더 내고 생활 품질을 얻을 의향`, `기후 적응 성향`, `치안/공공 서비스/음식/다양성 중요도`처럼 trade-off를 묻는 구조로 추천 입력 자체를 다시 설계하는 데 집중한다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/recommendation/domain/RecommendationSurveyAnswers.java`
+  - `src/main/java/com/worldmap/recommendation/web/RecommendationSurveyForm.java`
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationQuestionCatalog.java`
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationSurveyService.java`
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationFeedbackPayloadView.java`
+  - `src/main/java/com/worldmap/recommendation/web/RecommendationFeedbackRequest.java`
+  - `src/main/java/com/worldmap/recommendation/domain/RecommendationFeedback.java`
+  - `src/main/resources/templates/recommendation/survey.html`
+  - `src/main/resources/templates/recommendation/result.html`
+  - `src/main/java/com/worldmap/web/HomeController.java`
+  - `src/test/java/com/worldmap/recommendation/application/RecommendationSurveyServiceTest.java`
+  - `src/test/java/com/worldmap/recommendation/RecommendationPageIntegrationTest.java`
+  - `src/test/java/com/worldmap/recommendation/RecommendationFeedbackIntegrationTest.java`
+  - `src/test/java/com/worldmap/recommendation/application/RecommendationOfflinePersonaFixtures.java`
+  - `src/test/java/com/worldmap/recommendation/application/RecommendationOfflinePersonaCoverageTest.java`
+  - `src/test/java/com/worldmap/recommendation/application/RecommendationOfflinePersonaSnapshotTest.java`
+  - `src/test/java/com/worldmap/admin/AdminPageIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/35-redesign-recommendation-survey-with-twelve-questions.md`
+- 요청 흐름 / 데이터 흐름: 추천 흐름 자체는 그대로 `GET /recommendation/survey -> POST /recommendation/survey -> RecommendationSurveyService.recommend() -> recommendation/result -> POST /api/recommendation/feedback`이다. 바뀐 것은 입력 모델과 점수식이다. `RecommendationSurveyForm`이 12개 질문을 `RecommendationSurveyAnswers`로 바꾸고, `RecommendationSurveyService`는 country profile 30개와 비교해 top 3를 계산한다. 결과 페이지는 12개 답변 스냅샷을 hidden payload로 함께 내려 보내고, 만족도 제출은 `RecommendationFeedbackRequest -> RecommendationFeedbackSubmission -> RecommendationFeedbackService`로 저장된다.
+- 데이터 / 상태 변화: 추천 결과 top 3 자체는 여전히 저장하지 않는다. 저장되는 것은 `surveyVersion=survey-v3`, `engineVersion=engine-v3`, `satisfactionScore`, 그리고 사용자가 선택한 12개 답변 스냅샷이다. 새 answer snapshot 컬럼은 로컬 기존 row와 충돌하지 않게 nullable로 추가했고, 실제 신규 요청 유효성은 request validation으로 강제한다.
+- 핵심 도메인 개념: 이번 단계의 핵심은 “좋아하는 조건”만 묻지 않고 “무엇을 감수할 수 있는가”를 묻는 설문으로 바꾼 것이다. 그래서 단순 budget/priority 한 축 대신 `CostQualityPreference`, `SeasonTolerance`, `ImportanceLevel` 4축을 별도 enum으로 분리했다. 이 로직은 컨트롤러가 아니라 `RecommendationSurveyService`에 있어야 한다. 어떤 신호를 얼마나 강하게 점수에 반영할지, 물가 초과를 어떻게 penalty로 줄지, 영어 지원이 핵심일 때 얼마나 더 강하게 볼지는 HTTP 바인딩이 아니라 추천 도메인 규칙이기 때문이다.
+- 예외 상황 또는 엣지 케이스: `VALUE_FIRST` 응답에서는 실제 물가가 높을수록 penalty가 음수까지 내려가게 해서 “좋은 인프라가 있어도 너무 비싼 나라는 어렵다”는 신호를 더 분명히 만든다. 반대로 `QUALITY_FIRST`에서는 높은 생활비 자체를 바로 배제하지 않는다. `LOW` importance는 완전 무시가 아니라 약한 선호로 남겨 둬서, 후보 간 식별력은 유지하되 극단적 편향은 줄인다. 오프라인 페르소나 baseline은 새 질문 구조에 맞게 fixture와 snapshot을 다시 고정했다.
+- 테스트 내용: `./gradlew test --tests com.worldmap.recommendation.RecommendationPageIntegrationTest --tests com.worldmap.recommendation.RecommendationFeedbackIntegrationTest --tests com.worldmap.recommendation.application.RecommendationSurveyServiceTest --tests com.worldmap.recommendation.application.RecommendationOfflinePersonaCoverageTest --tests com.worldmap.recommendation.application.RecommendationOfflinePersonaSnapshotTest` 통과 후 `./gradlew test` 전체 통과.
+- 면접에서 30초 안에 설명하는 요약: 추천 설문이 단순하면 대부분 비슷한 답을 고르게 됩니다. 그래서 질문 수를 12개로 늘리는 것보다, `무엇을 좋아하느냐`가 아니라 `무엇을 감수할 수 있느냐`를 묻는 방향으로 다시 설계했습니다. 그리고 이 입력은 `RecommendationSurveyForm -> RecommendationSurveyAnswers -> RecommendationSurveyService` 흐름으로 서버에 들어가고, 서버가 deterministic하게 top 3를 계산합니다. 결과는 저장하지 않고 12개 답변 스냅샷과 만족도만 익명으로 모아 다음 설문 버전 개선에 씁니다.
+- 아직 내가 이해가 부족한 부분: 지금 baseline은 새 12문항 구조에 맞춰 다시 고정했지만, `P04`, `P05`, `P06` 같은 시나리오가 진짜로 더 좋아졌는지까지는 다음 버전 실험에서 더 봐야 한다.
+
+## 2026-03-24 - 공통 shell에 다크/라이트 테마 토글 추가
+
+- 단계: 6. 설문 기반 추천 엔진 보조 UI 조각
+- 목적: 현재 사이트는 차가운 우주 톤을 기본으로 두고 있지만, 사용자가 오래 보거나 시연할 때는 밝은 화면이 더 나은 경우도 있었다. 그래서 이번 조각은 공통 shell에 라이트모드를 추가하되, 사이트 전체에서 한 번에 적용되는 토글 구조를 만드는 데 집중한다.
+- 변경 파일:
+  - `src/main/resources/static/css/site.css`
+  - `src/main/resources/templates/fragments/site-header.html`
+  - `src/main/resources/templates/fragments/admin-header.html`
+  - `src/main/resources/static/js/theme-toggle.js`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/36-add-sitewide-light-mode-toggle.md`
+- 요청 흐름 / 데이터 흐름: 이 기능은 서버 상태 변화가 없다. 첫 진입 시 header fragment 상단의 짧은 inline script가 `localStorage.worldmap-theme`를 읽어 `html[data-theme]`를 먼저 맞춘다. 이후 `theme-toggle.js`가 토글 버튼 클릭을 받아 `light <-> dark`를 전환하고, 같은 값을 다시 localStorage에 저장한다. 실제 시각 변화는 모두 `site.css`의 CSS 변수 레이어가 담당한다.
+- 데이터 / 상태 변화: DB나 세션에는 아무것도 저장하지 않는다. 테마 상태는 브라우저 로컬의 `worldmap-theme` 값만 바뀐다. public shell과 dashboard shell이 같은 storage key를 공유하므로, 사용자가 홈에서 light로 바꾸면 `/dashboard`에 들어가도 같은 테마가 유지된다.
+- 핵심 도메인 개념: 이건 사용자 선호 UI 상태이지 비즈니스 데이터가 아니다. 그래서 컨트롤러나 세션에 넣지 않고 `html[data-theme] + CSS 변수 + localStorage` 조합으로 처리했다. 테마를 서버가 들고 있지 않기 때문에 페이지 진입마다 request 처리나 DB 접근이 추가되지 않고, 모든 화면이 공통 fragment와 공통 CSS만으로 같은 동작을 한다.
+- 예외 상황 또는 엣지 케이스: localStorage를 쓸 수 없는 환경에서는 기본 다크 테마로만 유지된다. public header와 admin header 둘 다 동일한 toggle markup과 같은 storage key를 쓰기 때문에, 어느 화면에서 바꿔도 다른 화면과 테마가 어긋나지 않는다. inline script를 fragment 상단에 둔 이유는 JS 파일이 로드되기 전 잠깐 다크/라이트가 뒤집혀 보이는 깜빡임을 줄이기 위해서다.
+- 테스트 내용: `node --check src/main/resources/static/js/theme-toggle.js`, `node --check src/main/resources/static/js/recommendation-feedback.js`, `./gradlew test` 전체 통과.
+- 면접에서 30초 안에 설명하는 요약: 라이트모드는 비즈니스 상태가 아니라 UI 상태라서 서버가 가질 이유가 없었습니다. 그래서 공통 header fragment가 localStorage 값을 읽어 `html[data-theme]`를 먼저 맞추고, CSS 변수 레이어가 실제 색을 바꾸게 했습니다. 덕분에 public 화면과 dashboard가 같은 토글 구조를 공유하면서도 서버 로직은 건드리지 않았습니다.
+- 아직 내가 이해가 부족한 부분: 현재 라이트모드는 공통 panel과 shell 위주로만 점검했다. 실제 지구본/지도 렌더링 화면에서 light background가 어느 정도까지 잘 어울리는지는 다음 시각 polish에서 조금 더 봐야 한다.
