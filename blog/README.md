@@ -76,7 +76,7 @@
 16. [추천 가중치와 경계값 튜닝하기](./11-recommendation-weight-tuning.md)
 17. [추천 결과는 저장하지 않고 만족도 피드백만 수집하기](./12-collect-recommendation-feedback.md)
 18. [설문 / 엔진 버전별 만족도 집계 기준 정리하기](./13-recommendation-feedback-insights.md)
-19. LLM으로 추천 결과 설명 붙이기
+19. [오프라인 AI-assisted 설문 개선 루프 정리하기](./14-offline-ai-survey-improvement-loop.md)
 
 ### Part E. 확장과 포트폴리오 정리
 

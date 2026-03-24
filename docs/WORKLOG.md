@@ -1321,3 +1321,32 @@
 - 테스트 내용: `./gradlew test --tests com.worldmap.recommendation.application.RecommendationSurveyServiceTest` 통과, `./gradlew test --tests com.worldmap.recommendation.RecommendationPageIntegrationTest --tests com.worldmap.recommendation.application.RecommendationCountryProfileCatalogTest --tests com.worldmap.recommendation.application.RecommendationSurveyServiceTest` 통과, `./gradlew test` 전체 통과. 서비스 테스트는 `저물가 + 음식 중심` 시나리오에서 `말레이시아`가 `싱가포르`보다 앞서도록 기대값을 고정했다.
 - 면접에서 30초 안에 설명하는 요약: 추천 후보 풀을 넓힌 뒤에는 점수식도 한 번 다듬었습니다. 이번에는 정확 일치 보너스, 물가 초과 패널티, 생활 조건 coherence bonus를 추가하고, 동점 비교 기준도 `강한 신호 개수`와 `정확 일치 개수`까지 보게 해서 설문 의도가 결과에 더 직접 반영되도록 조정했습니다.
 - 아직 내가 이해가 부족한 부분: 지금 경계값은 서비스 내부 상수로 관리되는데, 이후 추천 품질을 더 높이려면 실제 사용자 피드백이나 저장된 추천 이력을 기준으로 어떤 값을 재조정할지 실험 체계가 더 필요하다.
+
+## 2026-03-24 - 추천 런타임 LLM 제거와 오프라인 AI 개선 루프 재정의
+
+- 단계: 7. AI-assisted 설문 개선 체계
+- 목적: 추천 결과 설명을 위해 사용자 요청마다 LLM을 호출하는 방향은 과금과 비결정성 부담이 크다. 이번 조각에서는 추천 서비스는 계속 deterministic하게 유지하고, AI는 개발 단계의 설문/시나리오 개선 도구로만 사용하는 방향으로 문서와 화면 설명을 다시 고정한다.
+- 변경 파일:
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/AI_AGENT_OPERATING_MODEL.md`
+  - `docs/recommendation/OFFLINE_AI_SURVEY_IMPROVEMENT.md`
+  - `docs/recommendation/PERSONA_EVAL_SET.md`
+  - `src/main/resources/templates/recommendation/survey.html`
+  - `src/main/resources/templates/recommendation/result.html`
+  - `src/main/java/com/worldmap/web/HomeController.java`
+  - `src/main/java/com/worldmap/recommendation/package-info.java`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/00_rebuild_guide.md`
+  - `blog/01-why-worldmap-game-platform-domain.md`
+  - `blog/09-survey-recommendation-engine.md`
+  - `blog/13-recommendation-feedback-insights.md`
+  - `blog/14-offline-ai-survey-improvement-loop.md`
+- 요청 흐름 / 데이터 흐름: 사용자 런타임 요청 흐름은 바뀌지 않는다. 추천은 여전히 `GET /recommendation/survey -> POST /recommendation/survey -> POST /api/recommendation/feedback`로 동작하고, 서버가 top 3를 deterministic하게 계산한다. 새로 고정한 것은 오프라인 개선 흐름이다. 이제는 `만족도 집계 확인 -> 페르소나 시나리오 비교 -> 서브 에이전트로 문항/시나리오 초안 생성 -> 사람 검수 -> 다음 surveyVersion 반영` 순서로 개선한다.
+- 데이터 / 상태 변화: 런타임 엔티티는 추가하지 않았다. 대신 `docs/recommendation/PERSONA_EVAL_SET.md`와 `docs/recommendation/OFFLINE_AI_SURVEY_IMPROVEMENT.md`를 새 자산으로 두고, `surveyVersion`과 `engineVersion`을 오프라인 개선 루프의 비교 기준으로 쓰도록 명확히 했다.
+- 핵심 도메인 개념: 추천 품질을 높인다고 해서 사용자 요청마다 외부 LLM을 호출할 필요는 없다. 이 프로젝트에서는 “결정은 서버가 하고, AI는 설문 품질을 더 빨리 개선하는 오프라인 도구로만 사용한다”는 분리를 택했다. 그래서 과금과 비결정성을 줄이면서도 AI의 생산성 이점은 가져갈 수 있다.
+- 예외 상황 또는 엣지 케이스: 서브 에이전트가 만든 문항 초안이나 페르소나 시나리오는 바로 운영 반영하지 않는다. 최종 버전 채택은 항상 사람이 한다. 또한 지금은 오프라인 개선 루프를 문서와 시나리오 세트로 먼저 고정한 단계라, 실제 버전 개정 실험은 다음 단계에서 한 번 더 검증해야 한다.
+- 테스트 내용: `./gradlew test --tests com.worldmap.recommendation.RecommendationPageIntegrationTest --tests com.worldmap.web.HomeControllerTest`와 `./gradlew test` 전체로 화면 설명과 기존 기능이 깨지지 않았는지 확인한다.
+- 면접에서 30초 안에 설명하는 요약: 추천 기능에 런타임 LLM을 붙이는 대신, 서버 추천은 deterministic하게 유지하고 AI는 개발 단계에서만 사용하도록 방향을 바꿨습니다. 만족도 집계와 페르소나 시나리오를 함께 보고, 서브 에이전트가 문항 초안과 평가 시나리오를 제안하면 사람이 검수해 다음 설문 버전을 반영하는 구조로 정리했습니다.
+- 아직 내가 이해가 부족한 부분: 지금은 오프라인 개선 루프를 문서화한 단계라, 실제로 surveyVersion을 한 번 더 올려 본 실험 데이터는 아직 없다. 다음 단계에서 시나리오 세트와 실측 만족도 데이터를 같이 보며 실제 버전 개정을 한 번 수행해 볼 필요가 있다.
