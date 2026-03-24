@@ -29,5 +29,10 @@ worldmap:
     countries:
       enabled: true
       location: classpath:data/countries.json
+  admin:
+    bootstrap:
+      enabled: ${WORLDMAP_ADMIN_BOOTSTRAP_ENABLED:false}
+      nickname: ${WORLDMAP_ADMIN_BOOTSTRAP_NICKNAME:}
+      password: ${WORLDMAP_ADMIN_BOOTSTRAP_PASSWORD:}
   ranking:
     key-prefix: leaderboard

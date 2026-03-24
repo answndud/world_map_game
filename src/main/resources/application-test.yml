@@ -18,5 +18,8 @@ spring:
         enabled: false
 
 worldmap:
+  admin:
+    bootstrap:
+      enabled: false
   ranking:
     key-prefix: test:leaderboard

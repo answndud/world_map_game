@@ -63,6 +63,11 @@ public class Member {
 		this.lastLoginAt = loggedInAt;
 	}
 
+	public void provisionAdmin(String passwordHash) {
+		this.passwordHash = passwordHash;
+		this.role = MemberRole.ADMIN;
+	}
+
 	public Long getId() {
 		return id;
 	}
