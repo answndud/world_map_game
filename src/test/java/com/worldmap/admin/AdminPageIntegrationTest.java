@@ -63,6 +63,19 @@ class AdminPageIntegrationTest {
 			.andExpect(content().string(containsString("engine-v1")));
 	}
 
+	@Test
+	void adminPersonaBaselinePageRendersWeakAndActiveSignalSections() throws Exception {
+		mockMvc.perform(get("/admin/recommendation/persona-baseline"))
+			.andExpect(status().isOk())
+			.andExpect(view().name("admin/recommendation-persona-baseline"))
+			.andExpect(model().attributeExists("dashboard"))
+			.andExpect(model().attributeExists("personaBaseline"))
+			.andExpect(content().string(containsString("추천 baseline 운영 화면")))
+			.andExpect(content().string(containsString("P04")))
+			.andExpect(content().string(containsString("P15")))
+			.andExpect(content().string(containsString("15 / 18")));
+	}
+
 	private void saveFeedback(String surveyVersion, String engineVersion, int score) {
 		recommendationFeedbackRepository.save(
 			RecommendationFeedback.create(

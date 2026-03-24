@@ -50,6 +50,11 @@ public class AdminDashboardService {
 				"/admin/recommendation/feedback"
 			),
 			new AdminDashboardRouteView(
+				"페르소나 baseline",
+				"18개 평가 시나리오와 weak scenario를 기준으로 다음 개정 대상을 확인합니다.",
+				"/admin/recommendation/persona-baseline"
+			),
+			new AdminDashboardRouteView(
 				"공개 홈 점검",
 				"플레이어에게 보이는 홈 화면과 진입 동선을 바로 확인합니다.",
 				"/"

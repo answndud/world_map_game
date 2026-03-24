@@ -9,7 +9,7 @@
 <body>
 <div class="page-shell">
     <th:block th:replace="~{fragments/site-header :: siteHeader('home')}"></th:block>
-    <header class="hero hero-grid">
+    <header class="hero">
         <div>
             <p class="eyebrow">Explore The World</p>
             <h1>WorldMap Command</h1>
@@ -24,15 +24,6 @@
                 <a class="ghost-link" th:href="@{/ranking}">랭킹 보기</a>
             </div>
         </div>
-        <aside class="overview-radar panel">
-            <p class="subtitle">오늘의 추천 플레이</p>
-            <div class="radar-score">START HERE</div>
-            <ul class="signal-list">
-                <li><span>1</span><strong>위치 미션으로 감각 익히기</strong></li>
-                <li><span>2</span><strong>인구 퀴즈로 연속 기록 도전</strong></li>
-                <li><span>3</span><strong>추천 설문으로 취향 확인</strong></li>
-            </ul>
-        </aside>
     </header>
 
     <main class="layout">

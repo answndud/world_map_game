@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Page</title>
+    <link rel="stylesheet" th:href="@{/css/site.css(v='20260324-square-ui-1')}">
+</head>
+<body>
+<div class="page-shell">
+    <th:block th:replace="~{fragments/site-header :: siteHeader('mypage')}"></th:block>
+    <header class="hero compact-hero">
+        <p class="eyebrow">My Page</p>
+        <h1>내 프로필</h1>
+        <p class="hero-copy">
+            여기서는 앞으로 내 플레이 기록, 추천 이력, 즐겨 찾는 모드를 한 번에 확인하게 됩니다.
+            지금은 public 이동 구조를 먼저 정리하기 위한 준비 화면입니다.
+        </p>
+    </header>
+
+    <main class="layout">
+        <section class="panel game-panel">
+            <div class="panel-head">
+                <h2>곧 추가될 내용</h2>
+                <p>인증과 전적 기능이 붙으면 이 화면에서 내 기록과 최근 활동을 보게 됩니다.</p>
+            </div>
+
+            <div class="stats-grid">
+                <article class="stat-card">
+                    <span class="subtitle">PROFILE</span>
+                    <strong>준비 중</strong>
+                </article>
+                <article class="stat-card">
+                    <span class="subtitle">PLAY HISTORY</span>
+                    <strong>준비 중</strong>
+                </article>
+                <article class="stat-card">
+                    <span class="subtitle">RECOMMENDATION</span>
+                    <strong>준비 중</strong>
+                </article>
+            </div>
+
+            <div class="page-actions">
+                <a class="primary-link" th:href="@{/}">메인으로 돌아가기</a>
+            </div>
+        </section>
+    </main>
+</div>
+</body>
+</html>

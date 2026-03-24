@@ -1,6 +1,7 @@
 package com.worldmap.admin.web;
 
 import com.worldmap.admin.application.AdminDashboardService;
+import com.worldmap.admin.application.AdminPersonaBaselineService;
 import com.worldmap.recommendation.application.RecommendationFeedbackService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -13,13 +14,16 @@ public class AdminPageController {
 
 	private final AdminDashboardService adminDashboardService;
 	private final RecommendationFeedbackService recommendationFeedbackService;
+	private final AdminPersonaBaselineService adminPersonaBaselineService;
 
 	public AdminPageController(
 		AdminDashboardService adminDashboardService,
-		RecommendationFeedbackService recommendationFeedbackService
+		RecommendationFeedbackService recommendationFeedbackService,
+		AdminPersonaBaselineService adminPersonaBaselineService
 	) {
 		this.adminDashboardService = adminDashboardService;
 		this.recommendationFeedbackService = recommendationFeedbackService;
+		this.adminPersonaBaselineService = adminPersonaBaselineService;
 	}
 
 	@GetMapping
@@ -33,5 +37,12 @@ public class AdminPageController {
 		model.addAttribute("dashboard", adminDashboardService.loadDashboard());
 		model.addAttribute("feedbackInsights", recommendationFeedbackService.summarizeByVersion());
 		return "admin/recommendation-feedback";
+	}
+
+	@GetMapping("/recommendation/persona-baseline")
+	public String recommendationPersonaBaseline(Model model) {
+		model.addAttribute("dashboard", adminDashboardService.loadDashboard());
+		model.addAttribute("personaBaseline", adminPersonaBaselineService.loadBaseline());
+		return "admin/recommendation-persona-baseline";
 	}
 }

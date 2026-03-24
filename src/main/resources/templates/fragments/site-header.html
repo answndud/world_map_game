@@ -12,17 +12,8 @@
                th:classappend="${activeSection == 'home'} ? ' is-active'"
                th:href="@{/}">Home</a>
             <a class="site-nav-link"
-               th:classappend="${activeSection == 'location'} ? ' is-active'"
-               th:href="@{/games/location/start}">Location</a>
-            <a class="site-nav-link"
-               th:classappend="${activeSection == 'population'} ? ' is-active'"
-               th:href="@{/games/population/start}">Population</a>
-            <a class="site-nav-link"
-               th:classappend="${activeSection == 'recommendation'} ? ' is-active'"
-               th:href="@{/recommendation/survey}">Recommend</a>
-            <a class="site-nav-link"
-               th:classappend="${activeSection == 'ranking'} ? ' is-active'"
-               th:href="@{/ranking}">Ranking</a>
+               th:classappend="${activeSection == 'mypage'} ? ' is-active'"
+               th:href="@{/mypage}">My Page</a>
         </nav>
     </header>
 </th:block>

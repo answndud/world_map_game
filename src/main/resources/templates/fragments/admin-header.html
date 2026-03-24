@@ -14,6 +14,9 @@
             <a class="site-nav-link"
                th:classappend="${activeSection == 'recommendation-feedback'} ? ' is-active'"
                th:href="@{/admin/recommendation/feedback}">Recommendation</a>
+            <a class="site-nav-link"
+               th:classappend="${activeSection == 'persona-baseline'} ? ' is-active'"
+               th:href="@{/admin/recommendation/persona-baseline}">Baseline</a>
             <a class="site-nav-link" th:href="@{/}">Public Home</a>
         </nav>
     </header>
