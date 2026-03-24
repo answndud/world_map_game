@@ -1774,3 +1774,32 @@
 - 테스트 내용: `./gradlew test --tests com.worldmap.web.MyPageControllerTest --tests com.worldmap.mypage.MyPageServiceIntegrationTest --tests com.worldmap.auth.AuthFlowIntegrationTest` 통과 후 `./gradlew test` 전체 통과. `MyPageServiceIntegrationTest`는 위치 게임에서 `2회 시도 후 클리어`, `1회 시도 후 클리어`, 이후 게임오버 시나리오를 만들고, 인구수 게임도 별도 한 판 끝낸 뒤 `50%`, `1.5회`, `100%`, `1회`가 실제로 계산되는지 검증한다.
 - 면접에서 30초 안에 설명하는 요약: `/mypage`는 이제 완료된 run 요약과 플레이 성향 요약을 분리해서 보여줍니다. 최고 점수와 최근 플레이는 `leaderboard_record`에서 읽고, 1트 클리어율과 평균 시도 수는 raw stage 집계에서 계산합니다. 이렇게 해야 “결과”와 “플레이 방식”을 서로 다른 read model 책임으로 설명할 수 있습니다.
 - 아직 내가 이해가 부족한 부분: 지금은 cleared stage 기준 성향만 보여주고, 실패 run까지 포함한 정확도나 기간별 추세는 아직 없다. 이후에는 raw attempt 집계까지 더 내려갈지, 아니면 현재 stage 기반 요약을 유지할지 더 판단해야 한다.
+
+## 2026-03-24 - 환경변수 기반 bootstrap admin 계정 provisioning
+
+- 단계: 8. 인증, 전적, 마이페이지
+- 목적: `/admin/**` 접근 제어까지 붙은 상태에서는 실제 운영자가 어떤 계정으로 로그인할지 정리가 필요했다. 일반 회원가입 UI로 admin 계정을 만들면 public 흐름과 운영 계정이 섞이므로, 이번 조각은 서버 시작 시 환경변수로 admin 계정을 자동 준비하는 최소 운영 경로를 만드는 데 집중한다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/auth/application/MemberCredentialPolicy.java`
+  - `src/main/java/com/worldmap/auth/application/MemberAuthService.java`
+  - `src/main/java/com/worldmap/auth/domain/Member.java`
+  - `src/main/java/com/worldmap/admin/application/AdminBootstrapProperties.java`
+  - `src/main/java/com/worldmap/admin/application/AdminBootstrapService.java`
+  - `src/main/java/com/worldmap/admin/application/AdminBootstrapInitializer.java`
+  - `src/main/resources/application.yml`
+  - `src/main/resources/application-test.yml`
+  - `src/test/java/com/worldmap/admin/application/AdminBootstrapServiceTest.java`
+  - `src/test/java/com/worldmap/admin/AdminBootstrapIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/29-bootstrap-admin-account-from-env.md`
+- 요청 흐름 / 데이터 흐름: 이번 단계의 진입점은 HTTP 컨트롤러가 아니라 애플리케이션 시작이다. 서버가 올라오면 `AdminBootstrapInitializer.run()`이 실행되고, 여기서 `AdminBootstrapService.ensureBootstrapAdmin()`을 호출한다. 서비스는 `AdminBootstrapProperties`에서 `enabled / nickname / password`를 읽고, `MemberCredentialPolicy`로 닉네임과 비밀번호를 검증한 뒤 `MemberRepository.findByNicknameIgnoreCase()`로 기존 계정을 조회한다. 계정이 없으면 `Member.create(..., ADMIN)`으로 새 admin을 저장하고, 계정이 있으면 `provisionAdmin()`으로 비밀번호 hash를 갱신하고 role을 `ADMIN`으로 승격한다.
+- 데이터 / 상태 변화: 새 테이블은 없고 기존 `member_account`를 재사용한다. 이번 단계부터는 `WORLDMAP_ADMIN_BOOTSTRAP_ENABLED=true`, `WORLDMAP_ADMIN_BOOTSTRAP_NICKNAME=...`, `WORLDMAP_ADMIN_BOOTSTRAP_PASSWORD=...`를 주고 서버를 시작하면, 해당 닉네임 member가 없을 때는 새 `ADMIN` 계정이 생기고, 이미 있으면 `USER -> ADMIN` 승격과 비밀번호 갱신이 일어난다. 테스트 프로파일에서는 기본적으로 bootstrap을 꺼 두어 기존 인증 테스트와 충돌하지 않게 했다.
+- 핵심 도메인 개념: 운영용 admin 계정 provisioning은 공개 회원가입 흐름이 아니라 배포 환경의 운영 규칙이다. 그래서 signup 컨트롤러에 얹지 않고 `ApplicationRunner + Service` 조합으로 둔다. `AdminBootstrapInitializer`는 시작 시점만 잡고, 실제 생성/승격 규칙은 `AdminBootstrapService`가 맡는다. 또 회원가입과 bootstrap이 서로 다른 자격 증명 규칙을 가지지 않게 `MemberCredentialPolicy`를 분리해 닉네임/비밀번호 정책을 함께 재사용했다.
+- 예외 상황 또는 엣지 케이스: bootstrap이 비활성화되어 있으면 no-op로 끝난다. 반대로 활성화됐는데 닉네임이나 비밀번호가 비어 있으면 서버 시작 단계에서 `IllegalArgumentException`으로 빠르게 실패한다. bootstrap 닉네임과 같은 기존 `USER`가 있으면 새 계정을 만들지 않고 그 사용자를 `ADMIN`으로 승격하며, 이때 password hash도 bootstrap 값으로 다시 설정한다.
+- 테스트 내용: `./gradlew test --tests com.worldmap.admin.application.AdminBootstrapServiceTest --tests com.worldmap.admin.AdminBootstrapIntegrationTest --tests com.worldmap.auth.AuthFlowIntegrationTest` 통과 후 `./gradlew test` 전체 통과. 단위 테스트에서는 신규 생성 / 기존 USER 승격 / 설정 누락 fail-fast를 고정했고, 통합 테스트에서는 Spring 컨텍스트 기동 시 bootstrap admin이 실제로 생성되고 BCrypt hash가 저장되는지 확인했다.
+- 면접에서 30초 안에 설명하는 요약: admin 라우트를 role로 막은 뒤에는 운영자가 실제로 어떤 계정으로 들어갈지 정해야 했습니다. 공개 signup으로 admin 계정을 만들게 하면 사용자 흐름과 운영 계정이 섞이기 때문에, 서버 시작 시 환경변수로 admin 계정을 bootstrap 하도록 바꿨습니다. 시작 시점은 `ApplicationRunner`가 잡고, 계정 생성이나 기존 USER 승격 규칙은 `AdminBootstrapService`가 맡으며, 닉네임/비밀번호 검증은 회원가입과 같은 `MemberCredentialPolicy`를 재사용해 규칙을 하나로 유지했습니다.
+- 아직 내가 이해가 부족한 부분: 현재 bootstrap은 단일 운영자 계정 전제를 둔다. 이후 실제 운영 화면이 늘어나면 다중 admin 계정 provisioning이나 비밀번호 회전 정책을 어디까지 현재 구조에 포함할지, 아니면 별도 운영 절차로 둘지 추가 판단이 필요하다.

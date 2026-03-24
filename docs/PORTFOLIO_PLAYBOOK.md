@@ -31,7 +31,7 @@
 | 5 | Redis 랭킹 시스템 | Done |
 | 6 | 설문 기반 추천 엔진 | In Progress |
 | 7 | AI-assisted 설문 개선 체계 | In Progress |
-| 8 | 인증, 전적, 마이페이지 | In Progress |
+| 8 | 인증, 전적, 마이페이지 | Done |
 | 9 | Level 2와 실시간성 고도화 | Not Started |
 | 10 | 포트폴리오 정리와 발표 준비 | Not Started |
 
@@ -516,7 +516,7 @@
 
 ### 8. 인증, 전적, 마이페이지
 
-상태: In Progress
+상태: Done
 
 목표:
 
@@ -526,11 +526,11 @@
 
 - 회원가입 / 로그인
 - 사용자별 게임 기록 조회
-- 추천 기록 조회
 - 내 랭킹 확인
 - admin 라우트 접근 제어
 - 운영용 대시보드 권한 분리
 - 게스트 플레이 유지 + 로그인 시 현재 브라우저 기록 귀속
+- 운영용 admin 계정 provisioning
 
 현재까지 완료된 항목:
 
@@ -557,17 +557,23 @@
 - `/mypage`는 finished session에 속한 stage를 다시 읽어 모드별 `클리어 Stage 수`, `1트 클리어율`, `평균 시도 수`를 추가로 보여준다
 - 이 성향 지표는 `leaderboard_record`가 아니라 raw stage 집계에서 나온다. 최고 점수/최근 완료 이력과 달리, 플레이 방식 자체는 stage 시도 수를 봐야 설명할 수 있기 때문이다
 - `MyPageServiceIntegrationTest`로 위치/인구수 게임을 실제로 한 판씩 끝낸 뒤, raw stage 기반 성향 지표가 기대값으로 계산되는지 고정했다
+- `MemberCredentialPolicy`로 닉네임 / 비밀번호 규칙을 회원가입과 admin bootstrap이 함께 재사용하도록 정리했다
+- `AdminBootstrapProperties`, `AdminBootstrapService`, `AdminBootstrapInitializer`를 추가해 서버 시작 시 환경변수 기준 운영용 admin 계정을 자동 생성하거나 기존 계정을 `ADMIN`으로 승격하도록 연결했다
+- bootstrap admin은 `WORLDMAP_ADMIN_BOOTSTRAP_ENABLED`, `WORLDMAP_ADMIN_BOOTSTRAP_NICKNAME`, `WORLDMAP_ADMIN_BOOTSTRAP_PASSWORD`로 제어한다
+- 운영용 admin 계정은 signup UI와 분리했다. admin provisioning은 플레이어용 공개 흐름이 아니라 배포 환경의 운영 규칙이기 때문에 startup runner + service 조합으로 두는 편이 현재 구조에 더 맞다
+- `AdminBootstrapServiceTest`, `AdminBootstrapIntegrationTest`로 신규 생성 / 기존 USER 승격 / 잘못된 설정 fail-fast / 해시 저장을 고정했다
 
-이 단계에서 남은 일:
+이후 고도화 아이디어:
 
-- 실제 운영용 admin 계정 provisioning 방식 정리
-  - DB role 부여
-  - bootstrap 스크립트 / 환경변수 방식 여부 판단
 - `/mypage` 고도화 여부 결정
   - 연속 최고 기록
   - 모드별 누적 플레이 시간
   - 실패 run 포함 정확도
   - 시즌/기간 필터
+- admin 운영 도구 확장
+  - build 상태
+  - 랭킹 캐시 점검
+  - 추천 버전 롤아웃 메모
 
 반드시 이해할 것:
 
@@ -579,6 +585,8 @@
 - 왜 `/mypage` 첫 구현은 raw 세션 테이블보다 `leaderboard_record`에서 시작하는지
 - 왜 admin 권한 체크는 컨트롤러가 아니라 인터셉터에 두는 것이 더 맞는지
 - 왜 `/mypage` 세부 성향 지표는 다시 raw stage 집계로 내려가야 하는지
+- 왜 운영용 admin 계정을 signup 화면이 아니라 startup bootstrap으로 여는 것이 현재 프로젝트 범위에 더 맞는지
+- 왜 bootstrap 계정 생성에서도 회원가입과 같은 credential policy를 재사용해야 하는지
 
 면접 포인트:
 
@@ -587,12 +595,14 @@
 - 왜 내 기록 허브 첫 버전은 `leaderboard_record` 기반으로 만드는 것이 설명과 구현 모두에 유리한가
 - 왜 admin 접근 제어를 Spring Security 전체 도입 대신 기존 세션 구조 위에 작게 얹었는가
 - 왜 `/mypage`는 `run 요약`과 `play style 요약`을 서로 다른 read model에서 읽는가
+- 왜 admin 계정은 공개 회원가입이 아니라 환경변수 bootstrap 방식으로 운영하는가
 
 완료 기준:
 
 - 사용자 단위의 기록 조회가 가능하다.
 - 인증 흐름을 설명할 수 있다.
 - admin 화면이 public과 분리된 권한으로 보호된다.
+- 운영자가 실제로 로그인 가능한 admin 계정을 배포 설정으로 만들 수 있다.
 
 ### 9. Level 2와 실시간성 고도화
 
