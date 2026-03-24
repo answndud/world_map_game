@@ -546,10 +546,11 @@
 - BCrypt 기반 `MemberPasswordHasher`, `MemberAuthService`, `MemberSessionManager`를 추가해 `닉네임 + 비밀번호` 단순 계정의 세션 로그인 흐름을 만들었다
 - `/signup`, `/login`, `/logout` SSR 폼과 `/mypage`의 guest 유도 / 로그인 상태 shell 분기를 추가했다
 - 로그인 사용자가 새로 시작하는 위치/인구수 게임은 request nickname 대신 계정 닉네임을 사용하고, 세션/랭킹 기록을 `memberId` ownership으로 저장하도록 연결했다
+- `GuestProgressClaimService`를 추가해 회원가입/로그인 직후 현재 브라우저의 `guestSessionKey` 기록을 계정 ownership으로 귀속하도록 연결했다
+- guest로 저장됐던 게임 세션 / 랭킹 레코드는 claim 시 `memberId`를 채우고 `guestSessionKey`는 비워 ownership을 단일화한다
 
 이 단계에서 남은 일:
 
-- 로그인 직후 현재 `guestSessionKey` 기록을 계정으로 귀속하는 서비스 구현
 - `/mypage`에 내 최고 점수 / 최근 플레이 / 내 랭킹 연결
 - admin 화면 접근 제어 구현
 
@@ -559,6 +560,7 @@
 - 인증이 도메인 로직과 어디서 만나는지
 - 왜 이메일 없는 단순 계정으로도 현재 서비스 목적을 충족할 수 있는지
 - 로그인 전 guest 기록과 로그인 후 member 기록이 어떻게 달라지는지
+- 왜 guest 기록 귀속 시 `playerNickname`은 바꾸지 않고 ownership만 바꾸는지
 
 면접 포인트:
 

@@ -1658,3 +1658,34 @@
 - 테스트 내용: `./gradlew test --tests com.worldmap.auth.AuthFlowIntegrationTest --tests com.worldmap.auth.GuestSessionOwnershipIntegrationTest --tests com.worldmap.web.MyPageControllerTest --tests com.worldmap.game.location.LocationGameFlowIntegrationTest --tests com.worldmap.game.population.PopulationGameFlowIntegrationTest --tests com.worldmap.ranking.LeaderboardIntegrationTest` 통과. `AuthFlowIntegrationTest`는 회원가입 후 세션 로그인과 `/mypage` 연결, 로그인 실패 메시지를 검증한다. `GuestSessionOwnershipIntegrationTest`는 로그인 사용자로 시작한 게임과 랭킹 레코드가 `memberId` ownership을 가지는지까지 본다.
 - 면접에서 30초 안에 설명하는 요약: 단순 계정의 첫 구현으로 `닉네임 + 비밀번호` 회원가입/로그인을 붙이고, 로그인한 사용자가 새로 시작하는 게임 기록은 guest가 아니라 `memberId` 소유로 저장되게 만들었습니다. 폼 검증과 비밀번호 해시는 `MemberAuthService`가 맡고, 게임 시작 컨트롤러는 현재 세션의 로그인 사용자를 확인해 guest/game start 경로를 나눕니다. 이렇게 해서 guest 유지 구조를 깨지 않으면서도 계정 중심 기록 누적의 첫 단계를 만들었습니다.
 - 아직 내가 이해가 부족한 부분: 로그인 직후 기존 guest 기록을 어느 범위까지 자동 귀속할지, 그리고 `/mypage`에서 어떤 집계부터 먼저 보여줄지는 다음 조각에서 더 정해야 한다. 또 지금은 Spring Security 없이 단순 세션 관리로 시작했는데, admin 접근 제어까지 갈 때 이 구조를 어디까지 재사용할지도 후속 판단이 필요하다.
+
+## 2026-03-24 - 로그인 직후 guest 기록 귀속 연결
+
+- 단계: 8. 인증, 전적, 마이페이지
+- 목적: 이전 단계까지는 로그인 후 “새로 시작하는 게임”만 `memberId` ownership으로 저장됐다. 하지만 이미 guest로 쌓인 현재 브라우저 기록은 그대로 남아 있어서, 사용자가 기대하는 “지금까지 한 기록이 이어진다”는 감각이 부족했다. 그래서 이번 조각은 로그인/회원가입 직후 현재 `guestSessionKey` 기록을 계정에 붙이는 데 집중한다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/auth/application/GuestSessionKeyManager.java`
+  - `src/main/java/com/worldmap/auth/application/GuestProgressClaimService.java`
+  - `src/main/java/com/worldmap/auth/web/AuthPageController.java`
+  - `src/main/java/com/worldmap/game/common/domain/BaseGameSession.java`
+  - `src/main/java/com/worldmap/game/location/domain/LocationGameSessionRepository.java`
+  - `src/main/java/com/worldmap/game/population/domain/PopulationGameSessionRepository.java`
+  - `src/main/java/com/worldmap/ranking/domain/LeaderboardRecord.java`
+  - `src/main/java/com/worldmap/ranking/domain/LeaderboardRecordRepository.java`
+  - `src/main/resources/templates/auth/signup.html`
+  - `src/main/resources/templates/auth/login.html`
+  - `src/main/resources/templates/mypage.html`
+  - `src/test/java/com/worldmap/auth/AuthFlowIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/25-claim-current-guest-progress-after-login.md`
+- 요청 흐름 / 데이터 흐름: `POST /signup` 또는 `POST /login`은 `AuthPageController`에서 시작한다. 컨트롤러는 `MemberAuthService`로 회원가입/로그인을 성공시킨 뒤, `GuestSessionKeyManager.currentGuestSessionKey()`로 현재 브라우저의 guest key를 읽는다. 그 key가 있으면 `GuestProgressClaimService.claimGuestRecords(memberId, guestSessionKey)`를 호출한다. 이 서비스는 `LocationGameSessionRepository`, `PopulationGameSessionRepository`, `LeaderboardRecordRepository`에서 `guestSessionKey`를 가진 미귀속 레코드만 조회해 `claimOwnership(memberId)`를 호출한다. claim이 끝난 뒤 `MemberSessionManager`가 로그인 세션을 유지한다.
+- 데이터 / 상태 변화: claim 전에는 guest 기록이 `memberId = null`, `guestSessionKey = ...` 상태다. claim 후에는 동일 레코드가 `memberId = 로그인 사용자`, `guestSessionKey = null`로 바뀐다. 중요한 점은 `playerNickname` snapshot은 바꾸지 않는다는 것이다. 즉, 소유자는 계정으로 바뀌지만 당시 표시 이름은 그대로 남겨 과거 랭킹/전적 표시를 안정적으로 유지한다.
+- 핵심 도메인 개념: guest 기록 귀속은 인증 UI의 부가 기능이 아니라 ownership 전환 규칙이다. 그래서 이 로직은 컨트롤러에 직접 쓰지 않고 `GuestProgressClaimService`로 뺐다. 컨트롤러는 현재 guest key를 읽고 서비스를 호출할 뿐이고, 실제로 어떤 레코드를 어떤 규칙으로 `memberId`로 바꾸는지는 서비스와 엔티티(`claimOwnership`)가 맡는다.
+- 예외 상황 또는 엣지 케이스: guest key가 없는 세션에서 바로 로그인하면 claim은 no-op로 끝난다. 또 이미 `memberId`가 채워진 레코드는 다시 건드리지 않는다. 현재 범위는 “현재 브라우저 세션의 guest 기록만” 귀속이며, 다른 브라우저나 과거 세션의 guest 기록까지 복구하지는 않는다.
+- 테스트 내용: `./gradlew test --tests com.worldmap.auth.AuthFlowIntegrationTest --tests com.worldmap.auth.GuestSessionOwnershipIntegrationTest` 통과 후 `./gradlew test` 전체 통과. 새 시나리오에서는 guest로 위치 게임을 시작하고 게임오버까지 간 뒤, 같은 `MockHttpSession`으로 회원가입하면 기존 게임 세션과 랭킹 레코드가 모두 `memberId` ownership으로 바뀌고 `guestSessionKey`는 제거되는지 검증했다.
+- 면접에서 30초 안에 설명하는 요약: 로그인 화면만 붙이면 이전 guest 기록은 따로 놀게 됩니다. 그래서 회원가입/로그인 직후 현재 브라우저의 `guestSessionKey` 기록만 찾아 `memberId`로 ownership을 바꾸는 `GuestProgressClaimService`를 추가했습니다. 이때 당시 닉네임 snapshot은 유지하고, 소유자 필드만 바꿔 과거 기록 표시와 계정 귀속을 동시에 만족시켰습니다.
+- 아직 내가 이해가 부족한 부분: claim 이후 `/mypage`에서 어떤 집계부터 우선 보여줄지, 그리고 guest 기록을 언제까지 브라우저 세션 기준으로만 제한할지 다음 조각에서 더 정해야 한다. admin 접근 제어를 같은 세션 모델 위에 얹을지, 별도 보안 계층으로 분리할지도 후속 판단이 필요하다.

@@ -54,13 +54,14 @@
 27. [게스트 플레이를 유지하면서 단순 계정으로 확장하는 설계](./22-guest-session-to-simple-account-plan.md)
 28. [게스트 세션 키와 기록 소유권 기반 심기](./23-add-guest-session-ownership-foundation.md)
 29. [단순 회원가입 / 로그인과 member 소유 게임 시작 연결하기](./24-add-simple-auth-and-member-owned-game-starts.md)
+30. [로그인 직후 현재 브라우저의 guest 기록을 계정으로 귀속하기](./25-claim-current-guest-progress-after-login.md)
 
 ### Part E. 테스트, 확장, 취업 패키징
 
-30. 왜 핵심 게임 로직을 테스트해야 하는가
-31. 인증, 전적, 마이페이지 붙이기
-32. Level 2 난이도와 실시간성 고도화
-33. README, 아키텍처, 면접 답변 패키지 만들기
+31. 왜 핵심 게임 로직을 테스트해야 하는가
+32. 인증, 전적, 마이페이지 붙이기
+33. Level 2 난이도와 실시간성 고도화
+34. README, 아키텍처, 면접 답변 패키지 만들기
 
 ## 실제 집필 우선순위
 

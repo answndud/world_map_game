@@ -63,7 +63,7 @@
 - 비회원은 지금처럼 세션 기반으로 바로 플레이
 - 로그인하면 내 계정에 기록과 랭킹 이력이 누적
 - 계정 정보는 `닉네임 + 비밀번호` 수준으로 단순하게 유지
-- 현재는 8단계 2차 기준으로 `member`, `guestSessionKey`, 게임 세션 / 랭킹 레코드 ownership 필드, 닉네임 + 비밀번호 기반 회원가입 / 로그인 / 로그아웃, `My Page` 로그인 유도/계정 shell까지 먼저 연결했고, guest 기록 귀속과 실제 전적 조회는 다음 조각에서 붙인다.
+- 현재는 8단계 3차 기준으로 `member`, `guestSessionKey`, 게임 세션 / 랭킹 레코드 ownership 필드, 닉네임 + 비밀번호 기반 회원가입 / 로그인 / 로그아웃, 로그인 직후 현재 브라우저의 guest 기록 귀속, `My Page` 로그인 유도/계정 shell까지 먼저 연결했고, 실제 전적 조회는 다음 조각에서 붙인다.
 
 ### 이후 확장
 
@@ -200,7 +200,8 @@
 - 8단계 계정 구조는 `게스트 세션 유지 + 로그인 시 현재 브라우저 세션 기록 귀속`을 기본 원칙으로 설계한다.
 - 8단계 1차 구현으로 `member` 엔티티, `GuestSessionKeyManager`, 게임 세션 / 랭킹 레코드의 `memberId`, `guestSessionKey` 기반 ownership 저장 구조를 먼저 추가했다.
 - 8단계 2차 구현으로 `/signup`, `/login`, `/logout`과 BCrypt 기반 비밀번호 해시, 단순 세션 로그인, 로그인 사용자의 새 게임 시작 시 `memberId` ownership 저장을 추가했다.
-- guest 기록을 로그인 직후 계정으로 귀속하는 기능과 `/mypage` 실제 전적 조회는 아직 붙지 않았다.
+- 8단계 3차 구현으로 회원가입 / 로그인 직후 현재 브라우저의 `guestSessionKey` 기록을 계정 ownership으로 귀속하는 서비스를 추가했다.
+- `/mypage` 실제 전적 조회와 admin 접근 제어는 아직 붙지 않았다.
 - 이 피드백은 설문 문항과 가중치를 계속 개선하기 위한 신호로 사용하고, 오프라인 AI-assisted 평가 루프는 `docs/recommendation/OFFLINE_AI_SURVEY_IMPROVEMENT.md`와 `docs/recommendation/PERSONA_EVAL_SET.md`에서 관리한다.
 - `RecommendationOfflinePersonaCoverageTest`로 18개 페르소나 baseline을 자동 평가하고, 현재 엔진이 최소 15개 시나리오에서 기대 후보 1개 이상을 top 3에 포함하는지를 품질 하한으로 고정했다.
 - baseline은 기존 14개 중립 시나리오와, 새 두 문항을 적극적으로 쓰는 `P15~P18` 비교 시나리오로 나뉜다.

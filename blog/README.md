@@ -87,12 +87,13 @@
 27. [게스트 플레이를 유지하면서 단순 계정으로 확장하는 설계](./22-guest-session-to-simple-account-plan.md)
 28. [게스트 세션 키와 기록 소유권 기반 먼저 심기](./23-add-guest-session-ownership-foundation.md)
 29. [단순 회원가입 / 로그인과 member 소유 게임 시작 연결하기](./24-add-simple-auth-and-member-owned-game-starts.md)
+30. [로그인 직후 현재 브라우저의 guest 기록을 계정으로 귀속하기](./25-claim-current-guest-progress-after-login.md)
 
 ### Part E. 확장과 포트폴리오 정리
 
-30. 인증과 내 전적 조회 붙이기
-31. Level 2와 실시간 전달 방식 고도화하기
-32. 테스트, 아키텍처, 면접 패키지로 프로젝트 마감하기
+31. 인증과 내 전적 조회 붙이기
+32. Level 2와 실시간 전달 방식 고도화하기
+33. 테스트, 아키텍처, 면접 패키지로 프로젝트 마감하기
 
 ## 읽는 순서
 
