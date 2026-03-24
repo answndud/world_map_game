@@ -18,9 +18,6 @@
     --danger: #d36a6a;
     --warning: #f3d27a;
     --shadow: 0 28px 80px rgba(0, 0, 0, 0.34);
-    --cut-sm: 12px;
-    --cut-md: 18px;
-    --cut-lg: 24px;
 }
 
 * {
@@ -83,60 +80,6 @@ a {
     max-width: 1240px;
     margin: 0 auto;
     padding: 40px 20px 88px;
-}
-
-.site-header,
-.site-nav-link,
-.signal-list li,
-.panel,
-.mode-card,
-.status,
-.ghost-link,
-.primary-link,
-.primary-button,
-.secondary-button,
-.field input,
-.message-box,
-.feedback-card,
-.question-card,
-.stat-card,
-.selection-pill,
-.rule-card,
-.table-shell,
-.option-card,
-.globe-stage,
-.stage-overlay,
-.game-over-modal__panel,
-.result-banner {
-    --surface-cut: var(--cut-md);
-    clip-path: polygon(
-        var(--surface-cut) 0,
-        100% 0,
-        100% calc(100% - var(--surface-cut)),
-        calc(100% - var(--surface-cut)) 100%,
-        0 100%,
-        0 var(--surface-cut)
-    );
-}
-
-.site-nav-link,
-.status,
-.ghost-link,
-.primary-link,
-.primary-button,
-.secondary-button,
-.field input,
-.option-card,
-.signal-list li {
-    --surface-cut: var(--cut-sm);
-}
-
-.site-header,
-.panel,
-.globe-stage,
-.game-over-modal__panel,
-.result-banner {
-    --surface-cut: var(--cut-lg);
 }
 
 .site-header {
