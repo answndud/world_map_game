@@ -1211,3 +1211,26 @@
 - 면접에서 30초 안에 설명하는 요약: 위치 게임은 선택 상태를 굳이 텍스트 박스로 길게 보여줄 필요가 없다고 판단했습니다. 그래서 하단에서는 제출 버튼만 남기고, 선택 여부는 지구본 위 핑크 네온 하이라이트로만 보여주도록 단순화했습니다. 선택을 바꾸고 싶으면 취소 대신 다른 국가를 다시 클릭하면 됩니다.
 - 아직 내가 이해가 부족한 부분: 핑크 네온 하이라이트 강도가 실제 플레이에서 너무 강하거나 약한지, 그리고 모바일 화면에서 제출 버튼 하나만 있는 구성이 충분히 직관적인지는 한 번 더 체감 확인이 필요하다.
 - blog 작성 여부: 생략. 이번 변경은 위치 게임 입력 HUD를 단순화하는 UX polish라 WORKLOG 기록으로 충분하다고 판단했다.
+
+## 2026-03-24 - 추천 후보 국가 풀 30개로 확장
+
+- 단계: 6. 설문 기반 추천 엔진
+- 목적: 추천 계산 구조는 이미 만들어졌지만, 후보 풀이 12개 국가에 머물러 있어 결과가 몇몇 익숙한 국가에 과도하게 몰릴 수 있었다. 이번 조각에서는 점수 계산 로직은 유지하고, 추천 전용 국가 프로필 카탈로그를 30개로 확장해 후보 다양성을 먼저 높인다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationCountryProfileCatalog.java`
+  - `src/test/java/com/worldmap/recommendation/application/RecommendationCountryProfileCatalogTest.java`
+  - `src/test/java/com/worldmap/recommendation/application/RecommendationSurveyServiceTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/09-survey-recommendation-engine.md`
+  - `blog/10-expand-recommendation-candidate-pool.md`
+- 요청 흐름 / 데이터 흐름: 추천 요청 흐름 자체는 그대로다. 사용자가 설문을 제출하면 `RecommendationSurveyForm -> RecommendationSurveyAnswers -> RecommendationSurveyService.recommend()` 순서로 흐른다. 달라진 점은 서비스가 순회하는 `RecommendationCountryProfileCatalog`의 데이터 폭이다. 이제 북미, 유럽, 동아시아, 동남아, 중동, 남미, 아프리카, 오세아니아까지 포함한 30개 프로필을 비교 대상으로 사용한다.
+- 데이터 / 상태 변화: DB 스키마는 바뀌지 않았다. 이번 단계의 변화는 추천 전용 카탈로그 데이터다. `country` 테이블은 여전히 국가 기본 정보 source of truth로 남고, 추천 속성만 별도 프로필 카탈로그에 더 풍부하게 채워 넣었다.
+- 핵심 도메인 개념: 추천 품질은 계산 공식뿐 아니라 “어떤 후보 데이터를 비교하느냐”에 크게 의존한다. 그래서 이번 단계에서는 가중치 수식을 먼저 뒤엎지 않고, 동일한 점수 계산 구조가 더 넓은 후보 풀을 평가하도록 만들어 추천 결과의 다양성을 키웠다.
+- 예외 상황 또는 엣지 케이스: 프로필 카탈로그가 커질수록 ISO 코드 오타나 시드 데이터와의 불일치가 숨어들 수 있다. 그래서 이번에는 추천 품질 테스트뿐 아니라 “모든 프로필 ISO 코드가 실제 시드 국가에 존재하는가”를 검증하는 카탈로그 테스트를 추가했다.
+- 테스트 내용: `./gradlew test --tests com.worldmap.recommendation.application.RecommendationCountryProfileCatalogTest --tests com.worldmap.recommendation.application.RecommendationSurveyServiceTest` 통과, `./gradlew test --tests com.worldmap.recommendation.RecommendationPageIntegrationTest --tests com.worldmap.recommendation.application.RecommendationCountryProfileCatalogTest --tests com.worldmap.recommendation.application.RecommendationSurveyServiceTest` 통과. 카탈로그 테스트는 30개 / 중복 없음 / 시드 ISO 존재 여부를 검증했고, 서비스 테스트는 확장 후보 풀에서 `말레이시아` 같은 신규 후보가 실제 1위로 올라오는 시나리오를 고정했다.
+- 면접에서 30초 안에 설명하는 요약: 추천 엔진은 계산식만큼 후보 데이터가 중요해서, 이번에는 점수 공식을 바꾸지 않고 추천 프로필 카탈로그를 12개에서 30개로 넓혔습니다. 북미, 유럽, 동남아, 남미, 아프리카까지 후보를 분산시킨 뒤, ISO 유효성과 실제 추천 결과 상위권 진입 여부를 테스트로 고정해 추천 다양성을 먼저 높였습니다.
+- 아직 내가 이해가 부족한 부분: 지금은 프로필 값을 수작업으로 관리하므로, 이후 후보 국가가 더 늘어나면 어떤 기준으로 값을 보정하고 versioning할지 더 정리할 필요가 있다.

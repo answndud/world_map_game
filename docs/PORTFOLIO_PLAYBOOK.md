@@ -410,7 +410,7 @@
 
 - `RecommendationSurveyAnswers`로 설문 답변 타입과 enum 선택지 구조 정의
 - `RecommendationQuestionCatalog`로 6개 문항과 SSR 렌더링용 옵션 카탈로그 구성
-- `RecommendationCountryProfileCatalog`로 추천 계산에 쓰는 국가 프로필 12개 정의
+- `RecommendationCountryProfileCatalog`로 추천 계산에 쓰는 국가 프로필 30개 정의
 - `RecommendationSurveyForm`으로 요청 바인딩 및 답변 유효성 검증 추가
 - `RecommendationSurveyService.recommend()`에서 가중치 기반 상위 3개 국가 계산 구현
 - `/recommendation/survey` 설문 페이지와 `/recommendation/survey` POST 결과 페이지 SSR 흐름 추가
@@ -422,7 +422,7 @@
 이 단계에서 남은 일:
 
 - 추천 결과 저장 구조를 DB까지 확장할지 결정
-- 국가 프로필 수와 속성을 더 늘려 추천 후보 풀을 넓히기
+- 후보 풀이 넓어진 뒤에도 결과가 특정 지역으로 치우치지 않는지 확인
 - 가중치 튜닝과 경계값 조정
 - 다음 단계에서 LLM 설명 프롬프트로 넘길 구조화 입력 고정
 

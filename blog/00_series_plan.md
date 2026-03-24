@@ -39,14 +39,15 @@
 12. [15초 폴링으로 랭킹 화면 갱신하기](./07-leaderboard-polling-refresh.md)
 13. [랭킹 화면 필터와 동점 규칙 정리하기](./08-ranking-filter-and-tie-rule.md)
 14. [설문 기반 추천 엔진 만들기](./09-survey-recommendation-engine.md)
-15. LLM으로 추천 결과 설명 생성하기
+15. [추천 후보 국가 풀 넓히기](./10-expand-recommendation-candidate-pool.md)
+16. LLM으로 추천 결과 설명 생성하기
 
 ### Part E. 테스트, 확장, 취업 패키징
 
-16. 왜 핵심 게임 로직을 테스트해야 하는가
-17. 인증, 전적, 마이페이지 붙이기
-18. Level 2 난이도와 실시간성 고도화
-19. README, 아키텍처, 면접 답변 패키지 만들기
+17. 왜 핵심 게임 로직을 테스트해야 하는가
+18. 인증, 전적, 마이페이지 붙이기
+19. Level 2 난이도와 실시간성 고도화
+20. README, 아키텍처, 면접 답변 패키지 만들기
 
 ## 실제 집필 우선순위
 
