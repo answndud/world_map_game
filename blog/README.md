@@ -90,12 +90,13 @@
 30. [로그인 직후 현재 브라우저의 guest 기록을 계정으로 귀속하기](./25-claim-current-guest-progress-after-login.md)
 31. [leaderboard_record 기반으로 `/mypage` 기록 대시보드 만들기](./26-build-mypage-from-member-leaderboard-runs.md)
 32. [세션 role로 `/admin` 운영 화면 접근 제어 붙이기](./27-protect-admin-routes-with-session-role.md)
+33. [raw stage 집계로 `/mypage` 플레이 성향 지표 추가하기](./28-add-mypage-stage-performance-metrics.md)
 
 ### Part E. 확장과 포트폴리오 정리
 
-33. 인증과 내 전적 조회 고도화하기
-34. Level 2와 실시간 전달 방식 고도화하기
-35. 테스트, 아키텍처, 면접 패키지로 프로젝트 마감하기
+34. 인증과 내 전적 조회 고도화하기
+35. Level 2와 실시간 전달 방식 고도화하기
+36. 테스트, 아키텍처, 면접 패키지로 프로젝트 마감하기
 
 ## 읽는 순서
 

@@ -1745,3 +1745,32 @@
 - 테스트 내용: `./gradlew test --tests com.worldmap.admin.AdminPageIntegrationTest --tests com.worldmap.auth.AuthFlowIntegrationTest` 통과 후 `./gradlew test` 전체 통과. `AdminPageIntegrationTest`는 unauthenticated -> login redirect, USER -> 403, ADMIN -> dashboard/feedback/baseline 접근을 검증한다. `AuthFlowIntegrationTest`는 `returnTo=/admin`으로 로그인한 admin 계정이 다시 `/admin`으로 돌아가는지 확인한다.
 - 면접에서 30초 안에 설명하는 요약: admin 화면은 public과 같은 컨트롤러 분기 안에 두지 않고, `/admin/**` 진입 전에 `AdminAccessInterceptor`가 먼저 role을 검사하게 만들었습니다. 비로그인 사용자는 로그인으로 보내고, 일반 회원은 403으로 막으며, `ADMIN` 세션만 실제 운영 화면으로 들어갑니다. 이렇게 해서 기존 단순 세션 로그인 구조를 크게 흔들지 않으면서 운영 화면을 권한 기반으로 분리했습니다.
 - 아직 내가 이해가 부족한 부분: 지금은 admin role 부여를 수동 운영 전제로 두고 있다. 이후 실제 운영/포트폴리오 시연에서는 bootstrap admin 계정 생성 방식을 둘지, DB migration이나 환경변수 기반 provisioning으로 둘지 정리가 더 필요하다.
+
+## 2026-03-24 - `/mypage` raw stage 기반 플레이 성향 지표 추가
+
+- 단계: 8. 인증, 전적, 마이페이지
+- 목적: 이전 `/mypage`는 완료된 run 요약에는 강했지만, 사용자가 어떤 방식으로 문제를 푸는지는 보여주지 못했다. 그래서 이번 조각은 최고 점수/랭킹과 별개로, raw stage 기록에서 `클리어 Stage 수`, `1트 클리어율`, `평균 시도 수`를 읽어 플레이 성향까지 보여주는 데 집중한다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/mypage/application/MyPageModePerformanceView.java`
+  - `src/main/java/com/worldmap/mypage/application/MyPageDashboardView.java`
+  - `src/main/java/com/worldmap/mypage/application/MyPageService.java`
+  - `src/main/java/com/worldmap/game/location/domain/LocationGameSessionRepository.java`
+  - `src/main/java/com/worldmap/game/location/domain/LocationGameStageRepository.java`
+  - `src/main/java/com/worldmap/game/population/domain/PopulationGameSessionRepository.java`
+  - `src/main/java/com/worldmap/game/population/domain/PopulationGameStageRepository.java`
+  - `src/main/resources/templates/mypage.html`
+  - `src/test/java/com/worldmap/web/MyPageControllerTest.java`
+  - `src/test/java/com/worldmap/mypage/MyPageServiceIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/28-add-mypage-stage-performance-metrics.md`
+- 요청 흐름 / 데이터 흐름: `GET /mypage`는 여전히 `MyPageController -> MyPageService.loadDashboard(memberId)`로 시작한다. 다만 이번에는 서비스가 `leaderboard_record`만 읽지 않고, 위치/인구수 stage repository를 함께 읽는다. `leaderboard_record`는 완료 run 요약(총 완료 플레이 수, 최고 점수, 최근 플레이)을 만들고, raw stage 집계는 모드별 `클리어 Stage 수`, `1트 클리어율`, `평균 시도 수`를 만든다. 즉, 한 화면 안에서도 서로 다른 read model을 목적에 맞게 쓴다.
+- 데이터 / 상태 변화: 새 테이블은 없고 read model만 확장됐다. 중요한 점은 플레이 성향 지표가 “finished session에 속한 CLEARED stage”만 대상으로 한다는 것이다. 아직 끝나지 않은 진행 중 세션이나 재시작되며 지워질 수 있는 임시 stage는 포함하지 않는다.
+- 핵심 도메인 개념: `/mypage`의 최고 점수/최근 플레이는 `leaderboard_record`가 가장 자연스럽지만, `1트 클리어율`과 `평균 시도 수`는 run 요약만으로는 설명이 안 된다. 그래서 이 지표는 다시 raw stage 집계로 내려가야 한다. 컨트롤러는 여전히 로그인 여부와 뷰 분기만 맡고, 어떤 저장소를 조합해 어떤 read model을 만들지는 `MyPageService`가 맡는다.
+- 예외 상황 또는 엣지 케이스: 아직 클리어한 stage가 없는 모드라도 completed run은 있을 수 있다. 이 경우 해당 모드 카드 자체는 보이지만 `1트 클리어율`, `평균 시도 수`는 `기록 없음`으로 나온다. 숫자 포맷은 정수면 `50%`, `1회`처럼 보이고, 소수면 `1.5회`처럼 한 자리 소수로 제한했다.
+- 테스트 내용: `./gradlew test --tests com.worldmap.web.MyPageControllerTest --tests com.worldmap.mypage.MyPageServiceIntegrationTest --tests com.worldmap.auth.AuthFlowIntegrationTest` 통과 후 `./gradlew test` 전체 통과. `MyPageServiceIntegrationTest`는 위치 게임에서 `2회 시도 후 클리어`, `1회 시도 후 클리어`, 이후 게임오버 시나리오를 만들고, 인구수 게임도 별도 한 판 끝낸 뒤 `50%`, `1.5회`, `100%`, `1회`가 실제로 계산되는지 검증한다.
+- 면접에서 30초 안에 설명하는 요약: `/mypage`는 이제 완료된 run 요약과 플레이 성향 요약을 분리해서 보여줍니다. 최고 점수와 최근 플레이는 `leaderboard_record`에서 읽고, 1트 클리어율과 평균 시도 수는 raw stage 집계에서 계산합니다. 이렇게 해야 “결과”와 “플레이 방식”을 서로 다른 read model 책임으로 설명할 수 있습니다.
+- 아직 내가 이해가 부족한 부분: 지금은 cleared stage 기준 성향만 보여주고, 실패 run까지 포함한 정확도나 기간별 추세는 아직 없다. 이후에는 raw attempt 집계까지 더 내려갈지, 아니면 현재 stage 기반 요약을 유지할지 더 판단해야 한다.

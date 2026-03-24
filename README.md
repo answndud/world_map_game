@@ -63,7 +63,7 @@
 - 비회원은 지금처럼 세션 기반으로 바로 플레이
 - 로그인하면 내 계정에 기록과 랭킹 이력이 누적
 - 계정 정보는 `닉네임 + 비밀번호` 수준으로 단순하게 유지
-- 현재는 8단계 3차 기준으로 `member`, `guestSessionKey`, 게임 세션 / 랭킹 레코드 ownership 필드, 닉네임 + 비밀번호 기반 회원가입 / 로그인 / 로그아웃, 로그인 직후 현재 브라우저의 guest 기록 귀속, `My Page` 로그인 유도/계정 shell까지 먼저 연결했고, 실제 전적 조회는 다음 조각에서 붙인다.
+- 현재는 8단계 6차 기준으로 `member`, `guestSessionKey`, 게임 세션 / 랭킹 레코드 ownership 필드, 닉네임 + 비밀번호 기반 회원가입 / 로그인 / 로그아웃, 로그인 직후 현재 브라우저의 guest 기록 귀속, `/mypage` 기록 허브, raw stage 기반 플레이 성향 요약, `/admin/**` 접근 제어까지 연결했다.
 
 ### 이후 확장
 
@@ -205,7 +205,9 @@
 - `/mypage`는 원본 게임 세션 전체가 아니라 완료된 run이 이미 정규화된 `leaderboard_record`를 먼저 읽는다. 그래서 모드별 최고 기록, 최근 완료 이력, 당시 랭킹 위치를 한 번에 설명하기 쉽다.
 - 8단계 5차 구현으로 `/admin/**`는 `AdminAccessInterceptor`가 보호하고, 비로그인 사용자는 `/login?returnTo=...`로 보내며, 로그인한 일반 사용자는 `403`으로 막는다.
 - admin 접근 제어는 컨트롤러마다 복붙하지 않고 인터셉터로 묶었다. admin 진입 정책은 도메인 상태 변경보다 라우트 입구의 공통 규칙에 가깝기 때문이다.
-- 현재 남은 인증 단계의 핵심은 `/mypage` 세부 지표 확장과, 실제 운영용 admin 계정 provisioning 방식을 더 명확히 정리하는 것이다.
+- 8단계 6차 구현으로 `/mypage`는 finished session에 속한 stage를 다시 읽어 모드별 `클리어 Stage 수`, `1트 클리어율`, `평균 시도 수`까지 보여주기 시작했다.
+- `/mypage`는 이제 `leaderboard_record` 기반 완료 run 요약과, raw stage 기반 플레이 성향 요약을 함께 가진다. 즉, “무슨 결과를 냈는가”와 “어떤 방식으로 플레이하는가”를 분리해서 보여준다.
+- 현재 남은 인증 단계의 핵심은 실제 운영용 admin 계정 provisioning 방식을 더 명확히 정리하고, 필요하면 `/mypage`에 더 깊은 누적 통계를 추가하는 것이다.
 - 이 피드백은 설문 문항과 가중치를 계속 개선하기 위한 신호로 사용하고, 오프라인 AI-assisted 평가 루프는 `docs/recommendation/OFFLINE_AI_SURVEY_IMPROVEMENT.md`와 `docs/recommendation/PERSONA_EVAL_SET.md`에서 관리한다.
 - `RecommendationOfflinePersonaCoverageTest`로 18개 페르소나 baseline을 자동 평가하고, 현재 엔진이 최소 15개 시나리오에서 기대 후보 1개 이상을 top 3에 포함하는지를 품질 하한으로 고정했다.
 - baseline은 기존 14개 중립 시나리오와, 새 두 문항을 적극적으로 쓰는 `P15~P18` 비교 시나리오로 나뉜다.

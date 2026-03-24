@@ -554,16 +554,20 @@
 - `/admin/**`는 `AdminAccessInterceptor`가 보호하고, 비로그인 사용자는 `/login?returnTo=...`로 보내며, 로그인한 일반 사용자(`USER`)는 403으로 막는다
 - admin 접근 제어는 각 컨트롤러 메서드가 아니라 인터셉터에 뒀다. 이 규칙은 비즈니스 상태 변경보다 라우트 입구의 공통 진입 정책이기 때문이다
 - 로그인 폼은 `returnTo`를 받아, admin 사용자가 로그인 후 원래 보려던 `/admin` 경로로 바로 돌아오도록 정리했다
+- `/mypage`는 finished session에 속한 stage를 다시 읽어 모드별 `클리어 Stage 수`, `1트 클리어율`, `평균 시도 수`를 추가로 보여준다
+- 이 성향 지표는 `leaderboard_record`가 아니라 raw stage 집계에서 나온다. 최고 점수/최근 완료 이력과 달리, 플레이 방식 자체는 stage 시도 수를 봐야 설명할 수 있기 때문이다
+- `MyPageServiceIntegrationTest`로 위치/인구수 게임을 실제로 한 판씩 끝낸 뒤, raw stage 기반 성향 지표가 기대값으로 계산되는지 고정했다
 
 이 단계에서 남은 일:
 
-- `/mypage` 세부 지표 확장 여부 결정
-  - 연속 최고 기록
-  - 모드별 누적 플레이 시간
-  - 정확도 / 평균 시도 수 같은 원본 세션 기반 지표
 - 실제 운영용 admin 계정 provisioning 방식 정리
   - DB role 부여
   - bootstrap 스크립트 / 환경변수 방식 여부 판단
+- `/mypage` 고도화 여부 결정
+  - 연속 최고 기록
+  - 모드별 누적 플레이 시간
+  - 실패 run 포함 정확도
+  - 시즌/기간 필터
 
 반드시 이해할 것:
 
@@ -574,6 +578,7 @@
 - 왜 guest 기록 귀속 시 `playerNickname`은 바꾸지 않고 ownership만 바꾸는지
 - 왜 `/mypage` 첫 구현은 raw 세션 테이블보다 `leaderboard_record`에서 시작하는지
 - 왜 admin 권한 체크는 컨트롤러가 아니라 인터셉터에 두는 것이 더 맞는지
+- 왜 `/mypage` 세부 성향 지표는 다시 raw stage 집계로 내려가야 하는지
 
 면접 포인트:
 
@@ -581,6 +586,7 @@
 - 왜 비회원 플레이를 버리지 않고 유지했는가
 - 왜 내 기록 허브 첫 버전은 `leaderboard_record` 기반으로 만드는 것이 설명과 구현 모두에 유리한가
 - 왜 admin 접근 제어를 Spring Security 전체 도입 대신 기존 세션 구조 위에 작게 얹었는가
+- 왜 `/mypage`는 `run 요약`과 `play style 요약`을 서로 다른 read model에서 읽는가
 
 완료 기준:
 
