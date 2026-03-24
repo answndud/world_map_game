@@ -92,12 +92,14 @@
 32. [세션 role로 `/admin` 운영 화면 접근 제어 붙이기](./27-protect-admin-routes-with-session-role.md)
 33. [raw stage 집계로 `/mypage` 플레이 성향 지표 추가하기](./28-add-mypage-stage-performance-metrics.md)
 34. [환경변수로 운영용 admin 계정 bootstrap 하기](./29-bootstrap-admin-account-from-env.md)
+35. [운영 화면을 `/dashboard`로 바꾸고 ADMIN만 헤더에서 노출하기](./30-rename-admin-surface-to-dashboard.md)
+36. [Dashboard에 회원 수와 오늘 활성 지표 붙이기](./31-add-dashboard-activity-metrics.md)
 
 ### Part E. 확장과 포트폴리오 정리
 
-35. 인증과 내 전적 조회 고도화하기
-36. Level 2와 실시간 전달 방식 고도화하기
-37. 테스트, 아키텍처, 면접 패키지로 프로젝트 마감하기
+37. 인증과 내 전적 조회 고도화하기
+38. Level 2와 실시간 전달 방식 고도화하기
+39. 테스트, 아키텍처, 면접 패키지로 프로젝트 마감하기
 
 ## 읽는 순서
 

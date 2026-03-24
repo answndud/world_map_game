@@ -1803,3 +1803,65 @@
 - 테스트 내용: `./gradlew test --tests com.worldmap.admin.application.AdminBootstrapServiceTest --tests com.worldmap.admin.AdminBootstrapIntegrationTest --tests com.worldmap.auth.AuthFlowIntegrationTest` 통과 후 `./gradlew test` 전체 통과. 단위 테스트에서는 신규 생성 / 기존 USER 승격 / 설정 누락 fail-fast를 고정했고, 통합 테스트에서는 Spring 컨텍스트 기동 시 bootstrap admin이 실제로 생성되고 BCrypt hash가 저장되는지 확인했다.
 - 면접에서 30초 안에 설명하는 요약: admin 라우트를 role로 막은 뒤에는 운영자가 실제로 어떤 계정으로 들어갈지 정해야 했습니다. 공개 signup으로 admin 계정을 만들게 하면 사용자 흐름과 운영 계정이 섞이기 때문에, 서버 시작 시 환경변수로 admin 계정을 bootstrap 하도록 바꿨습니다. 시작 시점은 `ApplicationRunner`가 잡고, 계정 생성이나 기존 USER 승격 규칙은 `AdminBootstrapService`가 맡으며, 닉네임/비밀번호 검증은 회원가입과 같은 `MemberCredentialPolicy`를 재사용해 규칙을 하나로 유지했습니다.
 - 아직 내가 이해가 부족한 부분: 현재 bootstrap은 단일 운영자 계정 전제를 둔다. 이후 실제 운영 화면이 늘어나면 다중 admin 계정 provisioning이나 비밀번호 회전 정책을 어디까지 현재 구조에 포함할지, 아니면 별도 운영 절차로 둘지 추가 판단이 필요하다.
+
+## 2026-03-24 - 운영 화면을 `/dashboard`로 전환하고 ADMIN만 헤더에서 노출
+
+- 단계: 8. 인증, 전적, 마이페이지
+- 목적: 운영자 계정은 필요하지만 `/admin`이라는 주소와 공개 헤더 노출은 제품보다 개발용 화면이 먼저 보이는 인상을 줬다. 그래서 이번 조각은 권한 모델은 그대로 유지하면서, 운영 화면 표면 언어를 `Dashboard`로 바꾸고 `ADMIN` 로그인 상태에서만 public 헤더에 진입 버튼을 보이게 정리하는 데 집중한다.
+- 변경 파일:
+  - `src/main/resources/templates/fragments/site-header.html`
+  - `src/main/resources/templates/fragments/admin-header.html`
+  - `src/main/java/com/worldmap/admin/web/AdminPageController.java`
+  - `src/main/java/com/worldmap/admin/web/LegacyAdminRedirectController.java`
+  - `src/main/java/com/worldmap/admin/web/AdminWebConfig.java`
+  - `src/main/java/com/worldmap/admin/application/AdminDashboardService.java`
+  - `src/main/java/com/worldmap/recommendation/web/RecommendationPageController.java`
+  - `src/main/resources/templates/admin/index.html`
+  - `src/main/resources/templates/admin/recommendation-feedback.html`
+  - `src/main/resources/templates/admin/recommendation-persona-baseline.html`
+  - `src/main/resources/templates/auth/login.html`
+  - `src/test/java/com/worldmap/admin/AdminPageIntegrationTest.java`
+  - `src/test/java/com/worldmap/auth/AuthFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/recommendation/RecommendationFeedbackIntegrationTest.java`
+  - `src/test/java/com/worldmap/web/HomeControllerTest.java`
+  - `src/test/java/com/worldmap/web/MyPageControllerTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/30-rename-admin-surface-to-dashboard.md`
+- 요청 흐름 / 데이터 흐름: public 헤더는 이제 `site-header` fragment에서 현재 세션의 `WORLDMAP_MEMBER_ROLE`을 직접 읽고, `ADMIN`일 때만 `Dashboard` 링크를 렌더링한다. 운영 화면 요청은 `GET /dashboard/** -> AdminAccessInterceptor -> MemberSessionManager.currentMember() -> AdminPageController` 흐름으로 들어간다. 기존 `GET /admin/**`는 `LegacyAdminRedirectController`가 받아 `/dashboard/**`로 redirect만 수행한다. public의 legacy route인 `GET /recommendation/feedback-insights`도 이제 `/dashboard/recommendation/feedback`으로 redirect한다.
+- 데이터 / 상태 변화: 이번 단계는 새로운 테이블이나 계정 상태 전이를 추가하지 않는다. 바뀐 것은 운영 화면의 주소 체계와 shell 노출 규칙이다. 권한 모델은 그대로 `ADMIN`, `USER`를 유지하고, public 헤더에서는 `ADMIN` 세션일 때만 `Dashboard` 버튼이 보인다. 운영 화면 내부 링크도 모두 `/dashboard`, `/dashboard/recommendation/feedback`, `/dashboard/recommendation/persona-baseline` 기준으로 맞췄다.
+- 핵심 도메인 개념: 이번 단계의 핵심은 “권한은 admin이지만, 표면 언어는 dashboard로 바꾼다”는 것이다. 헤더 노출 규칙은 컨트롤러마다 model flag를 넣기보다 fragment가 session role을 직접 읽는 편이 더 단순하다. 반면 운영 화면 접근 권한은 여전히 라우트 입구의 공통 정책이라 interceptor가 맡는 것이 맞다. 또 `/admin`을 바로 지우지 않고 redirect controller를 두어 북마크와 옛 문서 링크를 안전하게 이전하도록 했다.
+- 예외 상황 또는 엣지 케이스: guest와 일반 USER는 public 헤더에서 `Dashboard` 버튼을 보지 못한다. 비로그인 사용자가 `/dashboard`로 직접 들어가면 `/login?returnTo=/dashboard`로 보내고, 일반 USER는 403으로 막는다. 예전 `/admin` 북마크는 `ADMIN` 세션에서는 `/dashboard`로 옮겨지고, 비로그인 사용자는 기존처럼 로그인 유도로 들어간다.
+- 테스트 내용: `./gradlew test --tests com.worldmap.admin.AdminPageIntegrationTest --tests com.worldmap.auth.AuthFlowIntegrationTest --tests com.worldmap.recommendation.RecommendationFeedbackIntegrationTest --tests com.worldmap.web.HomeControllerTest --tests com.worldmap.web.MyPageControllerTest` 통과. `AdminPageIntegrationTest`는 `/dashboard` 접근, guest login redirect, USER 403, legacy `/admin` redirect를 검증한다. `HomeControllerTest`는 guest에게 `Dashboard`가 안 보이고 ADMIN 세션에는 보이는지 확인한다. `AuthFlowIntegrationTest`는 admin 로그인 후 `returnTo=/dashboard` 복귀를 고정한다.
+- 면접에서 30초 안에 설명하는 요약: 운영자 계정은 필요하지만 `/admin`이라는 주소와 링크를 public shell에 그대로 두면 제품보다 개발용 화면이 먼저 보였습니다. 그래서 권한 모델은 그대로 `ADMIN`으로 두고, 실제 운영 진입 주소를 `/dashboard`로 바꿨습니다. public 헤더는 `ADMIN` 로그인 상태에서만 `Dashboard` 버튼을 보여주고, 기존 `/admin/**`는 redirect controller로 한동안 유지해 북마크와 테스트를 안전하게 옮겼습니다. 권한 체크는 여전히 interceptor가 맡고, 헤더 노출은 fragment가 session role을 읽는 방식으로 단순하게 유지했습니다.
+- 아직 내가 이해가 부족한 부분: 지금은 운영 화면 주소와 shell만 정리했기 때문에, 실제 dashboard다운 숫자 카드인 `총 회원 수`, `오늘 활성 회원/guest`, `오늘 완료 게임 수`는 아직 없다. 다음 조각에서는 read-only 지표를 어떤 기준으로 계산할지 먼저 정의해야 한다.
+
+## 2026-03-24 - Dashboard 1차 운영 수치 카드 추가
+
+- 단계: 8. 인증, 전적, 마이페이지
+- 목적: `/dashboard` 주소와 권한 구조는 정리됐지만, 실제 운영자가 제일 먼저 보고 싶은 기초 수치가 비어 있었다. 그래서 이번 조각은 `총 회원 수`, `오늘 활성 회원`, `오늘 활성 게스트`, `오늘 시작된 세션`, `오늘 완료된 게임`, `오늘 모드별 완료 수`를 dashboard 첫 화면에 붙이고, 각 지표의 source of truth를 명확히 고정하는 데 집중한다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/game/location/domain/LocationGameSessionRepository.java`
+  - `src/main/java/com/worldmap/game/population/domain/PopulationGameSessionRepository.java`
+  - `src/main/java/com/worldmap/ranking/domain/LeaderboardRecordRepository.java`
+  - `src/main/java/com/worldmap/admin/application/AdminDashboardActivityView.java`
+  - `src/main/java/com/worldmap/admin/application/AdminDashboardView.java`
+  - `src/main/java/com/worldmap/admin/application/AdminDashboardService.java`
+  - `src/main/resources/templates/admin/index.html`
+  - `src/test/java/com/worldmap/admin/AdminPageIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/31-add-dashboard-activity-metrics.md`
+- 요청 흐름 / 데이터 흐름: `GET /dashboard`는 그대로 `AdminAccessInterceptor -> AdminPageController.dashboard() -> AdminDashboardService.loadDashboard()`로 들어간다. 이번에는 서비스가 `MemberRepository.count()`로 총 회원 수를 읽고, 위치/인구수 게임 세션 repository에서 `startedAt` 기준 오늘 시작 세션 수와 distinct `memberId`, distinct `guestSessionKey`를 읽는다. 그 다음 `LeaderboardRecordRepository`에서 `finishedAt` 기준 오늘 완료 run 수와 모드별 완료 수를 읽어 `AdminDashboardActivityView`로 묶고, 최종적으로 `AdminDashboardView`에 넣어 SSR 템플릿으로 보낸다.
+- 데이터 / 상태 변화: 새 테이블은 없고 read model만 확장됐다. 중요한 점은 모든 수치를 한 테이블에서 읽지 않았다는 것이다. 총 회원 수는 `member_account`, 오늘 활성은 각 게임 세션의 `startedAt`, 오늘 완료 수는 `leaderboard_record.finishedAt`를 source of truth로 사용한다. 즉, “가입자 수”, “오늘 시작된 플레이”, “오늘 끝난 게임”은 각각 다른 도메인 이벤트를 기준으로 본다.
+- 핵심 도메인 개념: dashboard 카드도 결국 read model이다. 회원 수와 플레이 완료 수를 같은 저장소에서 억지로 읽으면 설명이 꼬이기 때문에, `MemberRepository`, `LocationGameSessionRepository`, `PopulationGameSessionRepository`, `LeaderboardRecordRepository`를 목적별로 분리해 쓴다. 컨트롤러는 `/dashboard` 진입만 맡고, 두 게임 repository의 distinct 사용자 목록을 합쳐 오늘 활성 수를 만드는 책임은 `AdminDashboardService`가 맡는다.
+- 예외 상황 또는 엣지 케이스: 오늘 같은 회원이 위치/인구수 두 모드를 모두 플레이할 수 있으므로, 활성 회원 수는 두 repository의 distinct `memberId`를 서비스에서 합쳐 중복을 제거한다. 게스트도 같은 방식으로 distinct `guestSessionKey`를 합친다. 반면 `오늘 시작된 세션 수`는 실제로 시작된 세션 개수가 목적이므로 두 repository count를 그대로 더한다. `오늘 완료된 게임 수`는 finished run만 보므로 `leaderboard_record` 기준으로 집계한다.
+- 테스트 내용: `./gradlew test --tests com.worldmap.admin.AdminPageIntegrationTest --tests com.worldmap.auth.AuthFlowIntegrationTest --tests com.worldmap.web.HomeControllerTest` 통과 후 `./gradlew test` 전체 통과. `AdminPageIntegrationTest`에서 회원 2명, 오늘 시작된 member 세션 1개, guest 세션 1개, 오늘 완료된 위치/인구 run 각 1개를 직접 넣고 `/dashboard` HTML에 `TOTAL MEMBERS`, `TODAY ACTIVE MEMBERS`, `TODAY ACTIVE GUESTS`, `TODAY COMPLETED RUNS`, `L 1 / P 1`이 실제로 보이는지 확인했다.
+- 면접에서 30초 안에 설명하는 요약: Dashboard에 운영 수치를 붙일 때 한 테이블에서 다 읽지 않았습니다. 총 회원 수는 `member_account`, 오늘 활성 회원/게스트는 각 게임 세션의 `startedAt`, 오늘 완료된 게임 수는 `leaderboard_record.finishedAt`를 source of truth로 삼았습니다. 그리고 위치/인구수 두 모드에서 중복된 회원이나 guest를 중복 집계하지 않도록 distinct id를 서비스에서 합쳐 `AdminDashboardActivityView`로 만들었습니다.
+- 아직 내가 이해가 부족한 부분: 지금은 snapshot 카드만 있고 기간별 추이는 없다. 다음 단계에서는 `최근 7일 활성 수`, `일간 완료 run 추이`, `추천 피드백 추이`처럼 시계열 지표를 어떤 저장소에서 얼마나 단순하게 읽을지 더 정해야 한다.

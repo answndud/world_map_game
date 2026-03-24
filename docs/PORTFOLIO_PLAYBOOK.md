@@ -562,6 +562,12 @@
 - bootstrap admin은 `WORLDMAP_ADMIN_BOOTSTRAP_ENABLED`, `WORLDMAP_ADMIN_BOOTSTRAP_NICKNAME`, `WORLDMAP_ADMIN_BOOTSTRAP_PASSWORD`로 제어한다
 - 운영용 admin 계정은 signup UI와 분리했다. admin provisioning은 플레이어용 공개 흐름이 아니라 배포 환경의 운영 규칙이기 때문에 startup runner + service 조합으로 두는 편이 현재 구조에 더 맞다
 - `AdminBootstrapServiceTest`, `AdminBootstrapIntegrationTest`로 신규 생성 / 기존 USER 승격 / 잘못된 설정 fail-fast / 해시 저장을 고정했다
+- 운영 화면 진입 주소를 `/admin`에서 `/dashboard`로 바꾸고, `ADMIN` 로그인일 때만 public 헤더에 `Dashboard` 버튼이 보이게 정리했다
+- 기존 `/admin/**`는 즉시 제거하지 않고 `/dashboard/**`로 redirect해 북마크 호환성과 기존 링크 테스트를 유지했다
+- 운영 화면 내부 헤더도 `Home -> Dashboard -> My Page -> Recommendation -> Baseline` 순으로 정리해 제품 화면과 운영 화면의 이동 언어를 맞췄다
+- `/dashboard` 첫 화면에 `총 회원 수`, `오늘 활성 회원`, `오늘 활성 게스트`, `오늘 시작된 세션`, `오늘 완료된 게임`, `오늘 모드별 완료 수` 카드를 추가했다
+- Dashboard 수치는 한 저장소에서 다 읽지 않는다. 회원 수는 `MemberRepository`, 오늘 활성 수는 각 게임 세션 repository의 `startedAt` distinct 집계, 오늘 완료 수는 `LeaderboardRecordRepository.finishedAt` 집계에서 읽는다
+- `AdminPageIntegrationTest`로 Dashboard 수치 카드가 실제 데이터 기준으로 렌더링되는지 고정했다
 
 이후 고도화 아이디어:
 
@@ -587,6 +593,9 @@
 - 왜 `/mypage` 세부 성향 지표는 다시 raw stage 집계로 내려가야 하는지
 - 왜 운영용 admin 계정을 signup 화면이 아니라 startup bootstrap으로 여는 것이 현재 프로젝트 범위에 더 맞는지
 - 왜 bootstrap 계정 생성에서도 회원가입과 같은 credential policy를 재사용해야 하는지
+- 왜 public에 `/admin` 링크를 노출하지 않고, `ADMIN` 로그인 상태에서만 `Dashboard` 버튼을 보여주는 것이 더 자연스러운지
+- 왜 `/admin`을 바로 삭제하지 않고 legacy redirect를 한 번 두는 것이 현재 운영 안정성에 유리한지
+- 왜 Dashboard 지표를 한 테이블에서 억지로 읽지 않고, member / game session / leaderboard_record read model을 나눠 쓰는 것이 더 설명 가능한지
 
 면접 포인트:
 
@@ -596,6 +605,8 @@
 - 왜 admin 접근 제어를 Spring Security 전체 도입 대신 기존 세션 구조 위에 작게 얹었는가
 - 왜 `/mypage`는 `run 요약`과 `play style 요약`을 서로 다른 read model에서 읽는가
 - 왜 admin 계정은 공개 회원가입이 아니라 환경변수 bootstrap 방식으로 운영하는가
+- 왜 운영 화면 URL을 `/admin`보다 `/dashboard`로 바꾸었는가
+- 왜 `오늘 활성 수`는 session 시작 기준, `오늘 완료 수`는 leaderboard record 기준으로 분리했는가
 
 완료 기준:
 

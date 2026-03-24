@@ -59,13 +59,15 @@
 32. [세션 role로 `/admin` 운영 화면 접근 제어 붙이기](./27-protect-admin-routes-with-session-role.md)
 33. [raw stage 집계로 `/mypage` 플레이 성향 지표 추가하기](./28-add-mypage-stage-performance-metrics.md)
 34. [환경변수로 운영용 admin 계정 bootstrap 하기](./29-bootstrap-admin-account-from-env.md)
+35. [운영 화면을 `/dashboard`로 바꾸고 ADMIN만 헤더에서 노출하기](./30-rename-admin-surface-to-dashboard.md)
+36. [Dashboard에 회원 수와 오늘 활성 지표 붙이기](./31-add-dashboard-activity-metrics.md)
 
 ### Part E. 테스트, 확장, 취업 패키징
 
-35. 왜 핵심 게임 로직을 테스트해야 하는가
-36. 인증, 전적, 마이페이지 붙이기
-37. Level 2 난이도와 실시간성 고도화
-38. README, 아키텍처, 면접 답변 패키지 만들기
+37. 왜 핵심 게임 로직을 테스트해야 하는가
+38. 인증, 전적, 마이페이지 붙이기
+39. Level 2 난이도와 실시간성 고도화
+40. README, 아키텍처, 면접 답변 패키지 만들기
 
 ## 실제 집필 우선순위
 
