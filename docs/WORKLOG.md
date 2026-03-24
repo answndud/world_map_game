@@ -1269,6 +1269,36 @@
 - 면접에서 30초 안에 설명하는 요약: 추천 결과는 저장하지 않기로 했고, 대신 설문을 개선할 수 있는 최소 신호만 남겼습니다. 결과 페이지에서 1~5점 만족도와 설문/엔진 버전, 사용자가 고른 6개 답변만 익명으로 저장하고, 이 데이터를 기준으로 어떤 설문 버전이 더 만족도가 높은지 나중에 비교할 수 있게 했습니다.
 - 아직 내가 이해가 부족한 부분: 지금은 피드백을 저장만 하고 집계 조회는 아직 없다. 다음 단계에서 버전별 평균 점수, 응답 수, 특정 답변 조합별 만족도 같은 집계 기준을 어디까지 보여줄지 더 정리해야 한다.
 
+## 2026-03-24 - 추천 만족도 버전 집계 조회 1차
+
+- 단계: 6. 설문 기반 추천 엔진
+- 목적: 만족도 피드백을 저장하기만 하면 설문 개선에 바로 쓰기 어렵다. 이번 조각에서는 `surveyVersion + engineVersion` 기준으로 평균 점수, 응답 수, 1~5점 분포를 읽는 최소 집계 화면과 API를 붙인다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/recommendation/domain/RecommendationFeedbackRepository.java`
+  - `src/main/java/com/worldmap/recommendation/domain/RecommendationFeedbackVersionSummaryProjection.java`
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationFeedbackService.java`
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationFeedbackInsightsView.java`
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationFeedbackSummaryView.java`
+  - `src/main/java/com/worldmap/recommendation/web/RecommendationFeedbackApiController.java`
+  - `src/main/java/com/worldmap/recommendation/web/RecommendationPageController.java`
+  - `src/main/resources/templates/recommendation/feedback-insights.html`
+  - `src/main/resources/templates/recommendation/result.html`
+  - `src/test/java/com/worldmap/recommendation/RecommendationFeedbackIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/12-collect-recommendation-feedback.md`
+  - `blog/13-recommendation-feedback-insights.md`
+- 요청 흐름 / 데이터 흐름: 사용자는 만족도 제출 뒤 내부적으로 `GET /api/recommendation/feedback/summary` 또는 `GET /recommendation/feedback-insights`를 통해 버전별 집계를 본다. 컨트롤러는 진입만 처리하고, 실제 집계는 `RecommendationFeedbackRepository.summarizeByVersion() -> RecommendationFeedbackService.summarizeByVersion()` 순서로 수행된다.
+- 데이터 / 상태 변화: 이번 단계에서는 새 데이터를 더 저장하지 않는다. 이미 저장하던 `RecommendationFeedback`만 읽고, `surveyVersion + engineVersion` 그룹 기준으로 `responseCount`, `averageSatisfaction`, `score1~5Count`, `lastSubmittedAt`를 계산해 view로 바꾼다.
+- 핵심 도메인 개념: 추천 결과를 저장하지 않더라도 설문 품질을 개선할 수 있는 핵심 단위는 `버전 조합`이다. 같은 `surveyVersion`과 `engineVersion`이 얼마나 만족도를 받았는지, 응답 수가 충분한지, 낮은 점수 분포가 몰려 있는지를 보면 “어느 버전을 유지/폐기할지” 판단할 수 있다.
+- 예외 상황 또는 엣지 케이스: 응답 수가 1~2개뿐인 버전은 평균 점수만으로 판단하면 위험하다. 그래서 표에는 평균 점수뿐 아니라 응답 수와 1~5점 분포를 같이 보여준다. 아직은 답변 조합별 drill-down은 넣지 않고, 버전 집계까지만 제한한다.
+- 테스트 내용: `./gradlew test --tests com.worldmap.recommendation.RecommendationFeedbackIntegrationTest --tests com.worldmap.recommendation.RecommendationPageIntegrationTest` 통과. 집계 통합 테스트는 `GET /api/recommendation/feedback/summary`가 버전별 응답 수와 평균 점수를 계산하는지, `GET /recommendation/feedback-insights`가 SSR 페이지를 렌더링하는지 확인했다.
+- 면접에서 30초 안에 설명하는 요약: 추천 결과는 저장하지 않지만, 설문과 엔진 버전별 만족도 집계는 볼 수 있게 만들었습니다. `RecommendationFeedback`를 `surveyVersion + engineVersion` 기준으로 그룹핑해서 평균 점수, 응답 수, 1~5점 분포를 계산하고, 이 집계를 API와 SSR 화면으로 노출해 설문 개선 기준으로 삼았습니다.
+- 아직 내가 이해가 부족한 부분: 지금은 버전 조합 단위 집계까지만 있다. 실제 설문 개선을 더 정교하게 하려면 “어떤 답변 조합에서 낮은 점수가 많이 나왔는지”까지 내려다볼지, 아니면 버전 평균만으로도 충분한지 더 판단해야 한다.
+
 ## 2026-03-24 - 추천 가중치 튜닝과 경계값 조정 1차
 
 - 단계: 6. 설문 기반 추천 엔진

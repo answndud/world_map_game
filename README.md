@@ -181,6 +181,7 @@
 - 정렬은 총점 우선이지만, 동점 구간에서는 `강한 신호 개수 -> 정확 일치 개수 -> 국가명` 순으로 보조 비교한다.
 - 결과 페이지는 아직 LLM 설명이 아니라, 서버가 계산한 매칭 점수와 핵심 이유 3개를 deterministic하게 보여준다.
 - 추천 결과 자체는 저장하지 않고, 결과 페이지에서 `1~5점 만족도 + surveyVersion + engineVersion + 사용자가 선택한 6개 답변`만 익명 피드백으로 수집한다.
+- `/recommendation/feedback-insights`와 `/api/recommendation/feedback/summary`에서 `surveyVersion + engineVersion` 기준 평균 점수, 응답 수, 1~5점 분포를 읽어 설문 개선 기준으로 사용한다.
 - 이 피드백은 설문 문항과 가중치를 계속 개선하기 위한 신호로 사용하고, LLM 자연어 설명은 다음 단계에서 붙인다.
 
 ## 7. 랭킹 시스템 설계
