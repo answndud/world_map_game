@@ -63,13 +63,14 @@
 36. [Dashboard에 회원 수와 오늘 활성 지표 붙이기](./31-add-dashboard-activity-metrics.md)
 37. [Dashboard 지표 중 공개 가능한 것만 `/stats`로 분리하기](./32-make-public-stats-page-from-dashboard-metrics.md)
 38. [local 프로필에서 admin / user 계정과 샘플 run 자동 생성하기](./33-bootstrap-local-demo-accounts-and-sample-runs.md)
+39. [홈 첫 화면에 로그인 / 회원가입 진입점 추가하기](./34-add-home-auth-entry-points.md)
 
 ### Part E. 테스트, 확장, 취업 패키징
 
-39. 왜 핵심 게임 로직을 테스트해야 하는가
-40. 인증, 전적, 마이페이지 붙이기
-41. Level 2 난이도와 실시간성 고도화
-42. README, 아키텍처, 면접 답변 패키지 만들기
+40. 왜 핵심 게임 로직을 테스트해야 하는가
+41. 인증, 전적, 마이페이지 붙이기
+42. Level 2 난이도와 실시간성 고도화
+43. README, 아키텍처, 면접 답변 패키지 만들기
 
 ## 실제 집필 우선순위
 

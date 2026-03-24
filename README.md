@@ -63,7 +63,7 @@
 - 비회원은 지금처럼 세션 기반으로 바로 플레이
 - 로그인하면 내 계정에 기록과 랭킹 이력이 누적
 - 계정 정보는 `닉네임 + 비밀번호` 수준으로 단순하게 유지
-- 현재는 8단계 10차 기준으로 `member`, `guestSessionKey`, 게임 세션 / 랭킹 레코드 ownership 필드, 닉네임 + 비밀번호 기반 회원가입 / 로그인 / 로그아웃, 로그인 직후 현재 브라우저의 guest 기록 귀속, `/mypage` 기록 허브, raw stage 기반 플레이 성향 요약, `/dashboard/**` 접근 제어, 환경변수 기반 bootstrap admin provisioning, Dashboard 1차 운영 수치 카드, 공개 `/stats` 화면, local demo 계정 / 샘플 run bootstrap까지 연결했다.
+- 현재는 8단계 11차 기준으로 `member`, `guestSessionKey`, 게임 세션 / 랭킹 레코드 ownership 필드, 닉네임 + 비밀번호 기반 회원가입 / 로그인 / 로그아웃, 로그인 직후 현재 브라우저의 guest 기록 귀속, `/mypage` 기록 허브, raw stage 기반 플레이 성향 요약, `/dashboard/**` 접근 제어, 환경변수 기반 bootstrap admin provisioning, Dashboard 1차 운영 수치 카드, 공개 `/stats` 화면, local demo 계정 / 샘플 run bootstrap, 홈 첫 화면 계정 진입 CTA까지 연결했다.
 
 ### 이후 확장
 
@@ -216,6 +216,7 @@
 - 8단계 9차 구현으로 `/dashboard` 첫 화면에 운영 수치 카드를 추가했다. `총 회원 수`는 `member_account`, `오늘 활성 회원 / 게스트`와 `오늘 시작된 세션 수`는 각 게임 세션의 `startedAt`, `오늘 완료된 게임 수`와 `모드별 완료 수`는 `leaderboard_record.finishedAt` 기준으로 계산한다.
 - 8단계 10차 구현으로 dashboard 활동 지표를 `ServiceActivityService`로 분리해 `/dashboard`와 공개 `/stats`가 같은 read model을 재사용하게 했다. `Stats`는 전체 사용자에게 공개 가능한 운영 수치와 일간 Top 3만 보여 주고, 추천 품질/버전 정보는 계속 Dashboard에만 남긴다.
 - 8단계 10차 구현으로 local profile 시작 시 admin 계정 `worldmap_admin`, 일반 계정 `orbit_runner`, 샘플 leaderboard run 2개, 진행 중 guest 세션 1개를 자동 생성하는 demo bootstrap을 추가했다. DB 데이터를 비워도 local profile로 서버를 다시 띄우면 country seed -> admin bootstrap -> demo bootstrap 순서로 같은 확인용 상태를 다시 만들 수 있다.
+- 8단계 11차 구현으로 홈 첫 화면에서 guest는 `로그인 / 회원가입`, 로그인 사용자는 `My Page / 로그아웃`을 바로 볼 수 있게 정리했다. 계정 기능은 그대로 두고, 홈에서 기록 유지 진입점을 더 짧게 만든 조각이다.
 - 현재 8단계 핵심 범위는 닫혔고, 이후 고도화 포인트는 `/mypage` 기간별 누적 통계, season/기간 필터, 더 세밀한 운영 도구 확장이다.
 - 이 피드백은 설문 문항과 가중치를 계속 개선하기 위한 신호로 사용하고, 오프라인 AI-assisted 평가 루프는 `docs/recommendation/OFFLINE_AI_SURVEY_IMPROVEMENT.md`와 `docs/recommendation/PERSONA_EVAL_SET.md`에서 관리한다.
 - `RecommendationOfflinePersonaCoverageTest`로 18개 페르소나 baseline을 자동 평가하고, 현재 엔진이 최소 15개 시나리오에서 기대 후보 1개 이상을 top 3에 포함하는지를 품질 하한으로 고정했다.

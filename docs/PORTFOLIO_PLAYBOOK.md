@@ -574,6 +574,7 @@
 - `DemoBootstrapProperties`, `DemoBootstrapService`, `DemoBootstrapInitializer`를 추가해 local profile 시작 시 `worldmap_admin(ADMIN)`, `orbit_runner(USER)`, 샘플 완료 run 2개, 진행 중 guest 세션 1개를 자동 생성하도록 연결했다
 - local demo bootstrap은 `country seed -> admin bootstrap -> demo bootstrap` 순서를 `@Order`로 고정해, DB를 비운 뒤 서버를 다시 띄워도 같은 확인용 상태를 재생성하게 했다
 - 저장소 루트의 gitignored `.env.local`에 local bootstrap 기본값을 같이 두고, source 후 `bootRun` 하면 같은 확인용 계정 / 샘플 데이터를 바로 불러오게 정리했다
+- 홈 첫 화면은 guest면 `로그인 / 회원가입`, 로그인 상태면 `My Page / 로그아웃`을 바로 보여 주도록 바꿔 계정 연결 진입점을 홈에서도 명확하게 만들었다
 - `DemoBootstrapIntegrationTest`, `StatsPageControllerTest`로 local dummy data bootstrap과 public stats 렌더링을 고정했다
 
 이후 고도화 아이디어:
@@ -606,6 +607,7 @@
 - 왜 공개 `/stats`와 내부 `/dashboard`를 같은 화면으로 합치지 않고 분리하는 것이 더 맞는지
 - 왜 local demo 계정 / 샘플 run 생성은 signup이나 SQL seed보다 startup runner + service 조합으로 두는 것이 현재 구조에 더 맞는지
 - 왜 demo bootstrap은 country seed 이후에만 돌도록 순서를 고정해야 하는지
+- 왜 홈 첫 화면에서 guest와 member의 계정 CTA를 다르게 보여 주는 것이 `My Page` 하나만 남기는 것보다 더 명확한지
 
 면접 포인트:
 

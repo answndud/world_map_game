@@ -1922,3 +1922,25 @@
 - 테스트 내용: 애플리케이션 테스트는 다시 추가하지 않았다. 기존 `./gradlew test` 전체 통과 상태를 유지한 채, local 부팅에서 `.env.local` 값과 동일한 계정 / 샘플 데이터가 실제로 생성되는지 앞선 부팅 검증으로 확인했다.
 - 면접에서 30초 안에 설명하는 요약: local 시연 상태를 더 쉽게 재현하려고 gitignored `.env.local` 샘플을 따로 두었습니다. 이 파일에는 admin bootstrap과 demo user bootstrap 기본값이 들어 있고, source 후 서버를 띄우면 기존 startup runner 흐름을 통해 같은 계정과 샘플 run을 다시 만들 수 있습니다. 즉, 민감한 local 설정은 git에 올리지 않으면서도, 재현 방법은 문서와 실행 파일로 같이 남겼습니다.
 - 아직 내가 이해가 부족한 부분: 현재 `.env.local`은 local 시연 편의성 중심이라 비밀번호 회전이나 다중 개발자별 로컬 값 분기는 따로 고려하지 않았다. 이후 배포/협업 범위가 넓어지면 `.env.example`을 별도로 둘지, 지금처럼 문서 + gitignored 실제 파일 조합을 유지할지 판단이 더 필요하다.
+
+## 2026-03-24 - 홈 첫 화면에 로그인 / 회원가입 진입점 추가
+
+- 단계: 8. 인증, 전적, 마이페이지
+- 목적: 로그인과 회원가입 자체는 이미 동작했지만, 홈 첫 화면에는 바로 들어가는 버튼이 없어서 guest 사용자가 계정 연결 경로를 한 번 더 찾아야 했다. 그래서 이번 조각은 홈에서 guest는 `로그인 / 회원가입`, 로그인 사용자는 `My Page / 로그아웃`을 바로 보게 만들어 기록 유지 진입점을 짧게 하는 데 집중한다.
+- 변경 파일:
+  - `src/main/resources/templates/home.html`
+  - `src/main/resources/static/css/site.css`
+  - `src/test/java/com/worldmap/web/HomeControllerTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/34-add-home-auth-entry-points.md`
+- 요청 흐름 / 데이터 흐름: `GET / -> HomeController -> home.html` 흐름은 그대로다. 이번에는 `home.html`이 현재 `HttpSession`을 직접 읽어, guest면 `로그인 / 회원가입` CTA를 렌더링하고, 로그인 상태면 세션에 들어 있는 `WORLDMAP_MEMBER_NICKNAME`을 표시하면서 `My Page / 로그아웃` 블록을 렌더링한다. 로그아웃은 새 흐름을 만들지 않고 기존 `POST /logout -> AuthPageController.logout() -> MemberSessionManager.signOut()`를 그대로 사용한다.
+- 데이터 / 상태 변화: 새로운 테이블이나 권한 모델 변화는 없다. 바뀐 것은 홈 첫 화면에서 현재 인증 상태를 직접 보여 주는 방식이다. guest는 홈에서 바로 계정을 연결할 수 있고, 로그인 사용자는 어떤 계정으로 기록을 이어가는지 홈에서 바로 확인한다.
+- 핵심 도메인 개념: 이 작업은 인증 규칙 추가가 아니라 표현 규칙 보강이다. 그래서 `HomeController`에 model flag를 더 넘기지 않고, 템플릿이 세션 상태를 직접 읽도록 두었다. 반대로 로그인/로그아웃 같은 상태 변경은 계속 `AuthPageController`, `MemberSessionManager`가 맡는다. 즉, 홈은 상태를 바꾸지 않고 이미 있는 인증 상태를 어떻게 보여 줄지만 책임진다.
+- 예외 상황 또는 엣지 케이스: guest는 홈에서 `로그인 / 회원가입`을 보더라도, 헤더의 `My Page` 링크는 기존처럼 남아 있다. 이 경우 `/mypage`는 로그인 유도 화면으로 간다. ADMIN 세션은 `Dashboard` 버튼과 함께 홈에서도 `로그아웃`을 바로 사용할 수 있다.
+- 테스트 내용: `./gradlew test --tests com.worldmap.web.HomeControllerTest --tests com.worldmap.auth.AuthFlowIntegrationTest` 통과. `HomeControllerTest`는 guest 홈에서 `로그인`, `회원가입`이 보이고 `로그아웃`은 안 보이는지, ADMIN 세션 홈에서는 `Dashboard`, `로그아웃`이 보이고 guest용 `회원가입`은 숨겨지는지 확인했다.
+- 면접에서 30초 안에 설명하는 요약: 계정 기능이 있어도 홈에서 바로 들어갈 수 없으면 사용자 경험이 끊깁니다. 그래서 홈 템플릿이 현재 세션을 보고, guest면 `로그인 / 회원가입`, 로그인 상태면 `My Page / 로그아웃`을 보여 주도록 바꿨습니다. 상태 변경 로직은 기존 auth 흐름을 그대로 쓰고, 홈은 그 상태를 SSR에서 어떻게 표현할지만 맡게 해서 책임을 나눴습니다.
+- 아직 내가 이해가 부족한 부분: 지금은 홈 첫 화면에서만 계정 CTA를 더 강하게 노출한다. 이후 위치/인구수 시작 화면에도 같은 수준으로 로그인 유도를 둘지, 아니면 홈만 메인 진입점으로 유지할지는 한 번 더 정리할 필요가 있다.

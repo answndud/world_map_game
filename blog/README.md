@@ -96,12 +96,13 @@
 36. [Dashboard에 회원 수와 오늘 활성 지표 붙이기](./31-add-dashboard-activity-metrics.md)
 37. [Dashboard 지표 중 공개 가능한 것만 `/stats`로 분리하기](./32-make-public-stats-page-from-dashboard-metrics.md)
 38. [local 프로필에서 admin / user 계정과 샘플 run 자동 생성하기](./33-bootstrap-local-demo-accounts-and-sample-runs.md)
+39. [홈 첫 화면에 로그인 / 회원가입 진입점 추가하기](./34-add-home-auth-entry-points.md)
 
 ### Part E. 확장과 포트폴리오 정리
 
-39. 인증과 내 전적 조회 고도화하기
-40. Level 2와 실시간 전달 방식 고도화하기
-41. 테스트, 아키텍처, 면접 패키지로 프로젝트 마감하기
+40. 인증과 내 전적 조회 고도화하기
+41. Level 2와 실시간 전달 방식 고도화하기
+42. 테스트, 아키텍처, 면접 패키지로 프로젝트 마감하기
 
 ## 읽는 순서
 
