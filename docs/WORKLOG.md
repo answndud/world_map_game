@@ -1718,3 +1718,30 @@
 - 테스트 내용: `./gradlew test --tests com.worldmap.web.MyPageControllerTest --tests com.worldmap.auth.AuthFlowIntegrationTest` 통과 후 `./gradlew test` 전체 통과. `MyPageControllerTest`는 로그인 사용자에게 최고 점수 / 최근 플레이 / 로그아웃이 보이는지 검증하고, `AuthFlowIntegrationTest`는 guest로 플레이 후 회원가입하면 귀속된 기록이 `/mypage`에서 바로 보이는지 확인한다.
 - 면접에서 30초 안에 설명하는 요약: `/mypage` 첫 버전은 원본 게임 세션을 다시 조립하지 않고, 게임오버 시점에 이미 정규화된 `leaderboard_record`를 읽어 만들었습니다. 그래서 총 완료 플레이 수, 모드별 최고 점수, 당시 최고 랭킹, 최근 완료 이력을 한 번에 보여줄 수 있습니다. 컨트롤러는 로그인 세션만 확인하고, 어떤 기록을 고를지는 `MyPageService`가 맡아 read 모델 책임을 분리했습니다.
 - 아직 내가 이해가 부족한 부분: 지금은 `leaderboard_record`만 읽기 때문에 정확도, 평균 시도 수, 실패한 run까지 포함한 누적 통계는 아직 없다. 이런 지표를 추가할 때는 raw 게임 세션 기반 read model을 따로 둘지, 현재 대시보드에 혼합할지를 다음 조각에서 더 판단해야 한다.
+
+## 2026-03-24 - admin 화면 세션 기반 접근 제어 연결
+
+- 단계: 8. 인증, 전적, 마이페이지
+- 목적: `/admin` 화면은 운영 정보가 분리돼 있었지만 실제로는 public과 같은 수준으로 열려 있었다. 그래서 이번 조각은 기존 단순 세션 로그인 구조를 유지한 채, admin 라우트만 `ADMIN` role로 제한하는 최소 권한 제어를 붙이는 데 집중한다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/admin/web/AdminAccessInterceptor.java`
+  - `src/main/java/com/worldmap/admin/web/AdminWebConfig.java`
+  - `src/main/java/com/worldmap/auth/web/AuthPageController.java`
+  - `src/main/resources/templates/auth/login.html`
+  - `src/main/resources/templates/admin/index.html`
+  - `src/main/resources/templates/error/403.html`
+  - `src/test/java/com/worldmap/admin/AdminPageIntegrationTest.java`
+  - `src/test/java/com/worldmap/auth/AuthFlowIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/27-protect-admin-routes-with-session-role.md`
+- 요청 흐름 / 데이터 흐름: admin 요청은 `AdminPageController`에 닿기 전에 `AdminAccessInterceptor`를 먼저 지난다. 인터셉터는 `HttpSession`에서 `MemberSessionManager.currentMember()`를 읽어 현재 로그인 사용자를 확인한다. 세션이 없거나 로그인 상태가 아니면 `/login?returnTo=...`로 리다이렉트하고, 로그인은 되어 있지만 role이 `ADMIN`이 아니면 403으로 막는다. `ADMIN`인 경우에만 실제 `AdminPageController -> AdminDashboardService / RecommendationFeedbackService / AdminPersonaBaselineService` 흐름으로 들어간다.
+- 데이터 / 상태 변화: 이번 단계는 새로운 테이블보다 요청 진입 규칙을 추가한 것이다. 로그인 성공 시 세션에 이미 저장하던 `memberId / nickname / role` 중 `role`을 이제 admin 라우트 guard에서 실제로 사용한다. 로그인 페이지는 `returnTo`를 받아, 운영자가 로그인 후 원래 보려던 admin 경로로 바로 돌아갈 수 있게 했다.
+- 핵심 도메인 개념: admin 접근 제어는 컨트롤러 액션마다 반복할 규칙이 아니라 라우트 입구의 공통 정책이다. 그래서 서비스보다 먼저, 컨트롤러보다 앞선 web interceptor에 두는 것이 맞다. 반면 로그인 검증과 세션 저장 자체는 여전히 `MemberAuthService`, `MemberSessionManager`가 맡는다. 즉, 인증과 권한 체크를 같은 곳에 섞지 않고 역할을 분리했다.
+- 예외 상황 또는 엣지 케이스: 현재 admin 계정 생성 UI는 없다. 그래서 운영용 admin 사용자는 DB role을 `ADMIN`으로 부여한 계정이 있어야 한다. 비로그인 사용자가 admin URL로 들어오면 로그인 페이지로 보내고, 일반 USER가 admin URL로 들어오면 403으로 막는다. `returnTo`는 내부 경로(`/...`)만 허용해 외부 redirect는 막는다.
+- 테스트 내용: `./gradlew test --tests com.worldmap.admin.AdminPageIntegrationTest --tests com.worldmap.auth.AuthFlowIntegrationTest` 통과 후 `./gradlew test` 전체 통과. `AdminPageIntegrationTest`는 unauthenticated -> login redirect, USER -> 403, ADMIN -> dashboard/feedback/baseline 접근을 검증한다. `AuthFlowIntegrationTest`는 `returnTo=/admin`으로 로그인한 admin 계정이 다시 `/admin`으로 돌아가는지 확인한다.
+- 면접에서 30초 안에 설명하는 요약: admin 화면은 public과 같은 컨트롤러 분기 안에 두지 않고, `/admin/**` 진입 전에 `AdminAccessInterceptor`가 먼저 role을 검사하게 만들었습니다. 비로그인 사용자는 로그인으로 보내고, 일반 회원은 403으로 막으며, `ADMIN` 세션만 실제 운영 화면으로 들어갑니다. 이렇게 해서 기존 단순 세션 로그인 구조를 크게 흔들지 않으면서 운영 화면을 권한 기반으로 분리했습니다.
+- 아직 내가 이해가 부족한 부분: 지금은 admin role 부여를 수동 운영 전제로 두고 있다. 이후 실제 운영/포트폴리오 시연에서는 bootstrap admin 계정 생성 방식을 둘지, DB migration이나 환경변수 기반 provisioning으로 둘지 정리가 더 필요하다.

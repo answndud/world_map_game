@@ -551,14 +551,19 @@
 - `MyPageService`를 추가해 `/mypage`가 로그인 사용자의 `leaderboard_record`를 읽어 총 완료 플레이 수, 모드별 최고 점수, 최고 랭킹, 최근 플레이 10개를 보여주도록 연결했다
 - `/mypage`는 raw game session 전체보다 먼저 `leaderboard_record`를 읽는다. 완료된 run 단위가 이미 정규화돼 있어 최고 기록과 최근 기록을 설명하기 쉽고, 당시 랭킹 위치도 바로 연결할 수 있기 때문이다
 - guest로 한 판 끝낸 뒤 회원가입하면, 귀속된 `leaderboard_record`가 즉시 `/mypage` 최근 플레이와 최고 기록에 반영되는 통합 테스트를 고정했다
+- `/admin/**`는 `AdminAccessInterceptor`가 보호하고, 비로그인 사용자는 `/login?returnTo=...`로 보내며, 로그인한 일반 사용자(`USER`)는 403으로 막는다
+- admin 접근 제어는 각 컨트롤러 메서드가 아니라 인터셉터에 뒀다. 이 규칙은 비즈니스 상태 변경보다 라우트 입구의 공통 진입 정책이기 때문이다
+- 로그인 폼은 `returnTo`를 받아, admin 사용자가 로그인 후 원래 보려던 `/admin` 경로로 바로 돌아오도록 정리했다
 
 이 단계에서 남은 일:
 
-- admin 화면 접근 제어 구현
 - `/mypage` 세부 지표 확장 여부 결정
   - 연속 최고 기록
   - 모드별 누적 플레이 시간
   - 정확도 / 평균 시도 수 같은 원본 세션 기반 지표
+- 실제 운영용 admin 계정 provisioning 방식 정리
+  - DB role 부여
+  - bootstrap 스크립트 / 환경변수 방식 여부 판단
 
 반드시 이해할 것:
 
@@ -568,12 +573,14 @@
 - 로그인 전 guest 기록과 로그인 후 member 기록이 어떻게 달라지는지
 - 왜 guest 기록 귀속 시 `playerNickname`은 바꾸지 않고 ownership만 바꾸는지
 - 왜 `/mypage` 첫 구현은 raw 세션 테이블보다 `leaderboard_record`에서 시작하는지
+- 왜 admin 권한 체크는 컨트롤러가 아니라 인터셉터에 두는 것이 더 맞는지
 
 면접 포인트:
 
 - 인증 추가 전후로 데이터 모델이 어떻게 바뀌는가
 - 왜 비회원 플레이를 버리지 않고 유지했는가
 - 왜 내 기록 허브 첫 버전은 `leaderboard_record` 기반으로 만드는 것이 설명과 구현 모두에 유리한가
+- 왜 admin 접근 제어를 Spring Security 전체 도입 대신 기존 세션 구조 위에 작게 얹었는가
 
 완료 기준:
 
