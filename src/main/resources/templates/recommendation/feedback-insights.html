@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>추천 만족도 집계</title>
+    <link rel="stylesheet" th:href="@{/css/site.css(v='20260324-square-ui-3')}">
+</head>
+<body>
+<div class="page-shell">
+    <th:block th:replace="~{fragments/site-header :: siteHeader('recommendation')}"></th:block>
+    <header class="hero compact-hero">
+        <p class="eyebrow">Recommendation Feedback Insights</p>
+        <h1>추천 만족도 집계</h1>
+        <p class="hero-copy">
+            추천 결과 자체는 저장하지 않고, `surveyVersion + engineVersion + 만족도 점수`를 기준으로 설문 품질을 봅니다.
+            이 화면은 어떤 버전 조합에서 평균 점수가 높았는지와 응답 수가 충분한지를 읽기 위한 내부용 요약 화면입니다.
+        </p>
+    </header>
+
+    <main class="layout">
+        <section class="panel game-panel">
+            <div class="panel-head">
+                <h2>전체 요약</h2>
+                <p>현재는 버전 조합별 평균 점수, 응답 수, 점수 분포만 보고 다음 설문 개선 방향을 잡습니다.</p>
+            </div>
+
+            <div class="stats-grid">
+                <article class="stat-card">
+                    <span class="subtitle">TOTAL FEEDBACK</span>
+                    <strong th:text="${feedbackInsights.totalResponses}">0</strong>
+                </article>
+                <article class="stat-card">
+                    <span class="subtitle">TRACKED VERSIONS</span>
+                    <strong th:text="${feedbackInsights.trackedVersionCount}">0</strong>
+                </article>
+                <article class="stat-card">
+                    <span class="subtitle">OVERALL AVG</span>
+                    <strong th:text="${#numbers.formatDecimal(feedbackInsights.overallAverageSatisfaction, 1, 2)}">0.00</strong>
+                </article>
+            </div>
+        </section>
+
+        <section class="panel game-panel">
+            <div class="panel-head">
+                <h2>버전 조합별 집계</h2>
+                <p>응답 수가 너무 적으면 평균 점수만으로 결론 내리지 않고, 표본 수와 분포를 같이 봅니다.</p>
+            </div>
+
+            <div class="table-shell">
+                <table class="result-table">
+                    <thead>
+                    <tr>
+                        <th>설문 버전</th>
+                        <th>엔진 버전</th>
+                        <th>평균 점수</th>
+                        <th>응답 수</th>
+                        <th>5/4/3/2/1점</th>
+                        <th>마지막 응답</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="summary : ${feedbackInsights.versionSummaries}">
+                        <td th:text="${summary.surveyVersion}">survey-v1</td>
+                        <td th:text="${summary.engineVersion}">engine-v1</td>
+                        <td th:text="${#numbers.formatDecimal(summary.averageSatisfaction, 1, 2)}">4.33</td>
+                        <td th:text="${summary.responseCount}">3</td>
+                        <td th:text="${summary.score5Count + '/' + summary.score4Count + '/' + summary.score3Count + '/' + summary.score2Count + '/' + summary.score1Count}">1/1/1/0/0</td>
+                        <td th:text="${summary.lastSubmittedAt != null ? #temporals.format(summary.lastSubmittedAt, 'yyyy-MM-dd HH:mm') : '-'}">2026-03-24 12:00</td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(feedbackInsights.versionSummaries)}">
+                        <td colspan="6">아직 수집된 만족도 피드백이 없습니다.</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="page-actions">
+                <a class="primary-link" th:href="@{/recommendation/survey}">설문으로 돌아가기</a>
+                <a class="ghost-link" th:href="@{/}">메인으로 돌아가기</a>
+            </div>
+        </section>
+    </main>
+</div>
+</body>
+</html>

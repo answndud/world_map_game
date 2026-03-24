@@ -1,6 +1,7 @@
 package com.worldmap.recommendation.web;
 
 import com.worldmap.recommendation.application.RecommendationQuestionCatalog;
+import com.worldmap.recommendation.application.RecommendationFeedbackService;
 import com.worldmap.recommendation.application.RecommendationSurveyService;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
@@ -17,13 +18,16 @@ public class RecommendationPageController {
 
 	private final RecommendationQuestionCatalog questionCatalog;
 	private final RecommendationSurveyService recommendationSurveyService;
+	private final RecommendationFeedbackService recommendationFeedbackService;
 
 	public RecommendationPageController(
 		RecommendationQuestionCatalog questionCatalog,
-		RecommendationSurveyService recommendationSurveyService
+		RecommendationSurveyService recommendationSurveyService,
+		RecommendationFeedbackService recommendationFeedbackService
 	) {
 		this.questionCatalog = questionCatalog;
 		this.recommendationSurveyService = recommendationSurveyService;
+		this.recommendationFeedbackService = recommendationFeedbackService;
 	}
 
 	@GetMapping("/survey")
@@ -49,5 +53,11 @@ public class RecommendationPageController {
 
 		model.addAttribute("result", recommendationSurveyService.recommend(surveyForm.toAnswers()));
 		return "recommendation/result";
+	}
+
+	@GetMapping("/feedback-insights")
+	public String feedbackInsights(Model model) {
+		model.addAttribute("feedbackInsights", recommendationFeedbackService.summarizeByVersion());
+		return "recommendation/feedback-insights";
 	}
 }
