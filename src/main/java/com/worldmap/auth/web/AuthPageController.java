@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -69,13 +70,18 @@ public class AuthPageController {
 	}
 
 	@GetMapping("/login")
-	public String loginPage(Model model, HttpSession httpSession) {
+	public String loginPage(
+		Model model,
+		HttpSession httpSession,
+		@RequestParam(required = false) String returnTo
+	) {
 		if (memberSessionManager.currentMember(httpSession).isPresent()) {
 			return "redirect:/mypage";
 		}
 		if (!model.containsAttribute("loginForm")) {
 			model.addAttribute("loginForm", new LoginForm());
 		}
+		model.addAttribute("returnTo", returnTo);
 		return "auth/login";
 	}
 
@@ -84,9 +90,11 @@ public class AuthPageController {
 		@Valid @ModelAttribute("loginForm") LoginForm loginForm,
 		BindingResult bindingResult,
 		HttpSession httpSession,
-		Model model
+		Model model,
+		@RequestParam(required = false) String returnTo
 	) {
 		if (bindingResult.hasErrors()) {
+			model.addAttribute("returnTo", returnTo);
 			return "auth/login";
 		}
 
@@ -95,9 +103,10 @@ public class AuthPageController {
 			guestSessionKeyManager.currentGuestSessionKey(httpSession)
 				.ifPresent(guestSessionKey -> guestProgressClaimService.claimGuestRecords(member.getId(), guestSessionKey));
 			memberSessionManager.signIn(httpSession, member);
-			return "redirect:/mypage";
+			return "redirect:" + resolvePostLoginRedirect(returnTo);
 		} catch (IllegalArgumentException | IllegalStateException ex) {
 			model.addAttribute("authErrorMessage", ex.getMessage());
+			model.addAttribute("returnTo", returnTo);
 			return "auth/login";
 		}
 	}
@@ -107,5 +116,15 @@ public class AuthPageController {
 		memberSessionManager.signOut(httpSession);
 		guestSessionKeyManager.rotateGuestSessionKey(httpSession);
 		return "redirect:/mypage";
+	}
+
+	private String resolvePostLoginRedirect(String returnTo) {
+		if (returnTo == null || returnTo.isBlank()) {
+			return "/mypage";
+		}
+		if (!returnTo.startsWith("/") || returnTo.startsWith("//")) {
+			return "/mypage";
+		}
+		return returnTo;
 	}
 }

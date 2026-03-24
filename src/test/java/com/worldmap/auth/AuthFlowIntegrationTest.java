@@ -11,6 +11,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.worldmap.auth.domain.Member;
 import com.worldmap.auth.domain.MemberRepository;
+import com.worldmap.auth.domain.MemberRole;
+import com.worldmap.auth.application.MemberPasswordHasher;
 import com.worldmap.country.domain.CountryRepository;
 import com.worldmap.game.location.domain.LocationGameSession;
 import com.worldmap.game.location.domain.LocationGameSessionRepository;
@@ -38,6 +40,9 @@ class AuthFlowIntegrationTest {
 
 	@Autowired
 	private MemberRepository memberRepository;
+
+	@Autowired
+	private MemberPasswordHasher memberPasswordHasher;
 
 	@Autowired
 	private LocationGameSessionRepository locationGameSessionRepository;
@@ -93,6 +98,26 @@ class AuthFlowIntegrationTest {
 			.andExpect(status().isOk())
 			.andExpect(view().name("auth/login"))
 			.andExpect(content().string(containsString("닉네임 또는 비밀번호가 올바르지 않습니다.")));
+	}
+
+	@Test
+	void adminLoginRedirectsBackToRequestedAdminRoute() throws Exception {
+		memberRepository.save(
+			Member.create(
+				"worldmap_admin",
+				memberPasswordHasher.hash("secret123"),
+				MemberRole.ADMIN
+			)
+		);
+
+		mockMvc.perform(
+			post("/login")
+				.param("nickname", "worldmap_admin")
+				.param("password", "secret123")
+				.param("returnTo", "/admin")
+		)
+			.andExpect(status().is3xxRedirection())
+			.andExpect(redirectedUrl("/admin"));
 	}
 
 	@Test
