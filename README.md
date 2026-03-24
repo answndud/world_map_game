@@ -186,6 +186,7 @@
 - `/recommendation/feedback-insights`와 `/api/recommendation/feedback/summary`에서 `surveyVersion + engineVersion` 기준 평균 점수, 응답 수, 1~5점 분포를 읽어 설문 개선 기준으로 사용한다.
 - 이 피드백은 설문 문항과 가중치를 계속 개선하기 위한 신호로 사용하고, 오프라인 AI-assisted 평가 루프는 `docs/recommendation/OFFLINE_AI_SURVEY_IMPROVEMENT.md`와 `docs/recommendation/PERSONA_EVAL_SET.md`에서 관리한다.
 - `RecommendationOfflinePersonaCoverageTest`로 14개 페르소나 baseline을 자동 평가하고, 현재 엔진이 최소 11개 시나리오에서 기대 후보 1개 이상을 top 3에 포함하는지를 품질 하한으로 고정했다.
+- `RecommendationOfflinePersonaSnapshotTest`로 14개 페르소나의 현재 top 3 추천 순서를 snapshot으로 고정해, 다음 `engine-v2` 실험에서 coverage뿐 아니라 순위 변화 자체도 비교할 수 있게 했다.
 - 현재 baseline 결과를 바탕으로 `docs/recommendation/SURVEY_V2_PROPOSAL.md`에 `복지형`, `저예산 안전형`, `온화한 고도시 다양성형` 시나리오를 우선 개선 대상으로 정리했다.
 
 ## 7. 랭킹 시스템 설계

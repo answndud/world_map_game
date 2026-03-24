@@ -1374,3 +1374,25 @@
 - 테스트 내용: `./gradlew test --tests com.worldmap.recommendation.application.RecommendationOfflinePersonaCoverageTest --tests com.worldmap.recommendation.application.RecommendationSurveyServiceTest` 통과, `./gradlew test` 전체 통과. anchor 시나리오 `P01`, `P02`, `P14`는 별도 assertion으로 고정했다.
 - 면접에서 30초 안에 설명하는 요약: 오프라인 개선 루프를 실제로 돌리기 위해 14개 페르소나 시나리오를 테스트 코드로 옮겨 baseline을 고정했습니다. 현재 엔진은 11개 시나리오에서 기대 후보를 top 3에 포함하고, 약한 케이스는 복지형, 저예산 안전형, 온화한 고도시 다양성형이었습니다. 그래서 survey v2는 질문 수를 늘리기보다 먼저 climate mismatch penalty, 영어 가중치, 저예산 penalty를 조정하는 방향으로 개정안을 잡았습니다.
 - 아직 내가 이해가 부족한 부분: 지금 개정안은 문서 초안이라 실제로 `engine-v2`를 적용했을 때 11/14가 얼마나 올라가는지는 아직 검증하지 않았다. 다음 단계에서 제안한 penalty와 가중치를 실제로 바꾸고 baseline 변화를 확인해야 한다.
+
+## 2026-03-24 - 추천 엔진 실험 전 persona top3 snapshot 고정
+
+- 단계: 7. AI-assisted 설문 개선 체계
+- 목적: 직접 `engine-v2` 가중치를 바꿔보니 baseline이 쉽게 흔들렸다. 그래서 이번에는 production 점수식을 바로 더 바꾸기보다, 현재 `engine-v1`의 14개 페르소나 top 3 결과를 snapshot으로 먼저 고정해서 다음 실험을 더 안전하게 만들었다.
+- 변경 파일:
+  - `src/test/java/com/worldmap/recommendation/application/RecommendationOfflinePersonaSnapshotTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `docs/recommendation/SURVEY_V2_PROPOSAL.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/15-survey-v2-proposal-from-persona-eval.md`
+  - `blog/16-freeze-persona-top3-snapshot.md`
+- 요청 흐름 / 데이터 흐름: 런타임 요청 흐름은 바뀌지 않았다. 이번 단계는 오프라인 평가 테스트 보강이다. `RecommendationOfflinePersonaSnapshotTest`는 14개 시나리오를 `RecommendationSurveyService.recommend()`에 통과시켜 현재 top 3 국가 순서가 snapshot과 정확히 같은지 본다.
+- 데이터 / 상태 변화: 운영 데이터와 추천 API는 그대로다. 새로 추가한 것은 “현재 엔진의 exact top 3 출력”을 테스트 자산으로 고정한 것이다. coverage test가 “기대 후보가 하나라도 들어오는가”를 본다면, snapshot test는 “정확히 어떤 순서로 나오는가”까지 함께 본다.
+- 핵심 도메인 개념: 추천 품질 실험은 coverage 숫자만으로 보면 부족하다. 어떤 시나리오는 기대 후보가 top 3에 들어와도, 1위/2위가 계속 이상한 나라일 수 있다. 그래서 다음 `engine-v2` 실험 전에는 exact snapshot도 같이 고정해 두는 편이 더 설명 가능하다.
+- 예외 상황 또는 엣지 케이스: snapshot test는 의도적으로 더 엄격하다. 다음 버전 실험에서 결과가 좋아져도 snapshot은 깨질 수 있다. 그때는 단순히 테스트를 맞추는 것이 아니라, 왜 순위가 바뀌었는지 문서와 함께 업데이트해야 한다.
+- 테스트 내용: `./gradlew test --tests com.worldmap.recommendation.application.RecommendationOfflinePersonaCoverageTest --tests com.worldmap.recommendation.application.RecommendationOfflinePersonaSnapshotTest --tests com.worldmap.recommendation.application.RecommendationSurveyServiceTest` 통과.
+- 면접에서 30초 안에 설명하는 요약: 추천 엔진을 바로 튜닝해보니 baseline이 쉽게 흔들려서, 먼저 현재 엔진의 14개 페르소나 top 3 결과를 snapshot 테스트로 고정했습니다. 이제 다음 가중치 실험에서는 단순히 11/14 숫자만 보는 게 아니라, 어떤 시나리오의 top 3 순서가 어떻게 움직였는지도 같이 비교할 수 있습니다.
+- 아직 내가 이해가 부족한 부분: snapshot을 언제 “좋은 변경이라서 갱신할 것인가”의 기준은 아직 더 정교하게 잡아야 한다. 다음 단계에서는 coverage 개선과 weak scenario 개선 근거가 있을 때만 snapshot을 갱신하는 규칙을 문서로 더 분명히 할 필요가 있다.

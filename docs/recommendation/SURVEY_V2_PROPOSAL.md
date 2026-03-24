@@ -12,6 +12,10 @@
 - 현재 baseline 하한: 14개 중 11개 시나리오에서 기대 후보 1개 이상이 top 3에 포함
 - 자동 품질 하한 고정 위치:
   - `/Users/alex/project/worldmap/src/test/java/com/worldmap/recommendation/application/RecommendationOfflinePersonaCoverageTest.java`
+- 현재 exact top 3 snapshot 고정 위치:
+  - `/Users/alex/project/worldmap/src/test/java/com/worldmap/recommendation/application/RecommendationOfflinePersonaSnapshotTest.java`
+
+즉, 다음 `engine-v2` 실험에서는 coverage 숫자뿐 아니라 top 3 순서가 어떻게 바뀌는지도 함께 비교한다.
 
 ## 현재 baseline에서 특히 강한 시나리오
 

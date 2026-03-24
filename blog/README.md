@@ -78,12 +78,13 @@
 18. [설문 / 엔진 버전별 만족도 집계 기준 정리하기](./13-recommendation-feedback-insights.md)
 19. [오프라인 AI-assisted 설문 개선 루프 정리하기](./14-offline-ai-survey-improvement-loop.md)
 20. [페르소나 평가로 survey v2 개정안 만들기](./15-survey-v2-proposal-from-persona-eval.md)
+21. [추천 엔진 실험 전 persona top3 snapshot 고정하기](./16-freeze-persona-top3-snapshot.md)
 
 ### Part E. 확장과 포트폴리오 정리
 
-21. 인증과 내 전적 조회 붙이기
-22. Level 2와 실시간 전달 방식 고도화하기
-23. 테스트, 아키텍처, 면접 패키지로 프로젝트 마감하기
+22. 인증과 내 전적 조회 붙이기
+23. Level 2와 실시간 전달 방식 고도화하기
+24. 테스트, 아키텍처, 면접 패키지로 프로젝트 마감하기
 
 ## 읽는 순서
 
