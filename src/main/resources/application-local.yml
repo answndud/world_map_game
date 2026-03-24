@@ -11,3 +11,15 @@ spring:
   sql:
     init:
       mode: never
+
+worldmap:
+  admin:
+    bootstrap:
+      enabled: ${WORLDMAP_ADMIN_BOOTSTRAP_ENABLED:true}
+      nickname: ${WORLDMAP_ADMIN_BOOTSTRAP_NICKNAME:worldmap_admin}
+      password: ${WORLDMAP_ADMIN_BOOTSTRAP_PASSWORD:secret123}
+  demo:
+    bootstrap:
+      enabled: ${WORLDMAP_DEMO_BOOTSTRAP_ENABLED:true}
+      member-nickname: ${WORLDMAP_DEMO_MEMBER_NICKNAME:orbit_runner}
+      member-password: ${WORLDMAP_DEMO_MEMBER_PASSWORD:secret123}

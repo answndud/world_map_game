@@ -1,48 +1,30 @@
 package com.worldmap.admin.application;
 
-import com.worldmap.auth.domain.MemberRepository;
-import com.worldmap.game.location.domain.LocationGameSessionRepository;
-import com.worldmap.game.population.domain.PopulationGameSessionRepository;
 import com.worldmap.recommendation.application.RecommendationCountryProfileCatalog;
 import com.worldmap.recommendation.application.RecommendationFeedbackInsightsView;
 import com.worldmap.recommendation.application.RecommendationFeedbackService;
 import com.worldmap.recommendation.application.RecommendationQuestionCatalog;
 import com.worldmap.recommendation.application.RecommendationSurveyService;
-import com.worldmap.ranking.domain.LeaderboardGameMode;
-import com.worldmap.ranking.domain.LeaderboardRecordRepository;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
+import com.worldmap.stats.application.ServiceActivityService;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AdminDashboardService {
 
-	private final MemberRepository memberRepository;
-	private final LocationGameSessionRepository locationGameSessionRepository;
-	private final PopulationGameSessionRepository populationGameSessionRepository;
-	private final LeaderboardRecordRepository leaderboardRecordRepository;
+	private final ServiceActivityService serviceActivityService;
 	private final RecommendationFeedbackService recommendationFeedbackService;
 	private final RecommendationQuestionCatalog recommendationQuestionCatalog;
 	private final RecommendationCountryProfileCatalog recommendationCountryProfileCatalog;
 
 	public AdminDashboardService(
-		MemberRepository memberRepository,
-		LocationGameSessionRepository locationGameSessionRepository,
-		PopulationGameSessionRepository populationGameSessionRepository,
-		LeaderboardRecordRepository leaderboardRecordRepository,
+		ServiceActivityService serviceActivityService,
 		RecommendationFeedbackService recommendationFeedbackService,
 		RecommendationQuestionCatalog recommendationQuestionCatalog,
 		RecommendationCountryProfileCatalog recommendationCountryProfileCatalog
 	) {
-		this.memberRepository = memberRepository;
-		this.locationGameSessionRepository = locationGameSessionRepository;
-		this.populationGameSessionRepository = populationGameSessionRepository;
-		this.leaderboardRecordRepository = leaderboardRecordRepository;
+		this.serviceActivityService = serviceActivityService;
 		this.recommendationFeedbackService = recommendationFeedbackService;
 		this.recommendationQuestionCatalog = recommendationQuestionCatalog;
 		this.recommendationCountryProfileCatalog = recommendationCountryProfileCatalog;
@@ -51,11 +33,10 @@ public class AdminDashboardService {
 	@Transactional(readOnly = true)
 	public AdminDashboardView loadDashboard() {
 		RecommendationFeedbackInsightsView feedbackInsights = recommendationFeedbackService.summarizeByVersion();
-		AdminDashboardActivityView activity = loadTodayActivity();
 		return new AdminDashboardView(
 			RecommendationSurveyService.SURVEY_VERSION,
 			RecommendationSurveyService.ENGINE_VERSION,
-			activity,
+			serviceActivityService.loadTodayActivity(),
 			recommendationQuestionCatalog.questions().size(),
 			recommendationCountryProfileCatalog.profiles().size(),
 			feedbackInsights.totalResponses(),
@@ -66,50 +47,13 @@ public class AdminDashboardService {
 		);
 	}
 
-	private AdminDashboardActivityView loadTodayActivity() {
-		LocalDateTime todayStart = LocalDate.now().atStartOfDay();
-		LocalDateTime tomorrowStart = todayStart.plusDays(1);
-
-		Set<Long> activeMemberIds = Stream.concat(
-			locationGameSessionRepository.findDistinctMemberIdsByStartedAtBetween(todayStart, tomorrowStart).stream(),
-			populationGameSessionRepository.findDistinctMemberIdsByStartedAtBetween(todayStart, tomorrowStart).stream()
-		).collect(Collectors.toSet());
-
-		Set<String> activeGuestKeys = Stream.concat(
-			locationGameSessionRepository.findDistinctGuestSessionKeysByStartedAtBetween(todayStart, tomorrowStart).stream(),
-			populationGameSessionRepository.findDistinctGuestSessionKeysByStartedAtBetween(todayStart, tomorrowStart).stream()
-		).collect(Collectors.toSet());
-
-		long todayStartedSessionCount =
-			locationGameSessionRepository.countByStartedAtGreaterThanEqualAndStartedAtLessThan(todayStart, tomorrowStart)
-				+ populationGameSessionRepository.countByStartedAtGreaterThanEqualAndStartedAtLessThan(todayStart, tomorrowStart);
-
-		long todayCompletedRunCount = leaderboardRecordRepository.countByFinishedAtGreaterThanEqualAndFinishedAtLessThan(
-			todayStart,
-			tomorrowStart
-		);
-
-		return new AdminDashboardActivityView(
-			memberRepository.count(),
-			activeMemberIds.size(),
-			activeGuestKeys.size(),
-			todayStartedSessionCount,
-			todayCompletedRunCount,
-			leaderboardRecordRepository.countByGameModeAndFinishedAtGreaterThanEqualAndFinishedAtLessThan(
-				LeaderboardGameMode.LOCATION,
-				todayStart,
-				tomorrowStart
-			),
-			leaderboardRecordRepository.countByGameModeAndFinishedAtGreaterThanEqualAndFinishedAtLessThan(
-				LeaderboardGameMode.POPULATION,
-				todayStart,
-				tomorrowStart
-			)
-		);
-	}
-
 	private List<AdminDashboardRouteView> adminRoutes() {
 		return List.of(
+			new AdminDashboardRouteView(
+				"공개 Stats 점검",
+				"플레이어가 보는 공개 통계 화면과 일간 Top 3 노출 상태를 바로 확인합니다.",
+				"/stats"
+			),
 			new AdminDashboardRouteView(
 				"추천 만족도 집계",
 				"설문 버전과 엔진 버전 조합별 평균 점수와 응답 수를 확인합니다.",

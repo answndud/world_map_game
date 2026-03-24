@@ -1,6 +1,6 @@
-package com.worldmap.admin.application;
+package com.worldmap.stats.application;
 
-public record AdminDashboardActivityView(
+public record ServiceActivityView(
 	long totalMemberCount,
 	long todayActiveMemberCount,
 	long todayActiveGuestCount,
@@ -9,4 +9,8 @@ public record AdminDashboardActivityView(
 	long todayLocationCompletedRunCount,
 	long todayPopulationCompletedRunCount
 ) {
+
+	public long todayActivePlayerCount() {
+		return todayActiveMemberCount + todayActiveGuestCount;
+	}
 }

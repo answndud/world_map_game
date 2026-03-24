@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Stats</title>
+    <link rel="stylesheet" th:href="@{/css/site.css(v='20260324-square-ui-1')}">
+</head>
+<body>
+<div class="page-shell">
+    <th:block th:replace="~{fragments/site-header :: siteHeader('stats')}"></th:block>
+    <header class="hero compact-hero">
+        <p class="eyebrow">Live Status</p>
+        <h1>서비스 현황</h1>
+        <p class="hero-copy">
+            지금 몇 명이 플레이 중인지, 오늘 어떤 모드가 많이 진행됐는지 공개 가능한 운영 수치만 따로 보여줍니다.
+        </p>
+    </header>
+
+    <main class="layout">
+        <section class="panel game-panel">
+            <div class="panel-head">
+                <h2>오늘의 활동</h2>
+                <p>공개 화면에서는 서비스가 실제로 돌아가고 있다는 감각을 보여 주는 숫자만 노출합니다.</p>
+            </div>
+            <div class="stats-grid">
+                <article class="stat-card">
+                    <span class="subtitle">REGISTERED PLAYERS</span>
+                    <strong th:text="${activity.totalMemberCount}">0</strong>
+                </article>
+                <article class="stat-card">
+                    <span class="subtitle">TODAY ACTIVE PLAYERS</span>
+                    <strong th:text="${activity.todayActivePlayerCount}">0</strong>
+                </article>
+                <article class="stat-card">
+                    <span class="subtitle">TODAY STARTED SESSIONS</span>
+                    <strong th:text="${activity.todayStartedSessionCount}">0</strong>
+                </article>
+                <article class="stat-card">
+                    <span class="subtitle">TODAY COMPLETED RUNS</span>
+                    <strong th:text="${activity.todayCompletedRunCount}">0</strong>
+                </article>
+                <article class="stat-card">
+                    <span class="subtitle">TODAY LOCATION RUNS</span>
+                    <strong th:text="${activity.todayLocationCompletedRunCount}">0</strong>
+                </article>
+                <article class="stat-card">
+                    <span class="subtitle">TODAY POPULATION RUNS</span>
+                    <strong th:text="${activity.todayPopulationCompletedRunCount}">0</strong>
+                </article>
+            </div>
+        </section>
+
+        <section class="split">
+            <article class="panel">
+                <div class="panel-head">
+                    <h2>오늘의 위치 미션 Top 3</h2>
+                    <p>오늘 완료된 위치 미션 기준 상위 기록입니다.</p>
+                </div>
+                <div class="table-shell">
+                    <table class="result-table">
+                        <thead>
+                        <tr>
+                            <th>순위</th>
+                            <th>플레이어</th>
+                            <th>점수</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="entry : ${locationDailyTop.entries}">
+                            <td th:text="${entry.rank}">1</td>
+                            <td th:text="${entry.playerNickname}">Guest</td>
+                            <td th:text="${entry.totalScore} + '점'">420점</td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(locationDailyTop.entries)}">
+                            <td colspan="3">아직 오늘 완료된 위치 미션 기록이 없습니다.</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </article>
+
+            <article class="panel">
+                <div class="panel-head">
+                    <h2>오늘의 인구수 퀴즈 Top 3</h2>
+                    <p>오늘 완료된 인구수 퀴즈 기준 상위 기록입니다.</p>
+                </div>
+                <div class="table-shell">
+                    <table class="result-table">
+                        <thead>
+                        <tr>
+                            <th>순위</th>
+                            <th>플레이어</th>
+                            <th>점수</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="entry : ${populationDailyTop.entries}">
+                            <td th:text="${entry.rank}">1</td>
+                            <td th:text="${entry.playerNickname}">Guest</td>
+                            <td th:text="${entry.totalScore} + '점'">420점</td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(populationDailyTop.entries)}">
+                            <td colspan="3">아직 오늘 완료된 인구수 퀴즈 기록이 없습니다.</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </article>
+        </section>
+
+        <section class="panel">
+            <div class="panel-head">
+                <h2>공개 기준</h2>
+                <p>내부 추천 버전, 만족도 집계, persona baseline 같은 운영 판단용 정보는 공개 Stats에서 숨기고 Dashboard에서만 봅니다.</p>
+            </div>
+            <div class="page-actions">
+                <a class="primary-link" th:href="@{/ranking}">전체 랭킹 보기</a>
+                <a class="secondary-button" th:href="@{/recommendation/survey}">나라 추천 받기</a>
+            </div>
+        </section>
+    </main>
+</div>
+</body>
+</html>

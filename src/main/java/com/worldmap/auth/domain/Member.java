@@ -68,6 +68,11 @@ public class Member {
 		this.role = MemberRole.ADMIN;
 	}
 
+	public void provisionUser(String passwordHash) {
+		this.passwordHash = passwordHash;
+		this.role = MemberRole.USER;
+	}
+
 	public Long getId() {
 		return id;
 	}

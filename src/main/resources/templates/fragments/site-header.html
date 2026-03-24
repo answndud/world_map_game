@@ -12,6 +12,9 @@
                th:classappend="${activeSection == 'home'} ? ' is-active'"
                th:href="@{/}">Home</a>
             <a class="site-nav-link"
+               th:classappend="${activeSection == 'stats'} ? ' is-active'"
+               th:href="@{/stats}">Stats</a>
+            <a class="site-nav-link"
                th:if="${session != null and session.WORLDMAP_MEMBER_ROLE == 'ADMIN'}"
                th:classappend="${activeSection == 'dashboard'} ? ' is-active'"
                th:href="@{/dashboard}">Dashboard</a>

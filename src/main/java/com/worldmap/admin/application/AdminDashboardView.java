@@ -1,11 +1,12 @@
 package com.worldmap.admin.application;
 
 import java.util.List;
+import com.worldmap.stats.application.ServiceActivityView;
 
 public record AdminDashboardView(
 	String currentSurveyVersion,
 	String currentEngineVersion,
-	AdminDashboardActivityView activity,
+	ServiceActivityView activity,
 	int recommendationQuestionCount,
 	int recommendationCandidateCount,
 	long totalFeedbackResponses,

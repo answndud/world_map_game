@@ -1,0 +1,60 @@
+package com.worldmap.demo;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import com.worldmap.auth.application.MemberPasswordHasher;
+import com.worldmap.auth.domain.Member;
+import com.worldmap.auth.domain.MemberRepository;
+import com.worldmap.auth.domain.MemberRole;
+import com.worldmap.game.location.domain.LocationGameSessionRepository;
+import com.worldmap.game.population.domain.PopulationGameSessionRepository;
+import com.worldmap.ranking.domain.LeaderboardRecordRepository;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+
+@SpringBootTest(
+	properties = {
+		"worldmap.admin.bootstrap.enabled=true",
+		"worldmap.admin.bootstrap.nickname=worldmap_admin",
+		"worldmap.admin.bootstrap.password=secret123",
+		"worldmap.demo.bootstrap.enabled=true",
+		"worldmap.demo.bootstrap.member-nickname=orbit_runner",
+		"worldmap.demo.bootstrap.member-password=secret123"
+	}
+)
+@ActiveProfiles({"test", "local"})
+class DemoBootstrapIntegrationTest {
+
+	@Autowired
+	private MemberRepository memberRepository;
+
+	@Autowired
+	private MemberPasswordHasher memberPasswordHasher;
+
+	@Autowired
+	private LeaderboardRecordRepository leaderboardRecordRepository;
+
+	@Autowired
+	private LocationGameSessionRepository locationGameSessionRepository;
+
+	@Autowired
+	private PopulationGameSessionRepository populationGameSessionRepository;
+
+	@Test
+	void startupBootstrapCreatesLocalAdminUserAndSampleRuns() {
+		Member adminMember = memberRepository.findByNicknameIgnoreCase("worldmap_admin").orElseThrow();
+		Member demoMember = memberRepository.findByNicknameIgnoreCase("orbit_runner").orElseThrow();
+
+		assertThat(adminMember.getRole()).isEqualTo(MemberRole.ADMIN);
+		assertThat(demoMember.getRole()).isEqualTo(MemberRole.USER);
+		assertThat(memberPasswordHasher.matches("secret123", adminMember.getPasswordHash())).isTrue();
+		assertThat(memberPasswordHasher.matches("secret123", demoMember.getPasswordHash())).isTrue();
+
+		assertThat(leaderboardRecordRepository.findByRunSignature("demo:location:orbit_runner:1")).isPresent();
+		assertThat(leaderboardRecordRepository.findByRunSignature("demo:population:orbit_runner:1")).isPresent();
+		assertThat(locationGameSessionRepository.findAllByGuestSessionKeyAndMemberIdIsNull("demo-guest-live")).hasSize(1);
+		assertThat(populationGameSessionRepository.countByMemberIdAndFinishedAtIsNotNull(demoMember.getId())).isGreaterThanOrEqualTo(1L);
+	}
+}
