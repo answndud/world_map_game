@@ -14,7 +14,7 @@
         <p class="eyebrow">Your Match</p>
         <h1>추천 결과</h1>
         <p class="hero-copy">
-            8개 답변을 바탕으로
+            <span th:text="${result.submittedPreferences.size()} + '개 답변을 바탕으로'">12개 답변을 바탕으로</span>
             지금 생활 취향과 잘 맞는 나라 3곳을 골랐습니다.
         </p>
     </header>
@@ -23,7 +23,7 @@
         <section class="panel game-panel">
             <div class="panel-head">
                 <h2>내가 고른 취향</h2>
-                <p>아래 답변을 기준으로 기후, 생활 속도, 비용 부담, 도시/자연 취향이 잘 맞는 나라를 찾았습니다.</p>
+                <p>단순 선호보다 어떤 조건을 감수할 수 있는지까지 함께 반영해, 지금의 생활 기준과 잘 맞는 나라를 찾았습니다.</p>
             </div>
 
             <div class="stats-grid">
@@ -81,11 +81,15 @@
                 <input type="hidden" name="engineVersion" th:value="${result.feedbackPayload.engineVersion}">
                 <input id="recommendation-satisfaction-score" type="hidden" name="satisfactionScore" value="">
                 <input type="hidden" name="climatePreference" th:value="${result.feedbackPayload.climatePreference}">
+                <input type="hidden" name="seasonTolerance" th:value="${result.feedbackPayload.seasonTolerance}">
                 <input type="hidden" name="pacePreference" th:value="${result.feedbackPayload.pacePreference}">
-                <input type="hidden" name="budgetPreference" th:value="${result.feedbackPayload.budgetPreference}">
+                <input type="hidden" name="costQualityPreference" th:value="${result.feedbackPayload.costQualityPreference}">
                 <input type="hidden" name="environmentPreference" th:value="${result.feedbackPayload.environmentPreference}">
-                <input type="hidden" name="englishImportance" th:value="${result.feedbackPayload.englishImportance}">
-                <input type="hidden" name="priorityFocus" th:value="${result.feedbackPayload.priorityFocus}">
+                <input type="hidden" name="englishSupportNeed" th:value="${result.feedbackPayload.englishSupportNeed}">
+                <input type="hidden" name="safetyPriority" th:value="${result.feedbackPayload.safetyPriority}">
+                <input type="hidden" name="publicServicePriority" th:value="${result.feedbackPayload.publicServicePriority}">
+                <input type="hidden" name="foodImportance" th:value="${result.feedbackPayload.foodImportance}">
+                <input type="hidden" name="diversityImportance" th:value="${result.feedbackPayload.diversityImportance}">
                 <input type="hidden" name="settlementPreference" th:value="${result.feedbackPayload.settlementPreference}">
                 <input type="hidden" name="mobilityPreference" th:value="${result.feedbackPayload.mobilityPreference}">
 

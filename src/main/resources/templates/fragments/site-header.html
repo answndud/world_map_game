@@ -1,28 +1,49 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <body>
+<script>
+    (function () {
+        try {
+            var storedTheme = window.localStorage.getItem("worldmap-theme");
+            document.documentElement.dataset.theme = storedTheme === "light" ? "light" : "dark";
+        } catch (error) {
+            document.documentElement.dataset.theme = "dark";
+        }
+    }());
+</script>
 <th:block th:fragment="siteHeader(activeSection)">
     <header class="site-header">
         <a class="site-brand" th:href="@{/}">
             <span class="site-brand-mark">WorldMap</span>
             <strong>Command</strong>
         </a>
-        <nav class="site-nav" aria-label="메인 이동">
-            <a class="site-nav-link"
-               th:classappend="${activeSection == 'home'} ? ' is-active'"
-               th:href="@{/}">Home</a>
-            <a class="site-nav-link"
-               th:classappend="${activeSection == 'stats'} ? ' is-active'"
-               th:href="@{/stats}">Stats</a>
-            <a class="site-nav-link"
-               th:if="${session != null and session.WORLDMAP_MEMBER_ROLE == 'ADMIN'}"
-               th:classappend="${activeSection == 'dashboard'} ? ' is-active'"
-               th:href="@{/dashboard}">Dashboard</a>
-            <a class="site-nav-link"
-               th:classappend="${activeSection == 'mypage'} ? ' is-active'"
-               th:href="@{/mypage}">My Page</a>
-        </nav>
+        <div class="site-header__actions">
+            <nav class="site-nav" aria-label="메인 이동">
+                <a class="site-nav-link"
+                   th:classappend="${activeSection == 'home'} ? ' is-active'"
+                   th:href="@{/}">Home</a>
+                <a class="site-nav-link"
+                   th:classappend="${activeSection == 'stats'} ? ' is-active'"
+                   th:href="@{/stats}">Stats</a>
+                <a class="site-nav-link"
+                   th:if="${session != null and session.WORLDMAP_MEMBER_ROLE == 'ADMIN'}"
+                   th:classappend="${activeSection == 'dashboard'} ? ' is-active'"
+                   th:href="@{/dashboard}">Dashboard</a>
+                <a class="site-nav-link"
+                   th:classappend="${activeSection == 'mypage'} ? ' is-active'"
+                   th:href="@{/mypage}">My Page</a>
+            </nav>
+            <button class="theme-toggle"
+                    type="button"
+                    data-theme-toggle
+                    aria-pressed="false"
+                    aria-label="테마 전환">
+                <span class="theme-toggle__hint">Theme</span>
+                <strong class="theme-toggle__state" data-theme-toggle-label>Light</strong>
+            </button>
+        </div>
     </header>
+    <script th:src="@{/js/theme-toggle.js(v='20260324-theme-1')}"></script>
 </th:block>
 </body>
 </html>

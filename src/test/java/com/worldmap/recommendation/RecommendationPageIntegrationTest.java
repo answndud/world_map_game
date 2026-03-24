@@ -1,7 +1,7 @@
 package com.worldmap.recommendation;
 
-import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -33,6 +33,7 @@ class RecommendationPageIntegrationTest {
 			.andExpect(model().attributeExists("surveyQuestions"))
 			.andExpect(content().string(containsString("어울리는 나라 추천")))
 			.andExpect(content().string(containsString("Find Your Match")))
+			.andExpect(content().string(containsString("12 Questions")))
 			.andExpect(content().string(not(containsString("deterministic"))))
 			.andExpect(content().string(not(containsString("Offline Eval"))));
 	}
@@ -41,11 +42,15 @@ class RecommendationPageIntegrationTest {
 	void surveySubmissionReturnsDeterministicResult() throws Exception {
 		mockMvc.perform(post("/recommendation/survey")
 				.param("climatePreference", "WARM")
+				.param("seasonTolerance", "HIGH")
 				.param("pacePreference", "FAST")
-				.param("budgetPreference", "HIGH")
+				.param("costQualityPreference", "QUALITY_FIRST")
 				.param("environmentPreference", "CITY")
-				.param("englishImportance", "HIGH")
-				.param("priorityFocus", "DIVERSITY")
+				.param("englishSupportNeed", "HIGH")
+				.param("safetyPriority", "MEDIUM")
+				.param("publicServicePriority", "MEDIUM")
+				.param("foodImportance", "MEDIUM")
+				.param("diversityImportance", "HIGH")
 				.param("settlementPreference", "BALANCED")
 				.param("mobilityPreference", "BALANCED"))
 			.andExpect(status().isOk())
@@ -54,8 +59,8 @@ class RecommendationPageIntegrationTest {
 			.andExpect(content().string(containsString("잘 맞는 나라 3곳")))
 			.andExpect(content().string(containsString("싱가포르")))
 			.andExpect(content().string(containsString("추천 만족도")))
-			.andExpect(content().string(containsString("survey-v2")))
-			.andExpect(content().string(containsString("engine-v2")))
+			.andExpect(content().string(containsString("survey-v3")))
+			.andExpect(content().string(containsString("engine-v3")))
 			.andExpect(content().string(not(containsString("deterministic"))))
 			.andExpect(content().string(not(containsString("만족도 집계 보기"))));
 	}

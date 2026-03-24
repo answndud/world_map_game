@@ -4,11 +4,15 @@ public record RecommendationFeedbackPayloadView(
 	String surveyVersion,
 	String engineVersion,
 	String climatePreference,
+	String seasonTolerance,
 	String pacePreference,
-	String budgetPreference,
+	String costQualityPreference,
 	String environmentPreference,
-	String englishImportance,
-	String priorityFocus,
+	String englishSupportNeed,
+	String safetyPriority,
+	String publicServicePriority,
+	String foodImportance,
+	String diversityImportance,
 	String settlementPreference,
 	String mobilityPreference
 ) {

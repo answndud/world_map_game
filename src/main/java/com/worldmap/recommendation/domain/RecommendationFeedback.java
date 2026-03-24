@@ -39,24 +39,40 @@ public class RecommendationFeedback {
 	private RecommendationSurveyAnswers.ClimatePreference climatePreference;
 
 	@Enumerated(EnumType.STRING)
+	@Column(name = "season_tolerance", length = 30)
+	private RecommendationSurveyAnswers.SeasonTolerance seasonTolerance;
+
+	@Enumerated(EnumType.STRING)
 	@Column(name = "pace_preference", nullable = false, length = 30)
 	private RecommendationSurveyAnswers.PacePreference pacePreference;
 
 	@Enumerated(EnumType.STRING)
-	@Column(name = "budget_preference", nullable = false, length = 30)
-	private RecommendationSurveyAnswers.BudgetPreference budgetPreference;
+	@Column(name = "cost_quality_preference", length = 40)
+	private RecommendationSurveyAnswers.CostQualityPreference costQualityPreference;
 
 	@Enumerated(EnumType.STRING)
 	@Column(name = "environment_preference", nullable = false, length = 30)
 	private RecommendationSurveyAnswers.EnvironmentPreference environmentPreference;
 
 	@Enumerated(EnumType.STRING)
-	@Column(name = "english_importance", nullable = false, length = 30)
-	private RecommendationSurveyAnswers.EnglishImportance englishImportance;
+	@Column(name = "english_support_need", length = 30)
+	private RecommendationSurveyAnswers.EnglishSupportNeed englishSupportNeed;
 
 	@Enumerated(EnumType.STRING)
-	@Column(name = "priority_focus", nullable = false, length = 30)
-	private RecommendationSurveyAnswers.PriorityFocus priorityFocus;
+	@Column(name = "safety_priority", length = 30)
+	private RecommendationSurveyAnswers.ImportanceLevel safetyPriority;
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "public_service_priority", length = 30)
+	private RecommendationSurveyAnswers.ImportanceLevel publicServicePriority;
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "food_importance", length = 30)
+	private RecommendationSurveyAnswers.ImportanceLevel foodImportance;
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "diversity_importance", length = 30)
+	private RecommendationSurveyAnswers.ImportanceLevel diversityImportance;
 
 	@Enumerated(EnumType.STRING)
 	@Column(name = "settlement_preference", length = 30)
@@ -83,11 +99,15 @@ public class RecommendationFeedback {
 		this.engineVersion = engineVersion;
 		this.satisfactionScore = satisfactionScore;
 		this.climatePreference = answers.climatePreference();
+		this.seasonTolerance = answers.seasonTolerance();
 		this.pacePreference = answers.pacePreference();
-		this.budgetPreference = answers.budgetPreference();
+		this.costQualityPreference = answers.costQualityPreference();
 		this.environmentPreference = answers.environmentPreference();
-		this.englishImportance = answers.englishImportance();
-		this.priorityFocus = answers.priorityFocus();
+		this.englishSupportNeed = answers.englishSupportNeed();
+		this.safetyPriority = answers.safetyPriority();
+		this.publicServicePriority = answers.publicServicePriority();
+		this.foodImportance = answers.foodImportance();
+		this.diversityImportance = answers.diversityImportance();
 		this.settlementPreference = answers.settlementPreference();
 		this.mobilityPreference = answers.mobilityPreference();
 		this.createdAt = createdAt;
@@ -128,24 +148,40 @@ public class RecommendationFeedback {
 		return climatePreference;
 	}
 
+	public RecommendationSurveyAnswers.SeasonTolerance getSeasonTolerance() {
+		return seasonTolerance;
+	}
+
 	public RecommendationSurveyAnswers.PacePreference getPacePreference() {
 		return pacePreference;
 	}
 
-	public RecommendationSurveyAnswers.BudgetPreference getBudgetPreference() {
-		return budgetPreference;
+	public RecommendationSurveyAnswers.CostQualityPreference getCostQualityPreference() {
+		return costQualityPreference;
 	}
 
 	public RecommendationSurveyAnswers.EnvironmentPreference getEnvironmentPreference() {
 		return environmentPreference;
 	}
 
-	public RecommendationSurveyAnswers.EnglishImportance getEnglishImportance() {
-		return englishImportance;
+	public RecommendationSurveyAnswers.EnglishSupportNeed getEnglishSupportNeed() {
+		return englishSupportNeed;
 	}
 
-	public RecommendationSurveyAnswers.PriorityFocus getPriorityFocus() {
-		return priorityFocus;
+	public RecommendationSurveyAnswers.ImportanceLevel getSafetyPriority() {
+		return safetyPriority;
+	}
+
+	public RecommendationSurveyAnswers.ImportanceLevel getPublicServicePriority() {
+		return publicServicePriority;
+	}
+
+	public RecommendationSurveyAnswers.ImportanceLevel getFoodImportance() {
+		return foodImportance;
+	}
+
+	public RecommendationSurveyAnswers.ImportanceLevel getDiversityImportance() {
+		return diversityImportance;
 	}
 
 	public RecommendationSurveyAnswers.SettlementPreference getSettlementPreference() {
