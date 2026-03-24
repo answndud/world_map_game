@@ -117,6 +117,8 @@ class LeaderboardIntegrationTest {
 			.andExpect(status().isOk())
 			.andExpect(view().name("ranking/index"))
 			.andExpect(content().string(containsString("지금 새로고침")))
+			.andExpect(content().string(containsString("게임 모드")))
+			.andExpect(content().string(containsString("동점 처리")))
 			.andExpect(model().attributeExists("locationAll"))
 			.andExpect(model().attributeExists("populationAll"));
 

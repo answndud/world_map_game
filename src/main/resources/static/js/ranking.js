@@ -7,14 +7,24 @@
     const statusBox = document.getElementById("ranking-auto-refresh-status");
     const lastUpdatedBox = document.getElementById("ranking-last-updated");
     const messageBox = document.getElementById("ranking-refresh-message");
+    const activeTitleBox = document.getElementById("ranking-active-title");
+    const activeCopyBox = document.getElementById("ranking-active-copy");
     const tableBodies = Array.from(document.querySelectorAll("tbody[data-game-mode][data-scope]"));
+    const rankingPanels = Array.from(document.querySelectorAll("[data-ranking-panel]"));
+    const modeButtons = Array.from(document.querySelectorAll("[data-ranking-mode]"));
+    const scopeButtons = Array.from(document.querySelectorAll("[data-ranking-scope]"));
     const refreshIntervalMs = 15000;
+    let activeMode = modeButtons.find((button) => button.classList.contains("is-active"))?.dataset.rankingMode ?? "location";
+    let activeScope = scopeButtons.find((button) => button.classList.contains("is-active"))?.dataset.rankingScope ?? "ALL";
     let refreshTimer = null;
     let refreshInFlight = false;
 
     refreshButton?.addEventListener("click", () => refreshLeaderboards(true));
     window.addEventListener("visibilitychange", handleVisibilityChange);
+    modeButtons.forEach((button) => button.addEventListener("click", () => switchMode(button.dataset.rankingMode)));
+    scopeButtons.forEach((button) => button.addEventListener("click", () => switchScope(button.dataset.rankingScope)));
 
+    syncActiveBoardUi();
     setLastUpdated(new Date(), "SSR 초기 로드");
     startAutoRefresh();
 
@@ -68,6 +78,55 @@
         } finally {
             refreshInFlight = false;
         }
+    }
+
+    function switchMode(nextMode) {
+        if (!nextMode || nextMode === activeMode) {
+            return;
+        }
+
+        activeMode = nextMode;
+        syncActiveBoardUi();
+    }
+
+    function switchScope(nextScope) {
+        if (!nextScope || nextScope === activeScope) {
+            return;
+        }
+
+        activeScope = nextScope;
+        syncActiveBoardUi();
+    }
+
+    function syncActiveBoardUi() {
+        const activeKey = currentBoardKey();
+
+        modeButtons.forEach((button) => {
+            const isActive = button.dataset.rankingMode === activeMode;
+            button.classList.toggle("is-active", isActive);
+            button.setAttribute("aria-pressed", String(isActive));
+        });
+
+        scopeButtons.forEach((button) => {
+            const isActive = button.dataset.rankingScope === activeScope;
+            button.classList.toggle("is-active", isActive);
+            button.setAttribute("aria-pressed", String(isActive));
+        });
+
+        rankingPanels.forEach((panel) => {
+            const isActive = panel.dataset.rankingPanel === activeKey;
+            panel.hidden = !isActive;
+
+            if (isActive) {
+                if (activeTitleBox) {
+                    activeTitleBox.textContent = panel.dataset.title || "실시간 랭킹";
+                }
+
+                if (activeCopyBox) {
+                    activeCopyBox.textContent = panel.dataset.copy || "";
+                }
+            }
+        });
     }
 
     function renderLeaderboardRows(tbody, entries) {
@@ -126,6 +185,10 @@
 
         stopAutoRefresh();
         setRefreshState("탭 비활성화로 자동 갱신 일시정지");
+    }
+
+    function currentBoardKey() {
+        return `${activeMode}:${activeScope}`;
     }
 
     function escapeHtml(value) {

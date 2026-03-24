@@ -34,18 +34,68 @@
                     <button id="ranking-refresh-button" class="secondary-button" type="button">지금 새로고침</button>
                 </div>
             </div>
+            <div class="ranking-controls-grid">
+                <section class="panel ranking-filter-shell">
+                    <div class="ranking-filter-group">
+                        <span class="subtitle">게임 모드</span>
+                        <div class="ranking-filter-buttons" role="group" aria-label="게임 모드 필터">
+                            <button class="secondary-button ranking-filter-button is-active"
+                                    id="ranking-mode-location"
+                                    type="button"
+                                    data-ranking-mode="location"
+                                    aria-pressed="true">
+                                위치 찾기
+                            </button>
+                            <button class="secondary-button ranking-filter-button"
+                                    id="ranking-mode-population"
+                                    type="button"
+                                    data-ranking-mode="population"
+                                    aria-pressed="false">
+                                인구수 맞추기
+                            </button>
+                        </div>
+                    </div>
+                    <div class="ranking-filter-group">
+                        <span class="subtitle">집계 범위</span>
+                        <div class="ranking-filter-buttons" role="group" aria-label="랭킹 범위 필터">
+                            <button class="secondary-button ranking-filter-button is-active"
+                                    id="ranking-scope-all"
+                                    type="button"
+                                    data-ranking-scope="ALL"
+                                    aria-pressed="true">
+                                전체
+                            </button>
+                            <button class="secondary-button ranking-filter-button"
+                                    id="ranking-scope-daily"
+                                    type="button"
+                                    data-ranking-scope="DAILY"
+                                    aria-pressed="false">
+                                일간
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <aside class="panel ranking-rule-card">
+                    <span class="subtitle">동점 처리</span>
+                    <h2>정렬 기준</h2>
+                    <p>
+                        먼저 총점, 클리어 수, 총 시도 수를 합친 내부 <code>rankingScore</code>를 비교합니다.
+                        그 값까지 같으면 더 빨리 끝난 run이 앞섭니다.
+                    </p>
+                </aside>
+            </div>
             <p id="ranking-refresh-message" class="message-box" hidden></p>
 
             <div class="panel-head">
-                <h2>All Time Top 10</h2>
-                <p>Level 1 기준 전체 누적 랭킹입니다.</p>
+                <h2 id="ranking-active-title">위치 찾기 · 전체 Top 10</h2>
+                <p id="ranking-active-copy">Level 1 기준 위치 찾기 전체 누적 랭킹입니다.</p>
             </div>
-            <div class="card-grid">
-                <article class="panel">
-                    <div class="panel-head">
-                        <h2>Location</h2>
-                        <p>지구본 위치 찾기 전체 기록</p>
-                    </div>
+            <div class="ranking-panel-stack">
+                <article class="panel ranking-board-panel"
+                         data-ranking-panel="location:ALL"
+                         data-title="위치 찾기 · 전체 Top 10"
+                         data-copy="Level 1 기준 위치 찾기 전체 누적 랭킹입니다.">
                     <div class="table-shell">
                         <table class="result-table">
                             <thead>
@@ -73,11 +123,11 @@
                     </div>
                 </article>
 
-                <article class="panel">
-                    <div class="panel-head">
-                        <h2>Population</h2>
-                        <p>인구 규모 퀴즈 전체 기록</p>
-                    </div>
+                <article class="panel ranking-board-panel"
+                         data-ranking-panel="population:ALL"
+                         data-title="인구수 맞추기 · 전체 Top 10"
+                         data-copy="Level 1 기준 인구수 맞추기 전체 누적 랭킹입니다."
+                         hidden>
                     <div class="table-shell">
                         <table class="result-table">
                             <thead>
@@ -104,20 +154,12 @@
                         </table>
                     </div>
                 </article>
-            </div>
-        </section>
 
-        <section class="panel">
-            <div class="panel-head">
-                <h2>Daily Top 10</h2>
-                <p th:text="${'오늘 기준 날짜: ' + locationDaily.targetDate}">오늘 기준 날짜: 2026-03-24</p>
-            </div>
-            <div class="card-grid">
-                <article class="panel">
-                    <div class="panel-head">
-                        <h2>Location Today</h2>
-                        <p>오늘 기록된 위치 게임 점수</p>
-                    </div>
+                <article class="panel ranking-board-panel"
+                         data-ranking-panel="location:DAILY"
+                         data-title="위치 찾기 · 오늘 Top 10"
+                         th:data-copy="${'오늘 기준 위치 찾기 랭킹입니다. 기준 날짜: ' + locationDaily.targetDate}"
+                         hidden>
                     <div class="table-shell">
                         <table class="result-table">
                             <thead>
@@ -145,11 +187,11 @@
                     </div>
                 </article>
 
-                <article class="panel">
-                    <div class="panel-head">
-                        <h2>Population Today</h2>
-                        <p>오늘 기록된 인구수 게임 점수</p>
-                    </div>
+                <article class="panel ranking-board-panel"
+                         data-ranking-panel="population:DAILY"
+                         data-title="인구수 맞추기 · 오늘 Top 10"
+                         th:data-copy="${'오늘 기준 인구수 맞추기 랭킹입니다. 기준 날짜: ' + populationDaily.targetDate}"
+                         hidden>
                     <div class="table-shell">
                         <table class="result-table">
                             <thead>
