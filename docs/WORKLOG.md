@@ -1903,3 +1903,22 @@
 - 테스트 내용: `./gradlew test --tests com.worldmap.stats.StatsPageControllerTest --tests com.worldmap.demo.DemoBootstrapIntegrationTest --tests com.worldmap.admin.AdminPageIntegrationTest --tests com.worldmap.web.HomeControllerTest` 통과 후 `./gradlew test` 전체 통과. 추가로 local profile로 `./gradlew bootRun --args='--spring.profiles.active=local --server.port=8081'`을 실행해 `/stats` 응답과 PostgreSQL 실데이터를 확인했다. 실제 DB에서 `worldmap_admin / orbit_runner` 계정, demo leaderboard run 2개, `demo-guest-live` 진행 중 세션 1개가 생성되는 것을 확인했다.
 - 면접에서 30초 안에 설명하는 요약: 운영 Dashboard를 일반 사용자에게 그대로 열기보다, 공개 가능한 숫자만 보여 주는 `/stats`를 따로 만들었습니다. 이때 Dashboard와 Stats가 다른 숫자를 보여 주지 않도록 `ServiceActivityService`라는 공통 read model 서비스로 활동 지표를 분리했습니다. 또 local 환경에서는 `worldmap_admin`, `orbit_runner`, 샘플 run 2개, guest 진행 중 세션 1개를 startup runner에서 자동으로 만들어서, DB를 지워도 같은 시연 상태를 다시 재현할 수 있게 했습니다.
 - 아직 내가 이해가 부족한 부분: 현재 demo bootstrap은 local 시연 편의성을 최우선으로 둔 구조라, 나중에 샘플 데이터를 더 늘릴지 아니면 fixture 수준으로만 유지할지 경계를 더 정해야 한다. 또 `/stats`는 snapshot 카드와 일간 Top 3까지만 있으므로, 추세 그래프나 최근 7일 활성 변화는 9단계나 10단계에서 얼마나 확장할지 추가 판단이 필요하다.
+
+## 2026-03-24 - local bootstrap용 `.env.local` 샘플 추가
+
+- 단계: 8. 인증, 전적, 마이페이지
+- 목적: local demo bootstrap 자체는 이미 동작했지만, 매번 긴 환경변수 명령을 직접 입력해야 했다. 그래서 이번 조각은 gitignore 대상인 `.env.local` 샘플을 저장소 루트에 두고, 같은 admin / user 계정과 샘플 데이터를 더 쉽게 다시 띄울 수 있게 정리하는 데 집중한다.
+- 변경 파일:
+  - `.gitignore`
+  - `.env.local`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/LOCAL_DEMO_BOOTSTRAP.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 이번 단계는 HTTP 요청 흐름이 아니라 local 실행 흐름 정리다. 개발자는 `set -a; source .env.local; set +a; ./gradlew bootRun`으로 local profile을 실행하고, 서버는 기존과 동일하게 `CountrySeedInitializer -> AdminBootstrapInitializer -> DemoBootstrapInitializer` 순서로 country seed, admin 계정, demo user/sample run을 만든다.
+- 데이터 / 상태 변화: `.env.local`에는 `SPRING_PROFILES_ACTIVE=local`, `WORLDMAP_ADMIN_BOOTSTRAP_*`, `WORLDMAP_DEMO_BOOTSTRAP_*` 기본값이 들어 있다. 이 값으로 local에서 `worldmap_admin / secret123`, `orbit_runner / secret123`, 샘플 run 2개, guest 진행 세션 1개를 다시 재생성할 수 있다. `.env.local`과 `.env`는 `.gitignore`에 넣어 local-only 설정으로 유지한다.
+- 핵심 도메인 개념: 이 파일은 새 비즈니스 기능이 아니라 demo bootstrap 사용성을 높이는 local 실행 자산이다. 그래서 설정 파일은 gitignore로 숨기고, 같은 값은 `README`와 `LOCAL_DEMO_BOOTSTRAP.md`에도 남겨 “파일이 로컬에만 있어도 재현 방법은 문서로 공유된다”는 구조를 택했다.
+- 예외 상황 또는 엣지 케이스: Spring Boot가 `.env.local`을 자동으로 읽는 것은 아니므로, 터미널에서 `source .env.local`을 먼저 실행해야 한다. `.env.local`을 수정해 닉네임이나 비밀번호를 바꿔도, local bootstrap은 다음 서버 시작 시 새 값으로 계정을 만들거나 기존 계정 비밀번호를 갱신한다.
+- 테스트 내용: 애플리케이션 테스트는 다시 추가하지 않았다. 기존 `./gradlew test` 전체 통과 상태를 유지한 채, local 부팅에서 `.env.local` 값과 동일한 계정 / 샘플 데이터가 실제로 생성되는지 앞선 부팅 검증으로 확인했다.
+- 면접에서 30초 안에 설명하는 요약: local 시연 상태를 더 쉽게 재현하려고 gitignored `.env.local` 샘플을 따로 두었습니다. 이 파일에는 admin bootstrap과 demo user bootstrap 기본값이 들어 있고, source 후 서버를 띄우면 기존 startup runner 흐름을 통해 같은 계정과 샘플 run을 다시 만들 수 있습니다. 즉, 민감한 local 설정은 git에 올리지 않으면서도, 재현 방법은 문서와 실행 파일로 같이 남겼습니다.
+- 아직 내가 이해가 부족한 부분: 현재 `.env.local`은 local 시연 편의성 중심이라 비밀번호 회전이나 다중 개발자별 로컬 값 분기는 따로 고려하지 않았다. 이후 배포/협업 범위가 넓어지면 `.env.example`을 별도로 둘지, 지금처럼 문서 + gitignored 실제 파일 조합을 유지할지 판단이 더 필요하다.

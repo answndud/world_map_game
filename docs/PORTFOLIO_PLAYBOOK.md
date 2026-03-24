@@ -573,6 +573,7 @@
 - 공개 `/stats`는 서비스 활성을 보여 주는 숫자만 노출하고, 추천 만족도 집계 / persona baseline / surveyVersion 같은 내부 운영 정보는 계속 `/dashboard`에만 남긴다
 - `DemoBootstrapProperties`, `DemoBootstrapService`, `DemoBootstrapInitializer`를 추가해 local profile 시작 시 `worldmap_admin(ADMIN)`, `orbit_runner(USER)`, 샘플 완료 run 2개, 진행 중 guest 세션 1개를 자동 생성하도록 연결했다
 - local demo bootstrap은 `country seed -> admin bootstrap -> demo bootstrap` 순서를 `@Order`로 고정해, DB를 비운 뒤 서버를 다시 띄워도 같은 확인용 상태를 재생성하게 했다
+- 저장소 루트의 gitignored `.env.local`에 local bootstrap 기본값을 같이 두고, source 후 `bootRun` 하면 같은 확인용 계정 / 샘플 데이터를 바로 불러오게 정리했다
 - `DemoBootstrapIntegrationTest`, `StatsPageControllerTest`로 local dummy data bootstrap과 public stats 렌더링을 고정했다
 
 이후 고도화 아이디어:

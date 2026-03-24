@@ -80,6 +80,17 @@ docker compose up -d
 
 ## 환경변수 오버라이드
 
+저장소 루트에는 기본값이 들어간 gitignored `.env.local`을 같이 둔다.
+
+```bash
+set -a
+source .env.local
+set +a
+./gradlew bootRun
+```
+
+즉, 매번 긴 환경변수 명령을 직접 치지 않고 `.env.local`을 source한 뒤 local profile로 바로 시작할 수 있다.
+
 ### admin 계정
 
 - `WORLDMAP_ADMIN_BOOTSTRAP_ENABLED`
