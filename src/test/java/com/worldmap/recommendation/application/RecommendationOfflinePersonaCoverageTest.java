@@ -26,17 +26,21 @@ class RecommendationOfflinePersonaCoverageTest {
 
 		long matchedScenarioCount = scenarios.size() - missedScenarioIds.size();
 
-		assertThat(scenarios).hasSize(14);
+		assertThat(scenarios).hasSize(18);
 		assertThat(matchedScenarioCount)
 			.withFailMessage("현재 추천 엔진의 페르소나 coverage가 너무 낮습니다. missed=%s", missedScenarioIds)
-			.isGreaterThanOrEqualTo(11);
+			.isGreaterThanOrEqualTo(15);
 	}
 
 	@Test
-	void anchorPersonasStillSurfaceCoreCandidates() {
+	void anchorAndActiveSignalPersonasStillSurfaceCoreCandidates() {
 		assertThat(topCountryNames("P01")).first().isEqualTo("싱가포르");
 		assertThat(topCountryNames("P02")).first().isEqualTo("말레이시아");
 		assertThat(topCountryNames("P14")).contains("말레이시아", "태국");
+		assertThat(topCountryNames("P15")).contains("말레이시아").doesNotContain("포르투갈");
+		assertThat(topCountryNames("P16")).contains("포르투갈").doesNotContain("말레이시아");
+		assertThat(topCountryNames("P17")).contains("브라질").doesNotContain("대한민국");
+		assertThat(topCountryNames("P18")).contains("대한민국").doesNotContain("브라질");
 	}
 
 	private boolean matchesAnyExpectedCandidate(RecommendationOfflinePersonaScenario scenario) {
