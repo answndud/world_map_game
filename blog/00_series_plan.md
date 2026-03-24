@@ -51,13 +51,15 @@
 24. [public 화면 문구를 제품 언어로 정리하기](./19-refresh-public-copy-before-admin-split.md)
 25. [public 운영 정보를 `/admin` read-only 화면으로 옮기기](./20-move-ops-insights-into-admin-surface.md)
 26. [추천 baseline 운영 화면과 public 헤더를 정리하기](./21-add-admin-persona-baseline-and-simplify-public-header.md)
+27. [게스트 플레이를 유지하면서 단순 계정으로 확장하는 설계](./22-guest-session-to-simple-account-plan.md)
+28. [게스트 세션 키와 기록 소유권 기반 심기](./23-add-guest-session-ownership-foundation.md)
 
 ### Part E. 테스트, 확장, 취업 패키징
 
-27. 왜 핵심 게임 로직을 테스트해야 하는가
-28. 인증, 전적, 마이페이지 붙이기
-29. Level 2 난이도와 실시간성 고도화
-30. README, 아키텍처, 면접 답변 패키지 만들기
+29. 왜 핵심 게임 로직을 테스트해야 하는가
+30. 인증, 전적, 마이페이지 붙이기
+31. Level 2 난이도와 실시간성 고도화
+32. README, 아키텍처, 면접 답변 패키지 만들기
 
 ## 실제 집필 우선순위
 

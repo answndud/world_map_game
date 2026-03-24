@@ -1561,3 +1561,56 @@
 - 테스트 내용: `./gradlew test --tests com.worldmap.admin.AdminPageIntegrationTest --tests com.worldmap.web.HomeControllerTest --tests com.worldmap.web.MyPageControllerTest --tests com.worldmap.recommendation.RecommendationFeedbackIntegrationTest` 통과. admin baseline page 렌더링, 홈 화면에서 `오늘의 추천 플레이` 제거, header의 `My Page` 노출, `/mypage` placeholder 렌더링을 확인했다.
 - 면접에서 30초 안에 설명하는 요약: 추천 운영에서는 만족도 집계만 보면 부족해서 `/admin/recommendation/persona-baseline`을 추가해 18개 시나리오 baseline과 weak scenario를 같이 보게 만들었습니다. 동시에 public 헤더는 `Home / My Page`만 남겨 상단 이동 구조를 단순화했고, `My Page`는 아직 인증 전 단계라 placeholder shell만 먼저 고정했습니다.
 - 아직 내가 이해가 부족한 부분: `My Page`를 지금처럼 가벼운 placeholder로 유지할지, 다음 단계에서 게스트 전적 일부라도 먼저 붙일지는 8단계 설계에서 더 정해야 한다. 또 admin baseline 화면을 향후 실제 테스트 결과와 완전히 같은 데이터 원천으로 연결할지도 후속 판단이 필요하다.
+
+## 2026-03-24 - 게스트 유지형 단순 계정 구조 설계
+
+- 단계: 8. 인증, 전적, 마이페이지
+- 목적: 비회원은 지금처럼 세션 기반으로 바로 플레이하게 두고, 기록을 오래 남기고 싶은 사용자만 가볍게 로그인하게 만드는 구조를 고정한다. 계정 목적은 커뮤니티가 아니라 `닉네임 유지`, `점수 누적`, `내 전적 조회`다.
+- 변경 파일:
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `docs/SIMPLE_ACCOUNT_PROGRESS_PLAN.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/22-guest-session-to-simple-account-plan.md`
+- 요청 흐름 / 데이터 흐름: 이번 단계는 구현이 아니라 설계 고정이다. 기본 흐름은 `비회원 플레이 -> guestSessionKey로 세션/랭킹 기록 저장 -> 회원가입 또는 로그인 -> 현재 guestSessionKey 기록을 memberId에 귀속 -> /mypage 이동`으로 잡았다. public 게임 요청 흐름은 계속 비회원도 그대로 들어오고, 인증은 기록 유지와 마이페이지 조회를 위한 확장 레이어로 붙인다.
+- 데이터 / 상태 변화: 실제 테이블 변경은 아직 없다. 설계 기준만 먼저 고정했다. 핵심은 `member` 테이블을 `nickname + passwordHash + role` 수준으로 단순화하고, 기존 게임 세션과 랭킹 레코드에는 `memberId` 또는 `guestSessionKey` 둘 중 하나로 소유자를 표시하는 것이다. 추천 결과 자체는 계정 단계에서도 저장하지 않고, 만족도 피드백만 익명으로 유지한다.
+- 핵심 도메인 개념: 게스트와 회원을 동시에 다루려면 “현재 플레이 소유자”를 설명할 공통 기준이 필요하다. 그래서 `memberId`와 `guestSessionKey`를 같이 두는 모델이 필요하다. 이렇게 하면 비회원 플레이는 유지하면서도, 로그인 시 현재 브라우저 세션의 기록만 계정으로 자연스럽게 귀속시킬 수 있다.
+- 예외 상황 또는 엣지 케이스: 이 설계는 현재 브라우저 세션 범위만 귀속한다. 브라우저를 닫고 새 세션이 되면 예전 비회원 기록은 자동 복구하지 않는다. 의도적으로 “기록을 계속 남기고 싶으면 로그인”하게 만드는 구조다. 또 이메일 복구를 넣지 않기 때문에, 비밀번호 분실 복구는 MVP 범위에서 다루지 않는다.
+- 테스트 내용: 설계 문서 작업이라 애플리케이션 테스트는 실행하지 않았다.
+- 면접에서 30초 안에 설명하는 요약: WorldMap은 커뮤니티 서비스가 아니라 점수 누적형 게임 허브라서, 비회원 플레이는 그대로 유지하고 기록을 오래 남기고 싶은 사람만 단순 계정으로 로그인하게 설계했습니다. 계정은 `닉네임 + 비밀번호`만 두고, 게임과 랭킹 기록은 `memberId` 또는 `guestSessionKey`로 소유자를 표시합니다. 로그인 시에는 현재 브라우저 세션의 비회원 기록만 계정으로 귀속해 구조를 단순하게 유지합니다.
+- 아직 내가 이해가 부족한 부분: `guestSessionKey`를 HttpSession에만 둘지, 별도 쿠키로 조금 더 오래 유지할지는 구현 단계에서 한 번 더 판단해야 한다. 또 로그인 직후 귀속 처리 시 게임 세션과 랭킹 레코드를 어디까지 같은 트랜잭션으로 묶을지도 실제 코드에서 더 세밀하게 정해야 한다.
+
+## 2026-03-24 - 게스트 세션 소유권 기반 추가
+
+- 단계: 8. 인증, 전적, 마이페이지
+- 목적: 회원가입 / 로그인을 붙이기 전에, 먼저 모든 게임 기록이 “회원 것인지, 현재 브라우저의 게스트 것인지”를 구분할 수 있어야 한다. 그래서 이번 조각은 계정 UI가 아니라 ownership 데이터 기반을 심는 데 집중한다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/auth/domain/Member.java`
+  - `src/main/java/com/worldmap/auth/domain/MemberRole.java`
+  - `src/main/java/com/worldmap/auth/domain/MemberRepository.java`
+  - `src/main/java/com/worldmap/auth/application/GuestSessionKeyManager.java`
+  - `src/main/java/com/worldmap/game/common/domain/BaseGameSession.java`
+  - `src/main/java/com/worldmap/game/location/domain/LocationGameSession.java`
+  - `src/main/java/com/worldmap/game/population/domain/PopulationGameSession.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameService.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationGameService.java`
+  - `src/main/java/com/worldmap/game/location/web/LocationGameApiController.java`
+  - `src/main/java/com/worldmap/game/population/web/PopulationGameApiController.java`
+  - `src/main/java/com/worldmap/ranking/domain/LeaderboardRecord.java`
+  - `src/main/java/com/worldmap/ranking/application/LeaderboardService.java`
+  - `src/test/java/com/worldmap/auth/GuestSessionOwnershipIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/23-add-guest-session-ownership-foundation.md`
+- 요청 흐름 / 데이터 흐름: 위치/인구수 게임 시작 요청은 `LocationGameApiController` 또는 `PopulationGameApiController`에서 시작한다. 컨트롤러는 `HttpSession`에서 `GuestSessionKeyManager.ensureGuestSessionKey()`를 호출해 현재 브라우저 세션의 guest key를 확보하고, 그 값을 서비스에 전달한다. 서비스는 게임 세션을 만들 때 `memberId = null`, `guestSessionKey = ...`로 저장한다. 이후 게임오버로 랭킹 기록이 만들어질 때 `LeaderboardService`가 세션 ownership을 그대로 넘겨 `leaderboard_record`에도 같은 `guestSessionKey`를 기록한다.
+- 데이터 / 상태 변화: 이제 `LocationGameSession`, `PopulationGameSession`, `LeaderboardRecord`는 모두 `memberId`와 `guestSessionKey`를 가진다. 아직 로그인은 없으므로 현재 단계에서는 항상 `memberId = null`이고, 같은 브라우저 세션에서 시작한 게임들은 같은 `guestSessionKey`를 공유한다. 즉, “게스트 기록을 나중에 계정으로 귀속할 수 있는 최소 키”가 실제 데이터에 남기 시작했다.
+- 핵심 도메인 개념: 로그인 기능보다 먼저 ownership을 심은 이유는, 나중에 회원가입 성공 후 현재 브라우저의 guest 기록만 안전하게 계정으로 옮기려면 모든 기록이 이미 공통 식별자(`guestSessionKey`)를 갖고 있어야 하기 때문이다. 이 책임은 컨트롤러보다 서비스/도메인에 가깝다. 컨트롤러는 `HttpSession`에서 key를 꺼내 전달만 하고, 실제로 게임 세션과 랭킹 레코드에 ownership을 남기는 규칙은 세션 생성 서비스와 랭킹 서비스가 맡는다.
+- 예외 상황 또는 엣지 케이스: 지금 단계에서는 브라우저를 닫고 새 세션이 생기면 새 `guestSessionKey`가 발급된다. 즉, 비회원 기록이 브라우저 재시작 후 자동으로 이어지지는 않는다. 또한 로그인 기능이 아직 없으므로 `memberId`는 계속 `null`이며, ownership 구조만 먼저 깔린 상태다.
+- 테스트 내용: `./gradlew test --tests com.worldmap.auth.GuestSessionOwnershipIntegrationTest --tests com.worldmap.game.location.LocationGameFlowIntegrationTest --tests com.worldmap.game.population.PopulationGameFlowIntegrationTest --tests com.worldmap.ranking.LeaderboardIntegrationTest` 통과. 새 `GuestSessionOwnershipIntegrationTest`는 같은 `MockHttpSession`으로 위치/인구수 게임을 시작했을 때 같은 `guestSessionKey`를 공유하는지, 게스트 게임오버 후 랭킹 레코드가 같은 ownership을 유지하는지 검증한다.
+- 면접에서 30초 안에 설명하는 요약: 로그인 기능을 붙이기 전에 먼저 게스트 기록의 소유권 기반을 깔았습니다. 게임 시작 컨트롤러가 현재 브라우저 세션의 `guestSessionKey`를 확보해 서비스에 넘기고, 게임 세션과 랭킹 레코드는 모두 `memberId` 또는 `guestSessionKey`로 소유자를 저장합니다. 이렇게 해두면 나중에 회원가입/로그인 성공 시 현재 브라우저의 게스트 기록만 계정으로 안전하게 귀속할 수 있습니다.
+- 아직 내가 이해가 부족한 부분: `guestSessionKey`를 지금처럼 HttpSession에만 둘지, 추후 remember-me나 별도 cookie로 조금 더 오래 유지할지는 인증 구현 단계에서 다시 판단해야 한다. 또 로그인 직후 귀속 처리에서 게임 세션과 랭킹 레코드를 같은 트랜잭션으로 묶을지, 도메인별로 나눌지 후속 설계가 더 필요하다.

@@ -31,7 +31,7 @@
 | 5 | Redis 랭킹 시스템 | Done |
 | 6 | 설문 기반 추천 엔진 | In Progress |
 | 7 | AI-assisted 설문 개선 체계 | In Progress |
-| 8 | 인증, 전적, 마이페이지 | Not Started |
+| 8 | 인증, 전적, 마이페이지 | In Progress |
 | 9 | Level 2와 실시간성 고도화 | Not Started |
 | 10 | 포트폴리오 정리와 발표 준비 | Not Started |
 
@@ -516,7 +516,7 @@
 
 ### 8. 인증, 전적, 마이페이지
 
-상태: Not Started
+상태: In Progress
 
 목표:
 
@@ -532,14 +532,36 @@
 - 운영용 대시보드 권한 분리
 - 현재는 public 헤더 정리를 위해 `/mypage` placeholder shell만 먼저 추가했고, 실제 사용자 데이터와 인증은 아직 붙이지 않았다
 
+현재까지 완료된 항목:
+
+- `/mypage` placeholder SSR 화면과 public 헤더 진입점 추가
+- `/Users/alex/project/worldmap/docs/SIMPLE_ACCOUNT_PROGRESS_PLAN.md`로 게스트 세션 유지형 단순 계정 설계 고정
+- 계정 목적을 `닉네임 유지`, `점수 누적`, `내 전적 조회`로 한정하고 이메일/소셜/커뮤니티 기능은 MVP 범위에서 제외
+- `memberId`와 `guestSessionKey`를 같이 두는 소유권 모델 초안 정리
+- 회원가입/로그인 시 현재 브라우저 세션의 guest 기록만 계정으로 귀속하는 흐름 설계
+- `member`, `MemberRole`, `MemberRepository`를 추가해 단순 계정 도메인 뼈대를 먼저 만들었다
+- `GuestSessionKeyManager`가 같은 브라우저 세션 안에서 공통 `guestSessionKey`를 발급/유지하도록 연결했다
+- 위치/인구수 게임 세션과 `leaderboard_record`가 모두 `memberId` 또는 `guestSessionKey`로 소유자를 저장하도록 ownership 필드를 추가했다
+- 같은 브라우저 세션으로 위치/인구수 게임을 시작하면 동일 `guestSessionKey`를 공유하고, 게스트 게임 종료 시 랭킹 레코드도 같은 ownership을 유지하는 테스트를 고정했다
+
+이 단계에서 남은 일:
+
+- 회원가입 / 로그인 / 로그아웃 구현
+- 비밀번호 해시 저장과 로그인 세션 생성 구조 추가
+- 로그인 직후 현재 `guestSessionKey` 기록을 계정으로 귀속하는 서비스 구현
+- `/mypage`에 내 최고 점수 / 최근 플레이 / 내 랭킹 연결
+- admin 화면 접근 제어 구현
+
 반드시 이해할 것:
 
 - 게스트 세션과 회원 계정을 어떻게 연결할지
 - 인증이 도메인 로직과 어디서 만나는지
+- 왜 이메일 없는 단순 계정으로도 현재 서비스 목적을 충족할 수 있는지
 
 면접 포인트:
 
 - 인증 추가 전후로 데이터 모델이 어떻게 바뀌는가
+- 왜 비회원 플레이를 버리지 않고 유지했는가
 
 완료 기준:
 

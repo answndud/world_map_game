@@ -54,9 +54,16 @@
 
 - 위치 찾기 Level 2
 - 인구수 맞추기 Level 2
-- 회원가입 / 로그인
+- 닉네임 기반 회원가입 / 로그인
 - 내 전적 조회
 - 일간 / 전체 랭킹 분리
+
+회원 기능은 커뮤니티가 아니라 `기록 유지`가 목적이다.
+
+- 비회원은 지금처럼 세션 기반으로 바로 플레이
+- 로그인하면 내 계정에 기록과 랭킹 이력이 누적
+- 계정 정보는 `닉네임 + 비밀번호` 수준으로 단순하게 유지
+- 현재는 8단계 1차 기반으로 `member`, `guestSessionKey`, 게임 세션 / 랭킹 레코드 ownership 필드만 먼저 연결했고, 회원가입 / 로그인은 다음 조각에서 붙인다.
 
 ### 이후 확장
 
@@ -190,6 +197,8 @@
 - 현재는 `/admin` read-only 대시보드와 `/admin/recommendation/feedback` 운영 화면을 먼저 추가했고, 인증과 권한 제어는 이후 8단계에서 붙일 계획이다.
 - public 헤더는 게임별 직접 이동을 제거하고 `Home`, `My Page`만 남겨 이동 구조를 단순화했다.
 - `/mypage`는 8단계 인증/전적 기능을 붙이기 전까지 사용하는 placeholder shell이다.
+- 8단계 계정 구조는 `게스트 세션 유지 + 로그인 시 현재 브라우저 세션 기록 귀속`을 기본 원칙으로 설계한다.
+- 8단계 1차 구현으로 `member` 엔티티, `GuestSessionKeyManager`, 게임 세션 / 랭킹 레코드의 `memberId`, `guestSessionKey` 기반 ownership 저장 구조를 먼저 추가했다.
 - 이 피드백은 설문 문항과 가중치를 계속 개선하기 위한 신호로 사용하고, 오프라인 AI-assisted 평가 루프는 `docs/recommendation/OFFLINE_AI_SURVEY_IMPROVEMENT.md`와 `docs/recommendation/PERSONA_EVAL_SET.md`에서 관리한다.
 - `RecommendationOfflinePersonaCoverageTest`로 18개 페르소나 baseline을 자동 평가하고, 현재 엔진이 최소 15개 시나리오에서 기대 후보 1개 이상을 top 3에 포함하는지를 품질 하한으로 고정했다.
 - baseline은 기존 14개 중립 시나리오와, 새 두 문항을 적극적으로 쓰는 `P15~P18` 비교 시나리오로 나뉜다.
