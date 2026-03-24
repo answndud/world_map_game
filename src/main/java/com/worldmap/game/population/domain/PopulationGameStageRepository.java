@@ -11,5 +11,10 @@ public interface PopulationGameStageRepository extends JpaRepository<PopulationG
 
 	List<PopulationGameStage> findAllBySessionIdOrderByStageNumber(UUID sessionId);
 
+	List<PopulationGameStage> findAllBySessionMemberIdAndSessionFinishedAtIsNotNullAndStatus(
+		Long memberId,
+		PopulationGameStageStatus status
+	);
+
 	void deleteAllBySessionId(UUID sessionId);
 }

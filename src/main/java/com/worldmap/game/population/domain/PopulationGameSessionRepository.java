@@ -7,4 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface PopulationGameSessionRepository extends JpaRepository<PopulationGameSession, UUID> {
 
 	List<PopulationGameSession> findAllByGuestSessionKeyAndMemberIdIsNull(String guestSessionKey);
+
+	long countByMemberIdAndFinishedAtIsNotNull(Long memberId);
 }

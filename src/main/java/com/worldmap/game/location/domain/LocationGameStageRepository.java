@@ -11,5 +11,10 @@ public interface LocationGameStageRepository extends JpaRepository<LocationGameS
 
 	List<LocationGameStage> findAllBySessionIdOrderByStageNumber(UUID sessionId);
 
+	List<LocationGameStage> findAllBySessionMemberIdAndSessionFinishedAtIsNotNullAndStatus(
+		Long memberId,
+		LocationGameStageStatus status
+	);
+
 	void deleteAllBySessionId(UUID sessionId);
 }
