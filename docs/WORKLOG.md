@@ -1614,3 +1614,47 @@
 - 테스트 내용: `./gradlew test --tests com.worldmap.auth.GuestSessionOwnershipIntegrationTest --tests com.worldmap.game.location.LocationGameFlowIntegrationTest --tests com.worldmap.game.population.PopulationGameFlowIntegrationTest --tests com.worldmap.ranking.LeaderboardIntegrationTest` 통과. 새 `GuestSessionOwnershipIntegrationTest`는 같은 `MockHttpSession`으로 위치/인구수 게임을 시작했을 때 같은 `guestSessionKey`를 공유하는지, 게스트 게임오버 후 랭킹 레코드가 같은 ownership을 유지하는지 검증한다.
 - 면접에서 30초 안에 설명하는 요약: 로그인 기능을 붙이기 전에 먼저 게스트 기록의 소유권 기반을 깔았습니다. 게임 시작 컨트롤러가 현재 브라우저 세션의 `guestSessionKey`를 확보해 서비스에 넘기고, 게임 세션과 랭킹 레코드는 모두 `memberId` 또는 `guestSessionKey`로 소유자를 저장합니다. 이렇게 해두면 나중에 회원가입/로그인 성공 시 현재 브라우저의 게스트 기록만 계정으로 안전하게 귀속할 수 있습니다.
 - 아직 내가 이해가 부족한 부분: `guestSessionKey`를 지금처럼 HttpSession에만 둘지, 추후 remember-me나 별도 cookie로 조금 더 오래 유지할지는 인증 구현 단계에서 다시 판단해야 한다. 또 로그인 직후 귀속 처리에서 게임 세션과 랭킹 레코드를 같은 트랜잭션으로 묶을지, 도메인별로 나눌지 후속 설계가 더 필요하다.
+
+## 2026-03-24 - 단순 회원가입 / 로그인과 member 소유 게임 시작 연결
+
+- 단계: 8. 인증, 전적, 마이페이지
+- 목적: ownership 필드만 있는 상태에서는 실제 사용자가 “기록을 남기기 위해 로그인한다”는 흐름을 체감할 수 없다. 그래서 이번 조각은 guest 귀속까지 한 번에 가지 않고, 먼저 `닉네임 + 비밀번호` 회원가입/로그인/로그아웃과 로그인 사용자의 새 게임 기록이 `memberId`로 저장되게 만드는 것에 집중한다.
+- 변경 파일:
+  - `build.gradle`
+  - `src/main/java/com/worldmap/auth/application/AuthenticatedMemberSession.java`
+  - `src/main/java/com/worldmap/auth/application/MemberPasswordHasher.java`
+  - `src/main/java/com/worldmap/auth/application/MemberSessionManager.java`
+  - `src/main/java/com/worldmap/auth/application/MemberAuthService.java`
+  - `src/main/java/com/worldmap/auth/application/GuestSessionKeyManager.java`
+  - `src/main/java/com/worldmap/auth/web/AuthPageController.java`
+  - `src/main/java/com/worldmap/auth/web/LoginForm.java`
+  - `src/main/java/com/worldmap/auth/web/SignupForm.java`
+  - `src/main/java/com/worldmap/web/MyPageController.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameService.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationGameService.java`
+  - `src/main/java/com/worldmap/game/location/web/LocationGameApiController.java`
+  - `src/main/java/com/worldmap/game/population/web/PopulationGameApiController.java`
+  - `src/main/java/com/worldmap/game/location/web/LocationGamePageController.java`
+  - `src/main/java/com/worldmap/game/population/web/PopulationGamePageController.java`
+  - `src/main/resources/templates/auth/signup.html`
+  - `src/main/resources/templates/auth/login.html`
+  - `src/main/resources/templates/mypage.html`
+  - `src/main/resources/templates/location-game/start.html`
+  - `src/main/resources/templates/population-game/start.html`
+  - `src/main/resources/static/css/site.css`
+  - `src/test/java/com/worldmap/auth/AuthFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/auth/GuestSessionOwnershipIntegrationTest.java`
+  - `src/test/java/com/worldmap/web/MyPageControllerTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/24-add-simple-auth-and-member-owned-game-starts.md`
+- 요청 흐름 / 데이터 흐름: 회원가입/로그인은 `AuthPageController`에서 시작한다. `POST /signup`, `POST /login`은 form validation 후 `MemberAuthService`가 닉네임 정규화, 중복 확인, BCrypt 해시 검증, `lastLoginAt` 갱신을 처리하고, 성공하면 `MemberSessionManager`가 현재 `HttpSession`에 `memberId`, `nickname`, `role`을 저장한다. 이후 위치/인구수 게임 시작 API는 컨트롤러에서 현재 로그인 사용자를 먼저 확인하고, 로그인 상태면 guest key 대신 `startMemberGame(memberId, nickname)`으로 들어가 새 게임 세션을 만든다. 게임오버 시 `LeaderboardService`는 기존처럼 세션 ownership을 복사하므로 랭킹 레코드도 `memberId` 소유가 된다.
+- 데이터 / 상태 변화: `member_account` 테이블을 실제로 쓰기 시작했고, 비밀번호는 평문이 아니라 BCrypt hash로 저장한다. 로그인 상태에서는 `HttpSession`에 member 정보가 올라가고, 그 세션에서 새로 시작한 게임 기록은 `guestSessionKey = null`, `memberId = ...`로 저장된다. 반대로 기존 guest 기록을 로그인 직후 계정으로 옮기는 동작은 아직 없다.
+- 핵심 도메인 개념: 이번 단계의 핵심은 “인증”보다 “현재 플레이 소유자 전환”이다. 컨트롤러는 HTTP form과 `HttpSession`을 다루고, `MemberAuthService`는 회원가입/로그인의 규칙을 담당한다. 게임 서비스가 별도 `startMemberGame`, `startGuestGame` 경로를 가지는 이유는, 로그인 여부에 따라 소유자와 닉네임 결정 규칙이 달라지는 것이 게임 도메인 진입 규칙이기 때문이다. `My Page`도 완전 보호보다 먼저 guest 유도 / member shell 분기로 시작해, 헤더는 단순하게 두면서 로그인 진입점을 자연스럽게 만든다.
+- 예외 상황 또는 엣지 케이스: 지금 단계에서는 로그인 성공 전에 쌓인 guest 기록이 자동으로 member로 옮겨지지 않는다. 즉, “로그인 이후 새로 시작한 게임부터” 계정 소유가 된다. 또한 닉네임은 대소문자 구분 없이 중복을 막고, 로그인 상태에서 게임 시작 화면의 닉네임 입력은 무시되며 계정 닉네임이 우선 사용된다.
+- 테스트 내용: `./gradlew test --tests com.worldmap.auth.AuthFlowIntegrationTest --tests com.worldmap.auth.GuestSessionOwnershipIntegrationTest --tests com.worldmap.web.MyPageControllerTest --tests com.worldmap.game.location.LocationGameFlowIntegrationTest --tests com.worldmap.game.population.PopulationGameFlowIntegrationTest --tests com.worldmap.ranking.LeaderboardIntegrationTest` 통과. `AuthFlowIntegrationTest`는 회원가입 후 세션 로그인과 `/mypage` 연결, 로그인 실패 메시지를 검증한다. `GuestSessionOwnershipIntegrationTest`는 로그인 사용자로 시작한 게임과 랭킹 레코드가 `memberId` ownership을 가지는지까지 본다.
+- 면접에서 30초 안에 설명하는 요약: 단순 계정의 첫 구현으로 `닉네임 + 비밀번호` 회원가입/로그인을 붙이고, 로그인한 사용자가 새로 시작하는 게임 기록은 guest가 아니라 `memberId` 소유로 저장되게 만들었습니다. 폼 검증과 비밀번호 해시는 `MemberAuthService`가 맡고, 게임 시작 컨트롤러는 현재 세션의 로그인 사용자를 확인해 guest/game start 경로를 나눕니다. 이렇게 해서 guest 유지 구조를 깨지 않으면서도 계정 중심 기록 누적의 첫 단계를 만들었습니다.
+- 아직 내가 이해가 부족한 부분: 로그인 직후 기존 guest 기록을 어느 범위까지 자동 귀속할지, 그리고 `/mypage`에서 어떤 집계부터 먼저 보여줄지는 다음 조각에서 더 정해야 한다. 또 지금은 Spring Security 없이 단순 세션 관리로 시작했는데, admin 접근 제어까지 갈 때 이 구조를 어디까지 재사용할지도 후속 판단이 필요하다.
