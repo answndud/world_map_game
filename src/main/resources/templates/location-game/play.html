@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>국가 위치 찾기 플레이</title>
-    <link rel="stylesheet" th:href="@{/css/site.css(v='20260324-square-ui-1')}">
+    <link rel="stylesheet" th:href="@{/css/site.css(v='20260324-square-ui-2')}">
     <script th:src="@{/vendor/globe.gl.min.js}" defer></script>
-    <script th:src="@{/js/location-game.js}" defer></script>
+    <script th:src="@{/js/location-game.js(v='20260324-location-ui-2')}" defer></script>
 </head>
 <body data-page="location-play" th:attr="data-session-id=${sessionId}">
 <div class="page-shell">
@@ -15,7 +15,7 @@
         <p class="eyebrow">Arcade Globe Mission</p>
         <h1>지구본에서 나라를 찾고 계속 올라가세요</h1>
         <p class="hero-copy">
-            플레이 중 지구본 위 나라 이름은 표시되지 않습니다. 클릭 후에는 선택 상태만 보이고, 실제 국가명은 제출 후 판정 단계에서만 공개됩니다.
+            플레이 중 지구본 위 나라 이름은 표시되지 않습니다. 국가를 클릭하면 지구본 위에서만 선택 하이라이트가 보이고, 실제 국가명은 제출 후 판정 단계에서만 공개됩니다.
             현재 Level 1은 인구 기준 상위 72개 주요 국가로 먼저 안정화했고, 이후 확장할 예정입니다.
         </p>
     </header>
@@ -36,19 +36,8 @@
                         <div id="location-stage-overlay" class="stage-overlay" hidden></div>
                     </div>
                 </div>
-                <div class="selection-row action-bar">
-                    <article class="selection-pill">
-                        <span class="subtitle">선택 상태</span>
-                        <strong id="selected-country-name">아직 선택하지 않았습니다</strong>
-                    </article>
-                    <article class="selection-pill">
-                        <span class="subtitle">진행 가이드</span>
-                        <strong id="location-stage-hint">지구본에서 국가를 찾은 뒤 클릭하고 제출하세요.</strong>
-                    </article>
-                    <div class="action-buttons">
-                        <button id="location-cancel-button" class="secondary-button" type="button" disabled>선택 취소</button>
-                        <button id="location-submit-button" class="primary-button" type="submit" disabled>선택한 국가 제출</button>
-                    </div>
+                <div class="action-buttons location-submit-row">
+                    <button id="location-submit-button" class="primary-button" type="submit" disabled>선택한 국가 제출</button>
                 </div>
             </form>
 

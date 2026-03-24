@@ -981,6 +981,15 @@ button:disabled {
     align-items: center;
 }
 
+.location-submit-row {
+    justify-content: center;
+    margin-top: 18px;
+}
+
+.location-submit-row .primary-button {
+    min-width: min(100%, 360px);
+}
+
 .attempt-log {
     display: grid;
     gap: 6px;
