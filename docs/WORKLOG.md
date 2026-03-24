@@ -1017,3 +1017,26 @@
 - 테스트 내용: 코드 동작 변경은 없는 문서 작업이므로 애플리케이션 테스트는 별도로 실행하지 않았다. 대신 새 blog 글은 이미 통과했던 `LeaderboardIntegrationTest`, `./gradlew test`, `node --check src/main/resources/static/js/ranking.js` 결과를 근거로 작성했다.
 - 면접에서 30초 안에 설명하는 요약: 이 프로젝트는 AI 도움을 받더라도 나중에 제가 직접 설명할 수 있어야 해서, 의미 있는 기능 조각은 코드와 내부 문서뿐 아니라 blog 글도 같은 턴에 같이 남기도록 운영 규칙을 강화했습니다. 이번에는 빠져 있던 Redis 랭킹 저장 구조와 랭킹 폴링 UI 글을 백필해, 랭킹 기능을 문서와 공개 글 기준으로 모두 설명 가능하게 맞췄습니다.
 - 아직 내가 이해가 부족한 부분: 어디까지를 “설명 가치가 있는 기능 조각”으로 보고 blog를 반드시 써야 하는지는 아직 약간의 판단 여지가 있다. 특히 작은 UX 수정이 누적돼 게임 루프 체감이 크게 달라지는 경우, 어느 시점에서 하나의 blog 글로 묶는 것이 가장 좋은지 경험이 더 필요하다.
+
+## 2026-03-24 - 랭킹 화면 필터와 동점 규칙 노출
+
+- 단계: 5. Redis 랭킹 시스템
+- 목적: 랭킹 저장 구조와 15초 폴링은 이미 있었지만, 위치/인구수와 전체/일간 보드를 한 화면에 모두 펼쳐 놓으니 읽기 순서가 약했다. 그래서 active 보드 하나만 크게 보는 필터 UI로 정리하고, 동점 처리 기준도 화면에 직접 노출해 랭킹 규칙을 더 설명 가능하게 만든다.
+- 변경 파일:
+  - `src/main/resources/templates/ranking/index.html`
+  - `src/main/resources/static/js/ranking.js`
+  - `src/main/resources/static/css/site.css`
+  - `src/test/java/com/worldmap/ranking/LeaderboardIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/08-ranking-filter-and-tie-rule.md`
+- 요청 흐름 / 데이터 흐름: `/ranking`은 여전히 SSR로 처음 렌더링되고, 브라우저는 `ranking.js`에서 15초마다 기존 `/api/rankings/location`, `/api/rankings/population` API를 다시 호출한다. 달라진 점은 UI가 이제 active 보드 하나만 보여준다는 것이다. `위치/인구수`, `전체/일간` 버튼은 프론트 로컬 상태만 바꾸고, 폴링은 같은 API 응답으로 각 `tbody`를 갱신한다. 즉 정렬 결과 계산은 계속 서버가 맡고, 어떤 보드를 보여줄지는 프론트가 맡는다.
+- 데이터 / 상태 변화: DB 스키마와 Redis 키 전략은 바뀌지 않았다. `leaderboard_record`, `rankingScore`, Redis Sorted Set 구조도 그대로 유지된다. 바뀐 것은 `/ranking`의 표현 구조와 안내 정보다. 화면에 동점 규칙을 직접 적어, `rankingScore desc -> finishedAt asc` 기준이 UI에서도 읽히게 만들었다.
+- 핵심 도메인 개념: 이번 변경은 도메인 변경이 아니라 표현 변경이다. 중요한 점은 “필터 전환은 프론트가 해도 되지만, 정렬과 동점 처리 규칙은 서버가 계속 가져가야 한다”는 경계를 지킨 것이다. 그래서 새 API를 늘리지 않고 기존 랭킹 API를 재사용했고, SSR 템플릿은 4개 보드를 준비하되 active 보드만 노출하도록 바꿨다.
+- 예외 상황 또는 엣지 케이스: 현재 daily 보드 설명 문구의 기준 날짜는 SSR 시점 값을 사용한다. 같은 날 안에서는 충분하지만, 자정을 넘기는 장시간 탭 유지 상황까지 완전히 매끈하게 맞추려면 API 응답의 `targetDate`를 기준으로 설명 문구도 다시 갱신하도록 한 단계 더 손볼 수 있다. 또 필터 전환은 로컬 UI 상태이므로 URL deep link까지는 아직 지원하지 않는다.
+- 테스트 내용: `node --check src/main/resources/static/js/ranking.js` 통과, `./gradlew test --tests com.worldmap.ranking.LeaderboardIntegrationTest` 통과. 통합 테스트에는 `/ranking` 페이지가 `게임 모드`, `동점 처리` 문구를 포함해 렌더링되는지 확인을 추가했다.
+- 면접에서 30초 안에 설명하는 요약: 랭킹 저장과 조회 구조는 이미 만들었고, 이번에는 화면을 더 설명 가능하게 정리했습니다. 기존 API는 그대로 두고 프론트에서 `위치/인구수`, `전체/일간` 필터로 active 보드 하나만 크게 보여주게 바꿨고, 동점 처리 규칙도 화면에 명시해서 `rankingScore` 기준이 UI에서도 읽히게 했습니다.
+- 아직 내가 이해가 부족한 부분: 지금은 active 보드 전환이 로컬 상태라 충분하지만, 나중에 URL 공유나 deep link가 필요해지면 query parameter와 어떻게 연결할지 한 번 더 설계해야 한다. 또한 daily 보드 설명 문구 날짜를 폴링 응답 기준으로 더 정교하게 갱신할지 여부도 판단이 남아 있다.
