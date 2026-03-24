@@ -1099,3 +1099,20 @@
 - 테스트 내용: `./gradlew test --tests com.worldmap.recommendation.RecommendationPageIntegrationTest --tests com.worldmap.recommendation.application.RecommendationSurveyServiceTest --tests com.worldmap.web.HomeControllerTest` 통과. 서비스 테스트는 warm/fast/high/city/high english/diversity 조합에서 `싱가포르`가 1위로 나오는지 확인했고, 통합 테스트는 설문 페이지 렌더링과 설문 제출 후 결과 페이지 SSR 렌더링을 확인했다.
 - 면접에서 30초 안에 설명하는 요약: 추천 기능은 처음부터 계산과 설명을 분리했습니다. 이번 단계에서는 설문 답변을 enum 기반으로 고정하고, 서버가 국가 프로필 카탈로그와 비교해 가중치 점수로 top 3를 계산하도록 만들었습니다. 즉 추천 결과 자체는 deterministic하게 서버가 만들고, LLM은 다음 단계에서 그 결과를 설명하는 역할만 맡게 됩니다.
 - 아직 내가 이해가 부족한 부분: 현재 국가 프로필 12개는 시작용이라 추천 품질을 더 높이려면 후보 국가 수와 속성을 더 늘려야 한다. 또한 답변 저장을 언제 DB 엔티티로 올릴지, LLM 프롬프트 입력용 구조를 어디서 고정할지도 다음 단계에서 더 분명히 해야 한다.
+
+## 2026-03-24 - 공통 박스/버튼 모서리 각지게 통일
+
+- 단계: 공통 UI 폴리시
+- 목적: 현재 사이트 전반의 버튼, 패널, 카드, 입력창, 모달이 둥근 모서리를 써서 “차갑고 각진 우주 HUD”라는 시각 방향과 어긋나 있었다. 이번 조각에서는 공통 CSS를 한 번에 정리해 모든 박스형 컴포넌트의 모서리를 각지게 통일한다.
+- 변경 파일:
+  - `src/main/resources/static/css/site.css`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 런타임 요청이나 서버 데이터 흐름은 바뀌지 않았다. 바뀐 것은 공통 표현 계층이다. 모든 화면은 같은 `site.css`를 공유하므로, 헤더 네비게이션, 버튼, 카드, 입력창, 글로브 스테이지, 게임오버 모달, 결과 배너까지 공통 스타일 토큰을 한 번에 수정하는 방식으로 반영된다.
+- 데이터 / 상태 변화: DB, Redis, API, 세션 상태 변화는 없다. 변경은 전부 프론트 공통 테마 레벨에 머문다.
+- 핵심 도메인 개념: 이 프로젝트는 기능만 아니라 “게임 플랫폼처럼 보이는 일관된 화면 톤”도 중요하다. 각 화면에서 개별적으로 radius를 줄이는 대신 공통 CSS의 반경 선언을 전부 제거해, 모든 박스형 UI가 같은 시각 규칙을 따르도록 맞췄다.
+- 예외 상황 또는 엣지 케이스: 이번 검증 범위는 프로젝트가 직접 관리하는 공통 CSS와 템플릿/정적 스크립트이다. 외부 vendor 파일은 수정하지 않았다. 검색 기준으로는 `src/main/resources/static/css/site.css`, `src/main/resources/templates`, `src/main/resources/static/js`, `src/main/resources/static`에서 vendor를 제외하고 `border-radius|radius`를 다시 확인했다.
+- 테스트 내용: 자동 UI 테스트는 없어서 애플리케이션 테스트는 돌리지 않았다. 대신 `git diff --check` 통과, `rg -n "border-radius|radius"` 재검색으로 프로젝트가 직접 관리하는 스타일 영역의 반경 선언을 다시 확인했다.
+- 면접에서 30초 안에 설명하는 요약: 디자인 톤을 맞추기 위해 버튼과 카드만 일부 고친 게 아니라, 공통 CSS에서 반경 선언을 한 번에 정리했습니다. 그래서 헤더, 버튼, 입력창, 모달, 게임 스테이지 같은 박스형 UI가 모두 같은 각진 HUD 규칙을 따르게 됐습니다.
+- 아직 내가 이해가 부족한 부분: 지금은 전역적으로 반경을 0으로 통일했지만, 이후 브랜드 아이덴티티를 더 다듬는 과정에서 “완전한 직각”과 “아주 작은 모따기” 중 어느 쪽이 더 좋은지 시각적으로 한 번 더 비교해볼 필요가 있다.
+- blog 작성 여부: 생략. 이번 변경은 요청 흐름이나 도메인 모델이 아니라 공통 테마 조정이라 별도 기술 글보다 WORKLOG 기록이 더 적합하다고 판단했다.
