@@ -1,6 +1,7 @@
 package com.worldmap.ranking.domain;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -9,6 +10,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface LeaderboardRecordRepository extends JpaRepository<LeaderboardRecord, Long> {
 
 	Optional<LeaderboardRecord> findByRunSignature(String runSignature);
+
+	List<LeaderboardRecord> findAllByGuestSessionKeyAndMemberIdIsNull(String guestSessionKey);
 
 	Page<LeaderboardRecord> findByGameModeAndGameLevelOrderByRankingScoreDescFinishedAtAsc(
 		LeaderboardGameMode gameMode,

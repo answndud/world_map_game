@@ -136,6 +136,14 @@ public abstract class BaseGameSession implements Persistable<UUID> {
 		this.finishedAt = null;
 	}
 
+	public void claimOwnership(Long memberId) {
+		if (memberId == null) {
+			throw new IllegalArgumentException("memberId는 비어 있을 수 없습니다.");
+		}
+		this.memberId = memberId;
+		this.guestSessionKey = null;
+	}
+
 	@Override
 	public UUID getId() {
 		return id;

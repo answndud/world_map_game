@@ -1,6 +1,7 @@
 package com.worldmap.auth.web;
 
 import com.worldmap.auth.application.GuestSessionKeyManager;
+import com.worldmap.auth.application.GuestProgressClaimService;
 import com.worldmap.auth.application.MemberAuthService;
 import com.worldmap.auth.application.MemberSessionManager;
 import com.worldmap.auth.domain.Member;
@@ -19,15 +20,18 @@ public class AuthPageController {
 	private final MemberAuthService memberAuthService;
 	private final MemberSessionManager memberSessionManager;
 	private final GuestSessionKeyManager guestSessionKeyManager;
+	private final GuestProgressClaimService guestProgressClaimService;
 
 	public AuthPageController(
 		MemberAuthService memberAuthService,
 		MemberSessionManager memberSessionManager,
-		GuestSessionKeyManager guestSessionKeyManager
+		GuestSessionKeyManager guestSessionKeyManager,
+		GuestProgressClaimService guestProgressClaimService
 	) {
 		this.memberAuthService = memberAuthService;
 		this.memberSessionManager = memberSessionManager;
 		this.guestSessionKeyManager = guestSessionKeyManager;
+		this.guestProgressClaimService = guestProgressClaimService;
 	}
 
 	@GetMapping("/signup")
@@ -54,6 +58,8 @@ public class AuthPageController {
 
 		try {
 			Member member = memberAuthService.signUp(signupForm.getNickname(), signupForm.getPassword());
+			guestSessionKeyManager.currentGuestSessionKey(httpSession)
+				.ifPresent(guestSessionKey -> guestProgressClaimService.claimGuestRecords(member.getId(), guestSessionKey));
 			memberSessionManager.signIn(httpSession, member);
 			return "redirect:/mypage";
 		} catch (IllegalArgumentException | IllegalStateException ex) {
@@ -86,6 +92,8 @@ public class AuthPageController {
 
 		try {
 			Member member = memberAuthService.login(loginForm.getNickname(), loginForm.getPassword());
+			guestSessionKeyManager.currentGuestSessionKey(httpSession)
+				.ifPresent(guestSessionKey -> guestProgressClaimService.claimGuestRecords(member.getId(), guestSessionKey));
 			memberSessionManager.signIn(httpSession, member);
 			return "redirect:/mypage";
 		} catch (IllegalArgumentException | IllegalStateException ex) {

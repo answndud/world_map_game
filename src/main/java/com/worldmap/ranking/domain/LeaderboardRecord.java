@@ -132,6 +132,14 @@ public class LeaderboardRecord {
 		);
 	}
 
+	public void claimOwnership(Long memberId) {
+		if (memberId == null) {
+			throw new IllegalArgumentException("memberId는 비어 있을 수 없습니다.");
+		}
+		this.memberId = memberId;
+		this.guestSessionKey = null;
+	}
+
 	public Long getId() {
 		return id;
 	}

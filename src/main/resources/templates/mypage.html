@@ -16,6 +16,7 @@
         <p class="hero-copy" th:if="${isAuthenticated}">
             <strong th:text="${currentMember.nickname}">player</strong>
             님의 계정이 연결되었습니다. 지금부터 시작하는 게임 기록은 이 계정에 누적됩니다.
+            이 브라우저에서 만들었던 비회원 기록도 현재 계정으로 이어집니다.
             상세 전적, 최고 점수, 최근 플레이는 다음 조각에서 이 화면에 이어 붙입니다.
         </p>
         <p class="hero-copy" th:unless="${isAuthenticated}">

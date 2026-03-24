@@ -15,6 +15,7 @@
         <p class="hero-copy">
             WorldMap 계정은 닉네임과 비밀번호만 사용합니다.
             커뮤니티 기능 없이 점수와 랭킹 기록을 계속 남기기 위한 최소 계정입니다.
+            이 브라우저에서 방금 만든 비회원 기록도 로그인과 함께 현재 계정으로 이어집니다.
         </p>
     </header>
 
@@ -22,7 +23,7 @@
         <section class="panel game-panel">
             <div class="panel-head">
                 <h2>새 계정 만들기</h2>
-                <p>회원가입 후에는 이 브라우저에서 시작하는 새 게임 기록이 계정에 누적됩니다.</p>
+                <p>회원가입 후에는 새 게임 기록뿐 아니라, 현재 브라우저의 비회원 기록도 계정 소유로 전환됩니다.</p>
             </div>
 
             <form class="game-form" th:action="@{/signup}" th:object="${signupForm}" method="post">

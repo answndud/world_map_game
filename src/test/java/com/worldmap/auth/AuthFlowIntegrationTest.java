@@ -11,6 +11,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.worldmap.auth.domain.Member;
 import com.worldmap.auth.domain.MemberRepository;
+import com.worldmap.country.domain.CountryRepository;
+import com.worldmap.game.location.domain.LocationGameSession;
+import com.worldmap.game.location.domain.LocationGameSessionRepository;
+import com.worldmap.game.location.domain.LocationGameStage;
+import com.worldmap.game.location.domain.LocationGameStageRepository;
+import com.worldmap.ranking.domain.LeaderboardRecord;
+import com.worldmap.ranking.domain.LeaderboardRecordRepository;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,9 +39,22 @@ class AuthFlowIntegrationTest {
 	@Autowired
 	private MemberRepository memberRepository;
 
+	@Autowired
+	private LocationGameSessionRepository locationGameSessionRepository;
+
+	@Autowired
+	private LocationGameStageRepository locationGameStageRepository;
+
+	@Autowired
+	private LeaderboardRecordRepository leaderboardRecordRepository;
+
+	@Autowired
+	private CountryRepository countryRepository;
+
 	@BeforeEach
 	void clearMembers() {
 		memberRepository.deleteAll();
+		leaderboardRecordRepository.deleteAll();
 	}
 
 	@Test
@@ -72,5 +93,76 @@ class AuthFlowIntegrationTest {
 			.andExpect(status().isOk())
 			.andExpect(view().name("auth/login"))
 			.andExpect(content().string(containsString("닉네임 또는 비밀번호가 올바르지 않습니다.")));
+	}
+
+	@Test
+	void signupClaimsCurrentGuestRecordsIntoMemberOwnership() throws Exception {
+		MockHttpSession browserSession = new MockHttpSession();
+		UUID guestSessionId = UUID.fromString(startLocationGame("guest_runner", browserSession));
+		LocationGameSession guestSession = locationGameSessionRepository.findById(guestSessionId).orElseThrow();
+		String guestSessionKey = guestSession.getGuestSessionKey();
+		assertThat(guestSessionKey).isNotBlank();
+
+		LocationGameStage firstStage = locationGameStageRepository.findBySessionIdAndStageNumber(guestSessionId, 1)
+			.orElseThrow();
+		String wrongCountryIso3Code = countryRepository.findAll().stream()
+			.map(country -> country.getIso3Code())
+			.filter(iso3Code -> !iso3Code.equals(firstStage.getTargetCountryIso3Code()))
+			.findFirst()
+			.orElseThrow();
+
+		for (int attempt = 1; attempt <= 3; attempt++) {
+			mockMvc.perform(
+				post("/api/games/location/sessions/{sessionId}/answer", guestSessionId)
+					.session(browserSession)
+					.contentType("application/json")
+					.content("""
+						{
+						  "stageNumber": 1,
+						  "selectedCountryIso3Code": "%s"
+						}
+						""".formatted(wrongCountryIso3Code))
+			)
+				.andExpect(status().isOk());
+		}
+
+		mockMvc.perform(
+			post("/signup")
+				.session(browserSession)
+				.param("nickname", "claimed_runner")
+				.param("password", "secret1234")
+		)
+			.andExpect(status().is3xxRedirection())
+			.andExpect(redirectedUrl("/mypage"));
+
+		Member member = memberRepository.findByNicknameIgnoreCase("claimed_runner").orElseThrow();
+		LocationGameSession claimedSession = locationGameSessionRepository.findById(guestSessionId).orElseThrow();
+		LeaderboardRecord claimedRecord = leaderboardRecordRepository.findAll().getFirst();
+
+		assertThat(claimedSession.getMemberId()).isEqualTo(member.getId());
+		assertThat(claimedSession.getGuestSessionKey()).isNull();
+		assertThat(claimedSession.getPlayerNickname()).isEqualTo("guest_runner");
+
+		assertThat(claimedRecord.getMemberId()).isEqualTo(member.getId());
+		assertThat(claimedRecord.getGuestSessionKey()).isNull();
+		assertThat(claimedRecord.getPlayerNickname()).isEqualTo("guest_runner");
+	}
+
+	private String startLocationGame(String nickname, MockHttpSession browserSession) throws Exception {
+		return com.fasterxml.jackson.databind.json.JsonMapper.builder().build()
+			.readTree(
+				mockMvc.perform(
+					post("/api/games/location/sessions")
+						.session(browserSession)
+						.contentType("application/json")
+						.content("{\"nickname\":\"" + nickname + "\"}")
+				)
+					.andExpect(status().isCreated())
+					.andReturn()
+					.getResponse()
+					.getContentAsString()
+			)
+			.get("sessionId")
+			.asText();
 	}
 }
