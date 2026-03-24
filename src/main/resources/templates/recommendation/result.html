@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>어울리는 나라 추천 결과</title>
-    <link rel="stylesheet" th:href="@{/css/site.css(v='20260324-square-ui-1')}">
+    <link rel="stylesheet" th:href="@{/css/site.css(v='20260324-square-ui-3')}">
+    <script th:src="@{/js/recommendation-feedback.js(v='20260324-feedback-1')}" defer></script>
 </head>
 <body>
 <div class="page-shell">
@@ -67,6 +68,39 @@
                 <a class="primary-link" th:href="@{/recommendation/survey}">설문 다시 하기</a>
                 <a class="ghost-link" th:href="@{/}">메인으로 돌아가기</a>
             </div>
+        </section>
+
+        <section class="panel game-panel">
+            <div class="panel-head">
+                <h2>추천 만족도</h2>
+                <p>추천 결과 자체는 저장하지 않고, 설문 개선을 위한 익명 만족도 점수만 수집합니다.</p>
+            </div>
+
+            <form id="recommendation-feedback-form" class="game-form">
+                <input type="hidden" name="surveyVersion" th:value="${result.feedbackPayload.surveyVersion}">
+                <input type="hidden" name="engineVersion" th:value="${result.feedbackPayload.engineVersion}">
+                <input id="recommendation-satisfaction-score" type="hidden" name="satisfactionScore" value="">
+                <input type="hidden" name="climatePreference" th:value="${result.feedbackPayload.climatePreference}">
+                <input type="hidden" name="pacePreference" th:value="${result.feedbackPayload.pacePreference}">
+                <input type="hidden" name="budgetPreference" th:value="${result.feedbackPayload.budgetPreference}">
+                <input type="hidden" name="environmentPreference" th:value="${result.feedbackPayload.environmentPreference}">
+                <input type="hidden" name="englishImportance" th:value="${result.feedbackPayload.englishImportance}">
+                <input type="hidden" name="priorityFocus" th:value="${result.feedbackPayload.priorityFocus}">
+
+                <div class="rating-button-row" role="radiogroup" aria-label="추천 만족도 선택">
+                    <button class="secondary-button rating-score-button" type="button" data-score="1">1점</button>
+                    <button class="secondary-button rating-score-button" type="button" data-score="2">2점</button>
+                    <button class="secondary-button rating-score-button" type="button" data-score="3">3점</button>
+                    <button class="secondary-button rating-score-button" type="button" data-score="4">4점</button>
+                    <button class="secondary-button rating-score-button" type="button" data-score="5">5점</button>
+                </div>
+
+                <div class="page-actions">
+                    <button id="recommendation-feedback-submit" class="primary-button" type="submit" disabled>만족도 보내기</button>
+                </div>
+            </form>
+
+            <div id="recommendation-feedback-message" class="feedback-inline-message" hidden></div>
         </section>
     </main>
 </div>

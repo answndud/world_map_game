@@ -815,6 +815,36 @@ button:disabled {
     margin-top: 14px;
 }
 
+.rating-button-row {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
+}
+
+.rating-score-button.is-selected {
+    border-color: rgba(141, 224, 255, 0.38);
+    background: linear-gradient(180deg, rgba(14, 33, 57, 0.92) 0%, rgba(9, 21, 37, 0.92) 100%);
+    color: var(--accent-strong);
+    box-shadow: 0 0 0 1px rgba(141, 224, 255, 0.14), 0 10px 24px rgba(0, 0, 0, 0.2);
+}
+
+.feedback-inline-message {
+    border: 1px solid var(--line);
+    background: rgba(8, 16, 30, 0.56);
+    padding: 16px 18px;
+    color: var(--ink);
+}
+
+.feedback-inline-message[data-tone="success"] {
+    border-color: rgba(88, 214, 141, 0.28);
+    color: var(--success);
+}
+
+.feedback-inline-message[data-tone="error"] {
+    border-color: rgba(211, 106, 106, 0.28);
+    color: #ffb7c0;
+}
+
 .globe-shell {
     display: grid;
     gap: 16px;

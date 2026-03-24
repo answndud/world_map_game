@@ -16,6 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class RecommendationSurveyService {
 
+	public static final String SURVEY_VERSION = "survey-v1";
+	public static final String ENGINE_VERSION = "engine-v1";
 	private static final int CLIMATE_WEIGHT = 5;
 	private static final int PACE_WEIGHT = 4;
 	private static final int BUDGET_WEIGHT = 5;
@@ -74,6 +76,18 @@ public class RecommendationSurveyService {
 		}
 
 		return new RecommendationSurveyResultView(
+			SURVEY_VERSION,
+			ENGINE_VERSION,
+			new RecommendationFeedbackPayloadView(
+				SURVEY_VERSION,
+				ENGINE_VERSION,
+				answers.climatePreference().name(),
+				answers.pacePreference().name(),
+				answers.budgetPreference().name(),
+				answers.environmentPreference().name(),
+				answers.englishImportance().name(),
+				answers.priorityFocus().name()
+			),
 			questionCatalog.summariesOf(answers),
 			List.copyOf(rankedCandidates)
 		);

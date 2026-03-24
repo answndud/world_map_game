@@ -46,6 +46,9 @@ class RecommendationPageIntegrationTest {
 			.andExpect(view().name("recommendation/result"))
 			.andExpect(model().attributeExists("result"))
 			.andExpect(content().string(containsString("Top 3 국가")))
-			.andExpect(content().string(containsString("싱가포르")));
+			.andExpect(content().string(containsString("싱가포르")))
+			.andExpect(content().string(containsString("추천 만족도")))
+			.andExpect(content().string(containsString("survey-v1")))
+			.andExpect(content().string(containsString("engine-v1")));
 	}
 }
