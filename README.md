@@ -174,15 +174,16 @@
 
 ### 현재 1차 구현 상태
 
-- `/recommendation/survey`에서 SSR 설문 6문항을 제공한다.
+- `/recommendation/survey`에서 SSR 설문 8문항을 제공한다.
 - 서버는 `RecommendationQuestionCatalog`로 문항과 선택지를 관리한다.
 - 제출된 답변은 `RecommendationSurveyForm -> RecommendationSurveyAnswers` 구조로 검증하고 변환한다.
 - `RecommendationSurveyService`가 30개 국가 프로필 카탈로그와 비교해 가중치 점수를 계산하고 상위 3개 국가를 반환한다.
+- 현재 설문은 기존 6개 문항에 `정착 성향`, `이동 생활 방식` 2개를 더해 사용자가 체감하는 추천 입력 밀도를 높였다.
 - 추천 후보 풀은 북미, 유럽, 동아시아, 동남아, 중동, 남미, 아프리카, 오세아니아까지 분산해 한 지역에만 결과가 몰리지 않도록 넓혔다.
 - 현재 점수식은 `정확 일치 보너스`, `저물가 선호 시 초과 물가 패널티`, `핵심 생활 조건 coherence bonus`를 포함하도록 한 번 더 조정했다.
 - 정렬은 총점 우선이지만, 동점 구간에서는 `강한 신호 개수 -> 정확 일치 개수 -> 국가명` 순으로 보조 비교한다.
 - 결과 페이지는 서버가 계산한 매칭 점수와 핵심 이유 3개를 deterministic하게 보여준다.
-- 추천 결과 자체는 저장하지 않고, 결과 페이지에서 `1~5점 만족도 + surveyVersion + engineVersion + 사용자가 선택한 6개 답변`만 익명 피드백으로 수집한다.
+- 추천 결과 자체는 저장하지 않고, 결과 페이지에서 `1~5점 만족도 + surveyVersion + engineVersion + 사용자가 선택한 8개 답변`만 익명 피드백으로 수집한다.
 - `/recommendation/feedback-insights`와 `/api/recommendation/feedback/summary`에서 `surveyVersion + engineVersion` 기준 평균 점수, 응답 수, 1~5점 분포를 읽어 설문 개선 기준으로 사용한다.
 - 이 피드백은 설문 문항과 가중치를 계속 개선하기 위한 신호로 사용하고, 오프라인 AI-assisted 평가 루프는 `docs/recommendation/OFFLINE_AI_SURVEY_IMPROVEMENT.md`와 `docs/recommendation/PERSONA_EVAL_SET.md`에서 관리한다.
 - `RecommendationOfflinePersonaCoverageTest`로 14개 페르소나 baseline을 자동 평가하고, 현재 엔진이 최소 11개 시나리오에서 기대 후보 1개 이상을 top 3에 포함하는지를 품질 하한으로 고정했다.

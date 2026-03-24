@@ -1396,3 +1396,37 @@
 - 테스트 내용: `./gradlew test --tests com.worldmap.recommendation.application.RecommendationOfflinePersonaCoverageTest --tests com.worldmap.recommendation.application.RecommendationOfflinePersonaSnapshotTest --tests com.worldmap.recommendation.application.RecommendationSurveyServiceTest` 통과.
 - 면접에서 30초 안에 설명하는 요약: 추천 엔진을 바로 튜닝해보니 baseline이 쉽게 흔들려서, 먼저 현재 엔진의 14개 페르소나 top 3 결과를 snapshot 테스트로 고정했습니다. 이제 다음 가중치 실험에서는 단순히 11/14 숫자만 보는 게 아니라, 어떤 시나리오의 top 3 순서가 어떻게 움직였는지도 같이 비교할 수 있습니다.
 - 아직 내가 이해가 부족한 부분: snapshot을 언제 “좋은 변경이라서 갱신할 것인가”의 기준은 아직 더 정교하게 잡아야 한다. 다음 단계에서는 coverage 개선과 weak scenario 개선 근거가 있을 때만 snapshot을 갱신하는 규칙을 문서로 더 분명히 할 필요가 있다.
+
+## 2026-03-24 - 추천 설문을 8문항으로 확장
+
+- 단계: 6. 설문 기반 추천 엔진
+- 목적: 추천 설문이 6문항만 있을 때는 사용자가 “정보가 너무 적다”는 인상을 받을 수 있었다. 이번 단계에서는 추천 계산 구조는 유지한 채, `정착 성향`과 `이동 생활 방식` 두 질문을 추가해 입력 밀도를 높이고 결과/피드백 구조도 같이 확장한다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/recommendation/domain/RecommendationSurveyAnswers.java`
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationQuestionCatalog.java`
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationSurveyService.java`
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationFeedbackPayloadView.java`
+  - `src/main/java/com/worldmap/recommendation/web/RecommendationSurveyForm.java`
+  - `src/main/java/com/worldmap/recommendation/web/RecommendationFeedbackRequest.java`
+  - `src/main/java/com/worldmap/recommendation/domain/RecommendationFeedback.java`
+  - `src/main/resources/templates/recommendation/survey.html`
+  - `src/main/resources/templates/recommendation/result.html`
+  - `src/test/java/com/worldmap/recommendation/application/RecommendationSurveyServiceTest.java`
+  - `src/test/java/com/worldmap/recommendation/application/RecommendationOfflinePersonaFixtures.java`
+  - `src/test/java/com/worldmap/recommendation/RecommendationPageIntegrationTest.java`
+  - `src/test/java/com/worldmap/recommendation/RecommendationFeedbackIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `docs/recommendation/PERSONA_EVAL_SET.md`
+  - `docs/recommendation/SURVEY_V2_PROPOSAL.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/17-expand-recommendation-survey-question-set.md`
+- 요청 흐름 / 데이터 흐름: 기본 추천 흐름은 그대로 `GET /recommendation/survey -> POST /recommendation/survey -> RecommendationSurveyService.recommend()`이다. 다만 입력이 6개 enum에서 8개 enum으로 늘었다. 결과 페이지는 `RecommendationSurveyResultView` 안에 8개 답변 스냅샷을 담은 `feedbackPayload`를 같이 내려주고, 만족도 제출은 `RecommendationFeedbackRequest -> RecommendationFeedbackSubmission -> RecommendationFeedbackService` 순서로 저장된다.
+- 데이터 / 상태 변화: 추천 결과 top 3 자체는 여전히 저장하지 않는다. 저장되는 것은 `surveyVersion=survey-v2`, `engineVersion=engine-v2`, `satisfactionScore`, 그리고 8개 답변 스냅샷이다. 기존 feedback 요약 쿼리는 버전/점수 집계만 보기 때문에 그대로 유지된다.
+- 핵심 도메인 개념: 문항 수를 늘리는 것은 단순 UI 변경이 아니다. 새 질문이 추천 순위에 영향을 주는 순간, 그 질문은 `RecommendationSurveyAnswers`와 `RecommendationSurveyService`가 책임져야 하는 서버 도메인 규칙이 된다. 이번에는 새 프로필 필드를 대거 추가하지 않고, 기존 국가 프로필 값(도시성, 속도, 안전, 복지, 영어, 다양성)을 조합해 두 질문을 흡수했다.
+- 예외 상황 또는 엣지 케이스: 운영 DB에는 기존 `recommendation_feedback` 데이터가 있을 수 있으므로, 새 피드백 컬럼은 nullable로 두어 기존 데이터를 깨지 않게 했다. 오프라인 페르소나 baseline은 갑자기 흔들지 않도록 새 두 문항을 우선 `BALANCED`로 채워 기존 top 3 기준선을 유지했다.
+- 테스트 내용: `./gradlew test --tests com.worldmap.recommendation.application.RecommendationSurveyServiceTest --tests com.worldmap.recommendation.RecommendationPageIntegrationTest --tests com.worldmap.recommendation.RecommendationFeedbackIntegrationTest --tests com.worldmap.recommendation.application.RecommendationOfflinePersonaCoverageTest --tests com.worldmap.recommendation.application.RecommendationOfflinePersonaSnapshotTest` 통과, `./gradlew test` 전체 통과.
+- 면접에서 30초 안에 설명하는 요약: 추천 설문이 너무 짧다는 피드백을 반영해 기존 6문항에 `정착 성향`, `이동 생활 방식`을 추가해 8문항으로 확장했습니다. 중요한 건 질문 수만 늘린 게 아니라, 새 답변도 `RecommendationSurveyService`에서 기존 국가 프로필 점수와 합산되도록 만들어 서버 중심 deterministic 추천 구조를 유지한 점입니다. 만족도 피드백 스냅샷도 8개 답변 기준으로 같이 확장했습니다.
+- 아직 내가 이해가 부족한 부분: 새 두 질문이 실제로 weak scenario를 얼마나 더 잘 가를 수 있는지는 아직 중립값 baseline만 고정한 상태다. 다음 단계에서는 이 두 질문을 적극적으로 쓰는 새 페르소나를 추가하거나, engine-v2 실험에서 이 신호가 실제로 품질 개선에 얼마나 도움이 되는지 더 봐야 한다.

@@ -409,14 +409,15 @@
 현재까지 완료된 항목:
 
 - `RecommendationSurveyAnswers`로 설문 답변 타입과 enum 선택지 구조 정의
-- `RecommendationQuestionCatalog`로 6개 문항과 SSR 렌더링용 옵션 카탈로그 구성
+- `RecommendationQuestionCatalog`로 8개 문항과 SSR 렌더링용 옵션 카탈로그 구성
 - `RecommendationCountryProfileCatalog`로 추천 계산에 쓰는 국가 프로필 30개 정의
 - `RecommendationSurveyForm`으로 요청 바인딩 및 답변 유효성 검증 추가
 - `RecommendationSurveyService.recommend()`에서 가중치 기반 상위 3개 국가 계산 구현
 - `RecommendationSurveyService` 점수식을 sharper하게 조정해 정확 일치 보너스, 초과 물가 패널티, coherence bonus, 동점 보조 비교 기준을 추가
+- 설문 입력 밀도를 높이기 위해 `정착 성향`, `이동 생활 방식` 질문을 추가하고, 피드백 스냅샷도 8개 답변 기준으로 확장
 - `/recommendation/survey` 설문 페이지와 `/recommendation/survey` POST 결과 페이지 SSR 흐름 추가
 - 결과 페이지에서 설문 입력 요약, top 3 국가, 서버 계산 이유 3개 노출
-- 결과 페이지에서 추천 결과 자체는 저장하지 않고, `1~5점 만족도 + surveyVersion + engineVersion + 선택한 6개 답변`만 익명 피드백으로 수집
+- 결과 페이지에서 추천 결과 자체는 저장하지 않고, `1~5점 만족도 + surveyVersion + engineVersion + 선택한 8개 답변`만 익명 피드백으로 수집
 - `/recommendation/feedback-insights` SSR 페이지와 `/api/recommendation/feedback/summary` API로 버전 조합별 평균 점수, 응답 수, 점수 분포 조회 추가
 - 추천 기능을 홈 화면과 공통 헤더 내비게이션에 연결
 - 공통 CSS에서 버튼, 패널, 입력창, 모달, 테이블 셸, 배지의 모서리를 완전한 사각형으로 통일하고, 스타일 버전 쿼리까지 적용해 실제 반영 경로를 함께 정리
