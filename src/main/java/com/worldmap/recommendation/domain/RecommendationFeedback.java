@@ -39,6 +39,10 @@ public class RecommendationFeedback {
 	private RecommendationSurveyAnswers.ClimatePreference climatePreference;
 
 	@Enumerated(EnumType.STRING)
+	@Column(name = "season_style_preference", length = 30)
+	private RecommendationSurveyAnswers.SeasonStylePreference seasonStylePreference;
+
+	@Enumerated(EnumType.STRING)
 	@Column(name = "season_tolerance", length = 30)
 	private RecommendationSurveyAnswers.SeasonTolerance seasonTolerance;
 
@@ -47,16 +51,32 @@ public class RecommendationFeedback {
 	private RecommendationSurveyAnswers.PacePreference pacePreference;
 
 	@Enumerated(EnumType.STRING)
+	@Column(name = "crowd_preference", length = 30)
+	private RecommendationSurveyAnswers.CrowdPreference crowdPreference;
+
+	@Enumerated(EnumType.STRING)
 	@Column(name = "cost_quality_preference", length = 40)
 	private RecommendationSurveyAnswers.CostQualityPreference costQualityPreference;
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "housing_preference", length = 30)
+	private RecommendationSurveyAnswers.HousingPreference housingPreference;
 
 	@Enumerated(EnumType.STRING)
 	@Column(name = "environment_preference", nullable = false, length = 30)
 	private RecommendationSurveyAnswers.EnvironmentPreference environmentPreference;
 
 	@Enumerated(EnumType.STRING)
+	@Column(name = "mobility_preference", length = 30)
+	private RecommendationSurveyAnswers.MobilityPreference mobilityPreference;
+
+	@Enumerated(EnumType.STRING)
 	@Column(name = "english_support_need", length = 30)
 	private RecommendationSurveyAnswers.EnglishSupportNeed englishSupportNeed;
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "newcomer_support_need", length = 30)
+	private RecommendationSurveyAnswers.NewcomerSupportNeed newcomerSupportNeed;
 
 	@Enumerated(EnumType.STRING)
 	@Column(name = "safety_priority", length = 30)
@@ -67,6 +87,10 @@ public class RecommendationFeedback {
 	private RecommendationSurveyAnswers.ImportanceLevel publicServicePriority;
 
 	@Enumerated(EnumType.STRING)
+	@Column(name = "digital_convenience_priority", length = 30)
+	private RecommendationSurveyAnswers.ImportanceLevel digitalConveniencePriority;
+
+	@Enumerated(EnumType.STRING)
 	@Column(name = "food_importance", length = 30)
 	private RecommendationSurveyAnswers.ImportanceLevel foodImportance;
 
@@ -75,12 +99,20 @@ public class RecommendationFeedback {
 	private RecommendationSurveyAnswers.ImportanceLevel diversityImportance;
 
 	@Enumerated(EnumType.STRING)
+	@Column(name = "culture_leisure_importance", length = 30)
+	private RecommendationSurveyAnswers.ImportanceLevel cultureLeisureImportance;
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "work_life_preference", length = 30)
+	private RecommendationSurveyAnswers.WorkLifePreference workLifePreference;
+
+	@Enumerated(EnumType.STRING)
 	@Column(name = "settlement_preference", length = 30)
 	private RecommendationSurveyAnswers.SettlementPreference settlementPreference;
 
 	@Enumerated(EnumType.STRING)
-	@Column(name = "mobility_preference", length = 30)
-	private RecommendationSurveyAnswers.MobilityPreference mobilityPreference;
+	@Column(name = "future_base_preference", length = 30)
+	private RecommendationSurveyAnswers.FutureBasePreference futureBasePreference;
 
 	@Column(name = "created_at", nullable = false)
 	private LocalDateTime createdAt;
@@ -99,17 +131,25 @@ public class RecommendationFeedback {
 		this.engineVersion = engineVersion;
 		this.satisfactionScore = satisfactionScore;
 		this.climatePreference = answers.climatePreference();
+		this.seasonStylePreference = answers.seasonStylePreference();
 		this.seasonTolerance = answers.seasonTolerance();
 		this.pacePreference = answers.pacePreference();
+		this.crowdPreference = answers.crowdPreference();
 		this.costQualityPreference = answers.costQualityPreference();
+		this.housingPreference = answers.housingPreference();
 		this.environmentPreference = answers.environmentPreference();
+		this.mobilityPreference = answers.mobilityPreference();
 		this.englishSupportNeed = answers.englishSupportNeed();
+		this.newcomerSupportNeed = answers.newcomerSupportNeed();
 		this.safetyPriority = answers.safetyPriority();
 		this.publicServicePriority = answers.publicServicePriority();
+		this.digitalConveniencePriority = answers.digitalConveniencePriority();
 		this.foodImportance = answers.foodImportance();
 		this.diversityImportance = answers.diversityImportance();
+		this.cultureLeisureImportance = answers.cultureLeisureImportance();
+		this.workLifePreference = answers.workLifePreference();
 		this.settlementPreference = answers.settlementPreference();
-		this.mobilityPreference = answers.mobilityPreference();
+		this.futureBasePreference = answers.futureBasePreference();
 		this.createdAt = createdAt;
 	}
 
@@ -148,6 +188,10 @@ public class RecommendationFeedback {
 		return climatePreference;
 	}
 
+	public RecommendationSurveyAnswers.SeasonStylePreference getSeasonStylePreference() {
+		return seasonStylePreference;
+	}
+
 	public RecommendationSurveyAnswers.SeasonTolerance getSeasonTolerance() {
 		return seasonTolerance;
 	}
@@ -156,16 +200,32 @@ public class RecommendationFeedback {
 		return pacePreference;
 	}
 
+	public RecommendationSurveyAnswers.CrowdPreference getCrowdPreference() {
+		return crowdPreference;
+	}
+
 	public RecommendationSurveyAnswers.CostQualityPreference getCostQualityPreference() {
 		return costQualityPreference;
+	}
+
+	public RecommendationSurveyAnswers.HousingPreference getHousingPreference() {
+		return housingPreference;
 	}
 
 	public RecommendationSurveyAnswers.EnvironmentPreference getEnvironmentPreference() {
 		return environmentPreference;
 	}
 
+	public RecommendationSurveyAnswers.MobilityPreference getMobilityPreference() {
+		return mobilityPreference;
+	}
+
 	public RecommendationSurveyAnswers.EnglishSupportNeed getEnglishSupportNeed() {
 		return englishSupportNeed;
+	}
+
+	public RecommendationSurveyAnswers.NewcomerSupportNeed getNewcomerSupportNeed() {
+		return newcomerSupportNeed;
 	}
 
 	public RecommendationSurveyAnswers.ImportanceLevel getSafetyPriority() {
@@ -176,6 +236,10 @@ public class RecommendationFeedback {
 		return publicServicePriority;
 	}
 
+	public RecommendationSurveyAnswers.ImportanceLevel getDigitalConveniencePriority() {
+		return digitalConveniencePriority;
+	}
+
 	public RecommendationSurveyAnswers.ImportanceLevel getFoodImportance() {
 		return foodImportance;
 	}
@@ -184,12 +248,20 @@ public class RecommendationFeedback {
 		return diversityImportance;
 	}
 
+	public RecommendationSurveyAnswers.ImportanceLevel getCultureLeisureImportance() {
+		return cultureLeisureImportance;
+	}
+
+	public RecommendationSurveyAnswers.WorkLifePreference getWorkLifePreference() {
+		return workLifePreference;
+	}
+
 	public RecommendationSurveyAnswers.SettlementPreference getSettlementPreference() {
 		return settlementPreference;
 	}
 
-	public RecommendationSurveyAnswers.MobilityPreference getMobilityPreference() {
-		return mobilityPreference;
+	public RecommendationSurveyAnswers.FutureBasePreference getFutureBasePreference() {
+		return futureBasePreference;
 	}
 
 	public LocalDateTime getCreatedAt() {

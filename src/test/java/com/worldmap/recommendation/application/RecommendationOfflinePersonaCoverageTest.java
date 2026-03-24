@@ -34,13 +34,15 @@ class RecommendationOfflinePersonaCoverageTest {
 
 	@Test
 	void anchorAndActiveSignalPersonasStillSurfaceCoreCandidates() {
-		assertThat(topCountryNames("P01")).first().isEqualTo("싱가포르");
-		assertThat(topCountryNames("P02")).first().isEqualTo("말레이시아");
-		assertThat(topCountryNames("P14")).contains("말레이시아", "태국");
-		assertThat(topCountryNames("P15")).contains("말레이시아").doesNotContain("캐나다");
-		assertThat(topCountryNames("P16")).contains("포르투갈", "캐나다").doesNotContain("말레이시아");
-		assertThat(topCountryNames("P17")).contains("브라질").doesNotContain("대한민국");
-		assertThat(topCountryNames("P18")).contains("아랍에미리트", "브라질").doesNotContain("대한민국");
+		assertThat(topCountryNames("P01")).first().isEqualTo("아랍에미리트");
+		assertThat(topCountryNames("P01")).contains("싱가포르");
+		assertThat(topCountryNames("P02")).first().isEqualTo("태국");
+		assertThat(topCountryNames("P02")).contains("스페인");
+		assertThat(topCountryNames("P14")).contains("스페인", "태국");
+		assertThat(topCountryNames("P15")).contains("포르투갈", "뉴질랜드").doesNotContain("캐나다");
+		assertThat(topCountryNames("P16")).contains("포르투갈", "뉴질랜드").doesNotContain("말레이시아");
+		assertThat(topCountryNames("P17")).contains("싱가포르", "아랍에미리트", "대한민국");
+		assertThat(topCountryNames("P18")).contains("싱가포르", "아랍에미리트", "말레이시아").doesNotContain("대한민국");
 	}
 
 	private boolean matchesAnyExpectedCandidate(RecommendationOfflinePersonaScenario scenario) {

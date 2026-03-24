@@ -35,7 +35,7 @@ public class HomeController {
 			),
 			new ModeCardView(
 				"어울리는 나라 추천",
-				"12 Questions",
+				"20 Questions",
 				"생활 조건 사이의 우선순위를 고르면 지금 나와 잘 맞는 나라 3곳을 골라 보여줍니다.",
 				"Discover",
 				"/recommendation/survey"
@@ -54,7 +54,7 @@ public class HomeController {
 		return List.of(
 			"위치 미션은 지구본에서 나라를 고르고, 제출 순간에만 정답이 공개됩니다.",
 			"인구 퀴즈는 하트가 남아 있는 동안 계속 이어지는 아케이드 방식으로 진행됩니다.",
-			"나라 추천은 생활 조건과 우선순위를 묻는 12문항에 답하면 바로 top 3 결과를 확인할 수 있습니다.",
+			"나라 추천은 생활 조건과 우선순위를 묻는 20문항에 답하면 바로 top 3 결과를 확인할 수 있습니다.",
 			"랭킹은 전체 기록과 오늘의 기록을 나눠서 볼 수 있습니다."
 		);
 	}

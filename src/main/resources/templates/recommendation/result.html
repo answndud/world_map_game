@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>어울리는 나라 추천 결과</title>
-    <link rel="stylesheet" th:href="@{/css/site.css(v='20260324-square-ui-3')}">
+    <link rel="stylesheet" th:href="@{/css/site.css(v='20260324-light-contrast-1')}">
     <script th:src="@{/js/recommendation-feedback.js(v='20260324-feedback-1')}" defer></script>
 </head>
 <body>
@@ -14,7 +14,7 @@
         <p class="eyebrow">Your Match</p>
         <h1>추천 결과</h1>
         <p class="hero-copy">
-            <span th:text="${result.submittedPreferences.size()} + '개 답변을 바탕으로'">12개 답변을 바탕으로</span>
+            <span th:text="${result.submittedPreferences.size()} + '개 답변을 바탕으로'">20개 답변을 바탕으로</span>
             지금 생활 취향과 잘 맞는 나라 3곳을 골랐습니다.
         </p>
     </header>
@@ -81,17 +81,25 @@
                 <input type="hidden" name="engineVersion" th:value="${result.feedbackPayload.engineVersion}">
                 <input id="recommendation-satisfaction-score" type="hidden" name="satisfactionScore" value="">
                 <input type="hidden" name="climatePreference" th:value="${result.feedbackPayload.climatePreference}">
+                <input type="hidden" name="seasonStylePreference" th:value="${result.feedbackPayload.seasonStylePreference}">
                 <input type="hidden" name="seasonTolerance" th:value="${result.feedbackPayload.seasonTolerance}">
                 <input type="hidden" name="pacePreference" th:value="${result.feedbackPayload.pacePreference}">
+                <input type="hidden" name="crowdPreference" th:value="${result.feedbackPayload.crowdPreference}">
                 <input type="hidden" name="costQualityPreference" th:value="${result.feedbackPayload.costQualityPreference}">
+                <input type="hidden" name="housingPreference" th:value="${result.feedbackPayload.housingPreference}">
                 <input type="hidden" name="environmentPreference" th:value="${result.feedbackPayload.environmentPreference}">
+                <input type="hidden" name="mobilityPreference" th:value="${result.feedbackPayload.mobilityPreference}">
                 <input type="hidden" name="englishSupportNeed" th:value="${result.feedbackPayload.englishSupportNeed}">
+                <input type="hidden" name="newcomerSupportNeed" th:value="${result.feedbackPayload.newcomerSupportNeed}">
                 <input type="hidden" name="safetyPriority" th:value="${result.feedbackPayload.safetyPriority}">
                 <input type="hidden" name="publicServicePriority" th:value="${result.feedbackPayload.publicServicePriority}">
+                <input type="hidden" name="digitalConveniencePriority" th:value="${result.feedbackPayload.digitalConveniencePriority}">
                 <input type="hidden" name="foodImportance" th:value="${result.feedbackPayload.foodImportance}">
                 <input type="hidden" name="diversityImportance" th:value="${result.feedbackPayload.diversityImportance}">
+                <input type="hidden" name="cultureLeisureImportance" th:value="${result.feedbackPayload.cultureLeisureImportance}">
+                <input type="hidden" name="workLifePreference" th:value="${result.feedbackPayload.workLifePreference}">
                 <input type="hidden" name="settlementPreference" th:value="${result.feedbackPayload.settlementPreference}">
-                <input type="hidden" name="mobilityPreference" th:value="${result.feedbackPayload.mobilityPreference}">
+                <input type="hidden" name="futureBasePreference" th:value="${result.feedbackPayload.futureBasePreference}">
 
                 <div class="rating-button-row" role="radiogroup" aria-label="추천 만족도 선택">
                     <button class="secondary-button rating-score-button" type="button" data-score="1">1점</button>

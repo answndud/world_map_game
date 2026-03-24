@@ -34,6 +34,43 @@
 - 면접용 30초 요약:
 ```
 
+## 2026-03-24 - 라이트 모드 버튼 대비 보정
+
+- 단계: 6. 설문 기반 추천 엔진 보조 UI 조각
+- 목적: 라이트 모드로 전환해도 primary 버튼 텍스트와 secondary 버튼/필터/선택 카드 배경이 다크 값에 머물러 가시성이 떨어졌다. 이번 조각은 서버 로직을 건드리지 않고, 공통 shell의 interactive color token만 정리해서 버튼 대비를 정상화하는 데 집중한다.
+- 변경 파일:
+  - `src/main/resources/static/css/site.css`
+  - `src/main/resources/templates/home.html`
+  - `src/main/resources/templates/recommendation/survey.html`
+  - `src/main/resources/templates/recommendation/result.html`
+  - `src/main/resources/templates/ranking/index.html`
+  - `src/main/resources/templates/location-game/start.html`
+  - `src/main/resources/templates/location-game/play.html`
+  - `src/main/resources/templates/location-game/result.html`
+  - `src/main/resources/templates/population-game/start.html`
+  - `src/main/resources/templates/population-game/play.html`
+  - `src/main/resources/templates/population-game/result.html`
+  - `src/main/resources/templates/stats/index.html`
+  - `src/main/resources/templates/mypage.html`
+  - `src/main/resources/templates/auth/login.html`
+  - `src/main/resources/templates/auth/signup.html`
+  - `src/main/resources/templates/admin/index.html`
+  - `src/main/resources/templates/admin/recommendation-feedback.html`
+  - `src/main/resources/templates/admin/recommendation-persona-baseline.html`
+  - `src/main/resources/templates/error/403.html`
+  - `src/main/resources/templates/error/404.html`
+  - `src/main/resources/templates/error/500.html`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 서버 요청 흐름은 바뀌지 않았다. header fragment가 기존처럼 `localStorage.worldmap-theme`를 읽어 `html[data-theme]`를 맞추면, 이제 `site.css`의 semantic token이 primary/secondary 버튼, 내비게이션, 랭킹 필터, 추천 선택 카드, 만족도 버튼의 실제 배경과 텍스트 색을 결정한다. 즉 상태 변화는 여전히 브라우저 로컬에 있고, 이번 수정은 `theme value -> CSS token -> control surface` 매핑만 보정한 것이다.
+- 데이터 / 상태 변화: DB, 세션, API payload는 전혀 바뀌지 않는다. 바뀐 것은 light theme에서 사용하는 `--primary-action-ink`, `--interactive-surface`, `--interactive-surface-selected` 같은 공통 표현 토큰과, 모든 SSR 페이지가 새 CSS 버전 쿼리를 읽도록 캐시 경로를 올린 점이다.
+- 핵심 도메인 개념: 이 로직은 컨트롤러나 서비스에 있을 이유가 없다. 버튼 대비는 게임 상태나 추천 계산이 아니라 표현 계층의 책임이므로, 공통 CSS 변수 레이어가 source of truth가 되는 편이 더 설명 가능하다. 특히 이번 문제는 라이트 모드인데 일부 버튼이 다크 RGBA와 검은 계열 텍스트를 그대로 쓰고 있었기 때문에, 개별 페이지를 고치는 대신 theme token을 정리해 공통 해결하는 쪽이 맞았다.
+- 예외 상황 또는 엣지 케이스: 추천 설문 옵션 카드와 랭킹 필터처럼 “버튼처럼 보이지만 클래스가 다른” 요소도 같이 보정했다. 기존 CSS에는 `--text-muted`, `--text-strong`처럼 정의되지 않은 변수를 참조하는 구간이 있었는데, light theme에서 active 상태 색이 의도와 다르게 내려갈 여지가 있어 이번에 함께 명시했다. 브라우저 캐시가 오래 남아 있으면 이전 CSS가 보일 수 있어, 모든 SSR 페이지의 `site.css` 버전 쿼리도 같이 올렸다.
+- 테스트 내용: `git diff --check -- src/main/resources/static/css/site.css src/main/resources/templates docs/PORTFOLIO_PLAYBOOK.md docs/WORKLOG.md` 통과. `./gradlew test`는 현재 머신에 Java 21 toolchain이 없어 시작 단계에서 실패했다. 오류는 `Cannot find a Java installation ... matching: {languageVersion=21}`였다.
+- 배운 점: theme toggle을 붙였다고 light theme가 완성되는 것은 아니다. 실제로는 “배경만 밝아지고 버튼은 다크 값이 남는” 혼합 상태가 더 거슬릴 수 있어서, 공통 인터랙션 토큰을 먼저 도입해 surface와 text를 함께 바꾸는 구조가 필요했다.
+- 아직 약한 부분: 이번 수정은 공통 버튼/선택 컨트롤 대비에 집중했다. 지구본 플레이 화면의 배경 톤, 게임오버 모달, 강한 경고 상태 색이 라이트 모드에서도 충분히 자연스러운지는 브라우저 실화면으로 한 번 더 봐야 한다.
+- 면접용 30초 요약: 라이트 모드에서 가시성이 나빴던 이유는 버튼이 여전히 다크 배경과 검은 계열 텍스트를 일부 공유했기 때문입니다. 그래서 각 화면을 따로 고치지 않고 `html[data-theme]` 아래 공통 interactive color token을 정의해 버튼, 필터, 선택 카드가 같은 기준으로 밝은 표면과 맞는 텍스트 색을 쓰게 바꿨습니다. 서버 상태는 건드리지 않았고, 캐시 때문에 예전 CSS가 남지 않도록 SSR 페이지의 asset 버전도 같이 올렸습니다.
+
 ## 2026-03-22 - 문서 운영 구조 생성
 
 - 단계: 0. 문서와 규칙 정리
@@ -2003,3 +2040,43 @@
 - 테스트 내용: `node --check src/main/resources/static/js/theme-toggle.js`, `node --check src/main/resources/static/js/recommendation-feedback.js`, `./gradlew test` 전체 통과.
 - 면접에서 30초 안에 설명하는 요약: 라이트모드는 비즈니스 상태가 아니라 UI 상태라서 서버가 가질 이유가 없었습니다. 그래서 공통 header fragment가 localStorage 값을 읽어 `html[data-theme]`를 먼저 맞추고, CSS 변수 레이어가 실제 색을 바꾸게 했습니다. 덕분에 public 화면과 dashboard가 같은 토글 구조를 공유하면서도 서버 로직은 건드리지 않았습니다.
 - 아직 내가 이해가 부족한 부분: 현재 라이트모드는 공통 panel과 shell 위주로만 점검했다. 실제 지구본/지도 렌더링 화면에서 light background가 어느 정도까지 잘 어울리는지는 다음 시각 polish에서 조금 더 봐야 한다.
+
+## 2026-03-24 - 추천 설문을 20문항 trade-off 구조로 다시 확장
+
+- 단계: 6. 설문 기반 추천 엔진
+- 목적: 12문항 구조는 이전보다 훨씬 나아졌지만, 여전히 질문 축이 부족했다. 특히 기후 질문은 `따뜻함 / 온화함 / 시원함`처럼 몸이 편한 방향을 더 자연스럽게 물어야 하고, 집 크기, 초기 적응 친화도, 디지털 생활 편의, 문화·여가, 장기 기반 같은 실제 생활 축도 더 분리해서 봐야 했다. 이번 조각은 추천 설문을 20문항으로 늘리되, 문항 수만 늘리는 게 아니라 나라 프로필 축과 점수식까지 같이 세분화하는 데 집중한다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/recommendation/domain/RecommendationSurveyAnswers.java`
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationCountryProfile.java`
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationCountryProfileCatalog.java`
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationQuestionCatalog.java`
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationSurveyService.java`
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationFeedbackPayloadView.java`
+  - `src/main/java/com/worldmap/recommendation/web/RecommendationSurveyForm.java`
+  - `src/main/java/com/worldmap/recommendation/web/RecommendationFeedbackRequest.java`
+  - `src/main/java/com/worldmap/recommendation/domain/RecommendationFeedback.java`
+  - `src/main/resources/templates/recommendation/survey.html`
+  - `src/main/resources/templates/recommendation/result.html`
+  - `src/main/resources/templates/admin/index.html`
+  - `src/main/resources/templates/admin/recommendation-feedback.html`
+  - `src/main/java/com/worldmap/web/HomeController.java`
+  - `src/test/java/com/worldmap/recommendation/application/RecommendationSurveyServiceTest.java`
+  - `src/test/java/com/worldmap/recommendation/application/RecommendationOfflinePersonaFixtures.java`
+  - `src/test/java/com/worldmap/recommendation/application/RecommendationOfflinePersonaCoverageTest.java`
+  - `src/test/java/com/worldmap/recommendation/application/RecommendationOfflinePersonaSnapshotTest.java`
+  - `src/test/java/com/worldmap/recommendation/RecommendationPageIntegrationTest.java`
+  - `src/test/java/com/worldmap/recommendation/RecommendationFeedbackIntegrationTest.java`
+  - `src/test/java/com/worldmap/admin/AdminPageIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/37-expand-recommendation-survey-to-twenty-questions.md`
+- 요청 흐름 / 데이터 흐름: 추천 흐름 자체는 그대로 `GET /recommendation/survey -> POST /recommendation/survey -> RecommendationSurveyService.recommend() -> recommendation/result -> POST /api/recommendation/feedback`이다. 바뀐 것은 입력 모델과 점수 계산의 세밀함이다. `RecommendationSurveyForm`이 20개 질문을 `RecommendationSurveyAnswers`로 정규화하고, `RecommendationSurveyService`는 확장된 나라 프로필 카탈로그를 기준으로 climate / seasonality / housing / newcomer support / digital / culture / future base까지 점수화한다. 결과 페이지는 20개 답변 스냅샷을 hidden payload로 내려 보내고, 만족도 제출은 `RecommendationFeedbackRequest -> RecommendationFeedbackSubmission -> RecommendationFeedbackService`로 저장된다.
+- 데이터 / 상태 변화: 추천 결과 top 3는 여전히 저장하지 않는다. 저장되는 것은 `surveyVersion=survey-v4`, `engineVersion=engine-v4`, `satisfactionScore`, 그리고 사용자가 선택한 20개 답변 스냅샷이다. 이전 피드백 row와 충돌하지 않게 새 컬럼은 nullable로 추가했고, 신규 요청 유효성은 form / request validation으로 강제한다.
+- 핵심 도메인 개념: 이번 단계의 핵심은 질문 수가 아니라 `설문 축의 해상도`다. 그래서 기존 12문항 위에 질문만 덧붙이지 않고, `SeasonStylePreference`, `CrowdPreference`, `HousingPreference`, `NewcomerSupportNeed`, `WorkLifePreference`, `FutureBasePreference` 같은 별도 enum 축을 추가했다. 그리고 나라 프로필에도 `seasonality`, `housingSpace`, `digitalConvenience`, `cultureScene`, `newcomerFriendliness`를 새로 넣었다. 이 계산은 컨트롤러가 아니라 `RecommendationSurveyService`가 맡아야 한다. 어떤 답변이 어떤 나라 속성과 얼마나 가깝고, cost overshoot나 climate mismatch를 어떻게 penalty로 줄지, newcomer support와 future base를 어떻게 read model로 묶을지는 추천 도메인 규칙이기 때문이다.
+- 예외 상황 또는 엣지 케이스: 기존 local DB에 예전 피드백 row가 있을 수 있기 때문에 새 피드백 컬럼은 nullable로 추가했다. `ClimatePreference.COLD` enum name은 그대로 두고 label만 `시원하고 선선한 쪽`으로 바꿔, 기존 enum row를 깨지 않고 사용자-facing 문구만 개선했다. snapshot은 20문항 구조에서 실제 결과가 달라졌기 때문에 `survey-v4 / engine-v4` 기준으로 다시 고정했다.
+- 테스트 내용: `./gradlew test --tests com.worldmap.recommendation.RecommendationPageIntegrationTest --tests com.worldmap.recommendation.RecommendationFeedbackIntegrationTest --tests com.worldmap.recommendation.application.RecommendationSurveyServiceTest --tests com.worldmap.recommendation.application.RecommendationOfflinePersonaCoverageTest --tests com.worldmap.recommendation.application.RecommendationOfflinePersonaSnapshotTest --tests com.worldmap.admin.AdminPageIntegrationTest` 통과 후 `./gradlew test` 전체 통과.
+- 면접에서 30초 안에 설명하는 요약: 12문항 설문은 시작점으로는 괜찮았지만, 실제 생활 선택에서는 집 크기, 초기 적응 친화도, 디지털 인프라, 문화·여가, 장기 기반 같은 축이 더 필요했습니다. 그래서 설문만 20개로 늘린 게 아니라 `RecommendationSurveyAnswers`, 나라 프로필, 점수식, 익명 feedback snapshot, offline persona baseline을 전부 같이 확장했습니다. 요청은 여전히 `survey -> service -> result -> feedback` 흐름으로 가고, 추천 계산은 서버가 deterministic하게 유지합니다.
+- 아직 내가 이해가 부족한 부분: 현재 `survey-v4 / engine-v4` baseline은 다시 고정했지만, `P04`, `P06`, `P14`처럼 남유럽 / 저예산 균형 시나리오가 과하게 스페인·이탈리아 쪽으로 끌리는지, newcomer support와 future base 가중치가 충분히 분리됐는지는 다음 tuning에서 더 봐야 한다.

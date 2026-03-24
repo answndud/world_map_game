@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>운영 Dashboard</title>
-    <link rel="stylesheet" th:href="@{/css/site.css(v='20260324-square-ui-1')}">
+    <link rel="stylesheet" th:href="@{/css/site.css(v='20260324-light-contrast-1')}">
 </head>
 <body>
 <div class="page-shell">
@@ -61,11 +61,11 @@
             <div class="stats-grid">
                 <article class="stat-card">
                     <span class="subtitle">CURRENT SURVEY</span>
-                    <strong th:text="${dashboard.currentSurveyVersion}">survey-v3</strong>
+                    <strong th:text="${dashboard.currentSurveyVersion}">survey-v4</strong>
                 </article>
                 <article class="stat-card">
                     <span class="subtitle">CURRENT ENGINE</span>
-                    <strong th:text="${dashboard.currentEngineVersion}">engine-v3</strong>
+                    <strong th:text="${dashboard.currentEngineVersion}">engine-v4</strong>
                 </article>
                 <article class="stat-card">
                     <span class="subtitle">QUESTION COUNT</span>

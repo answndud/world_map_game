@@ -231,21 +231,85 @@ final class RecommendationOfflinePersonaFixtures {
 			description,
 			new RecommendationSurveyAnswers(
 				climatePreference,
+				seasonStylePreference(climatePreference, environmentPreference),
 				seasonTolerance,
 				pacePreference,
+				crowdPreference(pacePreference, environmentPreference),
 				costQualityPreference,
+				housingPreference(environmentPreference, mobilityPreference),
 				environmentPreference,
+				mobilityPreference,
 				englishSupportNeed,
+				newcomerSupportNeed(englishSupportNeed, primaryFocus),
 				safetyImportance(primaryFocus),
 				publicServiceImportance(primaryFocus),
+				digitalImportance(pacePreference),
 				foodImportance(primaryFocus),
 				diversityImportance(primaryFocus),
+				cultureImportance(primaryFocus, pacePreference),
+				workLifePreference(pacePreference),
 				settlementPreference,
-				mobilityPreference
+				futureBasePreference(settlementPreference)
 			),
 			expectedCandidates,
 			expectedSatisfactionRange
 		);
+	}
+
+	private static RecommendationSurveyAnswers.SeasonStylePreference seasonStylePreference(
+		RecommendationSurveyAnswers.ClimatePreference climatePreference,
+		RecommendationSurveyAnswers.EnvironmentPreference environmentPreference
+	) {
+		if (climatePreference == RecommendationSurveyAnswers.ClimatePreference.COLD) {
+			return RecommendationSurveyAnswers.SeasonStylePreference.DISTINCT;
+		}
+		if (environmentPreference == RecommendationSurveyAnswers.EnvironmentPreference.CITY) {
+			return RecommendationSurveyAnswers.SeasonStylePreference.STABLE;
+		}
+		return RecommendationSurveyAnswers.SeasonStylePreference.BALANCED;
+	}
+
+	private static RecommendationSurveyAnswers.CrowdPreference crowdPreference(
+		RecommendationSurveyAnswers.PacePreference pacePreference,
+		RecommendationSurveyAnswers.EnvironmentPreference environmentPreference
+	) {
+		if (pacePreference == RecommendationSurveyAnswers.PacePreference.FAST
+			&& environmentPreference == RecommendationSurveyAnswers.EnvironmentPreference.CITY) {
+			return RecommendationSurveyAnswers.CrowdPreference.LIVELY;
+		}
+		if (pacePreference == RecommendationSurveyAnswers.PacePreference.RELAXED
+			|| environmentPreference == RecommendationSurveyAnswers.EnvironmentPreference.NATURE) {
+			return RecommendationSurveyAnswers.CrowdPreference.CALM;
+		}
+		return RecommendationSurveyAnswers.CrowdPreference.BALANCED;
+	}
+
+	private static RecommendationSurveyAnswers.HousingPreference housingPreference(
+		RecommendationSurveyAnswers.EnvironmentPreference environmentPreference,
+		RecommendationSurveyAnswers.MobilityPreference mobilityPreference
+	) {
+		if (environmentPreference == RecommendationSurveyAnswers.EnvironmentPreference.CITY
+			&& mobilityPreference == RecommendationSurveyAnswers.MobilityPreference.TRANSIT_FIRST) {
+			return RecommendationSurveyAnswers.HousingPreference.CENTER_FIRST;
+		}
+		if (environmentPreference == RecommendationSurveyAnswers.EnvironmentPreference.NATURE
+			|| mobilityPreference == RecommendationSurveyAnswers.MobilityPreference.SPACE_FIRST) {
+			return RecommendationSurveyAnswers.HousingPreference.SPACE_FIRST;
+		}
+		return RecommendationSurveyAnswers.HousingPreference.BALANCED;
+	}
+
+	private static RecommendationSurveyAnswers.NewcomerSupportNeed newcomerSupportNeed(
+		RecommendationSurveyAnswers.EnglishSupportNeed englishSupportNeed,
+		PrimaryFocus primaryFocus
+	) {
+		if (englishSupportNeed == RecommendationSurveyAnswers.EnglishSupportNeed.HIGH) {
+			return RecommendationSurveyAnswers.NewcomerSupportNeed.HIGH;
+		}
+		if (primaryFocus == PrimaryFocus.DIVERSITY || primaryFocus == PrimaryFocus.PUBLIC_SERVICE) {
+			return RecommendationSurveyAnswers.NewcomerSupportNeed.MEDIUM;
+		}
+		return RecommendationSurveyAnswers.NewcomerSupportNeed.LOW;
 	}
 
 	private static RecommendationSurveyAnswers.ImportanceLevel safetyImportance(PrimaryFocus primaryFocus) {
@@ -276,6 +340,49 @@ final class RecommendationOfflinePersonaFixtures {
 			case DIVERSITY -> RecommendationSurveyAnswers.ImportanceLevel.HIGH;
 			case FOOD -> RecommendationSurveyAnswers.ImportanceLevel.MEDIUM;
 			case SAFETY, PUBLIC_SERVICE -> RecommendationSurveyAnswers.ImportanceLevel.LOW;
+		};
+	}
+
+	private static RecommendationSurveyAnswers.ImportanceLevel digitalImportance(
+		RecommendationSurveyAnswers.PacePreference pacePreference
+	) {
+		return switch (pacePreference) {
+			case FAST -> RecommendationSurveyAnswers.ImportanceLevel.HIGH;
+			case BALANCED -> RecommendationSurveyAnswers.ImportanceLevel.MEDIUM;
+			case RELAXED -> RecommendationSurveyAnswers.ImportanceLevel.LOW;
+		};
+	}
+
+	private static RecommendationSurveyAnswers.ImportanceLevel cultureImportance(
+		PrimaryFocus primaryFocus,
+		RecommendationSurveyAnswers.PacePreference pacePreference
+	) {
+		if (primaryFocus == PrimaryFocus.DIVERSITY || primaryFocus == PrimaryFocus.FOOD) {
+			return RecommendationSurveyAnswers.ImportanceLevel.HIGH;
+		}
+		if (pacePreference == RecommendationSurveyAnswers.PacePreference.RELAXED) {
+			return RecommendationSurveyAnswers.ImportanceLevel.LOW;
+		}
+		return RecommendationSurveyAnswers.ImportanceLevel.MEDIUM;
+	}
+
+	private static RecommendationSurveyAnswers.WorkLifePreference workLifePreference(
+		RecommendationSurveyAnswers.PacePreference pacePreference
+	) {
+		return switch (pacePreference) {
+			case FAST -> RecommendationSurveyAnswers.WorkLifePreference.DRIVE_FIRST;
+			case BALANCED -> RecommendationSurveyAnswers.WorkLifePreference.BALANCED;
+			case RELAXED -> RecommendationSurveyAnswers.WorkLifePreference.LIFE_FIRST;
+		};
+	}
+
+	private static RecommendationSurveyAnswers.FutureBasePreference futureBasePreference(
+		RecommendationSurveyAnswers.SettlementPreference settlementPreference
+	) {
+		return switch (settlementPreference) {
+			case EXPERIENCE -> RecommendationSurveyAnswers.FutureBasePreference.LIGHT_START;
+			case BALANCED -> RecommendationSurveyAnswers.FutureBasePreference.BALANCED;
+			case STABILITY -> RecommendationSurveyAnswers.FutureBasePreference.STABLE_BASE;
 		};
 	}
 

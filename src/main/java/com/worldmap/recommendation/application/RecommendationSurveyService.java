@@ -16,25 +16,33 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class RecommendationSurveyService {
 
-	public static final String SURVEY_VERSION = "survey-v3";
-	public static final String ENGINE_VERSION = "engine-v3";
-	private static final int CLIMATE_WEIGHT = 5;
-	private static final int SEASON_TOLERANCE_WEIGHT = 4;
+	public static final String SURVEY_VERSION = "survey-v4";
+	public static final String ENGINE_VERSION = "engine-v4";
+	private static final int CLIMATE_WEIGHT = 4;
+	private static final int SEASON_STYLE_WEIGHT = 3;
+	private static final int WEATHER_ADAPTATION_WEIGHT = 4;
 	private static final int PACE_WEIGHT = 4;
+	private static final int CROWD_WEIGHT = 3;
 	private static final int COST_QUALITY_WEIGHT = 5;
+	private static final int HOUSING_WEIGHT = 4;
 	private static final int ENVIRONMENT_WEIGHT = 4;
+	private static final int MOBILITY_WEIGHT = 4;
 	private static final int ENGLISH_SUPPORT_WEIGHT = 4;
+	private static final int NEWCOMER_SUPPORT_WEIGHT = 4;
 	private static final int SAFETY_WEIGHT = 5;
-	private static final int PUBLIC_SERVICE_WEIGHT = 6;
+	private static final int PUBLIC_SERVICE_WEIGHT = 5;
+	private static final int DIGITAL_WEIGHT = 4;
 	private static final int FOOD_WEIGHT = 4;
 	private static final int DIVERSITY_WEIGHT = 4;
-	private static final int SETTLEMENT_WEIGHT = 2;
-	private static final int MOBILITY_WEIGHT = 2;
-	private static final int EXACT_MATCH_BONUS = 3;
-	private static final int COHERENCE_BONUS = 6;
-	private static final int COST_OVERSHOOT_PENALTY = 6;
+	private static final int CULTURE_WEIGHT = 4;
+	private static final int WORK_LIFE_WEIGHT = 3;
+	private static final int SETTLEMENT_WEIGHT = 3;
+	private static final int FUTURE_BASE_WEIGHT = 4;
+	private static final int EXACT_MATCH_BONUS = 2;
+	private static final int COHERENCE_BONUS = 8;
+	private static final int COST_OVERSHOOT_PENALTY = 7;
 	private static final int CLIMATE_MISMATCH_PENALTY = 3;
-	private static final int SEASON_MISMATCH_PENALTY = 3;
+	private static final int SEASON_STYLE_MISMATCH_PENALTY = 2;
 	private static final NumberFormat NUMBER_FORMAT = NumberFormat.getInstance(Locale.KOREA);
 
 	private final RecommendationCountryProfileCatalog profileCatalog;
@@ -91,17 +99,25 @@ public class RecommendationSurveyService {
 				SURVEY_VERSION,
 				ENGINE_VERSION,
 				answers.climatePreference().name(),
+				answers.seasonStylePreference().name(),
 				answers.seasonTolerance().name(),
 				answers.pacePreference().name(),
+				answers.crowdPreference().name(),
 				answers.costQualityPreference().name(),
+				answers.housingPreference().name(),
 				answers.environmentPreference().name(),
+				answers.mobilityPreference().name(),
 				answers.englishSupportNeed().name(),
+				answers.newcomerSupportNeed().name(),
 				answers.safetyPriority().name(),
 				answers.publicServicePriority().name(),
+				answers.digitalConveniencePriority().name(),
 				answers.foodImportance().name(),
 				answers.diversityImportance().name(),
+				answers.cultureLeisureImportance().name(),
+				answers.workLifePreference().name(),
 				answers.settlementPreference().name(),
-				answers.mobilityPreference().name()
+				answers.futureBasePreference().name()
 			),
 			questionCatalog.summariesOf(answers),
 			List.copyOf(rankedCandidates)
@@ -118,76 +134,153 @@ public class RecommendationSurveyService {
 		}
 
 		List<MatchSignal> signals = new ArrayList<>();
-		int climateDistance = distance(
-			answers.climatePreference().targetValue(),
-			profile.climateValue()
-		);
-		int climatePoints = closenessScore(climateDistance, CLIMATE_WEIGHT) + exactMatchBonus(climateDistance);
-		signals.add(new MatchSignal(climatePoints + mismatchPenalty(climateDistance, CLIMATE_MISMATCH_PENALTY), answers.climatePreference().label() + " 기후 방향과 잘 맞습니다."));
 
-		int seasonToleranceDistance = distance(
-			answers.seasonTolerance().toleranceValue(),
-			climateExtremity(profile.climateValue())
-		);
-		int seasonTolerancePoints = closenessScore(seasonToleranceDistance, SEASON_TOLERANCE_WEIGHT);
-		signals.add(new MatchSignal(seasonTolerancePoints + mismatchPenalty(seasonToleranceDistance, SEASON_MISMATCH_PENALTY), "기후 적응 난도와 감수 의향이 크게 어긋나지 않습니다."));
+		int climateDistance = distance(answers.climatePreference().targetValue(), profile.climateValue());
+		signals.add(new MatchSignal(
+			closenessScore(climateDistance, CLIMATE_WEIGHT) + exactMatchBonus(climateDistance)
+				+ mismatchPenalty(climateDistance, CLIMATE_MISMATCH_PENALTY),
+			answers.climatePreference().label() + " 날씨 감각과 비교적 잘 맞습니다."
+		));
 
-		int paceDistance = distance(
-			answers.pacePreference().targetValue(),
-			profile.paceValue()
-		);
-		int pacePoints = closenessScore(paceDistance, PACE_WEIGHT) + exactMatchBonus(paceDistance);
-		signals.add(new MatchSignal(pacePoints, answers.pacePreference().label() + " 생활 리듬과 잘 맞습니다."));
+		int seasonStyleDistance = distance(answers.seasonStylePreference().targetValue(), profile.seasonality());
+		signals.add(new MatchSignal(
+			closenessScore(seasonStyleDistance, SEASON_STYLE_WEIGHT) + exactMatchBonus(seasonStyleDistance)
+				+ mismatchPenalty(seasonStyleDistance, SEASON_STYLE_MISMATCH_PENALTY),
+			"계절 변화에 대한 기대와 실제 계절감이 크게 어긋나지 않습니다."
+		));
+
+		int weatherAdaptationDistance = distance(answers.seasonTolerance().toleranceValue(), weatherDemand(profile));
+		signals.add(new MatchSignal(
+			closenessScore(weatherAdaptationDistance, WEATHER_ADAPTATION_WEIGHT),
+			"기후 적응 난도와 감수 의향이 비교적 잘 맞습니다."
+		));
+
+		int paceDistance = distance(answers.pacePreference().targetValue(), profile.paceValue());
+		signals.add(new MatchSignal(
+			closenessScore(paceDistance, PACE_WEIGHT) + exactMatchBonus(paceDistance),
+			answers.pacePreference().label() + " 생활 리듬과 잘 맞습니다."
+		));
+
+		int crowdDistance = distance(answers.crowdPreference().targetValue(), crowdEnergy(profile));
+		signals.add(new MatchSignal(
+			closenessScore(crowdDistance, CROWD_WEIGHT) + exactMatchBonus(crowdDistance),
+			"동네의 밀도와 자극 수준이 원하는 방향과 가깝습니다."
+		));
 
 		int costQualityDistance = distance(
 			answers.costQualityPreference().targetPriceLevel(),
 			profile.priceLevel()
 		);
-		int costQualityPoints = costQualityPoints(
-			answers.costQualityPreference().targetPriceLevel(),
-			profile.priceLevel(),
-			costQualityDistance
+		signals.add(new MatchSignal(
+			costQualityPoints(
+				answers.costQualityPreference().targetPriceLevel(),
+				profile.priceLevel(),
+				costQualityDistance
+			),
+			"생활비 부담과 생활 품질에 대한 기대 수준이 크게 엇나가지 않습니다."
+		));
+
+		int housingDistance = distance(answers.housingPreference().targetSpaceValue(), profile.housingSpace());
+		signals.add(new MatchSignal(
+			closenessScore(housingDistance, HOUSING_WEIGHT) + exactMatchBonus(housingDistance),
+			"주거 공간과 중심 접근성 기준이 원하는 방향과 비슷합니다."
+		));
+
+		int environmentDistance = distance(answers.environmentPreference().targetUrbanity(), profile.urbanityValue());
+		signals.add(new MatchSignal(
+			closenessScore(environmentDistance, ENVIRONMENT_WEIGHT) + exactMatchBonus(environmentDistance),
+			"도시 편의와 자연 접근성의 비중이 원하는 쪽과 가깝습니다."
+		));
+
+		int mobilityDistance = distance(answers.mobilityPreference().targetTransitValue(), transitSupport(profile));
+		signals.add(new MatchSignal(
+			closenessScore(mobilityDistance, MOBILITY_WEIGHT) + exactMatchBonus(mobilityDistance),
+			"이동 방식과 생활 동선이 원하는 방향과 잘 맞습니다."
+		));
+
+		signals.add(new MatchSignal(
+			supportPoints(profile.englishSupport(), answers.englishSupportNeed(), ENGLISH_SUPPORT_WEIGHT),
+			"초기 적응에서 필요한 영어 지원 수준을 비교적 잘 충족합니다."
+		));
+
+		signals.add(new MatchSignal(
+			supportPoints(newcomerSupport(profile), answers.newcomerSupportNeed(), NEWCOMER_SUPPORT_WEIGHT),
+			"처음 정착할 때 필요한 안내와 친절한 분위기 기대와 잘 맞습니다."
+		));
+
+		signals.add(new MatchSignal(
+			priorityPoints(profile.safety(), answers.safetyPriority(), SAFETY_WEIGHT),
+			"치안과 생활 안전 기준에서 안정적인 편입니다."
+		));
+
+		signals.add(new MatchSignal(
+			priorityPoints(profile.welfare(), answers.publicServicePriority(), PUBLIC_SERVICE_WEIGHT),
+			"의료·행정·복지 같은 공공 서비스 기대치와 잘 맞습니다."
+		));
+
+		signals.add(new MatchSignal(
+			priorityPoints(profile.digitalConvenience(), answers.digitalConveniencePriority(), DIGITAL_WEIGHT),
+			"디지털 행정, 결제, 생활 인프라의 매끄러움에서 강점을 보입니다."
+		));
+
+		signals.add(new MatchSignal(
+			priorityPoints(profile.food(), answers.foodImportance(), FOOD_WEIGHT),
+			"음식 만족도와 외식 선택지 측면에서 장점을 보입니다."
+		));
+
+		signals.add(new MatchSignal(
+			priorityPoints(profile.diversity(), answers.diversityImportance(), DIVERSITY_WEIGHT),
+			"다양한 배경의 사람들과 섞여 지내기 좋은 환경에 가깝습니다."
+		));
+
+		signals.add(new MatchSignal(
+			priorityPoints(profile.cultureScene(), answers.cultureLeisureImportance(), CULTURE_WEIGHT),
+			"문화·여가 선택지 밀도에서 기대한 방향과 가깝습니다."
+		));
+
+		int workLifeDistance = distance(answers.workLifePreference().targetIntensityValue(), workIntensity(profile));
+		signals.add(new MatchSignal(
+			closenessScore(workLifeDistance, WORK_LIFE_WEIGHT) + exactMatchBonus(workLifeDistance),
+			"일 기회와 생활 균형 사이에서 원하는 강도와 비교적 잘 맞습니다."
+		));
+
+		signals.add(new MatchSignal(
+			settlementPoints(profile, answers.settlementPreference()),
+			answers.settlementPreference().label() + " 기준에서 적응 난도와 생활 안정성을 함께 반영했습니다."
+		));
+
+		int futureBaseDistance = distance(answers.futureBasePreference().targetValue(), futureBase(profile));
+		signals.add(new MatchSignal(
+			closenessScore(futureBaseDistance, FUTURE_BASE_WEIGHT) + exactMatchBonus(futureBaseDistance),
+			"당장의 편의와 장기 기반 사이에서 기대한 방향과 가깝습니다."
+		));
+
+		int coherencePoints = coherenceBonus(
+			climateDistance,
+			costQualityDistance,
+			environmentDistance,
+			housingDistance
 		);
-		signals.add(new MatchSignal(costQualityPoints, "비용 부담과 생활 품질에 대한 기대 수준이 크게 엇나가지 않습니다."));
-
-		int environmentDistance = distance(
-			answers.environmentPreference().targetUrbanity(),
-			profile.urbanityValue()
-		);
-		int environmentPoints = closenessScore(environmentDistance, ENVIRONMENT_WEIGHT) + exactMatchBonus(environmentDistance);
-		signals.add(new MatchSignal(environmentPoints, "도시 편의와 숨 쉴 공간의 균형이 원하는 방향과 비슷합니다."));
-
-		int englishPoints = englishPoints(profile.englishSupport(), answers.englishSupportNeed());
-		signals.add(new MatchSignal(englishPoints, "초기 적응에서 필요한 영어 지원 수준과 비교적 잘 맞습니다."));
-
-		int safetyPoints = priorityPoints(profile.safety(), answers.safetyPriority(), SAFETY_WEIGHT);
-		signals.add(new MatchSignal(safetyPoints, "치안과 생활 안전 기준에서 안정적인 편입니다."));
-
-		int publicServicePoints = priorityPoints(profile.welfare(), answers.publicServicePriority(), PUBLIC_SERVICE_WEIGHT);
-		signals.add(new MatchSignal(publicServicePoints, "의료·행정·복지 같은 공공 서비스 기대치와 잘 맞습니다."));
-
-		int foodPoints = priorityPoints(profile.food(), answers.foodImportance(), FOOD_WEIGHT);
-		signals.add(new MatchSignal(foodPoints, "음식 만족도와 외식 다양성 측면에서 강점을 보입니다."));
-
-		int diversityPoints = priorityPoints(profile.diversity(), answers.diversityImportance(), DIVERSITY_WEIGHT);
-		signals.add(new MatchSignal(diversityPoints, "다문화 분위기와 다양한 사람·문화 접근성에서 장점이 있습니다."));
-
-		int settlementPoints = settlementPoints(profile, answers.settlementPreference());
-		signals.add(new MatchSignal(settlementPoints, answers.settlementPreference().label() + " 기준에서 생활 안정성과 적응 난도를 함께 반영했습니다."));
-
-		int mobilityPoints = mobilityPoints(profile, answers.mobilityPreference());
-		signals.add(new MatchSignal(mobilityPoints, answers.mobilityPreference().label() + " 이동 방식과 일상 동선이 비교적 잘 맞습니다."));
-
-		int coherencePoints = coherenceBonus(climateDistance, paceDistance, environmentDistance);
 		signals.add(new MatchSignal(coherencePoints, "핵심 생활 조건들이 전반적으로 크게 어긋나지 않습니다."));
 
 		int totalScore = signals.stream()
 			.mapToInt(MatchSignal::points)
 			.sum();
 		int strongSignalCount = (int) signals.stream()
-			.filter(signal -> signal.points() >= 16)
+			.filter(signal -> signal.points() >= 14)
 			.count();
-		int exactMatchCount = exactMatchCount(climateDistance, paceDistance, costQualityDistance, environmentDistance);
+		int exactMatchCount = exactMatchCount(
+			climateDistance,
+			seasonStyleDistance,
+			paceDistance,
+			crowdDistance,
+			costQualityDistance,
+			housingDistance,
+			environmentDistance,
+			mobilityDistance,
+			workLifeDistance,
+			futureBaseDistance
+		);
 
 		List<String> topReasons = signals.stream()
 			.sorted(Comparator.comparingInt(MatchSignal::points).reversed())
@@ -238,8 +331,38 @@ public class RecommendationSurveyService {
 		return distance == 0 ? EXACT_MATCH_BONUS : 0;
 	}
 
-	private int climateExtremity(int climateValue) {
-		return 1 + (Math.abs(climateValue - 3) * 2);
+	private int weatherDemand(RecommendationCountryProfile profile) {
+		int climateSwing = Math.abs(profile.climateValue() - 3);
+		int seasonSwing = Math.abs(profile.seasonality() - 3);
+		return Math.min(5, 1 + (Math.max(climateSwing, seasonSwing) * 2));
+	}
+
+	private int crowdEnergy(RecommendationCountryProfile profile) {
+		return normalizedAverage(profile.paceValue(), profile.urbanityValue());
+	}
+
+	private int transitSupport(RecommendationCountryProfile profile) {
+		return normalizedAverage(profile.urbanityValue(), profile.digitalConvenience(), profile.paceValue());
+	}
+
+	private int newcomerSupport(RecommendationCountryProfile profile) {
+		return normalizedAverage(profile.englishSupport(), profile.newcomerFriendliness());
+	}
+
+	private int workIntensity(RecommendationCountryProfile profile) {
+		return normalizedAverage(profile.paceValue(), profile.urbanityValue(), profile.digitalConvenience());
+	}
+
+	private int futureBase(RecommendationCountryProfile profile) {
+		return normalizedAverage(profile.safety(), profile.welfare(), profile.housingSpace());
+	}
+
+	private int normalizedAverage(int... values) {
+		int total = 0;
+		for (int value : values) {
+			total += value;
+		}
+		return Math.round((float) total / values.length);
 	}
 
 	private int costQualityPoints(int preferredPriceLevel, int actualPriceLevel, int distance) {
@@ -257,14 +380,27 @@ public class RecommendationSurveyService {
 		return score;
 	}
 
-	private int englishPoints(
-		int englishSupport,
-		RecommendationSurveyAnswers.EnglishSupportNeed englishSupportNeed
+	private int supportPoints(
+		int supportScore,
+		RecommendationSurveyAnswers.EnglishSupportNeed need,
+		int weight
 	) {
-		return switch (englishSupportNeed) {
-			case HIGH -> englishSupport * (ENGLISH_SUPPORT_WEIGHT + 1);
-			case MEDIUM -> englishSupport * ENGLISH_SUPPORT_WEIGHT;
-			case LOW -> englishSupport;
+		return switch (need) {
+			case HIGH -> supportScore * (weight + 1);
+			case MEDIUM -> supportScore * weight;
+			case LOW -> supportScore;
+		};
+	}
+
+	private int supportPoints(
+		int supportScore,
+		RecommendationSurveyAnswers.NewcomerSupportNeed need,
+		int weight
+	) {
+		return switch (need) {
+			case HIGH -> supportScore * (weight + 1);
+			case MEDIUM -> supportScore * weight;
+			case LOW -> supportScore;
 		};
 	}
 
@@ -287,8 +423,8 @@ public class RecommendationSurveyService {
 		return attributeScore * weight + importance.weight();
 	}
 
-	private int coherenceBonus(int climateDistance, int paceDistance, int environmentDistance) {
-		return (climateDistance <= 1 && paceDistance <= 1 && environmentDistance <= 1)
+	private int coherenceBonus(int climateDistance, int costDistance, int environmentDistance, int housingDistance) {
+		return (climateDistance <= 1 && costDistance <= 1 && environmentDistance <= 1 && housingDistance <= 1)
 			? COHERENCE_BONUS
 			: 0;
 	}
@@ -308,21 +444,9 @@ public class RecommendationSurveyService {
 		RecommendationSurveyAnswers.SettlementPreference settlementPreference
 	) {
 		return switch (settlementPreference) {
-			case EXPERIENCE -> (profile.diversity() * SETTLEMENT_WEIGHT) + profile.food();
-			case BALANCED -> profile.safety() + profile.welfare();
-			case STABILITY -> (profile.safety() * SETTLEMENT_WEIGHT) + (profile.welfare() * SETTLEMENT_WEIGHT)
-				+ (profile.englishSupport() >= 4 ? 2 : 0);
-		};
-	}
-
-	private int mobilityPoints(
-		RecommendationCountryProfile profile,
-		RecommendationSurveyAnswers.MobilityPreference mobilityPreference
-	) {
-		return switch (mobilityPreference) {
-			case TRANSIT_FIRST -> (profile.urbanityValue() * MOBILITY_WEIGHT) + (profile.paceValue() >= 3 ? 2 : 0);
-			case BALANCED -> profile.safety();
-			case SPACE_FIRST -> ((6 - profile.urbanityValue()) * MOBILITY_WEIGHT) + profile.safety();
+			case EXPERIENCE -> newcomerSupport(profile) + profile.cultureScene() + profile.food();
+			case BALANCED -> profile.safety() + profile.welfare() + profile.diversity();
+			case STABILITY -> (futureBase(profile) * SETTLEMENT_WEIGHT) + profile.newcomerFriendliness();
 		};
 	}
 

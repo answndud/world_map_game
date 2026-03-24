@@ -43,38 +43,48 @@ class RecommendationFeedbackIntegrationTest {
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("""
 					{
-					  "surveyVersion": "survey-v3",
-					  "engineVersion": "engine-v3",
+					  "surveyVersion": "survey-v4",
+					  "engineVersion": "engine-v4",
 					  "satisfactionScore": 4,
 					  "climatePreference": "WARM",
+					  "seasonStylePreference": "STABLE",
 					  "seasonTolerance": "MEDIUM",
 					  "pacePreference": "BALANCED",
+					  "crowdPreference": "BALANCED",
 					  "costQualityPreference": "VALUE_FIRST",
+					  "housingPreference": "SPACE_FIRST",
 					  "environmentPreference": "CITY",
+					  "mobilityPreference": "BALANCED",
 					  "englishSupportNeed": "MEDIUM",
+					  "newcomerSupportNeed": "HIGH",
 					  "safetyPriority": "LOW",
 					  "publicServicePriority": "LOW",
+					  "digitalConveniencePriority": "MEDIUM",
 					  "foodImportance": "HIGH",
 					  "diversityImportance": "MEDIUM",
+					  "cultureLeisureImportance": "MEDIUM",
+					  "workLifePreference": "BALANCED",
 					  "settlementPreference": "BALANCED",
-					  "mobilityPreference": "BALANCED"
+					  "futureBasePreference": "BALANCED"
 					}
 					"""))
 			.andExpect(status().isCreated())
 			.andExpect(jsonPath("$.satisfactionScore").value(4))
-			.andExpect(jsonPath("$.surveyVersion").value("survey-v3"))
-			.andExpect(jsonPath("$.engineVersion").value("engine-v3"));
+			.andExpect(jsonPath("$.surveyVersion").value("survey-v4"))
+			.andExpect(jsonPath("$.engineVersion").value("engine-v4"));
 
 		assertThat(recommendationFeedbackRepository.findAll()).hasSize(1);
 		RecommendationFeedback feedback = recommendationFeedbackRepository.findAll().getFirst();
 		assertThat(feedback.getSatisfactionScore()).isEqualTo(4);
-		assertThat(feedback.getSurveyVersion()).isEqualTo("survey-v3");
-		assertThat(feedback.getEngineVersion()).isEqualTo("engine-v3");
+		assertThat(feedback.getSurveyVersion()).isEqualTo("survey-v4");
+		assertThat(feedback.getEngineVersion()).isEqualTo("engine-v4");
 		assertThat(feedback.getClimatePreference().name()).isEqualTo("WARM");
+		assertThat(feedback.getSeasonStylePreference().name()).isEqualTo("STABLE");
 		assertThat(feedback.getSeasonTolerance().name()).isEqualTo("MEDIUM");
 		assertThat(feedback.getFoodImportance().name()).isEqualTo("HIGH");
+		assertThat(feedback.getCultureLeisureImportance().name()).isEqualTo("MEDIUM");
 		assertThat(feedback.getSettlementPreference().name()).isEqualTo("BALANCED");
-		assertThat(feedback.getMobilityPreference().name()).isEqualTo("BALANCED");
+		assertThat(feedback.getFutureBasePreference().name()).isEqualTo("BALANCED");
 	}
 
 	@Test
@@ -83,21 +93,29 @@ class RecommendationFeedbackIntegrationTest {
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("""
 					{
-					  "surveyVersion": "survey-v3",
-					  "engineVersion": "engine-v3",
+					  "surveyVersion": "survey-v4",
+					  "engineVersion": "engine-v4",
 					  "satisfactionScore": 6,
 					  "climatePreference": "WARM",
+					  "seasonStylePreference": "STABLE",
 					  "seasonTolerance": "MEDIUM",
 					  "pacePreference": "BALANCED",
+					  "crowdPreference": "BALANCED",
 					  "costQualityPreference": "VALUE_FIRST",
+					  "housingPreference": "SPACE_FIRST",
 					  "environmentPreference": "CITY",
+					  "mobilityPreference": "BALANCED",
 					  "englishSupportNeed": "MEDIUM",
+					  "newcomerSupportNeed": "HIGH",
 					  "safetyPriority": "LOW",
 					  "publicServicePriority": "LOW",
+					  "digitalConveniencePriority": "MEDIUM",
 					  "foodImportance": "HIGH",
 					  "diversityImportance": "MEDIUM",
+					  "cultureLeisureImportance": "MEDIUM",
+					  "workLifePreference": "BALANCED",
 					  "settlementPreference": "BALANCED",
-					  "mobilityPreference": "BALANCED"
+					  "futureBasePreference": "BALANCED"
 					}
 					"""))
 			.andExpect(status().isBadRequest())
@@ -111,8 +129,8 @@ class RecommendationFeedbackIntegrationTest {
 		saveFeedback("survey-v1", "engine-v1", 5);
 		saveFeedback("survey-v1", "engine-v1", 4);
 		saveFeedback("survey-v1", "engine-v1", 2);
-		saveFeedback("survey-v3", "engine-v3", 3);
-		saveFeedback("survey-v3", "engine-v3", 3);
+		saveFeedback("survey-v4", "engine-v4", 3);
+		saveFeedback("survey-v4", "engine-v4", 3);
 
 		mockMvc.perform(get("/api/recommendation/feedback/summary"))
 			.andExpect(status().isOk())
@@ -124,7 +142,7 @@ class RecommendationFeedbackIntegrationTest {
 			.andExpect(jsonPath("$.versionSummaries[?(@.surveyVersion=='survey-v1' && @.engineVersion=='engine-v1')].score5Count").value(hasItem(1)))
 			.andExpect(jsonPath("$.versionSummaries[?(@.surveyVersion=='survey-v1' && @.engineVersion=='engine-v1')].score4Count").value(hasItem(1)))
 			.andExpect(jsonPath("$.versionSummaries[?(@.surveyVersion=='survey-v1' && @.engineVersion=='engine-v1')].score2Count").value(hasItem(1)))
-			.andExpect(jsonPath("$.versionSummaries[?(@.surveyVersion=='survey-v3' && @.engineVersion=='engine-v3')].responseCount").value(hasItem(2)));
+			.andExpect(jsonPath("$.versionSummaries[?(@.surveyVersion=='survey-v4' && @.engineVersion=='engine-v4')].responseCount").value(hasItem(2)));
 	}
 
 	@Test
@@ -142,17 +160,25 @@ class RecommendationFeedbackIntegrationTest {
 				score,
 				new RecommendationSurveyAnswers(
 					RecommendationSurveyAnswers.ClimatePreference.WARM,
+					RecommendationSurveyAnswers.SeasonStylePreference.STABLE,
 					RecommendationSurveyAnswers.SeasonTolerance.MEDIUM,
 					RecommendationSurveyAnswers.PacePreference.BALANCED,
+					RecommendationSurveyAnswers.CrowdPreference.BALANCED,
 					RecommendationSurveyAnswers.CostQualityPreference.VALUE_FIRST,
+					RecommendationSurveyAnswers.HousingPreference.SPACE_FIRST,
 					RecommendationSurveyAnswers.EnvironmentPreference.CITY,
+					RecommendationSurveyAnswers.MobilityPreference.BALANCED,
 					RecommendationSurveyAnswers.EnglishSupportNeed.MEDIUM,
+					RecommendationSurveyAnswers.NewcomerSupportNeed.MEDIUM,
 					RecommendationSurveyAnswers.ImportanceLevel.LOW,
 					RecommendationSurveyAnswers.ImportanceLevel.LOW,
+					RecommendationSurveyAnswers.ImportanceLevel.MEDIUM,
 					RecommendationSurveyAnswers.ImportanceLevel.HIGH,
 					RecommendationSurveyAnswers.ImportanceLevel.MEDIUM,
+					RecommendationSurveyAnswers.ImportanceLevel.MEDIUM,
+					RecommendationSurveyAnswers.WorkLifePreference.BALANCED,
 					RecommendationSurveyAnswers.SettlementPreference.BALANCED,
-					RecommendationSurveyAnswers.MobilityPreference.BALANCED
+					RecommendationSurveyAnswers.FutureBasePreference.BALANCED
 				)
 			)
 		);

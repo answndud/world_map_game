@@ -125,8 +125,8 @@ class AdminPageIntegrationTest {
 			.andExpect(content().string(containsString("TODAY COMPLETED RUNS")))
 			.andExpect(content().string(containsString("L 1 / P 1")))
 			.andExpect(content().string(containsString("추천 운영 상태")))
-			.andExpect(content().string(containsString("survey-v3")))
-			.andExpect(content().string(containsString("engine-v3")))
+			.andExpect(content().string(containsString("survey-v4")))
+			.andExpect(content().string(containsString("engine-v4")))
 			.andExpect(content().string(containsString("Dashboard 화면은 `ADMIN` role 세션으로만 접근 가능하게 보호한다.")));
 	}
 
@@ -187,17 +187,25 @@ class AdminPageIntegrationTest {
 				score,
 				new RecommendationSurveyAnswers(
 					RecommendationSurveyAnswers.ClimatePreference.WARM,
+					RecommendationSurveyAnswers.SeasonStylePreference.STABLE,
 					RecommendationSurveyAnswers.SeasonTolerance.MEDIUM,
 					RecommendationSurveyAnswers.PacePreference.BALANCED,
+					RecommendationSurveyAnswers.CrowdPreference.BALANCED,
 					RecommendationSurveyAnswers.CostQualityPreference.VALUE_FIRST,
+					RecommendationSurveyAnswers.HousingPreference.SPACE_FIRST,
 					RecommendationSurveyAnswers.EnvironmentPreference.CITY,
+					RecommendationSurveyAnswers.MobilityPreference.BALANCED,
 					RecommendationSurveyAnswers.EnglishSupportNeed.MEDIUM,
+					RecommendationSurveyAnswers.NewcomerSupportNeed.MEDIUM,
 					RecommendationSurveyAnswers.ImportanceLevel.LOW,
 					RecommendationSurveyAnswers.ImportanceLevel.LOW,
+					RecommendationSurveyAnswers.ImportanceLevel.MEDIUM,
 					RecommendationSurveyAnswers.ImportanceLevel.HIGH,
 					RecommendationSurveyAnswers.ImportanceLevel.MEDIUM,
+					RecommendationSurveyAnswers.ImportanceLevel.MEDIUM,
+					RecommendationSurveyAnswers.WorkLifePreference.BALANCED,
 					RecommendationSurveyAnswers.SettlementPreference.BALANCED,
-					RecommendationSurveyAnswers.MobilityPreference.BALANCED
+					RecommendationSurveyAnswers.FutureBasePreference.BALANCED
 				)
 			)
 		);
