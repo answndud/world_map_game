@@ -1350,3 +1350,27 @@
 - 테스트 내용: `./gradlew test --tests com.worldmap.recommendation.RecommendationPageIntegrationTest --tests com.worldmap.web.HomeControllerTest`와 `./gradlew test` 전체로 화면 설명과 기존 기능이 깨지지 않았는지 확인한다.
 - 면접에서 30초 안에 설명하는 요약: 추천 기능에 런타임 LLM을 붙이는 대신, 서버 추천은 deterministic하게 유지하고 AI는 개발 단계에서만 사용하도록 방향을 바꿨습니다. 만족도 집계와 페르소나 시나리오를 함께 보고, 서브 에이전트가 문항 초안과 평가 시나리오를 제안하면 사람이 검수해 다음 설문 버전을 반영하는 구조로 정리했습니다.
 - 아직 내가 이해가 부족한 부분: 지금은 오프라인 개선 루프를 문서화한 단계라, 실제로 surveyVersion을 한 번 더 올려 본 실험 데이터는 아직 없다. 다음 단계에서 시나리오 세트와 실측 만족도 데이터를 같이 보며 실제 버전 개정을 한 번 수행해 볼 필요가 있다.
+
+## 2026-03-24 - 페르소나 baseline 평가와 survey v2 개정안 초안
+
+- 단계: 7. AI-assisted 설문 개선 체계
+- 목적: 오프라인 개선 루프를 문서로만 두지 않고, 현재 추천 엔진을 14개 페르소나 시나리오로 실제 평가해 baseline을 고정하고 다음 `survey v2` 개정안을 만든다.
+- 변경 파일:
+  - `src/test/java/com/worldmap/recommendation/application/RecommendationOfflinePersonaScenario.java`
+  - `src/test/java/com/worldmap/recommendation/application/RecommendationOfflinePersonaFixtures.java`
+  - `src/test/java/com/worldmap/recommendation/application/RecommendationOfflinePersonaCoverageTest.java`
+  - `docs/recommendation/SURVEY_V2_PROPOSAL.md`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/14-offline-ai-survey-improvement-loop.md`
+  - `blog/15-survey-v2-proposal-from-persona-eval.md`
+- 요청 흐름 / 데이터 흐름: 이번 단계는 런타임 기능 추가가 아니라 오프라인 평가 흐름 보강이다. 테스트는 `RecommendationOfflinePersonaFixtures`의 14개 시나리오를 `RecommendationSurveyService.recommend()`에 통과시키고, 현재 엔진이 기대 후보를 얼마나 포함하는지 본다. 그 결과를 바탕으로 `docs/recommendation/SURVEY_V2_PROPOSAL.md`에 다음 버전 개정안을 적는다.
+- 데이터 / 상태 변화: 운영 DB나 추천 API는 바뀌지 않았다. 새로 생긴 것은 테스트 자산과 평가 문서다. baseline은 “14개 중 11개 시나리오에서 기대 후보 1개 이상이 top 3에 포함”으로 고정했고, `P04`, `P06`, `P13`을 우선 개선 대상 시나리오로 명시했다.
+- 핵심 도메인 개념: 설문 개선도 결국 “평가 자산 + 품질 하한 + 개정안”이 있어야 설명 가능하다. 그래서 Markdown 시나리오 표만 두지 않고 테스트 코드에도 같은 시나리오를 옮겨 baseline을 고정했다. 이렇게 해야 이후 `engine-v2` 실험에서 무엇이 좋아지고 무엇이 깨졌는지 바로 비교할 수 있다.
+- 예외 상황 또는 엣지 케이스: 현재 baseline은 “최소 기대 후보 1개 이상이 top 3에 들어오는가”를 기준으로 잡았기 때문에, 결과 순서나 2~3위 후보까지 완전히 이상적이라는 뜻은 아니다. 특히 `P05`, `P11`처럼 부분 일치에 가까운 시나리오는 다음 단계에서 더 정밀하게 볼 필요가 있다.
+- 테스트 내용: `./gradlew test --tests com.worldmap.recommendation.application.RecommendationOfflinePersonaCoverageTest --tests com.worldmap.recommendation.application.RecommendationSurveyServiceTest` 통과, `./gradlew test` 전체 통과. anchor 시나리오 `P01`, `P02`, `P14`는 별도 assertion으로 고정했다.
+- 면접에서 30초 안에 설명하는 요약: 오프라인 개선 루프를 실제로 돌리기 위해 14개 페르소나 시나리오를 테스트 코드로 옮겨 baseline을 고정했습니다. 현재 엔진은 11개 시나리오에서 기대 후보를 top 3에 포함하고, 약한 케이스는 복지형, 저예산 안전형, 온화한 고도시 다양성형이었습니다. 그래서 survey v2는 질문 수를 늘리기보다 먼저 climate mismatch penalty, 영어 가중치, 저예산 penalty를 조정하는 방향으로 개정안을 잡았습니다.
+- 아직 내가 이해가 부족한 부분: 지금 개정안은 문서 초안이라 실제로 `engine-v2`를 적용했을 때 11/14가 얼마나 올라가는지는 아직 검증하지 않았다. 다음 단계에서 제안한 penalty와 가중치를 실제로 바꾸고 baseline 변화를 확인해야 한다.

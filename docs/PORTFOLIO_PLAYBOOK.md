@@ -30,7 +30,7 @@
 | 4 | 국가 인구수 맞추기 게임 Level 1 | Reworking |
 | 5 | Redis 랭킹 시스템 | Done |
 | 6 | 설문 기반 추천 엔진 | In Progress |
-| 7 | AI-assisted 설문 개선 체계 | Not Started |
+| 7 | AI-assisted 설문 개선 체계 | In Progress |
 | 8 | 인증, 전적, 마이페이지 | Not Started |
 | 9 | Level 2와 실시간성 고도화 | Not Started |
 | 10 | 포트폴리오 정리와 발표 준비 | Not Started |
@@ -449,7 +449,7 @@
 
 ### 7. AI-assisted 설문 개선 체계
 
-상태: Not Started
+상태: In Progress
 
 목표:
 
@@ -463,11 +463,20 @@
 - 시나리오별 기대 후보 / 기대 만족도 평가 절차 정리
 - 만족도 실측 데이터와 오프라인 시나리오 평가를 함께 보는 개선 루프 문서화
 
+현재까지 완료된 항목:
+
+- `docs/recommendation/OFFLINE_AI_SURVEY_IMPROVEMENT.md`로 오프라인 AI 개선 루프 문서화
+- `docs/recommendation/PERSONA_EVAL_SET.md`로 14개 페르소나 평가 시나리오 정리
+- `RecommendationOfflinePersonaCoverageTest`로 현재 추천 엔진 baseline 품질 하한 고정
+- 현재 baseline에서 14개 중 11개 시나리오가 기대 후보 1개 이상을 top 3에 포함하는지 자동 검증
+- `docs/recommendation/SURVEY_V2_PROPOSAL.md`로 우선 개선 대상 시나리오와 v2 개정안 초안 정리
+
 반드시 이해할 것:
 
 - 왜 런타임 LLM 호출을 빼는 것이 현재 포트폴리오에 더 맞는가
 - 왜 AI를 서비스 기능이 아니라 설문 개선 도구로 돌리는가
 - 서브 에이전트가 어떤 산출물을 만들고, 사람은 어디서 최종 판단하는가
+- 왜 baseline 평가를 문서가 아니라 테스트로도 같이 고정해야 하는가
 
 면접 포인트:
 
@@ -478,6 +487,12 @@
 
 - 설문 개선 루프 문서를 보고 버전 실험 절차를 설명할 수 있다.
 - 페르소나 시나리오 세트와 실제 만족도 집계를 함께 볼 수 있다.
+
+이 단계에서 남은 일:
+
+- `engine-v2` 후보 가중치와 penalty 실험
+- `survey-v2` helper text와 선택지 문구 개정안 반영 여부 결정
+- baseline 11/14를 12/14 이상으로 끌어올릴 실제 개선 적용
 
 ### 8. 인증, 전적, 마이페이지
 

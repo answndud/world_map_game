@@ -44,13 +44,14 @@
 17. [추천 결과는 저장하지 않고 만족도 피드백만 수집하기](./12-collect-recommendation-feedback.md)
 18. [설문 / 엔진 버전별 만족도 집계 기준 정리하기](./13-recommendation-feedback-insights.md)
 19. [오프라인 AI-assisted 설문 개선 루프 정리하기](./14-offline-ai-survey-improvement-loop.md)
+20. [페르소나 평가로 survey v2 개정안 만들기](./15-survey-v2-proposal-from-persona-eval.md)
 
 ### Part E. 테스트, 확장, 취업 패키징
 
-20. 왜 핵심 게임 로직을 테스트해야 하는가
-21. 인증, 전적, 마이페이지 붙이기
-22. Level 2 난이도와 실시간성 고도화
-23. README, 아키텍처, 면접 답변 패키지 만들기
+21. 왜 핵심 게임 로직을 테스트해야 하는가
+22. 인증, 전적, 마이페이지 붙이기
+23. Level 2 난이도와 실시간성 고도화
+24. README, 아키텍처, 면접 답변 패키지 만들기
 
 ## 실제 집필 우선순위
 
