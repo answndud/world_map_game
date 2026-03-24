@@ -23,6 +23,31 @@
                 <a class="ghost-link" th:href="@{/recommendation/survey}">나라 추천 받기</a>
                 <a class="ghost-link" th:href="@{/ranking}">랭킹 보기</a>
             </div>
+
+            <div class="hero-account-callout"
+                 th:if="${session == null or session.WORLDMAP_MEMBER_ID == null}">
+                <p class="hero-account-copy">
+                    점수와 랭킹 기록을 계속 이어가고 싶다면 계정을 연결하세요.
+                </p>
+                <div class="page-actions">
+                    <a class="secondary-button" th:href="@{/login}">로그인</a>
+                    <a class="ghost-link" th:href="@{/signup}">회원가입</a>
+                </div>
+            </div>
+
+            <div class="hero-account-callout"
+                 th:if="${session != null and session.WORLDMAP_MEMBER_ID != null}">
+                <p class="hero-account-copy">
+                    <span class="account-chip" th:text="${session.WORLDMAP_MEMBER_NICKNAME}">orbit_runner</span>
+                    계정으로 기록을 이어서 남기고 있습니다.
+                </p>
+                <div class="page-actions">
+                    <a class="secondary-button" th:href="@{/mypage}">My Page</a>
+                    <form class="inline-form" th:action="@{/logout}" method="post">
+                        <button class="ghost-link" type="submit">로그아웃</button>
+                    </form>
+                </div>
+            </div>
         </div>
     </header>
 

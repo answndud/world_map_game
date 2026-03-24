@@ -36,6 +36,9 @@ class HomeControllerTest {
 			.andExpect(model().attributeExists("roadmap"))
 			.andExpect(content().string(containsString("플레이 방식")))
 			.andExpect(content().string(containsString(">My Page<")))
+			.andExpect(content().string(containsString(">로그인<")))
+			.andExpect(content().string(containsString(">회원가입<")))
+			.andExpect(content().string(not(containsString(">로그아웃<"))))
 			.andExpect(content().string(not(containsString(">Dashboard<"))))
 			.andExpect(content().string(not(containsString(">Location<"))))
 			.andExpect(content().string(not(containsString(">Population<"))))
@@ -55,6 +58,8 @@ class HomeControllerTest {
 
 		mockMvc.perform(get("/").session(session))
 			.andExpect(status().isOk())
-			.andExpect(content().string(containsString(">Dashboard<")));
+			.andExpect(content().string(containsString(">Dashboard<")))
+			.andExpect(content().string(containsString(">로그아웃<")))
+			.andExpect(content().string(not(containsString(">회원가입<"))));
 	}
 }
