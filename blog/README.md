@@ -80,12 +80,13 @@
 20. [페르소나 평가로 survey v2 개정안 만들기](./15-survey-v2-proposal-from-persona-eval.md)
 21. [추천 엔진 실험 전 persona top3 snapshot 고정하기](./16-freeze-persona-top3-snapshot.md)
 22. [추천 설문을 8문항으로 확장하기](./17-expand-recommendation-survey-question-set.md)
+23. [새 추천 문항을 실제로 쓰는 active-signal 페르소나 추가하기](./18-activate-new-recommendation-signals-in-persona-eval.md)
 
 ### Part E. 확장과 포트폴리오 정리
 
-23. 인증과 내 전적 조회 붙이기
-24. Level 2와 실시간 전달 방식 고도화하기
-25. 테스트, 아키텍처, 면접 패키지로 프로젝트 마감하기
+24. 인증과 내 전적 조회 붙이기
+25. Level 2와 실시간 전달 방식 고도화하기
+26. 테스트, 아키텍처, 면접 패키지로 프로젝트 마감하기
 
 ## 읽는 순서
 

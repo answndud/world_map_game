@@ -47,13 +47,14 @@
 20. [페르소나 평가로 survey v2 개정안 만들기](./15-survey-v2-proposal-from-persona-eval.md)
 21. [추천 엔진 실험 전 persona top3 snapshot 고정하기](./16-freeze-persona-top3-snapshot.md)
 22. [추천 설문을 8문항으로 확장하기](./17-expand-recommendation-survey-question-set.md)
+23. [새 추천 문항을 실제로 쓰는 active-signal 페르소나 추가하기](./18-activate-new-recommendation-signals-in-persona-eval.md)
 
 ### Part E. 테스트, 확장, 취업 패키징
 
-23. 왜 핵심 게임 로직을 테스트해야 하는가
-24. 인증, 전적, 마이페이지 붙이기
-25. Level 2 난이도와 실시간성 고도화
-26. README, 아키텍처, 면접 답변 패키지 만들기
+24. 왜 핵심 게임 로직을 테스트해야 하는가
+25. 인증, 전적, 마이페이지 붙이기
+26. Level 2 난이도와 실시간성 고도화
+27. README, 아키텍처, 면접 답변 패키지 만들기
 
 ## 실제 집필 우선순위
 

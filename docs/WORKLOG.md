@@ -1430,3 +1430,27 @@
 - 테스트 내용: `./gradlew test --tests com.worldmap.recommendation.application.RecommendationSurveyServiceTest --tests com.worldmap.recommendation.RecommendationPageIntegrationTest --tests com.worldmap.recommendation.RecommendationFeedbackIntegrationTest --tests com.worldmap.recommendation.application.RecommendationOfflinePersonaCoverageTest --tests com.worldmap.recommendation.application.RecommendationOfflinePersonaSnapshotTest` 통과, `./gradlew test` 전체 통과.
 - 면접에서 30초 안에 설명하는 요약: 추천 설문이 너무 짧다는 피드백을 반영해 기존 6문항에 `정착 성향`, `이동 생활 방식`을 추가해 8문항으로 확장했습니다. 중요한 건 질문 수만 늘린 게 아니라, 새 답변도 `RecommendationSurveyService`에서 기존 국가 프로필 점수와 합산되도록 만들어 서버 중심 deterministic 추천 구조를 유지한 점입니다. 만족도 피드백 스냅샷도 8개 답변 기준으로 같이 확장했습니다.
 - 아직 내가 이해가 부족한 부분: 새 두 질문이 실제로 weak scenario를 얼마나 더 잘 가를 수 있는지는 아직 중립값 baseline만 고정한 상태다. 다음 단계에서는 이 두 질문을 적극적으로 쓰는 새 페르소나를 추가하거나, engine-v2 실험에서 이 신호가 실제로 품질 개선에 얼마나 도움이 되는지 더 봐야 한다.
+
+## 2026-03-24 - 새 추천 문항을 실제로 쓰는 active-signal 페르소나 추가
+
+- 단계: 7. AI-assisted 설문 개선 체계
+- 목적: 8문항 설문을 만들었지만, 오프라인 baseline은 아직 새 두 문항을 모두 `BALANCED`로만 쓰고 있었다. 이번 단계에서는 `정착 성향`, `이동 생활 방식`이 실제로 top 3 후보를 바꾸는지 확인할 수 있게 active-signal 페르소나 4개를 추가한다.
+- 변경 파일:
+  - `src/test/java/com/worldmap/recommendation/application/RecommendationOfflinePersonaFixtures.java`
+  - `src/test/java/com/worldmap/recommendation/application/RecommendationOfflinePersonaCoverageTest.java`
+  - `src/test/java/com/worldmap/recommendation/application/RecommendationOfflinePersonaSnapshotTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `docs/recommendation/PERSONA_EVAL_SET.md`
+  - `docs/recommendation/SURVEY_V2_PROPOSAL.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/18-activate-new-recommendation-signals-in-persona-eval.md`
+- 요청 흐름 / 데이터 흐름: 런타임 추천 흐름은 그대로 `RecommendationSurveyService.recommend()`다. 이번 단계는 오프라인 평가 자산 보강이다. `RecommendationOfflinePersonaFixtures`에 `P15~P18`을 추가하고, `CoverageTest`는 18개 시나리오 기준 품질 하한을 본다. `SnapshotTest`는 같은 18개 시나리오의 exact top 3를 고정해 이후 가중치 실험에서 새 문항 때문에 어떤 후보가 바뀌었는지 바로 비교할 수 있게 한다.
+- 데이터 / 상태 변화: 운영 DB나 추천 페이지는 바뀌지 않았다. 바뀐 것은 평가 자산과 기준선이다. baseline은 기존 14개 중립 시나리오 + 새 문항을 적극적으로 쓰는 4개 active-signal 시나리오로 나뉜다. 현재 품질 하한은 `18개 중 15개 시나리오에서 기대 후보 1개 이상이 top 3에 포함`으로 올렸다.
+- 핵심 도메인 개념: 새 설문 문항을 추가했다면 오프라인 품질 평가도 그 문항을 실제로 써야 한다. 그렇지 않으면 추천 엔진이 새 답변을 제대로 읽는지 설명할 수 없다. 이번에는 같은 기본 취향에서 `EXPERIENCE / TRANSIT_FIRST`와 `STABILITY / SPACE_FIRST`만 바꿔, top 3의 2~3위 후보 구성이 실제로 달라지는 페어 시나리오를 만들었다.
+- 예외 상황 또는 엣지 케이스: 새 두 문항의 현재 가중치가 2로 낮기 때문에, 모든 시나리오에서 top 1이 크게 바뀌지는 않는다. 그래서 baseline 목적은 “새 신호가 완전히 무시되지 않는가”를 보는 것이고, 더 큰 순위 변화를 원하면 다음 단계에서 penalty와 가중치를 조정해야 한다.
+- 테스트 내용: `./gradlew test --tests com.worldmap.recommendation.application.RecommendationOfflinePersonaCoverageTest --tests com.worldmap.recommendation.application.RecommendationOfflinePersonaSnapshotTest --tests com.worldmap.recommendation.application.RecommendationSurveyServiceTest` 통과, `./gradlew test` 전체 통과.
+- 면접에서 30초 안에 설명하는 요약: 설문을 8문항으로 늘린 뒤에도 오프라인 baseline이 새 문항을 실제로 쓰지 않으면 품질 평가가 공허해집니다. 그래서 기존 14개 중립 시나리오 외에, 같은 기본 취향에서 `정착 성향`과 `이동 생활 방식`만 바꾼 4개 active-signal 시나리오를 추가했습니다. 이제 추천 엔진 실험에서 coverage 숫자뿐 아니라 새 문항이 실제 후보 구성을 어떻게 바꾸는지도 테스트와 snapshot으로 같이 볼 수 있습니다.
+- 아직 내가 이해가 부족한 부분: 현재는 새 두 문항이 주로 2~3위 후보를 바꾸는 정도로 작동한다. 이 신호를 더 강하게 키워야 할지, 아니면 보조 신호로만 유지할지는 다음 `engine-v2` 실험에서 만족도와 weak scenario 개선 폭을 같이 보고 판단해야 한다.

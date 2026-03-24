@@ -2,18 +2,25 @@
 
 ## 목적
 
-이 문서는 현재 `survey-v2 / engine-v2` 추천 엔진을 14개 페르소나 시나리오로 평가한 뒤, 다음 개선에서 어떤 부분을 먼저 고쳐야 하는지 정리한 초안이다.
+이 문서는 현재 `survey-v2 / engine-v2` 추천 엔진을 18개 페르소나 시나리오로 평가한 뒤, 다음 개선에서 어떤 부분을 먼저 고쳐야 하는지 정리한 초안이다.
 
 이번 문서의 목표는 바로 코드를 바꾸는 것이 아니라, `어디가 약한지 -> 무엇을 먼저 바꿀지 -> 어떤 순서로 실험할지`를 명확히 만드는 것이다.
 
 ## baseline 요약
 
-- 평가 시나리오 수: 14
-- 현재 baseline 하한: 14개 중 11개 시나리오에서 기대 후보 1개 이상이 top 3에 포함
+- 평가 시나리오 수: 18
+- 현재 baseline 하한: 18개 중 15개 시나리오에서 기대 후보 1개 이상이 top 3에 포함
 - 자동 품질 하한 고정 위치:
   - `/Users/alex/project/worldmap/src/test/java/com/worldmap/recommendation/application/RecommendationOfflinePersonaCoverageTest.java`
 - 현재 exact top 3 snapshot 고정 위치:
   - `/Users/alex/project/worldmap/src/test/java/com/worldmap/recommendation/application/RecommendationOfflinePersonaSnapshotTest.java`
+
+추가로, 현재 baseline은 두 층으로 나뉜다.
+
+- 기존 14개 중립 시나리오
+  - 새 두 문항을 `BALANCED / BALANCED`로 두고 기존 품질 기준선을 본다.
+- 추가 4개 active-signal 시나리오
+  - `EXPERIENCE / TRANSIT_FIRST`, `STABILITY / SPACE_FIRST`가 같은 기본 취향에서 top 3를 실제로 바꾸는지 본다.
 
 즉, 다음 `engine-v2` 실험에서는 coverage 숫자뿐 아니라 top 3 순서가 어떻게 바뀌는지도 함께 비교한다.
 
@@ -129,7 +136,7 @@
 
 다음 실험의 목표는 간단하다.
 
-- baseline 11/14 -> 최소 12/14
+- baseline 15/18 -> 최소 16/18
 - `P04`, `P06`, `P13` 중 최소 2개 개선
 - `P01`, `P02`, `P14` 같은 강한 시나리오는 유지
 
@@ -140,5 +147,5 @@
 1. `engine-v2` 실험 브랜치에서 climate mismatch penalty 추가
 2. 영어 가중치와 저예산 penalty를 소폭 조정
 3. `RecommendationOfflinePersonaCoverageTest` 다시 실행
-4. 14개 시나리오 결과를 비교
+4. 18개 시나리오 결과를 비교
 5. 개선 폭이 확인되면 `survey-v2` helper text 개정 반영

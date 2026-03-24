@@ -467,10 +467,11 @@
 현재까지 완료된 항목:
 
 - `docs/recommendation/OFFLINE_AI_SURVEY_IMPROVEMENT.md`로 오프라인 AI 개선 루프 문서화
-- `docs/recommendation/PERSONA_EVAL_SET.md`로 14개 페르소나 평가 시나리오 정리
+- `docs/recommendation/PERSONA_EVAL_SET.md`로 18개 페르소나 평가 시나리오 정리
 - `RecommendationOfflinePersonaCoverageTest`로 현재 추천 엔진 baseline 품질 하한 고정
-- 현재 baseline에서 14개 중 11개 시나리오가 기대 후보 1개 이상을 top 3에 포함하는지 자동 검증
-- `RecommendationOfflinePersonaSnapshotTest`로 현재 추천 엔진의 14개 시나리오 top 3 순서를 snapshot으로 고정
+- 현재 baseline에서 18개 중 15개 시나리오가 기대 후보 1개 이상을 top 3에 포함하는지 자동 검증
+- `RecommendationOfflinePersonaSnapshotTest`로 현재 추천 엔진의 18개 시나리오 top 3 순서를 snapshot으로 고정
+- 기존 14개 중립 baseline 외에, 새 두 문항을 적극적으로 쓰는 `P15~P18` 비교 시나리오를 추가해 `EXPERIENCE / TRANSIT_FIRST`와 `STABILITY / SPACE_FIRST`가 실제 후보 구성을 바꾸는지 검증
 - `docs/recommendation/SURVEY_V2_PROPOSAL.md`로 우선 개선 대상 시나리오와 v2 개정안 초안 정리
 
 반드시 이해할 것:
@@ -496,7 +497,7 @@
 - `engine-v2` 후보 가중치와 penalty 실험
 - 실험 결과를 snapshot과 비교해 어떤 시나리오 순위가 움직였는지 문서화
 - `survey-v2` helper text와 선택지 문구 개정안 반영 여부 결정
-- baseline 11/14를 12/14 이상으로 끌어올릴 실제 개선 적용
+- baseline 15/18을 더 높일 실제 개선 적용
 
 ### 8. 인증, 전적, 마이페이지
 
