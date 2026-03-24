@@ -1499,3 +1499,33 @@
 - 테스트 내용: `./gradlew test --tests com.worldmap.web.HomeControllerTest --tests com.worldmap.recommendation.RecommendationPageIntegrationTest --tests com.worldmap.ranking.LeaderboardIntegrationTest` 통과, `./gradlew test` 전체 통과.
 - 면접에서 30초 안에 설명하는 요약: public 화면에 개발 용어가 남아 있으면 서비스보다 포트폴리오 데모처럼 보이기 때문에, 홈·추천·랭킹 copy를 제품 언어로 다시 썼습니다. 요청 흐름과 서버 계산은 그대로 두고, view model과 템플릿만 바꿔 플레이어가 바로 이해할 수 있는 화면으로 정리했고, 내부 운영 페이지로 가는 링크도 public 결과 화면에서 제거했습니다.
 - 아직 내가 이해가 부족한 부분: 이번에는 public copy만 정리했기 때문에, 내부 운영 정보를 실제 `/admin` 라우트로 옮기는 작업이 아직 남아 있다. 다음 단계에서 admin 대시보드 1차를 만들 때 어떤 데이터까지 한 화면에 모을지 더 정해야 한다.
+
+## 2026-03-24 - 추천 운영 정보를 `/admin` read-only 화면으로 분리
+
+- 단계: 6. 설문 기반 추천 엔진
+- 목적: public 화면에서는 게임/추천 경험만 보이게 하고, 버전·집계·운영 상태 같은 내부 정보는 별도 `/admin` 화면에서만 보이게 실제 라우트와 템플릿을 나눈다. 이전 단계에서는 public 링크만 제거했지만, 운영 화면 자체는 아직 `/recommendation/feedback-insights`에 남아 있었다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/recommendation/web/RecommendationPageController.java`
+  - `src/main/java/com/worldmap/admin/application/AdminDashboardService.java`
+  - `src/main/java/com/worldmap/admin/application/AdminDashboardView.java`
+  - `src/main/java/com/worldmap/admin/application/AdminDashboardRouteView.java`
+  - `src/main/java/com/worldmap/admin/application/AdminDashboardFocusView.java`
+  - `src/main/java/com/worldmap/admin/web/AdminPageController.java`
+  - `src/main/resources/templates/fragments/admin-header.html`
+  - `src/main/resources/templates/admin/index.html`
+  - `src/main/resources/templates/admin/recommendation-feedback.html`
+  - `src/test/java/com/worldmap/admin/AdminPageIntegrationTest.java`
+  - `src/test/java/com/worldmap/recommendation/RecommendationFeedbackIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/20-move-ops-insights-into-admin-surface.md`
+- 요청 흐름 / 데이터 흐름: `GET /admin`은 `AdminPageController.dashboard() -> AdminDashboardService.loadDashboard()` 흐름으로 들어간다. 여기서 서비스가 `RecommendationFeedbackService.summarizeByVersion()`, `RecommendationQuestionCatalog.questions()`, `RecommendationCountryProfileCatalog.profiles()`를 묶어 운영 요약 모델을 만든다. `GET /admin/recommendation/feedback`은 `AdminPageController.recommendationFeedback()`에서 대시보드 요약과 `feedbackInsights` 집계를 같이 템플릿에 넘긴다. 기존 `GET /recommendation/feedback-insights`는 이제 `redirect:/admin/recommendation/feedback`만 수행한다.
+- 데이터 / 상태 변화: 운영 DB 스키마나 추천 계산 로직은 바뀌지 않았다. 바뀐 것은 읽기 모델의 노출 위치다. 만족도 집계는 여전히 `RecommendationFeedbackService`가 계산하고, admin 화면은 그 값을 운영 문맥으로 보여 준다. public 화면은 더 이상 만족도 집계 SSR view를 직접 가지지 않는다.
+- 핵심 도메인 개념: 운영 화면도 하나의 읽기 모델이다. survey version, engine version, 문항 수, 후보 국가 수, 만족도 응답 수를 한 화면에서 보여 주는 것은 단순 템플릿 조립이 아니라 “운영 요약”을 만드는 일이라서 `AdminDashboardService`로 분리했다. 집계 계산 자체는 기존 추천 서비스가 맡고, admin 서비스는 여러 도메인 값을 한 문맥으로 묶는 역할만 한다.
+- 예외 상황 또는 엣지 케이스: 현재 `/admin`은 정보 구조 분리 1차이며, 인증/권한은 아직 없다. 그래서 기존 `/recommendation/feedback-insights`를 바로 404로 없애지 않고 `/admin/recommendation/feedback`으로 redirect해 북마크와 테스트 호환성을 유지했다. 실제 접근 제어는 8단계에서 붙여야 한다.
+- 테스트 내용: `./gradlew test --tests com.worldmap.admin.AdminPageIntegrationTest --tests com.worldmap.recommendation.RecommendationFeedbackIntegrationTest --tests com.worldmap.recommendation.RecommendationPageIntegrationTest` 통과. `AdminPageIntegrationTest`는 `/admin` 대시보드와 `/admin/recommendation/feedback` 운영 화면 SSR을 검증하고, `RecommendationFeedbackIntegrationTest`는 legacy public route redirect를 검증한다.
+- 면접에서 30초 안에 설명하는 요약: public 화면과 운영 화면을 실제 라우트 수준에서 나누기 위해 `/admin` read-only 대시보드와 `/admin/recommendation/feedback`을 추가했습니다. 만족도 집계 계산은 그대로 `RecommendationFeedbackService`가 맡고, `AdminDashboardService`가 현재 설문/엔진 버전과 피드백 요약을 한 번에 묶어 운영 화면 모델을 만듭니다. 기존 public 운영 route는 admin으로 redirect해 사용자 경험과 운영 정보를 분리했습니다.
+- 아직 내가 이해가 부족한 부분: 현재 admin 대시보드는 추천 운영과 public 점검에만 초점을 둔다. 다음에는 `persona baseline`, `build 상태`, 더 세밀한 버전 비교까지 이 화면에 얼마나 확장할지 기준을 더 정해야 한다.
