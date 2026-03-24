@@ -35,8 +35,8 @@ public class HomeController {
 			),
 			new ModeCardView(
 				"어울리는 나라 추천",
-				"Survey + LLM",
-				"설문 답변을 서버가 가중치로 점수화해 상위 3개 국가를 먼저 계산하고, 다음 단계에서 LLM 설명을 붙입니다.",
+				"Survey + Eval",
+				"설문 답변을 서버가 가중치로 점수화해 상위 3개 국가를 계산하고, 만족도와 오프라인 평가 시나리오로 설문을 계속 개선합니다.",
 				"Prototype",
 				"/recommendation/survey"
 			),
@@ -55,7 +55,7 @@ public class HomeController {
 			"게임 세션, 라운드, 점수, 정답 판정은 서버가 관리한다.",
 			"프론트는 SSR(Thymeleaf)과 바닐라 JavaScript로 최소한의 상호작용만 담당한다.",
 			"Redis는 단순 캐시가 아니라 랭킹 자료구조로 사용한다.",
-			"LLM은 추천 결과의 설명 생성만 담당하고 결정 로직은 서버가 가진다."
+			"AI는 서비스 런타임이 아니라 설문 개선과 평가 시나리오 생성에만 사용하고, 결정 로직은 서버가 가진다."
 		);
 	}
 
