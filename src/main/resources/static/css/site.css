@@ -763,8 +763,55 @@ button:disabled {
     box-shadow: 0 0 0 1px rgba(141, 224, 255, 0.12), 0 12px 24px rgba(0, 0, 0, 0.16);
 }
 
+.option-card:has(input:checked) {
+    border-color: rgba(141, 224, 255, 0.34);
+    background: linear-gradient(180deg, rgba(15, 33, 56, 0.94) 0%, rgba(9, 20, 36, 0.94) 100%);
+    box-shadow: 0 0 0 1px rgba(141, 224, 255, 0.12), 0 12px 24px rgba(0, 0, 0, 0.16);
+}
+
 .option-card input {
     accent-color: var(--accent);
+}
+
+.option-card__copy {
+    display: grid;
+    gap: 4px;
+}
+
+.option-card__copy strong {
+    color: var(--ink);
+}
+
+.option-card__copy span {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    line-height: 1.55;
+}
+
+.recommendation-question {
+    display: grid;
+    gap: 16px;
+}
+
+.recommendation-option {
+    align-items: start;
+    min-height: 0;
+    padding: 16px;
+}
+
+.recommendation-meta {
+    display: grid;
+    gap: 4px;
+    margin-top: 14px;
+}
+
+.recommendation-meta p {
+    margin: 0;
+    color: var(--text-muted);
+}
+
+.recommendation-reason-list {
+    margin-top: 14px;
 }
 
 .globe-shell {

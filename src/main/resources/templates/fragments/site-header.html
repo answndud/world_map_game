@@ -18,6 +18,9 @@
                th:classappend="${activeSection == 'population'} ? ' is-active'"
                th:href="@{/games/population/start}">Population</a>
             <a class="site-nav-link"
+               th:classappend="${activeSection == 'recommendation'} ? ' is-active'"
+               th:href="@{/recommendation/survey}">Recommend</a>
+            <a class="site-nav-link"
                th:classappend="${activeSection == 'ranking'} ? ' is-active'"
                th:href="@{/ranking}">Ranking</a>
         </nav>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>어울리는 나라 추천 결과</title>
+    <link rel="stylesheet" th:href="@{/css/site.css}">
+</head>
+<body>
+<div class="page-shell">
+    <th:block th:replace="~{fragments/site-header :: siteHeader('recommendation')}"></th:block>
+    <header class="hero compact-hero">
+        <p class="eyebrow">Recommendation Result</p>
+        <h1>추천 결과</h1>
+        <p class="hero-copy">
+            서버는 6개 설문 답변을 가중치로 바꾼 뒤, 국가 프로필과 비교해 상위 3개 국가를 계산했습니다.
+            아직 설명 문장은 정적이지만, 계산 결과 자체는 서버가 deterministic하게 만든 값입니다.
+        </p>
+    </header>
+
+    <main class="layout">
+        <section class="panel game-panel">
+            <div class="panel-head">
+                <h2>내 설문 기준</h2>
+                <p>아래 6개 답변이 추천 점수 계산의 입력이 됩니다. 다음 단계에서는 이 입력과 결과를 LLM 설명 프롬프트로 넘기게 됩니다.</p>
+            </div>
+
+            <div class="stats-grid">
+                <article class="stat-card" th:each="preference : ${result.submittedPreferences}">
+                    <span class="subtitle" th:text="${preference.title}">기후</span>
+                    <strong th:text="${preference.selectedLabel}">따뜻한 기후</strong>
+                </article>
+            </div>
+        </section>
+
+        <section class="panel game-panel">
+            <div class="panel-head">
+                <h2>Top 3 국가</h2>
+                <p>순위는 총점 기준이며, 각 카드는 현재 설문 답변과 가장 잘 맞은 이유 3개를 같이 보여줍니다.</p>
+            </div>
+
+            <div class="card-grid">
+                <article class="mode-card recommendation-country-card"
+                         th:each="candidate : ${result.recommendations}">
+                    <div class="card-top">
+                        <span class="status" th:text="${'TOP ' + candidate.rank}">TOP 1</span>
+                        <span class="subtitle" th:text="${candidate.iso3Code + ' · ' + candidate.continentLabel}">SGP · 아시아</span>
+                    </div>
+                    <h3 th:text="${candidate.countryNameKr}">싱가포르</h3>
+                    <p th:text="${candidate.headline}">
+                        도심 속도, 영어 친화도, 안전성이 모두 높은 국가입니다.
+                    </p>
+                    <div class="recommendation-meta">
+                        <p th:text="${'수도 · ' + candidate.capitalCity}">수도 · 싱가포르</p>
+                        <p th:text="${'인구 · ' + candidate.populationLabel}">인구 · 5,900,000명</p>
+                        <p th:text="${'매칭 점수 · ' + candidate.matchScore}">매칭 점수 · 182</p>
+                    </div>
+                    <ul class="check-list recommendation-reason-list">
+                        <li th:each="reason : ${candidate.reasons}" th:text="${reason}">
+                            영어 친화도가 초반 적응 장벽을 낮춰 줄 가능성이 큽니다.
+                        </li>
+                    </ul>
+                </article>
+            </div>
+
+            <div class="page-actions">
+                <a class="primary-link" th:href="@{/recommendation/survey}">설문 다시 하기</a>
+                <a class="ghost-link" th:href="@{/}">메인으로 돌아가기</a>
+            </div>
+        </section>
+    </main>
+</div>
+</body>
+</html>

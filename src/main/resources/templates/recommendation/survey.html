@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>어울리는 나라 추천 설문</title>
+    <link rel="stylesheet" th:href="@{/css/site.css}">
+</head>
+<body>
+<div class="page-shell">
+    <th:block th:replace="~{fragments/site-header :: siteHeader('recommendation')}"></th:block>
+    <header class="hero compact-hero">
+        <p class="eyebrow">Survey Recommendation Engine</p>
+        <h1>어울리는 나라 추천</h1>
+        <p class="hero-copy">
+            이 단계에서는 LLM 없이도 설문 답변을 서버가 직접 점수화해 상위 3개 국가를 계산합니다.
+            추천 결과의 근거를 먼저 deterministic하게 만들고, 설명 생성은 다음 단계에서 붙입니다.
+        </p>
+    </header>
+
+    <main class="layout">
+        <section class="panel game-panel">
+            <div class="panel-head">
+                <h2>설문 시작</h2>
+                <p>기후, 생활 속도, 물가 허용 범위, 도시/자연 취향, 영어 중요도, 최우선 기준을 고르면 서버가 국가 프로필과 비교합니다.</p>
+            </div>
+
+            <div class="rule-grid">
+                <article class="rule-card">
+                    <span class="subtitle">Server</span>
+                    <strong>Weighted Top 3</strong>
+                </article>
+                <article class="rule-card">
+                    <span class="subtitle">Result</span>
+                    <strong>Deterministic</strong>
+                </article>
+                <article class="rule-card">
+                    <span class="subtitle">LLM</span>
+                    <strong>Next Stage</strong>
+                </article>
+            </div>
+
+            <p class="message-box" th:if="${surveyErrorMessage != null}" th:text="${surveyErrorMessage}">
+                모든 문항을 선택해주세요.
+            </p>
+
+            <form class="game-form" th:action="@{/recommendation/survey}" method="post">
+                <section class="panel recommendation-question"
+                         th:each="question : ${surveyQuestions}">
+                    <div class="panel-head">
+                        <h2 th:text="${question.title}">어떤 기후가 더 오래 머물기 편한가요?</h2>
+                        <p th:text="${question.helperText}">기후는 추천 풀이 크게 달라지는 기준입니다.</p>
+                    </div>
+
+                    <div class="options-grid">
+                        <label class="option-card recommendation-option"
+                               th:each="option : ${question.options}">
+                            <input type="radio"
+                                   th:name="${question.fieldName}"
+                                   th:value="${option.value}"
+                                   th:checked="${surveyForm.isSelected(question.fieldName, option.value)}">
+                            <span class="option-card__copy">
+                                <strong th:text="${option.label}">따뜻한 기후</strong>
+                                <span th:text="${option.description}">햇빛과 온난한 날씨를 선호합니다.</span>
+                            </span>
+                        </label>
+                    </div>
+                </section>
+
+                <div class="page-actions">
+                    <button class="primary-button" type="submit">추천 결과 보기</button>
+                    <a class="ghost-link" th:href="@{/}">메인으로 돌아가기</a>
+                </div>
+            </form>
+        </section>
+    </main>
+</div>
+</body>
+</html>

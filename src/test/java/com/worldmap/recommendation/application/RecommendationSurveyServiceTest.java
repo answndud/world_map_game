@@ -1,0 +1,78 @@
+package com.worldmap.recommendation.application;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import com.worldmap.country.domain.Continent;
+import com.worldmap.country.domain.Country;
+import com.worldmap.country.domain.CountryReferenceType;
+import com.worldmap.country.domain.CountryRepository;
+import com.worldmap.recommendation.domain.RecommendationSurveyAnswers;
+import java.math.BigDecimal;
+import java.util.List;
+import org.junit.jupiter.api.Test;
+
+class RecommendationSurveyServiceTest {
+
+	@Test
+	void recommendReturnsDeterministicTopThree() {
+		CountryRepository countryRepository = mock(CountryRepository.class);
+		when(countryRepository.findAllByOrderByNameKrAsc()).thenReturn(List.of(
+			country("CAN", "캐나다", "Canada", Continent.NORTH_AMERICA, "오타와", 40_000_000L),
+			country("AUS", "호주", "Australia", Continent.OCEANIA, "캔버라", 27_000_000L),
+			country("NZL", "뉴질랜드", "New Zealand", Continent.OCEANIA, "웰링턴", 5_000_000L),
+			country("SGP", "싱가포르", "Singapore", Continent.ASIA, "싱가포르", 5_900_000L),
+			country("JPN", "일본", "Japan", Continent.ASIA, "도쿄", 124_000_000L),
+			country("DEU", "독일", "Germany", Continent.EUROPE, "베를린", 84_000_000L),
+			country("SWE", "스웨덴", "Sweden", Continent.EUROPE, "스톡홀름", 10_000_000L),
+			country("ESP", "스페인", "Spain", Continent.EUROPE, "마드리드", 48_000_000L),
+			country("PRT", "포르투갈", "Portugal", Continent.EUROPE, "리스본", 10_000_000L),
+			country("CHE", "스위스", "Switzerland", Continent.EUROPE, "베른", 9_000_000L),
+			country("NLD", "네덜란드", "Netherlands", Continent.EUROPE, "암스테르담", 18_000_000L),
+			country("KOR", "대한민국", "South Korea", Continent.ASIA, "서울", 51_000_000L)
+		));
+
+		RecommendationSurveyService service = new RecommendationSurveyService(
+			new RecommendationCountryProfileCatalog(),
+			new RecommendationQuestionCatalog(),
+			countryRepository
+		);
+
+		RecommendationSurveyResultView result = service.recommend(new RecommendationSurveyAnswers(
+			RecommendationSurveyAnswers.ClimatePreference.WARM,
+			RecommendationSurveyAnswers.PacePreference.FAST,
+			RecommendationSurveyAnswers.BudgetPreference.HIGH,
+			RecommendationSurveyAnswers.EnvironmentPreference.CITY,
+			RecommendationSurveyAnswers.EnglishImportance.HIGH,
+			RecommendationSurveyAnswers.PriorityFocus.DIVERSITY
+		));
+
+		assertThat(result.recommendations()).hasSize(3);
+		assertThat(result.recommendations().getFirst().countryNameKr()).isEqualTo("싱가포르");
+		assertThat(result.submittedPreferences()).hasSize(6);
+	}
+
+	private Country country(
+		String iso3Code,
+		String nameKr,
+		String nameEn,
+		Continent continent,
+		String capitalCity,
+		Long population
+	) {
+		return Country.create(
+			iso3Code.substring(0, 2),
+			iso3Code,
+			nameKr,
+			nameEn,
+			continent,
+			capitalCity,
+			BigDecimal.ZERO,
+			BigDecimal.ZERO,
+			CountryReferenceType.CAPITAL_CITY,
+			population,
+			2024
+		);
+	}
+}

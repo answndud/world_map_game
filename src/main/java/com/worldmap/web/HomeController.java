@@ -36,8 +36,8 @@ public class HomeController {
 			new ModeCardView(
 				"어울리는 나라 추천",
 				"Survey + LLM",
-				"추천 결과는 서버가 계산하고 LLM은 설명만 생성하도록 역할을 분리합니다.",
-				"Planned",
+				"설문 답변을 서버가 가중치로 점수화해 상위 3개 국가를 먼저 계산하고, 다음 단계에서 LLM 설명을 붙입니다.",
+				"Prototype",
 				"/recommendation/survey"
 			),
 			new ModeCardView(
@@ -65,7 +65,8 @@ public class HomeController {
 			"국가 시드 데이터와 country 도메인 추가 완료",
 			"위치 찾기 게임 Level 1 세션/라운드 흐름 구현 완료",
 			"인구수 맞추기 게임 Level 1 구현 완료",
-			"Redis 기반 전체/일간 랭킹 1차 구현"
+			"Redis 기반 전체/일간 랭킹 1차 구현",
+			"설문 기반 추천 엔진 1차 deterministic 계산 흐름 구현"
 		);
 	}
 }
