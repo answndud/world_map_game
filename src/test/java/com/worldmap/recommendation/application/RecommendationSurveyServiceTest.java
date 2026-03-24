@@ -53,6 +53,39 @@ class RecommendationSurveyServiceTest {
 		assertThat(result.submittedPreferences()).hasSize(6);
 	}
 
+	@Test
+	void recommendCanSurfaceExpandedPoolCandidates() {
+		CountryRepository countryRepository = mock(CountryRepository.class);
+		when(countryRepository.findAllByOrderByNameKrAsc()).thenReturn(List.of(
+			country("THA", "태국", "Thailand", Continent.ASIA, "방콕", 71_000_000L),
+			country("MYS", "말레이시아", "Malaysia", Continent.ASIA, "쿠알라룸푸르", 35_000_000L),
+			country("VNM", "베트남", "Vietnam", Continent.ASIA, "하노이", 101_000_000L),
+			country("BRA", "브라질", "Brazil", Continent.SOUTH_AMERICA, "브라질리아", 211_000_000L),
+			country("MEX", "멕시코", "Mexico", Continent.NORTH_AMERICA, "멕시코시티", 130_000_000L),
+			country("ZAF", "남아프리카공화국", "South Africa", Continent.AFRICA, "프리토리아", 63_000_000L),
+			country("PRT", "포르투갈", "Portugal", Continent.EUROPE, "리스본", 10_000_000L),
+			country("ESP", "스페인", "Spain", Continent.EUROPE, "마드리드", 48_000_000L)
+		));
+
+		RecommendationSurveyService service = new RecommendationSurveyService(
+			new RecommendationCountryProfileCatalog(),
+			new RecommendationQuestionCatalog(),
+			countryRepository
+		);
+
+		RecommendationSurveyResultView result = service.recommend(new RecommendationSurveyAnswers(
+			RecommendationSurveyAnswers.ClimatePreference.WARM,
+			RecommendationSurveyAnswers.PacePreference.BALANCED,
+			RecommendationSurveyAnswers.BudgetPreference.LOW,
+			RecommendationSurveyAnswers.EnvironmentPreference.CITY,
+			RecommendationSurveyAnswers.EnglishImportance.MEDIUM,
+			RecommendationSurveyAnswers.PriorityFocus.FOOD
+		));
+
+		assertThat(result.recommendations()).hasSize(3);
+		assertThat(result.recommendations().getFirst().countryNameKr()).isEqualTo("말레이시아");
+	}
+
 	private Country country(
 		String iso3Code,
 		String nameKr,
