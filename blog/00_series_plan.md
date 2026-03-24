@@ -38,7 +38,7 @@
 11. [Redis Sorted Set으로 랭킹 반영하기](./06-redis-leaderboard-vertical-slice.md)
 12. [15초 폴링으로 랭킹 화면 갱신하기](./07-leaderboard-polling-refresh.md)
 13. [랭킹 화면 필터와 동점 규칙 정리하기](./08-ranking-filter-and-tie-rule.md)
-14. 설문 기반 추천 엔진 만들기
+14. [설문 기반 추천 엔진 만들기](./09-survey-recommendation-engine.md)
 15. LLM으로 추천 결과 설명 생성하기
 
 ### Part E. 테스트, 확장, 취업 패키징

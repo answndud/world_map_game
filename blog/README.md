@@ -71,7 +71,7 @@
 11. [Redis Sorted Set으로 실시간 랭킹 만들기](./06-redis-leaderboard-vertical-slice.md)
 12. [SSE 대신 15초 폴링으로 랭킹 화면을 살아 있게 만들기](./07-leaderboard-polling-refresh.md)
 13. [랭킹 화면에 모드/범위 필터와 동점 규칙 정리하기](./08-ranking-filter-and-tie-rule.md)
-14. 설문 기반 나라 추천 엔진 만들기
+14. [설문 기반 나라 추천 엔진 만들기](./09-survey-recommendation-engine.md)
 15. LLM으로 추천 결과 설명 붙이기
 
 ### Part E. 확장과 포트폴리오 정리

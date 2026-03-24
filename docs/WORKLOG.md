@@ -1060,3 +1060,42 @@
 - 테스트 내용: `./gradlew test --tests com.worldmap.ranking.LeaderboardIntegrationTest` 통과. 통합 테스트에는 `/ranking`이 `15초 Polling` 문구를 포함하는지 확인을 추가했다.
 - 면접에서 30초 안에 설명하는 요약: 랭킹은 이미 저장/조회/복구 구조가 완성돼 있었기 때문에, 이번에는 전략을 마감하는 작업을 했습니다. 현재 MVP에서는 15초 polling으로 충분하다고 판단해 그 결정을 화면과 문서에 남겼고, 더 복잡한 SSE/WebSocket은 9단계 실시간성 고도화 범위로 분리했습니다.
 - 아직 내가 이해가 부족한 부분: 언제 polling이 더 이상 충분하지 않고 SSE/WebSocket으로 넘어가야 하는지에 대한 정량 기준은 아직 약하다. 이후 사용자 수, 업데이트 빈도, 서버 리소스 데이터를 본 뒤 판단 기준을 더 구체화해야 한다.
+
+## 2026-03-24 - 설문 기반 추천 엔진 1차 vertical slice
+
+- 단계: 6. 설문 기반 추천 엔진
+- 목적: 추천 기능을 바로 LLM에게 맡기지 않고, 설문 답변만으로 deterministic하게 top 3 국가를 계산하는 서버 엔진을 먼저 만든다. 이번 조각에서는 설문 페이지, 답변 타입, 국가 프로필 카탈로그, 가중치 계산 서비스, 결과 SSR 화면까지 연결한다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/recommendation/domain/RecommendationSurveyAnswers.java`
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationCountryProfile.java`
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationCountryProfileCatalog.java`
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationQuestionCatalog.java`
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationOptionView.java`
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationQuestionView.java`
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationPreferenceSummaryView.java`
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationCandidateView.java`
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationSurveyResultView.java`
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationSurveyService.java`
+  - `src/main/java/com/worldmap/recommendation/web/RecommendationSurveyForm.java`
+  - `src/main/java/com/worldmap/recommendation/web/RecommendationPageController.java`
+  - `src/main/resources/templates/recommendation/survey.html`
+  - `src/main/resources/templates/recommendation/result.html`
+  - `src/main/resources/templates/fragments/site-header.html`
+  - `src/main/resources/templates/home.html`
+  - `src/main/resources/static/css/site.css`
+  - `src/main/java/com/worldmap/web/HomeController.java`
+  - `src/test/java/com/worldmap/recommendation/application/RecommendationSurveyServiceTest.java`
+  - `src/test/java/com/worldmap/recommendation/RecommendationPageIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/09-survey-recommendation-engine.md`
+- 요청 흐름 / 데이터 흐름: 사용자는 `GET /recommendation/survey`로 설문 페이지를 열고 6개 문항을 고른 뒤 `POST /recommendation/survey`를 보낸다. 컨트롤러는 `RecommendationSurveyForm`으로 입력을 검증하고, 이를 `RecommendationSurveyAnswers` 불변 객체로 바꿔 `RecommendationSurveyService.recommend()`에 넘긴다. 서비스는 `CountryRepository`의 기본 국가 정보와 `RecommendationCountryProfileCatalog`의 추천 전용 속성을 합쳐 점수를 계산하고, 상위 3개 결과를 `RecommendationSurveyResultView`로 만들어 SSR 결과 페이지에 넘긴다.
+- 데이터 / 상태 변화: 아직 DB 스키마는 바뀌지 않았다. 이번 단계의 “답변 저장 구조”는 DB 엔티티가 아니라 `폼 객체 -> 불변 답변 객체` 구조다. 이유는 지금 단계의 핵심이 추천 규칙 확정이기 때문이다. 국가 기본 데이터는 기존 `country` 테이블을 재사용하고, 추천용 속성만 별도 프로필 카탈로그로 시작했다.
+- 핵심 도메인 개념: 추천 계산은 LLM이 아니라 서버가 해야 한다. 그래서 설문 입력 자체도 enum 기반으로 타입을 고정했고, 추천 후보 비교는 기후/생활 속도/물가/환경/영어/최우선 기준을 점수화해 deterministic하게 처리했다. 즉 이번 결과 화면은 “자연어 설명”이 아니라 “서버가 계산한 근거”를 먼저 보여주는 1차 엔진이다.
+- 예외 상황 또는 엣지 케이스: 현재 추천 프로필은 12개 국가로 시작하는 수작업 카탈로그라, 후보 풀이 아직 제한적이다. 또한 설문 답변은 현재 세션 기록으로 저장하지 않으므로 나중에 추천 이력이나 재조회 기능을 붙일 때는 별도 저장 모델이 필요하다. 영문/현지 언어 적응 난이도도 지금은 영어 친화도 한 축으로 단순화했다.
+- 테스트 내용: `./gradlew test --tests com.worldmap.recommendation.RecommendationPageIntegrationTest --tests com.worldmap.recommendation.application.RecommendationSurveyServiceTest --tests com.worldmap.web.HomeControllerTest` 통과. 서비스 테스트는 warm/fast/high/city/high english/diversity 조합에서 `싱가포르`가 1위로 나오는지 확인했고, 통합 테스트는 설문 페이지 렌더링과 설문 제출 후 결과 페이지 SSR 렌더링을 확인했다.
+- 면접에서 30초 안에 설명하는 요약: 추천 기능은 처음부터 계산과 설명을 분리했습니다. 이번 단계에서는 설문 답변을 enum 기반으로 고정하고, 서버가 국가 프로필 카탈로그와 비교해 가중치 점수로 top 3를 계산하도록 만들었습니다. 즉 추천 결과 자체는 deterministic하게 서버가 만들고, LLM은 다음 단계에서 그 결과를 설명하는 역할만 맡게 됩니다.
+- 아직 내가 이해가 부족한 부분: 현재 국가 프로필 12개는 시작용이라 추천 품질을 더 높이려면 후보 국가 수와 속성을 더 늘려야 한다. 또한 답변 저장을 언제 DB 엔티티로 올릴지, LLM 프롬프트 입력용 구조를 어디서 고정할지도 다음 단계에서 더 분명히 해야 한다.

@@ -29,7 +29,7 @@
 | 3 | 국가 위치 찾기 게임 Level 1 | Reworking |
 | 4 | 국가 인구수 맞추기 게임 Level 1 | Reworking |
 | 5 | Redis 랭킹 시스템 | Done |
-| 6 | 설문 기반 추천 엔진 | Not Started |
+| 6 | 설문 기반 추천 엔진 | In Progress |
 | 7 | LLM 설명 생성 | Not Started |
 | 8 | 인증, 전적, 마이페이지 | Not Started |
 | 9 | Level 2와 실시간성 고도화 | Not Started |
@@ -392,7 +392,7 @@
 
 ### 6. 설문 기반 추천 엔진
 
-상태: Not Started
+상태: In Progress
 
 목표:
 
@@ -406,15 +406,37 @@
 - 상위 3개 국가 계산
 - 추천 결과 페이지 표시
 
+현재까지 완료된 항목:
+
+- `RecommendationSurveyAnswers`로 설문 답변 타입과 enum 선택지 구조 정의
+- `RecommendationQuestionCatalog`로 6개 문항과 SSR 렌더링용 옵션 카탈로그 구성
+- `RecommendationCountryProfileCatalog`로 추천 계산에 쓰는 국가 프로필 12개 정의
+- `RecommendationSurveyForm`으로 요청 바인딩 및 답변 유효성 검증 추가
+- `RecommendationSurveyService.recommend()`에서 가중치 기반 상위 3개 국가 계산 구현
+- `/recommendation/survey` 설문 페이지와 `/recommendation/survey` POST 결과 페이지 SSR 흐름 추가
+- 결과 페이지에서 설문 입력 요약, top 3 국가, 서버 계산 이유 3개 노출
+- 추천 기능을 홈 화면과 공통 헤더 내비게이션에 연결
+- 추천 페이지 통합 테스트와 추천 서비스 단위 테스트 통과
+
+이 단계에서 남은 일:
+
+- 추천 결과 저장 구조를 DB까지 확장할지 결정
+- 국가 프로필 수와 속성을 더 늘려 추천 후보 풀을 넓히기
+- 가중치 튜닝과 경계값 조정
+- 다음 단계에서 LLM 설명 프롬프트로 넘길 구조화 입력 고정
+
 반드시 이해할 것:
 
 - 왜 추천 후보 계산을 LLM에 맡기지 않는가
 - 문항별 가중치가 결과에 어떤 영향을 주는가
+- 왜 지금은 답변 저장을 DB 엔티티보다 `폼 -> 불변 답변 객체` 구조로 먼저 시작했는가
+- 왜 country 테이블만으로 부족한 속성은 별도 프로필 카탈로그로 시작했는가
 
 면접 포인트:
 
 - 추천 로직의 결정성을 어떻게 확보했는가
 - 추천 품질은 어떤 데이터에 의존하는가
+- 왜 결과 설명과 결과 계산을 분리했는가
 
 완료 기준:
 

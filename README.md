@@ -169,6 +169,15 @@
 
 즉, `추천 결과의 근거는 서버 데이터`, `설명은 LLM`으로 분리한다.
 
+### 현재 1차 구현 상태
+
+- `/recommendation/survey`에서 SSR 설문 6문항을 제공한다.
+- 서버는 `RecommendationQuestionCatalog`로 문항과 선택지를 관리한다.
+- 제출된 답변은 `RecommendationSurveyForm -> RecommendationSurveyAnswers` 구조로 검증하고 변환한다.
+- `RecommendationSurveyService`가 국가 프로필 카탈로그와 비교해 가중치 점수를 계산하고 상위 3개 국가를 반환한다.
+- 결과 페이지는 아직 LLM 설명이 아니라, 서버가 계산한 매칭 점수와 핵심 이유 3개를 deterministic하게 보여준다.
+- 추천 결과 저장과 LLM 자연어 설명은 다음 단계에서 붙인다.
+
 ## 7. 랭킹 시스템 설계
 
 랭킹은 Redis를 쓰는 이유가 분명해야 한다.
