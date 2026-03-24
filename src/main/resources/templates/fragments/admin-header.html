@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:fragment="adminHeader(activeSection)">
+    <header class="site-header">
+        <a class="site-brand" th:href="@{/admin}">
+            <span class="site-brand-mark">WorldMap</span>
+            <strong>Admin</strong>
+        </a>
+        <nav class="site-nav" aria-label="관리자 이동">
+            <a class="site-nav-link"
+               th:classappend="${activeSection == 'dashboard'} ? ' is-active'"
+               th:href="@{/admin}">Dashboard</a>
+            <a class="site-nav-link"
+               th:classappend="${activeSection == 'recommendation-feedback'} ? ' is-active'"
+               th:href="@{/admin/recommendation/feedback}">Recommendation</a>
+            <a class="site-nav-link" th:href="@{/}">Public Home</a>
+        </nav>
+    </header>
+</th:block>
+</body>
+</html>

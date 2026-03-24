@@ -8,8 +8,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 import com.worldmap.recommendation.domain.RecommendationFeedback;
 import com.worldmap.recommendation.domain.RecommendationFeedbackRepository;
@@ -121,17 +121,10 @@ class RecommendationFeedbackIntegrationTest {
 	}
 
 	@Test
-	void feedbackInsightsPageRendersVersionSummaryTable() throws Exception {
-		saveFeedback("survey-v1", "engine-v1", 5);
-		saveFeedback("survey-v1", "engine-v1", 4);
-
+	void legacyFeedbackInsightsRouteRedirectsToAdminRecommendationFeedbackPage() throws Exception {
 		mockMvc.perform(get("/recommendation/feedback-insights"))
-			.andExpect(status().isOk())
-			.andExpect(view().name("recommendation/feedback-insights"))
-			.andExpect(content().string(containsString("추천 만족도 집계")))
-			.andExpect(content().string(containsString("survey-v1")))
-			.andExpect(content().string(containsString("engine-v1")))
-			.andExpect(content().string(containsString("TOTAL FEEDBACK")));
+			.andExpect(status().is3xxRedirection())
+			.andExpect(redirectedUrl("/admin/recommendation/feedback"));
 	}
 
 	private void saveFeedback(String surveyVersion, String engineVersion, int score) {

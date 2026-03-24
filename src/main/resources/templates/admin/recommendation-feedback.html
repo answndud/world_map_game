@@ -3,29 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>추천 만족도 집계</title>
-    <link rel="stylesheet" th:href="@{/css/site.css(v='20260324-square-ui-3')}">
+    <title>추천 만족도 운영 화면</title>
+    <link rel="stylesheet" th:href="@{/css/site.css(v='20260324-square-ui-1')}">
 </head>
 <body>
 <div class="page-shell">
-    <th:block th:replace="~{fragments/site-header :: siteHeader('recommendation')}"></th:block>
+    <th:block th:replace="~{fragments/admin-header :: adminHeader('recommendation-feedback')}"></th:block>
     <header class="hero compact-hero">
-        <p class="eyebrow">Recommendation Feedback Insights</p>
-        <h1>추천 만족도 집계</h1>
+        <p class="eyebrow">Recommendation Ops</p>
+        <h1>추천 만족도 운영 화면</h1>
         <p class="hero-copy">
-            추천 결과 자체는 저장하지 않고, `surveyVersion + engineVersion + 만족도 점수`를 기준으로 설문 품질을 봅니다.
-            이 화면은 어떤 버전 조합에서 평균 점수가 높았는지와 응답 수가 충분한지를 읽기 위한 내부용 요약 화면입니다.
+            추천 결과 자체는 저장하지 않고, 설문 버전과 엔진 버전 조합별 만족도만 읽어 다음 설문 개선 기준으로 사용합니다.
         </p>
     </header>
 
     <main class="layout">
         <section class="panel game-panel">
             <div class="panel-head">
-                <h2>전체 요약</h2>
-                <p>현재는 버전 조합별 평균 점수, 응답 수, 점수 분포만 보고 다음 설문 개선 방향을 잡습니다.</p>
+                <h2>운영 기준</h2>
+                <p>평균 점수만 보지 않고, 응답 수와 점수 분포를 함께 봐야 다음 설문 개정 방향을 판단할 수 있습니다.</p>
             </div>
 
             <div class="stats-grid">
+                <article class="stat-card">
+                    <span class="subtitle">CURRENT SURVEY</span>
+                    <strong th:text="${dashboard.currentSurveyVersion}">survey-v2</strong>
+                </article>
+                <article class="stat-card">
+                    <span class="subtitle">CURRENT ENGINE</span>
+                    <strong th:text="${dashboard.currentEngineVersion}">engine-v2</strong>
+                </article>
                 <article class="stat-card">
                     <span class="subtitle">TOTAL FEEDBACK</span>
                     <strong th:text="${feedbackInsights.totalResponses}">0</strong>
@@ -44,7 +51,7 @@
         <section class="panel game-panel">
             <div class="panel-head">
                 <h2>버전 조합별 집계</h2>
-                <p>응답 수가 너무 적으면 평균 점수만으로 결론 내리지 않고, 표본 수와 분포를 같이 봅니다.</p>
+                <p>응답 수가 적은 버전은 평균 점수만 믿지 않고, 분포와 마지막 응답 시각을 같이 확인합니다.</p>
             </div>
 
             <div class="table-shell">
@@ -76,8 +83,8 @@
             </div>
 
             <div class="page-actions">
-                <a class="primary-link" th:href="@{/recommendation/survey}">설문으로 돌아가기</a>
-                <a class="ghost-link" th:href="@{/}">메인으로 돌아가기</a>
+                <a class="primary-link" th:href="@{/admin}">대시보드로 돌아가기</a>
+                <a class="ghost-link" th:href="@{/recommendation/survey}">public 설문 확인</a>
             </div>
         </section>
     </main>
