@@ -1133,3 +1133,32 @@
 - 면접에서 30초 안에 설명하는 요약: 처음에는 모서리 반경만 제거했지만, 그 정도로는 여전히 화면이 부드럽게 느껴졌습니다. 그래서 공통 CSS에서 버튼, 패널, 입력창, 모달 같은 박스형 UI 전체에 같은 컷 코너 규칙을 넣어, 사이트 전반이 더 각진 게임 HUD처럼 보이도록 한 번 더 정리했습니다.
 - 아직 내가 이해가 부족한 부분: clip-path 기반 컷 코너가 브라우저별 렌더링이나 모바일 성능에 어떤 차이를 주는지는 실제 기기에서 추가 확인이 필요하다.
 - blog 작성 여부: 생략. 이번 변경도 요청 흐름이나 도메인 모델이 아니라 공통 테마 조정이라 WORKLOG 기록으로 충분하다고 판단했다.
+
+## 2026-03-24 - 공통 CSS 반영 경로 정리와 각진 HUD 2차 강화
+
+- 단계: 공통 UI 폴리시
+- 목적: 사용자 스크린샷상 둥근 디자인이 그대로 남아 있었고, 확인 결과 8080에서 실제로 내려가던 `site.css`가 수정 전 구버전이었다. 그래서 이번에는 컷 코너를 더 크게 강화하는 동시에, 모든 템플릿의 스타일 링크에 버전 쿼리를 붙여 새 공통 CSS가 확실히 반영되도록 정리한다.
+- 변경 파일:
+  - `src/main/resources/static/css/site.css`
+  - `src/main/resources/templates/home.html`
+  - `src/main/resources/templates/location-game/start.html`
+  - `src/main/resources/templates/location-game/play.html`
+  - `src/main/resources/templates/location-game/result.html`
+  - `src/main/resources/templates/population-game/start.html`
+  - `src/main/resources/templates/population-game/play.html`
+  - `src/main/resources/templates/population-game/result.html`
+  - `src/main/resources/templates/recommendation/survey.html`
+  - `src/main/resources/templates/recommendation/result.html`
+  - `src/main/resources/templates/ranking/index.html`
+  - `src/main/resources/templates/error/404.html`
+  - `src/main/resources/templates/error/500.html`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 서버 비즈니스 요청 흐름은 바뀌지 않았다. 바뀐 것은 렌더링 자산 전달 경로다. 각 페이지 템플릿은 이제 `/css/site.css?v=20260324-angular-hud-2` 형태로 공통 스타일을 참조해, 브라우저와 서버가 이전 CSS를 잡고 있더라도 새 버전을 강제로 읽게 된다.
+- 데이터 / 상태 변화: DB, Redis, API, 게임 세션 상태는 바뀌지 않는다. 이번 변경은 전부 공통 UI 자산 전달과 표현 계층에 있다.
+- 핵심 도메인 개념: “반경을 0으로 둔다”와 “사용자가 실제로 각진 화면을 본다”는 다른 문제다. 이번에는 컷 코너 크기를 더 키워 디자인 언어를 더 날카롭게 만들고, 동시에 전역 스타일 링크에 버전 쿼리를 붙여 수정본이 실제로 화면에 반영되도록 했다.
+- 예외 상황 또는 엣지 케이스: 이 수정은 템플릿이 직접 참조하는 공통 CSS에만 적용된다. 만약 브라우저 탭이 아주 오래된 HTML 자체를 들고 있으면 한 번 새로고침이 여전히 필요할 수 있다. 또한 현재 버전 쿼리는 수동 문자열이므로, 나중에 정적 자산 빌드 파이프라인이 생기면 해시 기반으로 바꾸는 편이 더 좋다.
+- 테스트 내용: `/css/site.css` 응답 본문을 직접 확인해 이전 `border-radius: 18px`, `999px` 구버전이 내려오고 있음을 재현했고, 이후 템플릿 링크와 CSS를 수정했다. `git diff --check` 통과, `rg -n "site.css"`로 모든 템플릿의 스타일 링크를 다시 점검했다.
+- 면접에서 30초 안에 설명하는 요약: 처음에는 공통 CSS만 수정했지만, 실제 화면은 오래된 정적 자산을 계속 보고 있었습니다. 그래서 버튼과 패널의 컷 코너를 더 크게 강화하는 동시에, 모든 페이지의 `site.css` 링크에 버전 쿼리를 붙여 새 스타일이 확실히 반영되도록 정리했습니다.
+- 아직 내가 이해가 부족한 부분: 지금은 수동 버전 문자열로 캐시를 깨고 있는데, 이후 빌드/배포 환경이 생기면 정적 자산 fingerprinting으로 어떻게 자동화할지 더 정리해야 한다.
+- blog 작성 여부: 생략. 이번 변경은 공통 스타일 반영 경로와 시각 조정이라 별도 기술 글보다 WORKLOG 기록이 적합하다고 판단했다.
