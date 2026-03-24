@@ -18,9 +18,9 @@
     --danger: #d36a6a;
     --warning: #f3d27a;
     --shadow: 0 28px 80px rgba(0, 0, 0, 0.34);
-    --cut-sm: 8px;
-    --cut-md: 12px;
-    --cut-lg: 16px;
+    --cut-sm: 12px;
+    --cut-md: 18px;
+    --cut-lg: 24px;
 }
 
 * {
@@ -190,7 +190,7 @@ a {
     display: inline-flex;
     align-items: center;
     min-height: 40px;
-    padding: 0 14px;
+    padding: 0 18px;
     border: 1px solid var(--line);
     border-radius: 0;
     background: rgba(8, 16, 30, 0.56);
@@ -418,7 +418,7 @@ body[data-page="population-play"] .page-shell {
 .status {
     display: inline-flex;
     align-items: center;
-    padding: 7px 11px;
+    padding: 8px 14px;
     border: 1px solid rgba(92, 200, 255, 0.18);
     border-radius: 0;
     background: rgba(92, 200, 255, 0.1);
@@ -457,8 +457,8 @@ body[data-page="population-play"] .page-shell {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 44px;
-    padding: 0 16px;
+    min-height: 46px;
+    padding: 0 20px;
     border-radius: 0;
     border: 1px solid transparent;
     text-decoration: none;
@@ -583,7 +583,7 @@ button:disabled {
 .field input {
     width: 100%;
     min-height: 50px;
-    padding: 0 14px;
+    padding: 0 18px;
     border: 1px solid var(--line);
     border-radius: 0;
     background: rgba(5, 10, 18, 0.92);
@@ -612,7 +612,7 @@ button:disabled {
     border: 1px solid var(--line);
     border-radius: 0;
     background: linear-gradient(180deg, rgba(11, 22, 39, 0.84) 0%, rgba(7, 14, 26, 0.84) 100%);
-    padding: 16px 18px;
+    padding: 18px 20px;
 }
 
 .message-box {
@@ -804,7 +804,7 @@ button:disabled {
     align-items: center;
     gap: 12px;
     min-height: 58px;
-    padding: 0 16px;
+    padding: 0 20px;
     border: 1px solid var(--line);
     border-radius: 0;
     background: linear-gradient(180deg, rgba(11, 22, 39, 0.82) 0%, rgba(7, 14, 26, 0.82) 100%);
