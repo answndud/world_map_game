@@ -1162,3 +1162,32 @@
 - 면접에서 30초 안에 설명하는 요약: 처음에는 공통 CSS만 수정했지만, 실제 화면은 오래된 정적 자산을 계속 보고 있었습니다. 그래서 버튼과 패널의 컷 코너를 더 크게 강화하는 동시에, 모든 페이지의 `site.css` 링크에 버전 쿼리를 붙여 새 스타일이 확실히 반영되도록 정리했습니다.
 - 아직 내가 이해가 부족한 부분: 지금은 수동 버전 문자열로 캐시를 깨고 있는데, 이후 빌드/배포 환경이 생기면 정적 자산 fingerprinting으로 어떻게 자동화할지 더 정리해야 한다.
 - blog 작성 여부: 생략. 이번 변경은 공통 스타일 반영 경로와 시각 조정이라 별도 기술 글보다 WORKLOG 기록이 적합하다고 판단했다.
+
+## 2026-03-24 - 컷 코너 제거와 완전한 사각형 UI로 재정렬
+
+- 단계: 공통 UI 폴리시
+- 목적: 사용자 피드백 기준으로 컷 코너 자체가 촌스럽고 불필요했다. 이번에는 “각진 느낌”이 아니라 진짜 직사각형을 목표로, 공통 UI에서 잘린 모서리 규칙을 제거하고 모든 박스형 요소를 완전한 사각형으로 정리한다.
+- 변경 파일:
+  - `src/main/resources/static/css/site.css`
+  - `src/main/resources/templates/home.html`
+  - `src/main/resources/templates/location-game/start.html`
+  - `src/main/resources/templates/location-game/play.html`
+  - `src/main/resources/templates/location-game/result.html`
+  - `src/main/resources/templates/population-game/start.html`
+  - `src/main/resources/templates/population-game/play.html`
+  - `src/main/resources/templates/population-game/result.html`
+  - `src/main/resources/templates/recommendation/survey.html`
+  - `src/main/resources/templates/recommendation/result.html`
+  - `src/main/resources/templates/ranking/index.html`
+  - `src/main/resources/templates/error/404.html`
+  - `src/main/resources/templates/error/500.html`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 서버 요청 흐름은 바뀌지 않았다. 렌더링 레이어에서만 바뀌었다. 모든 템플릿이 이제 `/css/site.css?v=20260324-square-ui-1`을 참조하고, 공통 CSS에서는 컷 코너용 `clip-path`와 관련 변수들을 제거해 단순한 사각형 표면만 남겼다.
+- 데이터 / 상태 변화: 없다. 표현 계층만 수정했다.
+- 핵심 도메인 개념: 사용자가 원하는 것은 “기계적인 컷 코너”가 아니라 “깔끔한 직사각형”이었다. 그래서 반경을 없앤 뒤 남아 있던 clip-path까지 제거해, 박스형 UI가 해석 여지 없이 직사각형으로 보이도록 정리했다.
+- 예외 상황 또는 엣지 케이스: 버전 쿼리를 다시 바꿨기 때문에 새 HTML을 받은 뒤에는 오래된 CSS를 잡을 가능성이 낮다. 다만 브라우저 탭이 아주 오래된 문서를 유지 중이면 한 번 새로고침은 여전히 필요할 수 있다.
+- 테스트 내용: `rg -n "clip-path|surface-cut|cut-sm|cut-md|cut-lg"`로 컷 코너 관련 선언과 참조를 다시 확인했고, 스타일 링크가 모든 템플릿에서 `20260324-square-ui-1`로 바뀌었는지 검색으로 점검했다.
+- 면접에서 30초 안에 설명하는 요약: 처음에는 radius 제거, 그다음엔 컷 코너까지 시도했지만 사용자 취향과 안 맞았습니다. 그래서 공통 CSS에서 컷 코너 자체를 걷어내고, 모든 박스형 UI를 `border-radius: 0`인 완전한 직사각형으로 다시 정리했습니다.
+- 아직 내가 이해가 부족한 부분: 지금은 완전한 직사각형으로 통일했지만, 이후 타이포/간격/보더 두께까지 함께 다듬어야 더 세련된 결과가 나올 수 있다.
+- blog 작성 여부: 생략. 이번 변경은 공통 테마 정리라 WORKLOG 기록으로 충분하다고 판단했다.
