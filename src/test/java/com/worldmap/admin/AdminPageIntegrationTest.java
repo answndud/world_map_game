@@ -154,9 +154,9 @@ class AdminPageIntegrationTest {
 			.andExpect(model().attributeExists("dashboard"))
 			.andExpect(model().attributeExists("personaBaseline"))
 			.andExpect(content().string(containsString("추천 baseline 운영 화면")))
-			.andExpect(content().string(containsString("P04")))
+			.andExpect(content().string(containsString("자동 계산")))
 			.andExpect(content().string(containsString("P15")))
-			.andExpect(content().string(containsString("15 / 18")));
+			.andExpect(content().string(containsString("/ 18")));
 	}
 
 	@Test

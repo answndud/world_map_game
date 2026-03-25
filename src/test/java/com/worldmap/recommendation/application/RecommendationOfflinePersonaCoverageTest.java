@@ -15,13 +15,16 @@ class RecommendationOfflinePersonaCoverageTest {
 	@Autowired
 	private RecommendationSurveyService recommendationSurveyService;
 
+	@Autowired
+	private RecommendationPersonaBaselineCatalog baselineCatalog;
+
 	@Test
 	void currentEngineMaintainsMinimumPersonaCoverage() {
-		List<RecommendationOfflinePersonaScenario> scenarios = RecommendationOfflinePersonaFixtures.scenarios();
+		List<RecommendationPersonaBaselineScenario> scenarios = baselineCatalog.scenarios();
 
 		List<String> missedScenarioIds = scenarios.stream()
 			.filter(scenario -> !matchesAnyExpectedCandidate(scenario))
-			.map(RecommendationOfflinePersonaScenario::id)
+			.map(RecommendationPersonaBaselineScenario::id)
 			.toList();
 
 		long matchedScenarioCount = scenarios.size() - missedScenarioIds.size();
@@ -47,7 +50,7 @@ class RecommendationOfflinePersonaCoverageTest {
 		assertThat(topCountryNames("P18")).contains("싱가포르", "아랍에미리트", "말레이시아").doesNotContain("대한민국");
 	}
 
-	private boolean matchesAnyExpectedCandidate(RecommendationOfflinePersonaScenario scenario) {
+	private boolean matchesAnyExpectedCandidate(RecommendationPersonaBaselineScenario scenario) {
 		List<String> topCountryNames = recommendationSurveyService.recommend(scenario.answers())
 			.recommendations()
 			.stream()
@@ -58,7 +61,7 @@ class RecommendationOfflinePersonaCoverageTest {
 	}
 
 	private List<String> topCountryNames(String scenarioId) {
-		RecommendationOfflinePersonaScenario scenario = RecommendationOfflinePersonaFixtures.scenarios().stream()
+		RecommendationPersonaBaselineScenario scenario = baselineCatalog.scenarios().stream()
 			.filter(candidate -> candidate.id().equals(scenarioId))
 			.findFirst()
 			.orElseThrow();

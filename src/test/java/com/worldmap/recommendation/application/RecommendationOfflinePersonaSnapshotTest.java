@@ -19,9 +19,12 @@ class RecommendationOfflinePersonaSnapshotTest {
 	@Autowired
 	private RecommendationSurveyService recommendationSurveyService;
 
+	@Autowired
+	private RecommendationPersonaBaselineCatalog baselineCatalog;
+
 	@Test
 	void currentEngineMatchesPersonaTop3Snapshot() {
-		for (RecommendationOfflinePersonaScenario scenario : RecommendationOfflinePersonaFixtures.scenarios()) {
+		for (RecommendationPersonaBaselineScenario scenario : baselineCatalog.scenarios()) {
 			List<String> actualTop3 = recommendationSurveyService.recommend(scenario.answers())
 				.recommendations()
 				.stream()
