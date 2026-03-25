@@ -17,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class RecommendationSurveyService {
 
 	public static final String SURVEY_VERSION = "survey-v4";
-	public static final String ENGINE_VERSION = "engine-v4";
+	public static final String ENGINE_VERSION = "engine-v5";
 	private static final int CLIMATE_WEIGHT = 4;
 	private static final int SEASON_STYLE_WEIGHT = 3;
 	private static final int WEATHER_ADAPTATION_WEIGHT = 4;
@@ -40,7 +40,9 @@ public class RecommendationSurveyService {
 	private static final int FUTURE_BASE_WEIGHT = 4;
 	private static final int EXACT_MATCH_BONUS = 2;
 	private static final int COHERENCE_BONUS = 8;
-	private static final int COST_OVERSHOOT_PENALTY = 7;
+	private static final int VALUE_FIRST_COST_OVERSHOOT_PENALTY = 11;
+	private static final int BALANCED_COST_OVERSHOOT_PENALTY = 7;
+	private static final int QUALITY_FIRST_COST_OVERSHOOT_PENALTY = 4;
 	private static final int CLIMATE_MISMATCH_PENALTY = 3;
 	private static final int SEASON_STYLE_MISMATCH_PENALTY = 2;
 	private static final NumberFormat NUMBER_FORMAT = NumberFormat.getInstance(Locale.KOREA);
@@ -173,7 +175,7 @@ public class RecommendationSurveyService {
 		);
 		signals.add(new MatchSignal(
 			costQualityPoints(
-				answers.costQualityPreference().targetPriceLevel(),
+				answers.costQualityPreference(),
 				profile.priceLevel(),
 				costQualityDistance
 			),
@@ -365,7 +367,12 @@ public class RecommendationSurveyService {
 		return Math.round((float) total / values.length);
 	}
 
-	private int costQualityPoints(int preferredPriceLevel, int actualPriceLevel, int distance) {
+	private int costQualityPoints(
+		RecommendationSurveyAnswers.CostQualityPreference costQualityPreference,
+		int actualPriceLevel,
+		int distance
+	) {
+		int preferredPriceLevel = costQualityPreference.targetPriceLevel();
 		int score = switch (distance) {
 			case 0 -> (6 * COST_QUALITY_WEIGHT) + EXACT_MATCH_BONUS;
 			case 1 -> 3 * COST_QUALITY_WEIGHT;
@@ -374,10 +381,18 @@ public class RecommendationSurveyService {
 		};
 
 		if (actualPriceLevel > preferredPriceLevel) {
-			score -= (actualPriceLevel - preferredPriceLevel) * COST_OVERSHOOT_PENALTY;
+			score -= (actualPriceLevel - preferredPriceLevel) * costOvershootPenalty(costQualityPreference);
 		}
 
 		return score;
+	}
+
+	private int costOvershootPenalty(RecommendationSurveyAnswers.CostQualityPreference costQualityPreference) {
+		return switch (costQualityPreference) {
+			case VALUE_FIRST -> VALUE_FIRST_COST_OVERSHOOT_PENALTY;
+			case BALANCED -> BALANCED_COST_OVERSHOOT_PENALTY;
+			case QUALITY_FIRST -> QUALITY_FIRST_COST_OVERSHOOT_PENALTY;
+		};
 	}
 
 	private int supportPoints(
