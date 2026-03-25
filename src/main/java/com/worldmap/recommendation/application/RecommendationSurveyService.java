@@ -17,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class RecommendationSurveyService {
 
 	public static final String SURVEY_VERSION = "survey-v4";
-	public static final String ENGINE_VERSION = "engine-v5";
+	public static final String ENGINE_VERSION = "engine-v6";
 	private static final int CLIMATE_WEIGHT = 4;
 	private static final int SEASON_STYLE_WEIGHT = 3;
 	private static final int WEATHER_ADAPTATION_WEIGHT = 4;
@@ -40,6 +40,7 @@ public class RecommendationSurveyService {
 	private static final int FUTURE_BASE_WEIGHT = 4;
 	private static final int EXACT_MATCH_BONUS = 2;
 	private static final int COHERENCE_BONUS = 8;
+	private static final int EXPERIENCE_TRANSIT_BONUS = 12;
 	private static final int VALUE_FIRST_COST_OVERSHOOT_PENALTY = 11;
 	private static final int BALANCED_COST_OVERSHOOT_PENALTY = 7;
 	private static final int QUALITY_FIRST_COST_OVERSHOOT_PENALTY = 4;
@@ -249,6 +250,11 @@ public class RecommendationSurveyService {
 		signals.add(new MatchSignal(
 			settlementPoints(profile, answers.settlementPreference()),
 			answers.settlementPreference().label() + " 기준에서 적응 난도와 생활 안정성을 함께 반영했습니다."
+		));
+
+		signals.add(new MatchSignal(
+			experienceTransitBonus(profile, answers),
+			"가볍게 적응하며 대중교통 중심으로 살아보기 좋은지 함께 반영했습니다."
 		));
 
 		int futureBaseDistance = distance(answers.futureBasePreference().targetValue(), futureBase(profile));
@@ -463,6 +469,31 @@ public class RecommendationSurveyService {
 			case BALANCED -> profile.safety() + profile.welfare() + profile.diversity();
 			case STABILITY -> (futureBase(profile) * SETTLEMENT_WEIGHT) + profile.newcomerFriendliness();
 		};
+	}
+
+	private int experienceTransitBonus(
+		RecommendationCountryProfile profile,
+		RecommendationSurveyAnswers answers
+	) {
+		if (answers.settlementPreference() != RecommendationSurveyAnswers.SettlementPreference.EXPERIENCE
+			|| answers.mobilityPreference() != RecommendationSurveyAnswers.MobilityPreference.TRANSIT_FIRST
+			|| answers.costQualityPreference() != RecommendationSurveyAnswers.CostQualityPreference.VALUE_FIRST) {
+			return 0;
+		}
+
+		int transitScore = transitSupport(profile);
+		int newcomerScore = newcomerSupport(profile);
+		int digitalScore = profile.digitalConvenience();
+		int safetyScore = profile.safety();
+		int welfareScore = profile.welfare();
+
+		if (transitScore >= 4 && newcomerScore >= 4 && digitalScore >= 4 && safetyScore >= 3 && welfareScore >= 3) {
+			return EXPERIENCE_TRANSIT_BONUS;
+		}
+		if (transitScore >= 3 && newcomerScore >= 4 && digitalScore >= 3 && safetyScore >= 3) {
+			return EXPERIENCE_TRANSIT_BONUS / 2;
+		}
+		return 0;
 	}
 
 	private String continentLabel(Country country) {

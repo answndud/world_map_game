@@ -14,7 +14,7 @@ import org.springframework.test.context.ActiveProfiles;
 @ActiveProfiles("test")
 class RecommendationOfflinePersonaSnapshotTest {
 
-	private static final Map<String, List<String>> ENGINE_V5_TOP3_SNAPSHOT = snapshot();
+	private static final Map<String, List<String>> ENGINE_V6_TOP3_SNAPSHOT = snapshot();
 
 	@Autowired
 	private RecommendationSurveyService recommendationSurveyService;
@@ -31,7 +31,7 @@ class RecommendationOfflinePersonaSnapshotTest {
 
 			assertThat(actualTop3)
 				.as("scenario=%s", scenario.id())
-				.containsExactlyElementsOf(ENGINE_V5_TOP3_SNAPSHOT.get(scenario.id()));
+				.containsExactlyElementsOf(ENGINE_V6_TOP3_SNAPSHOT.get(scenario.id()));
 		}
 	}
 
@@ -51,7 +51,7 @@ class RecommendationOfflinePersonaSnapshotTest {
 		snapshot.put("P12", List.of("포르투갈", "태국", "말레이시아"));
 		snapshot.put("P13", List.of("싱가포르", "아랍에미리트", "미국"));
 		snapshot.put("P14", List.of("스페인", "태국", "말레이시아"));
-		snapshot.put("P15", List.of("포르투갈", "뉴질랜드", "남아프리카 공화국"));
+		snapshot.put("P15", List.of("포르투갈", "뉴질랜드", "말레이시아"));
 		snapshot.put("P16", List.of("뉴질랜드", "포르투갈", "우루과이"));
 		snapshot.put("P17", List.of("싱가포르", "아랍에미리트", "대한민국"));
 		snapshot.put("P18", List.of("싱가포르", "아랍에미리트", "말레이시아"));
