@@ -17,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class RecommendationSurveyService {
 
 	public static final String SURVEY_VERSION = "survey-v4";
-	public static final String ENGINE_VERSION = "engine-v7";
+	public static final String ENGINE_VERSION = "engine-v8";
 	private static final int CLIMATE_WEIGHT = 4;
 	private static final int SEASON_STYLE_WEIGHT = 3;
 	private static final int WEATHER_ADAPTATION_WEIGHT = 4;
@@ -42,6 +42,8 @@ public class RecommendationSurveyService {
 	private static final int COHERENCE_BONUS = 8;
 	private static final int EXPERIENCE_TRANSIT_BONUS = 12;
 	private static final int CIVIC_BASE_BONUS = 10;
+	private static final int PRACTICAL_SAFETY_BONUS = 8;
+	private static final int SOFT_LANDING_BONUS = 8;
 	private static final int VALUE_FIRST_COST_OVERSHOOT_PENALTY = 11;
 	private static final int BALANCED_COST_OVERSHOOT_PENALTY = 7;
 	private static final int QUALITY_FIRST_COST_OVERSHOOT_PENALTY = 4;
@@ -261,6 +263,16 @@ public class RecommendationSurveyService {
 		signals.add(new MatchSignal(
 			civicBaseBonus(profile, answers),
 			"안전, 공공 서비스, 기본 정착 안정성을 함께 보는 균형형 생활 기준을 반영했습니다."
+		));
+
+		signals.add(new MatchSignal(
+			practicalSafetyBonus(profile, answers),
+			"비용을 아끼면서도 실제로 적응하기 쉬운 안전 중심 생활인지 함께 반영했습니다."
+		));
+
+		signals.add(new MatchSignal(
+			softLandingBonus(profile, answers),
+			"영어와 정착 친화도가 충분해 초기에 부딪히는 장벽이 낮은지도 함께 반영했습니다."
 		));
 
 		int futureBaseDistance = distance(answers.futureBasePreference().targetValue(), futureBase(profile));
@@ -534,6 +546,62 @@ public class RecommendationSurveyService {
 			return CIVIC_BASE_BONUS / 2;
 		}
 		return 0;
+	}
+
+	private int practicalSafetyBonus(
+		RecommendationCountryProfile profile,
+		RecommendationSurveyAnswers answers
+	) {
+		boolean practicalSafetyFit = answers.costQualityPreference() == RecommendationSurveyAnswers.CostQualityPreference.VALUE_FIRST
+			&& answers.safetyPriority() == RecommendationSurveyAnswers.ImportanceLevel.HIGH
+			&& answers.environmentPreference() == RecommendationSurveyAnswers.EnvironmentPreference.MIXED
+			&& answers.pacePreference() == RecommendationSurveyAnswers.PacePreference.BALANCED;
+
+		if (!practicalSafetyFit || profile.priceLevel() >= 4) {
+			return 0;
+		}
+
+		boolean strongAdaptationBase = profile.englishSupport() >= 4
+			&& profile.newcomerFriendliness() >= 4
+			&& profile.housingSpace() >= 4
+			&& profile.safety() >= 4
+			&& profile.welfare() >= 4;
+
+		boolean acceptableAdaptationBase = profile.englishSupport() >= 3
+			&& profile.newcomerFriendliness() >= 3
+			&& profile.safety() >= 4
+			&& profile.welfare() >= 4;
+
+		if (strongAdaptationBase) {
+			return PRACTICAL_SAFETY_BONUS;
+		}
+		if (acceptableAdaptationBase) {
+			return PRACTICAL_SAFETY_BONUS / 2;
+		}
+		return 0;
+	}
+
+	private int softLandingBonus(
+		RecommendationCountryProfile profile,
+		RecommendationSurveyAnswers answers
+	) {
+		boolean needsSoftLanding = answers.costQualityPreference() == RecommendationSurveyAnswers.CostQualityPreference.VALUE_FIRST
+			&& answers.safetyPriority() == RecommendationSurveyAnswers.ImportanceLevel.HIGH
+			&& answers.environmentPreference() == RecommendationSurveyAnswers.EnvironmentPreference.MIXED
+			&& answers.pacePreference() == RecommendationSurveyAnswers.PacePreference.BALANCED
+			&& answers.englishSupportNeed() == RecommendationSurveyAnswers.EnglishSupportNeed.MEDIUM;
+
+		if (!needsSoftLanding || profile.priceLevel() >= 4) {
+			return 0;
+		}
+
+		boolean strongSoftLanding = profile.englishSupport() >= 4
+			&& profile.newcomerFriendliness() >= 4
+			&& profile.housingSpace() >= 4
+			&& profile.safety() >= 4
+			&& profile.welfare() >= 4;
+
+		return strongSoftLanding ? SOFT_LANDING_BONUS : 0;
 	}
 
 	private String continentLabel(Country country) {
