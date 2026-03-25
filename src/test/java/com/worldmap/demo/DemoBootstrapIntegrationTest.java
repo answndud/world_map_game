@@ -6,9 +6,13 @@ import com.worldmap.auth.application.MemberPasswordHasher;
 import com.worldmap.auth.domain.Member;
 import com.worldmap.auth.domain.MemberRepository;
 import com.worldmap.auth.domain.MemberRole;
+import com.worldmap.admin.application.AdminRecommendationOpsReviewService;
+import com.worldmap.admin.application.AdminRecommendationOpsReviewView;
 import com.worldmap.game.location.domain.LocationGameSessionRepository;
 import com.worldmap.game.population.domain.PopulationGameSessionRepository;
 import com.worldmap.ranking.domain.LeaderboardRecordRepository;
+import com.worldmap.recommendation.application.RecommendationSurveyService;
+import com.worldmap.recommendation.domain.RecommendationFeedbackRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -42,6 +46,12 @@ class DemoBootstrapIntegrationTest {
 	@Autowired
 	private PopulationGameSessionRepository populationGameSessionRepository;
 
+	@Autowired
+	private RecommendationFeedbackRepository recommendationFeedbackRepository;
+
+	@Autowired
+	private AdminRecommendationOpsReviewService adminRecommendationOpsReviewService;
+
 	@Test
 	void startupBootstrapCreatesLocalAdminUserAndSampleRuns() {
 		Member adminMember = memberRepository.findByNicknameIgnoreCase("worldmap_admin").orElseThrow();
@@ -56,5 +66,15 @@ class DemoBootstrapIntegrationTest {
 		assertThat(leaderboardRecordRepository.findByRunSignature("demo:population:orbit_runner:1")).isPresent();
 		assertThat(locationGameSessionRepository.findAllByGuestSessionKeyAndMemberIdIsNull("demo-guest-live")).hasSize(1);
 		assertThat(populationGameSessionRepository.countByMemberIdAndFinishedAtIsNotNull(demoMember.getId())).isGreaterThanOrEqualTo(1L);
+		assertThat(
+			recommendationFeedbackRepository.countBySurveyVersionAndEngineVersion(
+				RecommendationSurveyService.SURVEY_VERSION,
+				RecommendationSurveyService.ENGINE_VERSION
+			)
+		).isGreaterThanOrEqualTo(5L);
+
+		AdminRecommendationOpsReviewView opsReview = adminRecommendationOpsReviewService.loadReview();
+		assertThat(opsReview.priorityActionTitle()).isEqualTo("rank drift 줄이기");
+		assertThat(opsReview.currentVersionResponseCount()).isGreaterThanOrEqualTo(5);
 	}
 }

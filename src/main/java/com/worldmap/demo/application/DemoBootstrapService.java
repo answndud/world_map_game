@@ -24,6 +24,10 @@ import com.worldmap.ranking.domain.LeaderboardGameLevel;
 import com.worldmap.ranking.domain.LeaderboardGameMode;
 import com.worldmap.ranking.domain.LeaderboardRecord;
 import com.worldmap.ranking.domain.LeaderboardRecordRepository;
+import com.worldmap.recommendation.application.RecommendationSurveyService;
+import com.worldmap.recommendation.domain.RecommendationFeedback;
+import com.worldmap.recommendation.domain.RecommendationFeedbackRepository;
+import com.worldmap.recommendation.domain.RecommendationSurveyAnswers;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -39,6 +43,7 @@ public class DemoBootstrapService {
 	private static final String DEMO_GUEST_SESSION_KEY = "demo-guest-live";
 	private static final String DEMO_LOCATION_RUN_SIGNATURE = "demo:location:orbit_runner:1";
 	private static final String DEMO_POPULATION_RUN_SIGNATURE = "demo:population:orbit_runner:1";
+	private static final int DEMO_CURRENT_FEEDBACK_TARGET = 5;
 
 	private final DemoBootstrapProperties demoBootstrapProperties;
 	private final MemberRepository memberRepository;
@@ -53,6 +58,7 @@ public class DemoBootstrapService {
 	private final PopulationGameAttemptRepository populationGameAttemptRepository;
 	private final LeaderboardRecordRepository leaderboardRecordRepository;
 	private final LeaderboardRankingPolicy leaderboardRankingPolicy;
+	private final RecommendationFeedbackRepository recommendationFeedbackRepository;
 
 	public DemoBootstrapService(
 		DemoBootstrapProperties demoBootstrapProperties,
@@ -67,7 +73,8 @@ public class DemoBootstrapService {
 		PopulationGameStageRepository populationGameStageRepository,
 		PopulationGameAttemptRepository populationGameAttemptRepository,
 		LeaderboardRecordRepository leaderboardRecordRepository,
-		LeaderboardRankingPolicy leaderboardRankingPolicy
+		LeaderboardRankingPolicy leaderboardRankingPolicy,
+		RecommendationFeedbackRepository recommendationFeedbackRepository
 	) {
 		this.demoBootstrapProperties = demoBootstrapProperties;
 		this.memberRepository = memberRepository;
@@ -82,6 +89,7 @@ public class DemoBootstrapService {
 		this.populationGameAttemptRepository = populationGameAttemptRepository;
 		this.leaderboardRecordRepository = leaderboardRecordRepository;
 		this.leaderboardRankingPolicy = leaderboardRankingPolicy;
+		this.recommendationFeedbackRepository = recommendationFeedbackRepository;
 	}
 
 	@Transactional
@@ -99,6 +107,7 @@ public class DemoBootstrapService {
 		provisionDemoLocationRun(demoMember);
 		provisionDemoPopulationRun(demoMember);
 		provisionDemoGuestLiveSession();
+		provisionCurrentRecommendationFeedbackSamples();
 	}
 
 	private Member provisionDemoMember() {
@@ -289,6 +298,158 @@ public class DemoBootstrapService {
 
 		LocationGameStage pendingStage = LocationGameStage.create(liveGuestSession, 1, mexico);
 		locationGameStageRepository.save(pendingStage);
+	}
+
+	private void provisionCurrentRecommendationFeedbackSamples() {
+		long currentFeedbackCount = recommendationFeedbackRepository.countBySurveyVersionAndEngineVersion(
+			RecommendationSurveyService.SURVEY_VERSION,
+			RecommendationSurveyService.ENGINE_VERSION
+		);
+
+		if (currentFeedbackCount >= DEMO_CURRENT_FEEDBACK_TARGET) {
+			return;
+		}
+
+		List<RecommendationFeedback> demoFeedbacks = List.of(
+			RecommendationFeedback.create(
+				RecommendationSurveyService.SURVEY_VERSION,
+				RecommendationSurveyService.ENGINE_VERSION,
+				5,
+				new RecommendationSurveyAnswers(
+					RecommendationSurveyAnswers.ClimatePreference.MILD,
+					RecommendationSurveyAnswers.SeasonStylePreference.DISTINCT,
+					RecommendationSurveyAnswers.SeasonTolerance.LOW,
+					RecommendationSurveyAnswers.PacePreference.BALANCED,
+					RecommendationSurveyAnswers.CrowdPreference.BALANCED,
+					RecommendationSurveyAnswers.CostQualityPreference.QUALITY_FIRST,
+					RecommendationSurveyAnswers.HousingPreference.BALANCED,
+					RecommendationSurveyAnswers.EnvironmentPreference.MIXED,
+					RecommendationSurveyAnswers.MobilityPreference.BALANCED,
+					RecommendationSurveyAnswers.EnglishSupportNeed.HIGH,
+					RecommendationSurveyAnswers.NewcomerSupportNeed.HIGH,
+					RecommendationSurveyAnswers.ImportanceLevel.HIGH,
+					RecommendationSurveyAnswers.ImportanceLevel.HIGH,
+					RecommendationSurveyAnswers.ImportanceLevel.MEDIUM,
+					RecommendationSurveyAnswers.ImportanceLevel.MEDIUM,
+					RecommendationSurveyAnswers.ImportanceLevel.MEDIUM,
+					RecommendationSurveyAnswers.ImportanceLevel.HIGH,
+					RecommendationSurveyAnswers.WorkLifePreference.BALANCED,
+					RecommendationSurveyAnswers.SettlementPreference.STABILITY,
+					RecommendationSurveyAnswers.FutureBasePreference.STABLE_BASE
+				)
+			),
+			RecommendationFeedback.create(
+				RecommendationSurveyService.SURVEY_VERSION,
+				RecommendationSurveyService.ENGINE_VERSION,
+				4,
+				new RecommendationSurveyAnswers(
+					RecommendationSurveyAnswers.ClimatePreference.WARM,
+					RecommendationSurveyAnswers.SeasonStylePreference.STABLE,
+					RecommendationSurveyAnswers.SeasonTolerance.MEDIUM,
+					RecommendationSurveyAnswers.PacePreference.FAST,
+					RecommendationSurveyAnswers.CrowdPreference.BALANCED,
+					RecommendationSurveyAnswers.CostQualityPreference.BALANCED,
+					RecommendationSurveyAnswers.HousingPreference.CENTER_FIRST,
+					RecommendationSurveyAnswers.EnvironmentPreference.CITY,
+					RecommendationSurveyAnswers.MobilityPreference.TRANSIT_FIRST,
+					RecommendationSurveyAnswers.EnglishSupportNeed.HIGH,
+					RecommendationSurveyAnswers.NewcomerSupportNeed.MEDIUM,
+					RecommendationSurveyAnswers.ImportanceLevel.MEDIUM,
+					RecommendationSurveyAnswers.ImportanceLevel.MEDIUM,
+					RecommendationSurveyAnswers.ImportanceLevel.HIGH,
+					RecommendationSurveyAnswers.ImportanceLevel.MEDIUM,
+					RecommendationSurveyAnswers.ImportanceLevel.HIGH,
+					RecommendationSurveyAnswers.ImportanceLevel.HIGH,
+					RecommendationSurveyAnswers.WorkLifePreference.DRIVE_FIRST,
+					RecommendationSurveyAnswers.SettlementPreference.EXPERIENCE,
+					RecommendationSurveyAnswers.FutureBasePreference.BALANCED
+				)
+			),
+			RecommendationFeedback.create(
+				RecommendationSurveyService.SURVEY_VERSION,
+				RecommendationSurveyService.ENGINE_VERSION,
+				4,
+				new RecommendationSurveyAnswers(
+					RecommendationSurveyAnswers.ClimatePreference.MILD,
+					RecommendationSurveyAnswers.SeasonStylePreference.STABLE,
+					RecommendationSurveyAnswers.SeasonTolerance.MEDIUM,
+					RecommendationSurveyAnswers.PacePreference.RELAXED,
+					RecommendationSurveyAnswers.CrowdPreference.CALM,
+					RecommendationSurveyAnswers.CostQualityPreference.VALUE_FIRST,
+					RecommendationSurveyAnswers.HousingPreference.SPACE_FIRST,
+					RecommendationSurveyAnswers.EnvironmentPreference.NATURE,
+					RecommendationSurveyAnswers.MobilityPreference.SPACE_FIRST,
+					RecommendationSurveyAnswers.EnglishSupportNeed.MEDIUM,
+					RecommendationSurveyAnswers.NewcomerSupportNeed.MEDIUM,
+					RecommendationSurveyAnswers.ImportanceLevel.HIGH,
+					RecommendationSurveyAnswers.ImportanceLevel.MEDIUM,
+					RecommendationSurveyAnswers.ImportanceLevel.MEDIUM,
+					RecommendationSurveyAnswers.ImportanceLevel.MEDIUM,
+					RecommendationSurveyAnswers.ImportanceLevel.LOW,
+					RecommendationSurveyAnswers.ImportanceLevel.MEDIUM,
+					RecommendationSurveyAnswers.WorkLifePreference.LIFE_FIRST,
+					RecommendationSurveyAnswers.SettlementPreference.BALANCED,
+					RecommendationSurveyAnswers.FutureBasePreference.BALANCED
+				)
+			),
+			RecommendationFeedback.create(
+				RecommendationSurveyService.SURVEY_VERSION,
+				RecommendationSurveyService.ENGINE_VERSION,
+				5,
+				new RecommendationSurveyAnswers(
+					RecommendationSurveyAnswers.ClimatePreference.WARM,
+					RecommendationSurveyAnswers.SeasonStylePreference.STABLE,
+					RecommendationSurveyAnswers.SeasonTolerance.HIGH,
+					RecommendationSurveyAnswers.PacePreference.BALANCED,
+					RecommendationSurveyAnswers.CrowdPreference.BALANCED,
+					RecommendationSurveyAnswers.CostQualityPreference.VALUE_FIRST,
+					RecommendationSurveyAnswers.HousingPreference.BALANCED,
+					RecommendationSurveyAnswers.EnvironmentPreference.MIXED,
+					RecommendationSurveyAnswers.MobilityPreference.TRANSIT_FIRST,
+					RecommendationSurveyAnswers.EnglishSupportNeed.MEDIUM,
+					RecommendationSurveyAnswers.NewcomerSupportNeed.HIGH,
+					RecommendationSurveyAnswers.ImportanceLevel.MEDIUM,
+					RecommendationSurveyAnswers.ImportanceLevel.MEDIUM,
+					RecommendationSurveyAnswers.ImportanceLevel.HIGH,
+					RecommendationSurveyAnswers.ImportanceLevel.HIGH,
+					RecommendationSurveyAnswers.ImportanceLevel.HIGH,
+					RecommendationSurveyAnswers.ImportanceLevel.MEDIUM,
+					RecommendationSurveyAnswers.WorkLifePreference.BALANCED,
+					RecommendationSurveyAnswers.SettlementPreference.EXPERIENCE,
+					RecommendationSurveyAnswers.FutureBasePreference.LIGHT_START
+				)
+			),
+			RecommendationFeedback.create(
+				RecommendationSurveyService.SURVEY_VERSION,
+				RecommendationSurveyService.ENGINE_VERSION,
+				4,
+				new RecommendationSurveyAnswers(
+					RecommendationSurveyAnswers.ClimatePreference.MILD,
+					RecommendationSurveyAnswers.SeasonStylePreference.DISTINCT,
+					RecommendationSurveyAnswers.SeasonTolerance.MEDIUM,
+					RecommendationSurveyAnswers.PacePreference.BALANCED,
+					RecommendationSurveyAnswers.CrowdPreference.BALANCED,
+					RecommendationSurveyAnswers.CostQualityPreference.BALANCED,
+					RecommendationSurveyAnswers.HousingPreference.BALANCED,
+					RecommendationSurveyAnswers.EnvironmentPreference.MIXED,
+					RecommendationSurveyAnswers.MobilityPreference.BALANCED,
+					RecommendationSurveyAnswers.EnglishSupportNeed.MEDIUM,
+					RecommendationSurveyAnswers.NewcomerSupportNeed.HIGH,
+					RecommendationSurveyAnswers.ImportanceLevel.HIGH,
+					RecommendationSurveyAnswers.ImportanceLevel.HIGH,
+					RecommendationSurveyAnswers.ImportanceLevel.MEDIUM,
+					RecommendationSurveyAnswers.ImportanceLevel.MEDIUM,
+					RecommendationSurveyAnswers.ImportanceLevel.MEDIUM,
+					RecommendationSurveyAnswers.ImportanceLevel.MEDIUM,
+					RecommendationSurveyAnswers.WorkLifePreference.BALANCED,
+					RecommendationSurveyAnswers.SettlementPreference.STABILITY,
+					RecommendationSurveyAnswers.FutureBasePreference.STABLE_BASE
+				)
+			)
+		);
+
+		int missingFeedbackCount = DEMO_CURRENT_FEEDBACK_TARGET - (int) currentFeedbackCount;
+		recommendationFeedbackRepository.saveAll(demoFeedbacks.stream().limit(missingFeedbackCount).toList());
 	}
 
 	private void saveLeaderboardRecord(

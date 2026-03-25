@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.Query;
 
 public interface RecommendationFeedbackRepository extends JpaRepository<RecommendationFeedback, Long> {
 
+	long countBySurveyVersionAndEngineVersion(String surveyVersion, String engineVersion);
+
 	@Query("""
 		select
 			f.surveyVersion as surveyVersion,
