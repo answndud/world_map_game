@@ -509,12 +509,13 @@
 - `engine-v7`에서는 `P04`가 `스페인 + 아일랜드 + 우루과이`, `P06`이 `스페인 + 우루과이`를 포함하도록 snapshot/coverage를 다시 고정
 - `engine-v8`에서는 `P06`이 `스페인 + 우루과이 + 포르투갈`이 되도록 snapshot/coverage를 다시 고정
 - `engine-v9`에서는 `QUALITY_FIRST + SAFETY HIGH + English HIGH + MIXED + BALANCED + LOW tolerance` 조합에 한해 family base bonus를 추가해 `P11`에 `캐나다`를 다시 포함시키고 baseline을 `18 / 18`까지 올림
+- `engine-v10`에서는 `WARM + FAST + CITY + QUALITY_FIRST + English/Digital/Culture HIGH` 조합에만 작동하는 global hub bonus를 추가해 `P01`, `P05`의 1위 anchor를 `싱가포르`로 되돌리고 snapshot/coverage를 다시 고정
 - `RecommendationPersonaBaselineCatalog`로 baseline 시나리오 정의를 main source로 올리고, `/dashboard/recommendation/persona-baseline`이 현재 엔진 결과를 기준으로 weak scenario를 자동 계산하게 정리
 - weak scenario가 0개가 된 뒤에는 `/dashboard/recommendation/persona-baseline`이 기대 후보 top 3 여부뿐 아니라 `기대 1위 anchor`가 실제 top 1인지도 같이 계산하도록 확장
 - `/dashboard/recommendation/feedback`는 현재 버전 만족도와 baseline drift를 함께 읽어, 다음 액션을 `피드백 수집 / weak scenario / 문구 점검 / rank drift` 중 하나로 정리하는 운영 메모를 추가
-- local demo bootstrap은 current `survey-v4 / engine-v9` 피드백 샘플 5개를 함께 만들어, fresh local 환경에서도 `/dashboard/recommendation/feedback`이 `rank drift 줄이기` 메모를 바로 보여 주도록 정리
+- local demo bootstrap은 current `survey-v4 / engine-v10` 피드백 샘플 5개를 함께 만들어, fresh local 환경에서도 `/dashboard/recommendation/feedback`이 `rank drift 줄이기` 메모를 바로 보여 주도록 정리
 - `/Users/alex/project/worldmap/docs/PLAYER_COPY_AND_ADMIN_SPLIT_PLAN.md`로 public copy와 admin 운영 화면 분리 설계 정리
-- `/dashboard/recommendation/persona-baseline` read-only 화면으로 현재 baseline 18/18, weak scenario 자동 계산, anchor drift 13개, active-signal 4개를 운영 화면에서 바로 확인
+- `/dashboard/recommendation/persona-baseline` read-only 화면으로 현재 baseline 18/18, weak scenario 자동 계산, anchor drift 11개, active-signal 4개를 운영 화면에서 바로 확인
 - `/dashboard` read-only 대시보드를 추가해 현재 survey/engine 버전, 질문 수, 후보 국가 수, 만족도 수집 현황을 한 화면에서 조회
 - `/dashboard/recommendation/feedback`로 버전별 만족도 집계를 실제 운영 화면으로 이동
 
@@ -538,7 +539,7 @@
 
 이 단계에서 남은 일:
 
-- baseline은 18 / 18까지 올라왔고 anchor drift도 운영 화면에서 보이기 시작했으니, 다음엔 drift 수를 줄일지 만족도 저점을 먼저 볼지 판단
+- baseline은 18 / 18을 유지하고 anchor drift도 11개까지 줄였으니, 다음엔 drift 상위 시나리오 중 실제 만족도 저점과 겹치는 조합을 더 우선해서 볼지 판단
 - 현재는 `/dashboard/recommendation/feedback`이 그 판단을 운영 메모로 내려주므로, 다음 실험은 메모가 가리키는 우선순위 하나만 좁게 집행
 - 실험 결과를 snapshot과 비교해 어떤 시나리오 순위가 움직였는지 문서화
 - rank drift가 큰 시나리오 중 실제 만족도 저점과 겹치는 조합이 있는지 확인
