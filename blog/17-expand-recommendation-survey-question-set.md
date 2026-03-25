@@ -1,5 +1,10 @@
 # [Spring Boot 포트폴리오] 17. 추천 설문을 8문항으로 확장하기
 
+> 현재 기준 안내
+>
+> 이 글은 6문항에서 8문항으로 처음 확장하던 중간 단계 기록이다.
+> 현재 저장소 기준 설문은 8문항이 아니라 20문항이며, 현재 재현 기준은 [37-expand-recommendation-survey-to-twenty-questions.md](./37-expand-recommendation-survey-to-twenty-questions.md)와 [50-current-state-rebuild-map.md](./50-current-state-rebuild-map.md)다.
+
 ## 이번 글의 핵심 질문
 
 추천 설문이 너무 짧으면 사용자는 “이 정도 질문으로 정말 나한테 맞는 나라를 고를 수 있나?”라는 느낌을 받기 쉽다.

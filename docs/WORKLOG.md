@@ -2721,3 +2721,28 @@
 - 테스트 내용: 먼저 디버그 테스트로 `P01`의 실제 점수를 확인해 `아랍에미리트 356 / 싱가포르 349 / 미국 267` gap을 확인했다. 그 다음 `globalHubBonus()`를 추가하고 `P01`, `P05`가 `싱가포르, 아랍에미리트, 미국`으로 바뀐 것을 확인한 뒤, `RecommendationOfflinePersonaSnapshotTest`와 `RecommendationOfflinePersonaCoverageTest`를 `engine-v10` 기준으로 다시 고정했다. `AdminPersonaBaselineServiceIntegrationTest`에서는 anchor drift가 `11`로 줄었는지 확인했고, `AdminRecommendationOpsReviewServiceIntegrationTest`에서는 ops review의 우선 시나리오가 `P02, P04, P06`으로 바뀐 것을 고정했다. 마지막으로 추천/admin targeted suite와 `./gradlew test` 전체 통과를 확인했다.
 - 면접에서 30초 안에 설명하는 요약: baseline 18 / 18을 맞춘 뒤에는 weak scenario보다 1위 순위 drift가 더 중요한 문제가 됐습니다. 이번에는 `P01`, `P05`처럼 warm/fast/city/high-quality 조합에서만 작동하는 `globalHubBonus`를 추천 엔진에 아주 좁게 추가해서, 기대 1위였던 `싱가포르`가 `아랍에미리트`보다 앞서도록 보정했습니다. 그 결과 baseline은 유지하면서 anchor drift 수를 `13 -> 11`로 줄였습니다.
 - 아직 내가 이해가 부족한 부분: 이번 보정으로 `P01`, `P05`는 움직였지만, `P02`, `P04`, `P06` 같은 현실형 drift 시나리오는 여전히 남아 있다. 다음에는 drift 수만 줄일지, 현재 버전 만족도 저점과 겹치는 시나리오를 먼저 볼지 운영 화면 기준으로 다시 판단해야 한다.
+
+## 2026-03-26 - 블로그를 현재 코드 재현용 기준으로 보강
+
+- 단계: 10. 포트폴리오 정리와 발표 준비 보조 조각
+- 목적: `blog/`는 현재까지 주로 기능 발전 과정을 기록하는 연대기 역할을 해 왔다. 그래서 설계 이유를 설명하는 데는 좋았지만, 블로그만 보고 현재 저장소를 그대로 재현하려는 사람에게는 `/admin -> /dashboard`, `8문항 -> 12문항 -> 20문항`, `engine-v9 -> engine-v10` 같은 변화가 혼동을 만들 수 있었다. 이번 조각은 blog를 “현재 코드 재현” 기준에서도 읽을 수 있게 보강하는 데 집중한다.
+- 변경 파일:
+  - `blog/50-current-state-rebuild-map.md`
+  - `blog/00_rebuild_guide.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/13-recommendation-feedback-insights.md`
+  - `blog/17-expand-recommendation-survey-question-set.md`
+  - `blog/20-move-ops-insights-into-admin-surface.md`
+  - `blog/27-protect-admin-routes-with-session-role.md`
+  - `blog/29-bootstrap-admin-account-from-env.md`
+  - `blog/35-redesign-recommendation-survey-with-twelve-questions.md`
+  - `blog/48-seed-current-recommendation-feedback-in-local-demo.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 이번 조각은 런타임 요청을 바꾸지 않는다. 바뀐 것은 설명 흐름이다. 새 허브 글 `blog/50-current-state-rebuild-map.md`는 현재 라우트(`/dashboard`, `/stats`, `/mypage`), 현재 추천 기준(`survey-v4 / engine-v10`, 20문항), 현재 local demo 기준을 한 번에 고정하고, 어떤 글이 역사 기록이고 어떤 글이 현재 재현 기준인지 분리해 준다.
+- 핵심 도메인 개념: 문서도 역할이 나뉜다. `docs/`는 SSOT이고, `blog/`는 출판용 연대기다. 그런데 재현형 블로그로도 쓰려면 “현재 상태 허브”가 따로 있어야 한다. 그래서 이번에는 기존 글을 지우지 않고, 구버전 글 상단에 `현재 기준 안내`를 붙여 연대기와 현재 재현 가이드를 분리했다.
+- 예외 상황 또는 엣지 케이스: 예전 글을 모두 최신 상태로 덮어쓰면 당시 설계 판단이 사라진다. 반대로 아무 안내도 없이 그대로 두면 현재 재현용으로 읽는 사람은 `/admin`이나 8문항 설문을 최신 기준으로 오해할 수 있다. 그래서 본문은 유지하고, 상단 배너와 허브 글로 현재 기준만 명시하는 방식을 택했다.
+- 테스트 내용: 코드나 라우트 자체는 바꾸지 않은 문서 조각이라 애플리케이션 테스트는 다시 돌리지 않았다. 대신 각 글의 상단 안내와 허브 글이 현재 코드 기준([AdminPageController.java](/Users/alex/project/worldmap/src/main/java/com/worldmap/admin/web/AdminPageController.java), [RecommendationSurveyService.java](/Users/alex/project/worldmap/src/main/java/com/worldmap/recommendation/application/RecommendationSurveyService.java), [survey.html](/Users/alex/project/worldmap/src/main/resources/templates/recommendation/survey.html), [site-header.html](/Users/alex/project/worldmap/src/main/resources/templates/fragments/site-header.html))과 직접 연결되도록 점검했고 `git diff --check`로 문서 형식도 확인했다.
+- 면접에서 30초 안에 설명하는 요약: 블로그는 원래 변경 과정을 기록하는 연대기라서, 현재 저장소를 그대로 재현하려는 사람에게는 중간 단계 글이 혼동을 줄 수 있었습니다. 그래서 최신 라우트, 최신 설문 버전, 최신 local demo 기준을 한 번에 모은 rebuild map을 따로 만들고, 구버전 글 상단에는 `현재 기준 안내`를 붙여 연대기와 현재 재현 가이드를 분리했습니다.
+- 아직 내가 이해가 부족한 부분: 지금 허브 글은 추천과 운영 화면처럼 많이 바뀐 축을 중심으로 정리했다. 이후 Level 2가 시작되면 게임 쪽도 같은 방식으로 “현재 기준 허브”를 더 촘촘히 나눌지 검토가 필요하다.

@@ -1,5 +1,11 @@
 # 48. local demo bootstrap에 현재 추천 피드백 샘플 넣기
 
+> 현재 기준 안내
+>
+> 이 글은 local demo bootstrap에 current recommendation feedback sample을 처음 넣던 단계 기록이다.
+> 개념은 그대로 유효하지만, 본문에 적힌 current engine 버전은 당시 기준(`engine-v9`)이다.
+> 현재 저장소 재현 기준 버전은 `survey-v4 / engine-v10`이고, 최신 기준은 [49-add-global-hub-bonus-for-warm-city-hubs.md](./49-add-global-hub-bonus-for-warm-city-hubs.md), [50-current-state-rebuild-map.md](./50-current-state-rebuild-map.md), [LOCAL_DEMO_BOOTSTRAP.md](/Users/alex/project/worldmap/docs/LOCAL_DEMO_BOOTSTRAP.md)를 본다.
+
 ## 왜 이 작업이 필요했는가
 
 추천 운영 화면은 이미 두 개가 있었습니다.

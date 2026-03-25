@@ -37,6 +37,9 @@
 - 의미 있는 기능 조각이 끝났다면 `docs/`와 함께 `blog/`도 같은 턴에 같이 남긴다.
 - 아주 작은 문구 수정이나 미세 CSS 조정처럼 설명 가치가 낮은 변경만 예외로 둔다.
 
+현재 코드 기준으로 다시 만들고 싶다면, 번호 순서로 바로 들어가기 전에
+[50-current-state-rebuild-map.md](./50-current-state-rebuild-map.md)부터 보는 편이 안전하다.
+
 ## 집필 원칙
 
 - "무엇을 만들었는가"보다 "왜 그렇게 설계했는가"를 먼저 설명한다.
@@ -112,6 +115,7 @@
 52. [추천 만족도 운영 화면에 다음 액션 메모 붙이기](./47-add-ops-review-to-recommendation-feedback-dashboard.md)
 53. [local demo bootstrap에 현재 추천 피드백 샘플 넣기](./48-seed-current-recommendation-feedback-in-local-demo.md)
 54. [따뜻한 초도시 허브 시나리오에 global hub bonus 추가하기](./49-add-global-hub-bonus-for-warm-city-hubs.md)
+55. [현재 코드 재현용 블로그 허브](./50-current-state-rebuild-map.md)
 
 ### Part E. 확장과 포트폴리오 정리
 

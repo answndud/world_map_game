@@ -1,5 +1,10 @@
 # [Spring Boot 포트폴리오] 35. 추천 설문을 12문항 trade-off 구조로 다시 설계하기
 
+> 현재 기준 안내
+>
+> 이 글은 추천 설문을 12문항 trade-off 구조로 올리던 중간 단계 기록이다.
+> 현재 저장소 기준 설문은 20문항이며, 현재 재현 기준은 [37-expand-recommendation-survey-to-twenty-questions.md](./37-expand-recommendation-survey-to-twenty-questions.md)와 [50-current-state-rebuild-map.md](./50-current-state-rebuild-map.md)다.
+
 ## 왜 다시 손봤나
 
 기존 추천 설문은 동작은 했지만 질문이 너무 단순했다.

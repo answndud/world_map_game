@@ -1,5 +1,10 @@
 # 세션 role로 `/admin` 운영 화면 접근 제어 붙이기
 
+> 현재 기준 안내
+>
+> 이 글은 운영 화면 접근 제어를 처음 붙이던 시점이라 `/admin/**` 경로를 중심으로 설명한다.
+> 현재 저장소 기준 운영 라우트는 `/dashboard/**`이며, 접근 제어 개념은 그대로 유효하지만 경로와 헤더 노출은 [30-rename-admin-surface-to-dashboard.md](./30-rename-admin-surface-to-dashboard.md)와 [50-current-state-rebuild-map.md](./50-current-state-rebuild-map.md)를 기준으로 읽는 편이 안전하다.
+
 ## 왜 이 글을 쓰는가
 
 `/admin` 화면을 따로 만들었다고 해서 운영 화면 분리가 끝난 것은 아니다.

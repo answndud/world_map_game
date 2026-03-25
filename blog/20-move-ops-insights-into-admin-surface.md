@@ -1,5 +1,10 @@
 # [Spring Boot 포트폴리오] 20. public 운영 정보를 `/admin` read-only 화면으로 옮기기
 
+> 현재 기준 안내
+>
+> 이 글은 운영 정보를 public route에서 처음 분리하던 단계 기록이라 `/admin`을 기준으로 설명한다.
+> 현재 저장소 기준 실제 운영 진입 주소는 `/dashboard`이고, 현재 재현 기준은 [30-rename-admin-surface-to-dashboard.md](./30-rename-admin-surface-to-dashboard.md)와 [50-current-state-rebuild-map.md](./50-current-state-rebuild-map.md)다.
+
 ## 이번 글의 핵심 질문
 
 public 화면 문구를 제품 언어로 바꿨더라도, 내부 운영 화면이 여전히 `/recommendation/feedback-insights` 같은 public 경로에 남아 있으면 정보 구조는 완전히 분리됐다고 보기 어렵다.

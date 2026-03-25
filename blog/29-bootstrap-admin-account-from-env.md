@@ -1,5 +1,11 @@
 # 환경변수로 운영용 admin 계정 bootstrap 하기
 
+> 현재 기준 안내
+>
+> 이 글의 admin bootstrap 개념은 그대로 유효하다.
+> 다만 본문 예시 경로는 `/admin` 기준이라, 현재 저장소를 재현할 때는 실제 운영 진입 주소를 `/dashboard`로 읽어야 한다.
+> 현재 재현 기준은 [30-rename-admin-surface-to-dashboard.md](./30-rename-admin-surface-to-dashboard.md), [33-bootstrap-local-demo-accounts-and-sample-runs.md](./33-bootstrap-local-demo-accounts-and-sample-runs.md), [50-current-state-rebuild-map.md](./50-current-state-rebuild-map.md)다.
+
 ## 왜 이 글을 쓰는가
 
 `/admin` 접근 제어까지 붙이고 나면 바로 생기는 질문이 있다.

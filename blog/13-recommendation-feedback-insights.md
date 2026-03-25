@@ -1,5 +1,11 @@
 # [Spring Boot 포트폴리오] 13. 설문 / 엔진 버전별 만족도 집계 기준 정리하기
 
+> 현재 기준 안내
+>
+> 이 글은 추천 만족도 집계를 처음 public SSR/API로 열었던 단계 기록이다.
+> 현재 저장소 기준 운영 화면은 `/recommendation/feedback-insights`가 아니라 `/dashboard/recommendation/feedback`을 사용한다.
+> 현재 코드 재현 기준은 [50-current-state-rebuild-map.md](./50-current-state-rebuild-map.md), [30-rename-admin-surface-to-dashboard.md](./30-rename-admin-surface-to-dashboard.md), [47-add-ops-review-to-recommendation-feedback-dashboard.md](./47-add-ops-review-to-recommendation-feedback-dashboard.md)를 먼저 본다.
+
 ## 이번 글의 핵심 질문
 
 만족도 피드백을 저장하기 시작했다면, 그 다음 질문은 자연스럽다.
