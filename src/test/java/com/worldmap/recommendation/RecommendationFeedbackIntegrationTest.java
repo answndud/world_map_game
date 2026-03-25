@@ -44,7 +44,7 @@ class RecommendationFeedbackIntegrationTest {
 				.content("""
 					{
 					  "surveyVersion": "survey-v4",
-					  "engineVersion": "engine-v6",
+					  "engineVersion": "engine-v7",
 					  "satisfactionScore": 4,
 					  "climatePreference": "WARM",
 					  "seasonStylePreference": "STABLE",
@@ -71,13 +71,13 @@ class RecommendationFeedbackIntegrationTest {
 			.andExpect(status().isCreated())
 			.andExpect(jsonPath("$.satisfactionScore").value(4))
 			.andExpect(jsonPath("$.surveyVersion").value("survey-v4"))
-			.andExpect(jsonPath("$.engineVersion").value("engine-v6"));
+			.andExpect(jsonPath("$.engineVersion").value("engine-v7"));
 
 		assertThat(recommendationFeedbackRepository.findAll()).hasSize(1);
 		RecommendationFeedback feedback = recommendationFeedbackRepository.findAll().getFirst();
 		assertThat(feedback.getSatisfactionScore()).isEqualTo(4);
 		assertThat(feedback.getSurveyVersion()).isEqualTo("survey-v4");
-		assertThat(feedback.getEngineVersion()).isEqualTo("engine-v6");
+		assertThat(feedback.getEngineVersion()).isEqualTo("engine-v7");
 		assertThat(feedback.getClimatePreference().name()).isEqualTo("WARM");
 		assertThat(feedback.getSeasonStylePreference().name()).isEqualTo("STABLE");
 		assertThat(feedback.getSeasonTolerance().name()).isEqualTo("MEDIUM");
@@ -94,7 +94,7 @@ class RecommendationFeedbackIntegrationTest {
 				.content("""
 					{
 					  "surveyVersion": "survey-v4",
-					  "engineVersion": "engine-v6",
+					  "engineVersion": "engine-v7",
 					  "satisfactionScore": 6,
 					  "climatePreference": "WARM",
 					  "seasonStylePreference": "STABLE",
@@ -129,8 +129,8 @@ class RecommendationFeedbackIntegrationTest {
 		saveFeedback("survey-v1", "engine-v1", 5);
 		saveFeedback("survey-v1", "engine-v1", 4);
 		saveFeedback("survey-v1", "engine-v1", 2);
-		saveFeedback("survey-v4", "engine-v6", 3);
-		saveFeedback("survey-v4", "engine-v6", 3);
+		saveFeedback("survey-v4", "engine-v7", 3);
+		saveFeedback("survey-v4", "engine-v7", 3);
 
 		mockMvc.perform(get("/api/recommendation/feedback/summary"))
 			.andExpect(status().isOk())
@@ -142,7 +142,7 @@ class RecommendationFeedbackIntegrationTest {
 			.andExpect(jsonPath("$.versionSummaries[?(@.surveyVersion=='survey-v1' && @.engineVersion=='engine-v1')].score5Count").value(hasItem(1)))
 			.andExpect(jsonPath("$.versionSummaries[?(@.surveyVersion=='survey-v1' && @.engineVersion=='engine-v1')].score4Count").value(hasItem(1)))
 			.andExpect(jsonPath("$.versionSummaries[?(@.surveyVersion=='survey-v1' && @.engineVersion=='engine-v1')].score2Count").value(hasItem(1)))
-			.andExpect(jsonPath("$.versionSummaries[?(@.surveyVersion=='survey-v4' && @.engineVersion=='engine-v6')].responseCount").value(hasItem(2)));
+			.andExpect(jsonPath("$.versionSummaries[?(@.surveyVersion=='survey-v4' && @.engineVersion=='engine-v7')].responseCount").value(hasItem(2)));
 	}
 
 	@Test

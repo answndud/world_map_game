@@ -17,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class RecommendationSurveyService {
 
 	public static final String SURVEY_VERSION = "survey-v4";
-	public static final String ENGINE_VERSION = "engine-v6";
+	public static final String ENGINE_VERSION = "engine-v7";
 	private static final int CLIMATE_WEIGHT = 4;
 	private static final int SEASON_STYLE_WEIGHT = 3;
 	private static final int WEATHER_ADAPTATION_WEIGHT = 4;
@@ -41,6 +41,7 @@ public class RecommendationSurveyService {
 	private static final int EXACT_MATCH_BONUS = 2;
 	private static final int COHERENCE_BONUS = 8;
 	private static final int EXPERIENCE_TRANSIT_BONUS = 12;
+	private static final int CIVIC_BASE_BONUS = 10;
 	private static final int VALUE_FIRST_COST_OVERSHOOT_PENALTY = 11;
 	private static final int BALANCED_COST_OVERSHOOT_PENALTY = 7;
 	private static final int QUALITY_FIRST_COST_OVERSHOOT_PENALTY = 4;
@@ -255,6 +256,11 @@ public class RecommendationSurveyService {
 		signals.add(new MatchSignal(
 			experienceTransitBonus(profile, answers),
 			"가볍게 적응하며 대중교통 중심으로 살아보기 좋은지 함께 반영했습니다."
+		));
+
+		signals.add(new MatchSignal(
+			civicBaseBonus(profile, answers),
+			"안전, 공공 서비스, 기본 정착 안정성을 함께 보는 균형형 생활 기준을 반영했습니다."
 		));
 
 		int futureBaseDistance = distance(answers.futureBasePreference().targetValue(), futureBase(profile));
@@ -492,6 +498,40 @@ public class RecommendationSurveyService {
 		}
 		if (transitScore >= 3 && newcomerScore >= 4 && digitalScore >= 3 && safetyScore >= 3) {
 			return EXPERIENCE_TRANSIT_BONUS / 2;
+		}
+		return 0;
+	}
+
+	private int civicBaseBonus(
+		RecommendationCountryProfile profile,
+		RecommendationSurveyAnswers answers
+	) {
+		boolean wantsBalancedCivicLife = answers.environmentPreference() == RecommendationSurveyAnswers.EnvironmentPreference.MIXED
+			&& answers.pacePreference() == RecommendationSurveyAnswers.PacePreference.BALANCED
+			&& (answers.publicServicePriority() == RecommendationSurveyAnswers.ImportanceLevel.HIGH
+				|| answers.safetyPriority() == RecommendationSurveyAnswers.ImportanceLevel.HIGH);
+
+		if (!wantsBalancedCivicLife) {
+			return 0;
+		}
+
+		if (answers.costQualityPreference() == RecommendationSurveyAnswers.CostQualityPreference.VALUE_FIRST
+			&& profile.priceLevel() >= 4) {
+			return 0;
+		}
+
+		int civicBaseScore = normalizedAverage(
+			profile.safety(),
+			profile.welfare(),
+			profile.housingSpace(),
+			profile.newcomerFriendliness()
+		);
+
+		if (civicBaseScore >= 4) {
+			return CIVIC_BASE_BONUS;
+		}
+		if (civicBaseScore >= 3 && profile.safety() >= 4 && profile.welfare() >= 4) {
+			return CIVIC_BASE_BONUS / 2;
 		}
 		return 0;
 	}

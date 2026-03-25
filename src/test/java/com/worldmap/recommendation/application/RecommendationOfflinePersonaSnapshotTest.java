@@ -14,7 +14,7 @@ import org.springframework.test.context.ActiveProfiles;
 @ActiveProfiles("test")
 class RecommendationOfflinePersonaSnapshotTest {
 
-	private static final Map<String, List<String>> ENGINE_V6_TOP3_SNAPSHOT = snapshot();
+	private static final Map<String, List<String>> ENGINE_V7_TOP3_SNAPSHOT = snapshot();
 
 	@Autowired
 	private RecommendationSurveyService recommendationSurveyService;
@@ -31,7 +31,7 @@ class RecommendationOfflinePersonaSnapshotTest {
 
 			assertThat(actualTop3)
 				.as("scenario=%s", scenario.id())
-				.containsExactlyElementsOf(ENGINE_V6_TOP3_SNAPSHOT.get(scenario.id()));
+				.containsExactlyElementsOf(ENGINE_V7_TOP3_SNAPSHOT.get(scenario.id()));
 		}
 	}
 
@@ -40,9 +40,9 @@ class RecommendationOfflinePersonaSnapshotTest {
 		snapshot.put("P01", List.of("아랍에미리트", "싱가포르", "미국"));
 		snapshot.put("P02", List.of("태국", "스페인", "말레이시아"));
 		snapshot.put("P03", List.of("노르웨이", "핀란드", "덴마크"));
-		snapshot.put("P04", List.of("스페인", "이탈리아", "아일랜드"));
+		snapshot.put("P04", List.of("스페인", "아일랜드", "우루과이"));
 		snapshot.put("P05", List.of("아랍에미리트", "싱가포르", "미국"));
-		snapshot.put("P06", List.of("스페인", "이탈리아", "우루과이"));
+		snapshot.put("P06", List.of("스페인", "우루과이", "이탈리아"));
 		snapshot.put("P07", List.of("싱가포르", "브라질", "아랍에미리트"));
 		snapshot.put("P08", List.of("핀란드", "뉴질랜드", "노르웨이"));
 		snapshot.put("P09", List.of("싱가포르", "아랍에미리트", "덴마크"));
@@ -50,7 +50,7 @@ class RecommendationOfflinePersonaSnapshotTest {
 		snapshot.put("P11", List.of("아일랜드", "스위스", "호주"));
 		snapshot.put("P12", List.of("포르투갈", "태국", "말레이시아"));
 		snapshot.put("P13", List.of("싱가포르", "아랍에미리트", "미국"));
-		snapshot.put("P14", List.of("스페인", "태국", "말레이시아"));
+		snapshot.put("P14", List.of("스페인", "말레이시아", "태국"));
 		snapshot.put("P15", List.of("포르투갈", "뉴질랜드", "말레이시아"));
 		snapshot.put("P16", List.of("뉴질랜드", "포르투갈", "우루과이"));
 		snapshot.put("P17", List.of("싱가포르", "아랍에미리트", "대한민국"));
