@@ -31,7 +31,7 @@
                 </article>
                 <article class="stat-card">
                     <span class="subtitle">MATCHED FLOOR</span>
-                    <strong th:text="${personaBaseline.matchedScenarioCount + ' / ' + personaBaseline.totalScenarioCount}">15 / 18</strong>
+                    <strong th:text="${personaBaseline.matchedScenarioCount + ' / ' + personaBaseline.totalScenarioCount}">18 / 18</strong>
                 </article>
                 <article class="stat-card">
                     <span class="subtitle">WEAK SCENARIOS</span>
@@ -61,6 +61,10 @@
                     <p th:text="${'현재 top 3 · ' + #strings.listJoin(scenario.currentTopCandidates, ', ')}">현재 top 3</p>
                     <p th:text="${scenario.focusPoint}">개선 포인트</p>
                 </article>
+            </div>
+
+            <div class="empty-state" th:if="${#lists.isEmpty(personaBaseline.weakScenarios)}">
+                <p>현재 엔진 기준으로는 weak scenario가 없습니다. 다음 tuning은 rank drift나 만족도 저점부터 다시 보게 됩니다.</p>
             </div>
         </section>
 

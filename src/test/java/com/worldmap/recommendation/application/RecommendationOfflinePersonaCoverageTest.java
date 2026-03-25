@@ -48,6 +48,7 @@ class RecommendationOfflinePersonaCoverageTest {
 		assertThat(topCountryNames("P16")).contains("포르투갈", "뉴질랜드").doesNotContain("말레이시아");
 		assertThat(topCountryNames("P17")).contains("싱가포르", "아랍에미리트", "대한민국");
 		assertThat(topCountryNames("P18")).contains("싱가포르", "아랍에미리트", "말레이시아").doesNotContain("대한민국");
+		assertThat(topCountryNames("P11")).contains("캐나다").doesNotContain("호주");
 	}
 
 	private boolean matchesAnyExpectedCandidate(RecommendationPersonaBaselineScenario scenario) {

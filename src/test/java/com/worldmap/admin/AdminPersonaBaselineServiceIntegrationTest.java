@@ -24,7 +24,8 @@ class AdminPersonaBaselineServiceIntegrationTest {
 		AdminPersonaBaselineView baseline = adminPersonaBaselineService.loadBaseline();
 
 		assertThat(baseline.totalScenarioCount()).isEqualTo(18);
-		assertThat(baseline.matchedScenarioCount()).isGreaterThanOrEqualTo(15);
+		assertThat(baseline.matchedScenarioCount()).isEqualTo(18);
+		assertThat(baseline.weakScenarioCount()).isZero();
 		assertThat(baseline.activeSignalScenarioCount()).isEqualTo(4);
 
 		for (AdminPersonaBaselineScenarioView weakScenario : baseline.weakScenarios()) {

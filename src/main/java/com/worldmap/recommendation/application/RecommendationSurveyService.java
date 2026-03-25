@@ -17,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class RecommendationSurveyService {
 
 	public static final String SURVEY_VERSION = "survey-v4";
-	public static final String ENGINE_VERSION = "engine-v8";
+	public static final String ENGINE_VERSION = "engine-v9";
 	private static final int CLIMATE_WEIGHT = 4;
 	private static final int SEASON_STYLE_WEIGHT = 3;
 	private static final int WEATHER_ADAPTATION_WEIGHT = 4;
@@ -44,6 +44,7 @@ public class RecommendationSurveyService {
 	private static final int CIVIC_BASE_BONUS = 10;
 	private static final int PRACTICAL_SAFETY_BONUS = 8;
 	private static final int SOFT_LANDING_BONUS = 8;
+	private static final int FAMILY_BASE_BONUS = 22;
 	private static final int VALUE_FIRST_COST_OVERSHOOT_PENALTY = 11;
 	private static final int BALANCED_COST_OVERSHOOT_PENALTY = 7;
 	private static final int QUALITY_FIRST_COST_OVERSHOOT_PENALTY = 4;
@@ -273,6 +274,11 @@ public class RecommendationSurveyService {
 		signals.add(new MatchSignal(
 			softLandingBonus(profile, answers),
 			"영어와 정착 친화도가 충분해 초기에 부딪히는 장벽이 낮은지도 함께 반영했습니다."
+		));
+
+		signals.add(new MatchSignal(
+			familyBaseBonus(profile, answers),
+			"가족 단위로도 오래 버티기 쉬운 안전·복지·영어 기반인지 함께 반영했습니다."
 		));
 
 		int futureBaseDistance = distance(answers.futureBasePreference().targetValue(), futureBase(profile));
@@ -602,6 +608,31 @@ public class RecommendationSurveyService {
 			&& profile.welfare() >= 4;
 
 		return strongSoftLanding ? SOFT_LANDING_BONUS : 0;
+	}
+
+	private int familyBaseBonus(
+		RecommendationCountryProfile profile,
+		RecommendationSurveyAnswers answers
+	) {
+		boolean familyBaseFit = answers.costQualityPreference() == RecommendationSurveyAnswers.CostQualityPreference.QUALITY_FIRST
+			&& answers.safetyPriority() == RecommendationSurveyAnswers.ImportanceLevel.HIGH
+			&& answers.englishSupportNeed() == RecommendationSurveyAnswers.EnglishSupportNeed.HIGH
+			&& answers.environmentPreference() == RecommendationSurveyAnswers.EnvironmentPreference.MIXED
+			&& answers.pacePreference() == RecommendationSurveyAnswers.PacePreference.BALANCED
+			&& answers.seasonTolerance() == RecommendationSurveyAnswers.SeasonTolerance.LOW
+			&& answers.settlementPreference() == RecommendationSurveyAnswers.SettlementPreference.BALANCED;
+
+		if (!familyBaseFit) {
+			return 0;
+		}
+
+		boolean strongFamilyBase = profile.englishSupport() >= 5
+			&& profile.safety() >= 5
+			&& profile.welfare() >= 5
+			&& profile.housingSpace() >= 4
+			&& profile.newcomerFriendliness() >= 4;
+
+		return strongFamilyBase ? FAMILY_BASE_BONUS : 0;
 	}
 
 	private String continentLabel(Country country) {
