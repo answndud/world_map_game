@@ -2619,3 +2619,28 @@
 - 테스트 내용: 먼저 디버그 테스트로 `P11`의 실제 점수를 직접 확인해 `아일랜드 353 / 스위스 338 / 호주 336 / 캐나다 317 / 덴마크 313`이라는 gap을 확인했다. 그 다음 `familyBaseBonus()`를 추가하고 `P11`이 `아일랜드, 캐나다, 스위스`로 바뀐 것을 확인한 뒤, `RecommendationOfflinePersonaSnapshotTest`와 `RecommendationOfflinePersonaCoverageTest`를 `engine-v9` 기준으로 다시 고정했다. `AdminPersonaBaselineServiceIntegrationTest`에서는 dynamic baseline이 `18 / 18`, weak scenario 0이 되는지 검증했고, `recommendation-persona-baseline.html`에는 weak scenario가 없을 때의 empty-state 문구를 추가했다. 마지막으로 targeted suite와 `./gradlew test` 전체 통과를 확인했다.
 - 면접에서 30초 안에 설명하는 요약: 동적 baseline을 돌려보니 마지막 weak scenario는 `P11` 하나였습니다. 이 시나리오는 가족형 정착 기반이 핵심이어서, 이번에는 `English + Safety + Welfare + Housing`이 모두 강한 후보에만 좁게 들어가는 `familyBaseBonus`를 추가했습니다. 그 결과 `P11`에 `캐나다`가 다시 top 3에 들어왔고, baseline은 `18 / 18`까지 올라갔습니다.
 - 아직 내가 이해가 부족한 부분: 이제 weak scenario는 0개지만, 이게 곧바로 순위 품질이 완벽하다는 뜻은 아니다. 다음 단계에서는 `weak scenario 유무`보다 `top1 miss`, `rank drift`, 실제 만족도 저점이 있는 버전 조합을 더 봐야 한다.
+
+## 2026-03-25 - dashboard persona baseline에 anchor drift 추가
+
+- 단계: 7. AI-assisted 설문 개선 체계
+- 목적: `engine-v9`에서 weak scenario는 0개가 됐지만, 운영 화면이 여전히 `기대 후보가 top 3에 있느냐`만 보여 주고 있어 다음 개선 우선순위를 잡기 어려웠다. 이번 조각은 `기대 후보는 들어오지만 기대 1위 anchor가 아직 밀리는 시나리오`를 따로 보여 주는 데 집중한다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/admin/application/AdminPersonaBaselineService.java`
+  - `src/main/java/com/worldmap/admin/application/AdminPersonaBaselineView.java`
+  - `src/main/java/com/worldmap/admin/application/AdminPersonaBaselineScenarioView.java`
+  - `src/main/resources/templates/admin/recommendation-persona-baseline.html`
+  - `src/test/java/com/worldmap/admin/AdminPersonaBaselineServiceIntegrationTest.java`
+  - `src/test/java/com/worldmap/admin/AdminPageIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/46-add-anchor-drift-to-dashboard-persona-baseline.md`
+- 요청 흐름 / 데이터 흐름: 플레이어 요청 흐름은 바뀌지 않는다. 이번 조각은 `GET /dashboard/recommendation/persona-baseline -> AdminPageController -> AdminPersonaBaselineService.loadBaseline()` read model만 바뀐다. 서비스는 `RecommendationPersonaBaselineCatalog`의 18개 시나리오를 현재 `RecommendationSurveyService`에 다시 넣어 top 3를 계산한 뒤, `weak scenario`, `anchor drift`, `active signal` 세 그룹으로 나눠 SSR에 전달한다.
+- 데이터 / 상태 변화: 새 테이블이나 저장 상태는 없다. 달라진 것은 운영 화면에서 보는 기준이다. 이제는 `expectedCandidates` 중 아무거나 top 3에 있느냐뿐 아니라, `expectedCandidates[0]`이 실제 top 1인지도 같이 계산한다.
+- 핵심 도메인 개념: weak scenario는 “완전히 빗나간 경우”이고, anchor drift는 “방향은 맞지만 1위가 아쉬운 경우”다. 이 판정은 템플릿이 하면 안 되고 `AdminPersonaBaselineService`가 맡아야 한다. 기대 후보와 현재 top 3, 기대 1위와 현재 1위를 비교하는 규칙이 운영 read model 규칙이기 때문이다.
+- 예외 상황 또는 엣지 케이스: expected list가 비어 있거나 추천 결과가 비어 있으면 anchor 비교를 할 수 없으므로, view에는 `-` fallback을 둔다. 현재 baseline catalog는 모두 기대 후보를 가지고 있어 실제로는 빈 값이 나오지 않지만, 운영 화면에서 예외로 깨지지 않게 방어했다.
+- 테스트 내용: `AdminPersonaBaselineServiceIntegrationTest`에서 현재 baseline이 `18 / 18`, weak 0, anchor drift 13, active signal 4인지 검증했고, drift 시나리오 집합이 `P01, P02, P04, P05, P06, P07, P08, P09, P10, P11, P13, P14, P15`와 일치하는지 고정했다. `AdminPageIntegrationTest`에서는 persona baseline 페이지가 `ANCHOR DRIFT`, `1위 재검토 대상`, `P11`을 실제로 렌더링하는지 확인했다.
+- 면접에서 30초 안에 설명하는 요약: baseline이 18 / 18이 되면 weak scenario만으로는 다음 개선 포인트를 잡기 어렵습니다. 그래서 운영 화면 read model을 확장해서, 기대 후보는 top 3에 들어오지만 기대 1위가 밀리는 `anchor drift`를 따로 계산해 보여 주도록 바꿨습니다. 덕분에 이제는 추천 엔진이 완전히 빗나간 경우와, 방향은 맞지만 순위가 아쉬운 경우를 분리해 볼 수 있습니다.
+- 아직 내가 이해가 부족한 부분: `expectedCandidates[0]`을 1위 anchor로 보는 기준이 현재는 충분히 설명 가능하지만, 나중에 실제 만족도 데이터가 쌓이면 일부 시나리오는 “1위 후보 하나”보다 “허용 가능한 top 3 조합”이 더 맞을 수도 있다. 그때 anchor drift 정의를 그대로 유지할지 다시 판단해야 한다.

@@ -510,8 +510,9 @@
 - `engine-v8`에서는 `P06`이 `스페인 + 우루과이 + 포르투갈`이 되도록 snapshot/coverage를 다시 고정
 - `engine-v9`에서는 `QUALITY_FIRST + SAFETY HIGH + English HIGH + MIXED + BALANCED + LOW tolerance` 조합에 한해 family base bonus를 추가해 `P11`에 `캐나다`를 다시 포함시키고 baseline을 `18 / 18`까지 올림
 - `RecommendationPersonaBaselineCatalog`로 baseline 시나리오 정의를 main source로 올리고, `/dashboard/recommendation/persona-baseline`이 현재 엔진 결과를 기준으로 weak scenario를 자동 계산하게 정리
+- weak scenario가 0개가 된 뒤에는 `/dashboard/recommendation/persona-baseline`이 기대 후보 top 3 여부뿐 아니라 `기대 1위 anchor`가 실제 top 1인지도 같이 계산하도록 확장
 - `/Users/alex/project/worldmap/docs/PLAYER_COPY_AND_ADMIN_SPLIT_PLAN.md`로 public copy와 admin 운영 화면 분리 설계 정리
-- `/dashboard/recommendation/persona-baseline` read-only 화면으로 현재 baseline 18/18, weak scenario 자동 계산, active-signal 4개를 운영 화면에서 바로 확인
+- `/dashboard/recommendation/persona-baseline` read-only 화면으로 현재 baseline 18/18, weak scenario 자동 계산, anchor drift 13개, active-signal 4개를 운영 화면에서 바로 확인
 - `/dashboard` read-only 대시보드를 추가해 현재 survey/engine 버전, 질문 수, 후보 국가 수, 만족도 수집 현황을 한 화면에서 조회
 - `/dashboard/recommendation/feedback`로 버전별 만족도 집계를 실제 운영 화면으로 이동
 
@@ -535,9 +536,9 @@
 
 이 단계에서 남은 일:
 
-- baseline은 18 / 18까지 올라왔으니, 다음엔 weak scenario보다 rank drift와 만족도 저점을 함께 볼지 판단
+- baseline은 18 / 18까지 올라왔고 anchor drift도 운영 화면에서 보이기 시작했으니, 다음엔 drift 수를 줄일지 만족도 저점을 먼저 볼지 판단
 - 실험 결과를 snapshot과 비교해 어떤 시나리오 순위가 움직였는지 문서화
-- `/dashboard/recommendation/persona-baseline`에서 weak scenario가 0개일 때 rank drift / top1 miss까지 보일지 결정
+- rank drift가 큰 시나리오 중 실제 만족도 저점과 겹치는 조합이 있는지 확인
 - baseline 18 / 18을 유지하면서 만족도 데이터와의 간극이 있는지 검토
 
 ### 8. 인증, 전적, 마이페이지
