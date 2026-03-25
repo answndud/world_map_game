@@ -73,6 +73,7 @@
 46. [탐색형·교통형 저예산 시나리오에 보정 신호 하나 더 넣기](./41-add-experience-transit-bonus-for-budget-explorers.md)
 47. [균형형 생활 시나리오를 위해 civic base bonus 추가하기](./42-add-civic-base-bonus-for-balanced-lifestyles.md)
 48. [현실형 저예산 사용자에게 soft landing bonus 추가하기](./43-add-soft-landing-bonus-for-practical-budget-users.md)
+49. [dashboard baseline 화면이 현재 엔진 결과를 직접 읽게 만들기](./44-make-dashboard-persona-baseline-dynamic.md)
 
 ### Part E. 테스트, 확장, 취업 패키징
 

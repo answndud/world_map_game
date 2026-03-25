@@ -2565,3 +2565,30 @@
 - 테스트 내용: 먼저 디버그 테스트로 `P06`의 실제 점수를 직접 확인해 `스페인 314 / 우루과이 298 / 이탈리아 293 / 포르투갈 287`이라는 gap을 확인했다. 그 다음 `softLandingBonus()`를 추가하고 `P06`이 `스페인, 우루과이, 포르투갈`로 바뀐 것을 확인한 뒤, `RecommendationOfflinePersonaSnapshotTest`와 `RecommendationOfflinePersonaCoverageTest`를 `engine-v8` 기준으로 다시 고정했다. 마지막으로 `./gradlew test --tests com.worldmap.recommendation.application.RecommendationOfflinePersonaSnapshotTest --tests com.worldmap.recommendation.application.RecommendationOfflinePersonaCoverageTest --tests com.worldmap.recommendation.application.RecommendationSurveyServiceTest --tests com.worldmap.recommendation.RecommendationPageIntegrationTest --tests com.worldmap.recommendation.RecommendationFeedbackIntegrationTest --tests com.worldmap.admin.AdminPageIntegrationTest`와 `./gradlew test` 전체 통과를 확인했다.
 - 면접에서 30초 안에 설명하는 요약: `P06`은 비용과 안전을 함께 보는 현실형 사용자였는데, 이전 엔진에서는 여전히 이탈리아가 3위에 남았습니다. 그래서 전체 엔진을 다시 흔들지 않고, 영어 적응과 newcomer 친화도, 주거 안정성이 모두 높은 경우에만 작동하는 `softLandingBonus`를 아주 좁게 추가했습니다. 이 규칙은 `RecommendationSurveyService`가 맡고, 결과는 `P06`이 `스페인 + 우루과이 + 포르투갈`이 되도록 snapshot과 coverage 테스트에 다시 고정했습니다.
 - 아직 내가 이해가 부족한 부분: `P06`은 원하는 방향으로 움직였지만, 이제는 `P04`, `P15` 외 다른 시나리오에 숨은 약점이 없는지 전체 coverage를 다시 훑어 봐야 한다. 다음 실험은 새 bonus를 더 키우기보다, 남은 weak scenario가 실제로 무엇인지부터 다시 확인하는 것이 맞다.
+
+## 2026-03-25 - baseline 시나리오 카탈로그 공용화와 dashboard weak scenario 자동 계산
+
+- 단계: 7. AI-assisted 설문 개선 체계
+- 목적: 추천 엔진을 튜닝할수록 `/dashboard/recommendation/persona-baseline`에 보이는 weak scenario가 실제 테스트 결과와 어긋나기 시작했다. 이번 조각은 baseline 시나리오 정의를 test helper에서 main source로 올리고, dashboard가 현재 엔진 결과를 기준으로 weak scenario를 자동 계산하게 만들어 test와 운영 화면이 같은 기준을 보게 하는 데 집중한다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationPersonaBaselineCatalog.java`
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationPersonaBaselineScenario.java`
+  - `src/main/java/com/worldmap/admin/application/AdminPersonaBaselineService.java`
+  - `src/main/resources/templates/admin/recommendation-persona-baseline.html`
+  - `src/test/java/com/worldmap/admin/AdminPageIntegrationTest.java`
+  - `src/test/java/com/worldmap/admin/AdminPersonaBaselineServiceIntegrationTest.java`
+  - `src/test/java/com/worldmap/recommendation/application/RecommendationOfflinePersonaCoverageTest.java`
+  - `src/test/java/com/worldmap/recommendation/application/RecommendationOfflinePersonaSnapshotTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/44-make-dashboard-persona-baseline-dynamic.md`
+- 요청 흐름 / 데이터 흐름: 런타임 플레이어 요청 흐름은 바뀌지 않았다. 바뀐 것은 운영 화면 쪽 read model이다. 이제 `GET /dashboard/recommendation/persona-baseline -> AdminPageController -> AdminPersonaBaselineService.loadBaseline()`에서 서비스가 `RecommendationPersonaBaselineCatalog.scenarios()`를 읽고, 각 시나리오를 `RecommendationSurveyService.recommend()`에 다시 넣어 현재 top 3를 계산한다. 그 결과를 기준으로 `expectedCandidates`와 교집합이 없는 시나리오만 weak scenario로 분류해 SSR에 전달한다.
+- 데이터 / 상태 변화: 새 테이블은 없다. 바뀐 것은 baseline 정의 위치와 운영 화면 계산 방식이다. 이전에는 weak scenario와 active-signal 시나리오가 `AdminPersonaBaselineService`에 하드코딩돼 있었고, 추천 엔진을 바꿔도 운영 화면 값이 자동으로 따라오지 않았다. 이제는 baseline 정의가 `RecommendationPersonaBaselineCatalog` 하나로 모이고, dashboard가 그 카탈로그와 현재 엔진 결과를 함께 읽어 weak scenario를 계산한다.
+- 핵심 도메인 개념: “어떤 페르소나를 baseline으로 볼 것인가”는 test 전용 임시값이 아니라 추천 도메인의 평가 자산이다. 그래서 test source에만 두기보다 main source의 카탈로그로 올렸다. 반대로 weak scenario 판정은 템플릿이 하면 안 되고 `AdminPersonaBaselineService`가 맡아야 한다. 기대 후보와 현재 top 3의 교집합을 보고 weak scenario를 분류하는 규칙이 운영 화면용 read model 규칙이기 때문이다.
+- 예외 상황 또는 엣지 케이스: 현재 엔진이 개선되면 예전 weak scenario였던 `P04`, `P06`이 더 이상 weak가 아닐 수 있다. 이때 운영 화면이 하드코딩이면 오래된 판단을 그대로 보여 주게 된다. 이번 변경 후에는 weak scenario가 동적으로 계산되기 때문에, 엔진을 바꾸면 운영 화면도 자동으로 따라 바뀐다. active-signal 시나리오는 의도적으로 비교 기준으로 쓰는 집합이라 weak 여부와 무관하게 별도 섹션으로 유지했다.
+- 테스트 내용: `RecommendationOfflinePersonaCoverageTest`, `RecommendationOfflinePersonaSnapshotTest`가 새 `RecommendationPersonaBaselineCatalog`를 기준으로 그대로 동작하는지 확인했다. 추가로 `AdminPersonaBaselineServiceIntegrationTest`에서 total 18, active signal 4, weak scenario는 현재 top 3가 기대 후보와 겹치지 않는 케이스만 나오는지 검증했다. `AdminPageIntegrationTest`에서는 persona baseline 페이지가 `자동 계산` 문구와 active-signal 섹션을 실제로 렌더링하는지 확인했다. 마지막으로 targeted suite와 `./gradlew test` 전체 통과를 확인했다.
+- 면접에서 30초 안에 설명하는 요약: 추천 엔진을 계속 튜닝하면 테스트와 운영 화면이 서로 다른 기준을 보면 안 됩니다. 그래서 이번에는 baseline 시나리오 정의를 `RecommendationPersonaBaselineCatalog` 하나로 모으고, `/dashboard/recommendation/persona-baseline`이 현재 엔진 결과를 기준으로 weak scenario를 자동 계산하도록 바꿨습니다. 덕분에 테스트와 운영 화면이 같은 시나리오 자산을 공유하게 됐습니다.
+- 아직 내가 이해가 부족한 부분: 지금은 weak scenario를 “기대 후보가 top 3에 하나도 없는 경우”로만 보고 있다. 다음에는 top 1 miss, rank drift, expected satisfaction range까지 같이 운영 화면에서 보여 줄지 판단해야 한다.
