@@ -38,9 +38,9 @@ class AdminRecommendationOpsReviewServiceIntegrationTest {
 
 		assertThat(review.currentVersionResponseCount()).isEqualTo(2);
 		assertThat(review.baselineMatchedScenarioCount()).isEqualTo(18);
-		assertThat(review.anchorDriftScenarioCount()).isEqualTo(13);
+		assertThat(review.anchorDriftScenarioCount()).isEqualTo(11);
 		assertThat(review.priorityActionTitle()).isEqualTo("현재 버전 피드백 더 수집");
-		assertThat(review.priorityScenarioIds()).containsExactly("P01", "P02", "P04");
+		assertThat(review.priorityScenarioIds()).containsExactly("P02", "P04", "P06");
 	}
 
 	@Test
@@ -56,7 +56,7 @@ class AdminRecommendationOpsReviewServiceIntegrationTest {
 		assertThat(review.currentVersionResponseCount()).isEqualTo(5);
 		assertThat(review.currentVersionAverageSatisfaction()).isGreaterThanOrEqualTo(4.0);
 		assertThat(review.priorityActionTitle()).isEqualTo("rank drift 줄이기");
-		assertThat(review.priorityScenarioIds()).containsExactly("P01", "P02", "P04");
+		assertThat(review.priorityScenarioIds()).containsExactly("P02", "P04", "P06");
 	}
 
 	private RecommendationFeedback createFeedback(int score) {

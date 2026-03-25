@@ -37,8 +37,10 @@ class RecommendationOfflinePersonaCoverageTest {
 
 	@Test
 	void anchorAndActiveSignalPersonasStillSurfaceCoreCandidates() {
-		assertThat(topCountryNames("P01")).first().isEqualTo("아랍에미리트");
-		assertThat(topCountryNames("P01")).contains("싱가포르");
+		assertThat(topCountryNames("P01")).first().isEqualTo("싱가포르");
+		assertThat(topCountryNames("P01")).contains("아랍에미리트");
+		assertThat(topCountryNames("P05")).first().isEqualTo("싱가포르");
+		assertThat(topCountryNames("P05")).contains("아랍에미리트");
 		assertThat(topCountryNames("P02")).first().isEqualTo("태국");
 		assertThat(topCountryNames("P02")).contains("스페인");
 		assertThat(topCountryNames("P04")).contains("아일랜드", "우루과이").doesNotContain("이탈리아");

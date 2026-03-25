@@ -17,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class RecommendationSurveyService {
 
 	public static final String SURVEY_VERSION = "survey-v4";
-	public static final String ENGINE_VERSION = "engine-v9";
+	public static final String ENGINE_VERSION = "engine-v10";
 	private static final int CLIMATE_WEIGHT = 4;
 	private static final int SEASON_STYLE_WEIGHT = 3;
 	private static final int WEATHER_ADAPTATION_WEIGHT = 4;
@@ -45,6 +45,7 @@ public class RecommendationSurveyService {
 	private static final int PRACTICAL_SAFETY_BONUS = 8;
 	private static final int SOFT_LANDING_BONUS = 8;
 	private static final int FAMILY_BASE_BONUS = 22;
+	private static final int GLOBAL_HUB_BONUS = 10;
 	private static final int VALUE_FIRST_COST_OVERSHOOT_PENALTY = 11;
 	private static final int BALANCED_COST_OVERSHOOT_PENALTY = 7;
 	private static final int QUALITY_FIRST_COST_OVERSHOOT_PENALTY = 4;
@@ -279,6 +280,11 @@ public class RecommendationSurveyService {
 		signals.add(new MatchSignal(
 			familyBaseBonus(profile, answers),
 			"가족 단위로도 오래 버티기 쉬운 안전·복지·영어 기반인지 함께 반영했습니다."
+		));
+
+		signals.add(new MatchSignal(
+			globalHubBonus(profile, answers),
+			"영어·대중교통·디지털·문화 밀도가 모두 높은 초도시형 허브인지 함께 반영했습니다."
 		));
 
 		int futureBaseDistance = distance(answers.futureBasePreference().targetValue(), futureBase(profile));
@@ -633,6 +639,35 @@ public class RecommendationSurveyService {
 			&& profile.newcomerFriendliness() >= 4;
 
 		return strongFamilyBase ? FAMILY_BASE_BONUS : 0;
+	}
+
+	private int globalHubBonus(
+		RecommendationCountryProfile profile,
+		RecommendationSurveyAnswers answers
+	) {
+		boolean wantsGlobalCityHub = answers.climatePreference() == RecommendationSurveyAnswers.ClimatePreference.WARM
+			&& answers.pacePreference() == RecommendationSurveyAnswers.PacePreference.FAST
+			&& answers.environmentPreference() == RecommendationSurveyAnswers.EnvironmentPreference.CITY
+			&& answers.costQualityPreference() == RecommendationSurveyAnswers.CostQualityPreference.QUALITY_FIRST
+			&& answers.englishSupportNeed() == RecommendationSurveyAnswers.EnglishSupportNeed.HIGH
+			&& answers.diversityImportance() == RecommendationSurveyAnswers.ImportanceLevel.HIGH
+			&& answers.digitalConveniencePriority() == RecommendationSurveyAnswers.ImportanceLevel.HIGH
+			&& answers.cultureLeisureImportance() == RecommendationSurveyAnswers.ImportanceLevel.HIGH
+			&& answers.newcomerSupportNeed() == RecommendationSurveyAnswers.NewcomerSupportNeed.HIGH;
+
+		if (!wantsGlobalCityHub) {
+			return 0;
+		}
+
+		boolean strongGlobalHub = profile.urbanityValue() >= 5
+			&& transitSupport(profile) >= 5
+			&& profile.digitalConvenience() >= 5
+			&& profile.diversity() >= 5
+			&& profile.food() >= 5
+			&& profile.cultureScene() >= 5
+			&& profile.safety() >= 5;
+
+		return strongGlobalHub ? GLOBAL_HUB_BONUS : 0;
 	}
 
 	private String continentLabel(Country country) {
