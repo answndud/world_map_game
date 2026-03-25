@@ -140,7 +140,10 @@ class AdminPageIntegrationTest {
 			.andExpect(view().name("admin/recommendation-feedback"))
 			.andExpect(model().attributeExists("dashboard"))
 			.andExpect(model().attributeExists("feedbackInsights"))
+			.andExpect(model().attributeExists("opsReview"))
 			.andExpect(content().string(containsString("추천 만족도 운영 화면")))
+			.andExpect(content().string(containsString("운영 판단 메모")))
+			.andExpect(content().string(containsString("현재 버전 피드백 더 수집")))
 			.andExpect(content().string(containsString("버전 조합별 집계")))
 			.andExpect(content().string(containsString("survey-v1")))
 			.andExpect(content().string(containsString("engine-v1")));
