@@ -71,13 +71,14 @@
 44. [public 디자인 패스 이후 SSR 화면과 테스트를 안정화하기](./39-stabilize-public-design-pass.md)
 45. [비용 선호에 따라 초과 물가 패널티를 다르게 주기](./40-split-cost-overshoot-penalty-by-preference.md)
 46. [탐색형·교통형 저예산 시나리오에 보정 신호 하나 더 넣기](./41-add-experience-transit-bonus-for-budget-explorers.md)
+47. [균형형 생활 시나리오를 위해 civic base bonus 추가하기](./42-add-civic-base-bonus-for-balanced-lifestyles.md)
 
 ### Part E. 테스트, 확장, 취업 패키징
 
-47. 왜 핵심 게임 로직을 테스트해야 하는가
-48. 인증, 전적, 마이페이지 붙이기
-49. Level 2 난이도와 실시간성 고도화
-50. README, 아키텍처, 면접 답변 패키지 만들기
+48. 왜 핵심 게임 로직을 테스트해야 하는가
+49. 인증, 전적, 마이페이지 붙이기
+50. Level 2 난이도와 실시간성 고도화
+51. README, 아키텍처, 면접 답변 패키지 만들기
 
 ## 실제 집필 우선순위
 

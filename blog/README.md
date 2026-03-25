@@ -104,12 +104,13 @@
 44. [public 디자인 패스 이후 SSR 화면과 테스트를 안정화하기](./39-stabilize-public-design-pass.md)
 45. [비용 선호에 따라 초과 물가 패널티를 다르게 주기](./40-split-cost-overshoot-penalty-by-preference.md)
 46. [탐색형·교통형 저예산 시나리오에 보정 신호 하나 더 넣기](./41-add-experience-transit-bonus-for-budget-explorers.md)
+47. [균형형 생활 시나리오를 위해 civic base bonus 추가하기](./42-add-civic-base-bonus-for-balanced-lifestyles.md)
 
 ### Part E. 확장과 포트폴리오 정리
 
-47. 인증과 내 전적 조회 고도화하기
-48. Level 2와 실시간 전달 방식 고도화하기
-49. 테스트, 아키텍처, 면접 패키지로 프로젝트 마감하기
+48. 인증과 내 전적 조회 고도화하기
+49. Level 2와 실시간 전달 방식 고도화하기
+50. 테스트, 아키텍처, 면접 패키지로 프로젝트 마감하기
 
 ## 읽는 순서
 

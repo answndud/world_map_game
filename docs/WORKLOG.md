@@ -2510,3 +2510,31 @@
 - 테스트 내용: 먼저 `RecommendationOfflinePersonaSnapshotTest`로 전체 18개 시나리오 top 3를 다시 확인했고, `P15`가 `포르투갈, 뉴질랜드, 말레이시아`로 바뀌는 것을 확인한 뒤 snapshot을 `engine-v6` 기준으로 다시 고정했다. 그 다음 `RecommendationOfflinePersonaCoverageTest`에서 `P15`가 `뉴질랜드`, `말레이시아`를 포함하고 `남아프리카 공화국`은 포함하지 않는지 고정했다. 마지막으로 `./gradlew test --tests com.worldmap.recommendation.application.RecommendationSurveyServiceTest --tests com.worldmap.recommendation.application.RecommendationOfflinePersonaCoverageTest --tests com.worldmap.recommendation.application.RecommendationOfflinePersonaSnapshotTest --tests com.worldmap.recommendation.RecommendationPageIntegrationTest --tests com.worldmap.recommendation.RecommendationFeedbackIntegrationTest --tests com.worldmap.admin.AdminPageIntegrationTest`와 `./gradlew test` 전체 통과를 확인했다.
 - 면접에서 30초 안에 설명하는 요약: `engine-v5`에서는 저예산 탐색형 시나리오가 아직 원하는 후보를 못 올렸습니다. 그래서 이번에는 추천 엔진 전체를 다시 흔드는 대신, `EXPERIENCE + TRANSIT_FIRST + VALUE_FIRST` 조합에서만 작동하는 작은 보정 신호를 추가했습니다. 이 규칙은 `RecommendationSurveyService`가 맡고, 결과는 `P15`가 `뉴질랜드 + 말레이시아`를 포함하도록 coverage와 snapshot 테스트에 다시 고정했습니다.
 - 아직 내가 이해가 부족한 부분: `P15`는 개선됐지만 `P04`, `P06`처럼 남유럽 후보가 상단에 남는 균형형/현실형 시나리오는 아직 더 봐야 한다. 다음에는 `publicService`와 `futureBase`, 혹은 `balanced cost` 구간 penalty를 어디까지 만질지 좁혀야 한다.
+
+## 2026-03-25 - 추천 엔진 weak scenario 튜닝 3차: 균형형 civic base 보정
+
+- 단계: 6. 설문 기반 추천 엔진 / 7. AI-assisted 설문 개선 체계
+- 목적: `engine-v6`에서 `P15`는 개선됐지만, `P04`, `P06`처럼 `MILD + BALANCED + MIXED` 생활을 원하면서 안전이나 공공서비스도 신경 쓰는 시나리오는 여전히 스페인·이탈리아 쪽으로 기울었다. 이번 조각은 이 패턴만 좁혀서, 균형형 사용자에게 `기후가 맞는지`뿐 아니라 `안전, 공공서비스, 기본 정착 안정성`도 함께 반영하는 작은 보정을 추가하는 데 집중한다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationSurveyService.java`
+  - `src/main/resources/templates/admin/index.html`
+  - `src/main/resources/templates/admin/recommendation-feedback.html`
+  - `src/test/java/com/worldmap/recommendation/application/RecommendationOfflinePersonaCoverageTest.java`
+  - `src/test/java/com/worldmap/recommendation/application/RecommendationOfflinePersonaSnapshotTest.java`
+  - `src/test/java/com/worldmap/recommendation/RecommendationPageIntegrationTest.java`
+  - `src/test/java/com/worldmap/recommendation/RecommendationFeedbackIntegrationTest.java`
+  - `src/test/java/com/worldmap/admin/AdminPageIntegrationTest.java`
+  - `README.md`
+  - `docs/recommendation/PERSONA_EVAL_SET.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/42-add-civic-base-bonus-for-balanced-lifestyles.md`
+- 요청 흐름 / 데이터 흐름: 런타임 추천 흐름은 그대로 `GET /recommendation/survey -> POST /recommendation/survey -> RecommendationSurveyService.recommend() -> recommendation/result -> POST /api/recommendation/feedback`이다. 이번에는 `RecommendationSurveyService` 내부에 `civicBaseBonus()`를 추가했다. 사용자가 `MIXED` 환경, `BALANCED` pace를 원하고 `safetyPriority` 또는 `publicServicePriority`가 `HIGH`이면, 서비스가 후보 국가의 `safety`, `welfare`, `housingSpace`, `newcomerFriendliness`를 한 번 더 묶어 균형형 정착 안정성을 보정한다. 단, `VALUE_FIRST`인데 물가가 너무 높은 후보는 이 bonus를 못 받게 막았다.
+- 데이터 / 상태 변화: 추천 결과 top 3는 여전히 저장하지 않는다. 익명 피드백에는 이제 `engineVersion=engine-v7`이 저장되고, `/dashboard`와 `/dashboard/recommendation/feedback` 운영 화면도 현재 엔진 버전을 `engine-v7`으로 보여준다. 설문 버전은 계속 `survey-v4`를 유지한다.
+- 핵심 도메인 개념: 이번 단계의 핵심은 “균형형 생활”도 하나의 coherence 신호라는 점이다. 지금까지는 기후, pace, 물가 같은 개별 축 점수는 있었지만, `안전 / 공공서비스 / 정착 안정성`을 같이 묶는 read model은 약했다. 그래서 `civicBaseBonus()`로 이 축을 한 번 더 잡았다. 이 계산은 컨트롤러가 아니라 `RecommendationSurveyService`가 맡아야 한다. 어떤 설문 조합에서 이 bonus를 켜고, 어떤 프로필 속성을 묶어 읽을지는 추천 도메인 규칙이지 HTTP 바인딩 규칙이 아니기 때문이다.
+- 예외 상황 또는 엣지 케이스: bonus 범위를 너무 넓히면 북유럽/영어권 고비용 후보가 과하게 올라올 수 있다. 그래서 `MIXED + BALANCED` 생활과 `HIGH` safety/public service 중요도가 함께 있을 때만 bonus를 켰고, `VALUE_FIRST`인데 `priceLevel >= 4`인 후보는 bonus를 받지 못하게 했다. 덕분에 `P04`는 `스페인, 아일랜드, 우루과이`, `P06`은 `스페인, 우루과이, 이탈리아`까지 움직였고, 다른 anchor 시나리오는 크게 흔들리지 않았다.
+- 테스트 내용: 먼저 `RecommendationOfflinePersonaSnapshotTest`로 18개 시나리오 top 3를 다시 뽑아 `P04`, `P06`, `P14` 변화를 확인했다. 그다음 snapshot을 `engine-v7` 기준으로 다시 고정했다. `RecommendationOfflinePersonaCoverageTest`에서는 `P04`가 `아일랜드`, `우루과이`를 포함하고 `이탈리아`는 빠지는지, `P06`이 `우루과이`를 포함하는지를 추가로 고정했다. 마지막으로 `./gradlew test --tests com.worldmap.recommendation.application.RecommendationSurveyServiceTest --tests com.worldmap.recommendation.application.RecommendationOfflinePersonaCoverageTest --tests com.worldmap.recommendation.application.RecommendationOfflinePersonaSnapshotTest --tests com.worldmap.recommendation.RecommendationPageIntegrationTest --tests com.worldmap.recommendation.RecommendationFeedbackIntegrationTest --tests com.worldmap.admin.AdminPageIntegrationTest`와 `./gradlew test` 전체 통과를 확인했다.
+- 면접에서 30초 안에 설명하는 요약: `P15`를 개선한 뒤에도 균형형 시나리오에서는 여전히 남유럽 후보가 너무 강했습니다. 그래서 이번에는 `MIXED + BALANCED` 생활을 원하면서 안전이나 공공서비스를 중시하는 경우에만 작동하는 `civicBaseBonus`를 추가했습니다. 이 규칙은 `RecommendationSurveyService`가 맡고, `P04`가 `스페인 + 아일랜드 + 우루과이`, `P06`이 `스페인 + 우루과이`를 포함하도록 snapshot과 coverage 테스트에 다시 고정했습니다.
+- 아직 내가 이해가 부족한 부분: `P04`는 꽤 좋아졌지만 `P06`의 3위 후보에는 아직 `이탈리아`가 남는다. 다음 실험에서는 `balanced cost` 구간에서 `food/culture`가 너무 강하게 남는지, 아니면 `futureBase`나 `english/newcomer` 쪽을 조금 더 올려야 하는지 더 좁혀 봐야 한다.

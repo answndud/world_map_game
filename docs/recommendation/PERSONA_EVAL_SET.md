@@ -27,9 +27,9 @@
 | P01 | 따뜻한 기후와 빠른 도시 리듬, 영어 환경을 함께 원하는 디지털 노마드 | `WARM / FAST / HIGH / CITY / HIGH / DIVERSITY / BALANCED / BALANCED` | 싱가포르, 아랍에미리트, 미국 | `4~5점` | 도시 속도와 영어 중요도가 강하게 반영되는지 확인한다. |
 | P02 | 생활비를 아끼면서도 음식과 다문화 환경을 선호하는 초보 이민 관심자 | `WARM / BALANCED / LOW / MIXED / MEDIUM / FOOD / BALANCED / BALANCED` | 말레이시아, 태국, 멕시코 | `4~5점` | 저물가와 음식 선호가 함께 있을 때 결과가 너무 비싸게 치우치지 않는지 본다. |
 | P03 | 조용하고 안전한 북유럽형 생활을 선호하는 안정 중시형 | `COLD / RELAXED / HIGH / NATURE / HIGH / SAFETY / BALANCED / BALANCED` | 노르웨이, 핀란드, 스웨덴 | `4~5점` | 추운 기후, 자연 중심, 치안 우선 조건이 함께 맞는지 확인한다. |
-| P04 | 복지와 균형 잡힌 도시 생활을 원하는 중도 성향 직장인 | `MILD / BALANCED / MEDIUM / MIXED / MEDIUM / WELFARE / BALANCED / BALANCED` | 독일, 덴마크, 캐나다 | `4~5점` | 극단적 선호가 없는 경우에도 균형형 국가가 잘 올라오는지 본다. |
+| P04 | 복지와 균형 잡힌 도시 생활을 원하는 중도 성향 직장인 | `MILD / BALANCED / MEDIUM / MIXED / MEDIUM / WELFARE / BALANCED / BALANCED` | 스페인, 아일랜드, 우루과이 | `4~5점` | 극단적 선호가 없는 경우에도 기후만 맞는 후보보다 공공서비스와 정착 안정성이 함께 잡힌 균형형 국가가 올라오는지 본다. |
 | P05 | 영어가 매우 중요하고, 도시 활동성과 문화 다양성을 최우선으로 보는 인턴 준비생 | `WARM / FAST / HIGH / CITY / HIGH / DIVERSITY / BALANCED / BALANCED` | 미국, 캐나다, 영국 | `4~5점` | 영어 친화도와 문화 다양성이 실제로 상위권에 반영되는지 확인한다. |
-| P06 | 비슷한 기후라도 너무 비싸지 않은 나라를 찾는 현실형 사용자 | `MILD / BALANCED / LOW / MIXED / MEDIUM / SAFETY / BALANCED / BALANCED` | 포르투갈, 스페인, 체코 | `3~4점` | 저물가 선호가 있지만 다른 조건도 적당히 보는 경우를 점검한다. |
+| P06 | 비슷한 기후라도 너무 비싸지 않은 나라를 찾는 현실형 사용자 | `MILD / BALANCED / LOW / MIXED / MEDIUM / SAFETY / BALANCED / BALANCED` | 스페인, 우루과이, 포르투갈 | `3~4점` | 저물가 선호가 있지만 안전성과 생활 안정성도 적당히 보는 경우를 점검한다. |
 | P07 | 음식과 도시 속도가 중요하고, 아시아권 대도시를 선호하는 사용자 | `WARM / FAST / MEDIUM / CITY / LOW / FOOD / BALANCED / BALANCED` | 일본, 한국, 싱가포르 | `4~5점` | 음식 선호가 강할 때 동아시아 대도시가 잘 나오는지 본다. |
 | P08 | 자연과 여유를 좋아하고, 영어는 있으면 좋지만 절대 기준은 아닌 사용자 | `COLD / RELAXED / MEDIUM / NATURE / MEDIUM / SAFETY / BALANCED / BALANCED` | 뉴질랜드, 캐나다, 스웨덴 | `4~5점` | 자연 중심과 느긋한 생활 속도가 함께 작동하는지 본다. |
 | P09 | 따뜻한 기후와 높은 물가 허용으로 인프라와 안정성을 우선하는 사용자 | `WARM / BALANCED / HIGH / CITY / HIGH / WELFARE / BALANCED / BALANCED` | 아랍에미리트, 싱가포르, 호주 | `4~5점` | 고물가 허용이 있을 때 고도시형 국가가 자연스럽게 올라오는지 확인한다. |
