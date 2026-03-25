@@ -7,7 +7,9 @@ public record AdminPersonaBaselineView(
 	int matchedScenarioCount,
 	int weakScenarioCount,
 	int activeSignalScenarioCount,
+	int anchorDriftScenarioCount,
 	List<AdminPersonaBaselineScenarioView> weakScenarios,
+	List<AdminPersonaBaselineScenarioView> anchorDriftScenarios,
 	List<AdminPersonaBaselineScenarioView> activeSignalScenarios
 ) {
 }

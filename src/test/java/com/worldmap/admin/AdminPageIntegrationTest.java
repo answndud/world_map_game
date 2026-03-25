@@ -155,6 +155,9 @@ class AdminPageIntegrationTest {
 			.andExpect(model().attributeExists("personaBaseline"))
 			.andExpect(content().string(containsString("추천 baseline 운영 화면")))
 			.andExpect(content().string(containsString("자동 계산")))
+			.andExpect(content().string(containsString("ANCHOR DRIFT")))
+			.andExpect(content().string(containsString("1위 재검토 대상")))
+			.andExpect(content().string(containsString("P11")))
 			.andExpect(content().string(containsString("P15")))
 			.andExpect(content().string(containsString("/ 18")));
 	}

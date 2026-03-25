@@ -33,6 +33,12 @@ public class AdminPersonaBaselineService {
 			.map(this::toWeakScenarioView)
 			.toList();
 
+		List<AdminPersonaBaselineScenarioView> anchorDriftScenarios = evaluatedScenarios.stream()
+			.filter(EvaluatedScenario::matchesAnyExpectedCandidate)
+			.filter(evaluated -> !evaluated.matchesExpectedAnchorCandidate())
+			.map(this::toAnchorDriftScenarioView)
+			.toList();
+
 		List<AdminPersonaBaselineScenarioView> activeSignalScenarios = evaluatedScenarios.stream()
 			.filter(evaluated -> evaluated.scenario().activeSignal())
 			.map(this::toActiveSignalScenarioView)
@@ -48,7 +54,9 @@ public class AdminPersonaBaselineService {
 			matchedScenarioCount,
 			weakScenarios.size(),
 			activeSignalScenarios.size(),
+			anchorDriftScenarios.size(),
 			weakScenarios,
+			anchorDriftScenarios,
 			activeSignalScenarios
 		);
 	}
@@ -63,13 +71,24 @@ public class AdminPersonaBaselineService {
 		boolean matchesAnyExpectedCandidate = scenario.expectedCandidates().stream()
 			.anyMatch(currentTopCandidates::contains);
 
-		return new EvaluatedScenario(scenario, currentTopCandidates, matchesAnyExpectedCandidate);
+		boolean matchesExpectedAnchorCandidate = !scenario.expectedCandidates().isEmpty()
+			&& !currentTopCandidates.isEmpty()
+			&& scenario.expectedCandidates().get(0).equals(currentTopCandidates.get(0));
+
+		return new EvaluatedScenario(
+			scenario,
+			currentTopCandidates,
+			matchesAnyExpectedCandidate,
+			matchesExpectedAnchorCandidate
+		);
 	}
 
 	private AdminPersonaBaselineScenarioView toWeakScenarioView(EvaluatedScenario evaluatedScenario) {
 		return new AdminPersonaBaselineScenarioView(
 			evaluatedScenario.scenario().id(),
 			evaluatedScenario.scenario().description(),
+			expectedAnchorCandidate(evaluatedScenario),
+			currentAnchorCandidate(evaluatedScenario),
 			evaluatedScenario.scenario().expectedCandidates(),
 			evaluatedScenario.currentTopCandidates(),
 			evaluatedScenario.scenario().analysisNote().isBlank()
@@ -78,20 +97,49 @@ public class AdminPersonaBaselineService {
 		);
 	}
 
+	private AdminPersonaBaselineScenarioView toAnchorDriftScenarioView(EvaluatedScenario evaluatedScenario) {
+		return new AdminPersonaBaselineScenarioView(
+			evaluatedScenario.scenario().id(),
+			evaluatedScenario.scenario().description(),
+			expectedAnchorCandidate(evaluatedScenario),
+			currentAnchorCandidate(evaluatedScenario),
+			evaluatedScenario.scenario().expectedCandidates(),
+			evaluatedScenario.currentTopCandidates(),
+			evaluatedScenario.scenario().analysisNote().isBlank()
+				? "기대 후보는 top 3에 유지되지만 1위 anchor가 아직 다르다. 다음 tuning은 weak scenario보다 rank drift를 줄이는 방향으로 본다."
+				: evaluatedScenario.scenario().analysisNote() + " 현재는 기대 1위 anchor가 top 1이 아니다."
+		);
+	}
+
 	private AdminPersonaBaselineScenarioView toActiveSignalScenarioView(EvaluatedScenario evaluatedScenario) {
 		return new AdminPersonaBaselineScenarioView(
 			evaluatedScenario.scenario().id(),
 			evaluatedScenario.scenario().description(),
+			expectedAnchorCandidate(evaluatedScenario),
+			currentAnchorCandidate(evaluatedScenario),
 			evaluatedScenario.scenario().expectedCandidates(),
 			evaluatedScenario.currentTopCandidates(),
 			evaluatedScenario.scenario().analysisNote()
 		);
 	}
 
+	private String expectedAnchorCandidate(EvaluatedScenario evaluatedScenario) {
+		return evaluatedScenario.scenario().expectedCandidates().isEmpty()
+			? "-"
+			: evaluatedScenario.scenario().expectedCandidates().get(0);
+	}
+
+	private String currentAnchorCandidate(EvaluatedScenario evaluatedScenario) {
+		return evaluatedScenario.currentTopCandidates().isEmpty()
+			? "-"
+			: evaluatedScenario.currentTopCandidates().get(0);
+	}
+
 	private record EvaluatedScenario(
 		RecommendationPersonaBaselineScenario scenario,
 		List<String> currentTopCandidates,
-		boolean matchesAnyExpectedCandidate
+		boolean matchesAnyExpectedCandidate,
+		boolean matchesExpectedAnchorCandidate
 	) {
 	}
 }

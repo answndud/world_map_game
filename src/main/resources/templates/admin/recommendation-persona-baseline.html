@@ -21,7 +21,7 @@
         <section class="panel game-panel">
             <div class="panel-head">
                 <h2>baseline 요약</h2>
-                <p>현재 품질 하한은 18개 시나리오 중 15개 이상에서 기대 후보 1개가 top 3에 포함되는지로 잡고 있고, 아래 숫자는 현재 엔진 결과를 기준으로 자동 계산됩니다.</p>
+                <p>현재 품질 하한은 18개 시나리오 중 15개 이상에서 기대 후보 1개가 top 3에 포함되는지로 잡고 있고, 그 다음에는 기대 1위 anchor가 얼마나 흔들리는지까지 함께 봅니다. 아래 숫자는 현재 엔진 결과를 기준으로 자동 계산됩니다.</p>
             </div>
 
             <div class="stats-grid">
@@ -40,6 +40,10 @@
                 <article class="stat-card">
                     <span class="subtitle">ACTIVE SIGNAL</span>
                     <strong th:text="${personaBaseline.activeSignalScenarioCount}">4</strong>
+                </article>
+                <article class="stat-card">
+                    <span class="subtitle">ANCHOR DRIFT</span>
+                    <strong th:text="${personaBaseline.anchorDriftScenarioCount}">13</strong>
                 </article>
             </div>
         </section>
@@ -65,6 +69,40 @@
 
             <div class="empty-state" th:if="${#lists.isEmpty(personaBaseline.weakScenarios)}">
                 <p>현재 엔진 기준으로는 weak scenario가 없습니다. 다음 tuning은 rank drift나 만족도 저점부터 다시 보게 됩니다.</p>
+            </div>
+        </section>
+
+        <section class="panel game-panel">
+            <div class="panel-head">
+                <h2>1위 재검토 대상</h2>
+                <p>기대 후보는 top 3에 들어오지만, 기대 1위 anchor가 현재 1위가 아닌 시나리오를 자동으로 모아 보여 줍니다.</p>
+            </div>
+
+            <div class="table-shell">
+                <table class="result-table">
+                    <thead>
+                    <tr>
+                        <th>시나리오</th>
+                        <th>기대 1위</th>
+                        <th>현재 1위</th>
+                        <th>현재 top 3</th>
+                        <th>포인트</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="scenario : ${personaBaseline.anchorDriftScenarios}">
+                        <td th:text="${scenario.scenarioId + ' · ' + scenario.title}">P11 · 가족형 사용자</td>
+                        <td th:text="${scenario.expectedAnchorCandidate}">캐나다</td>
+                        <td th:text="${scenario.currentAnchorCandidate}">아일랜드</td>
+                        <td th:text="${#strings.listJoin(scenario.currentTopCandidates, ', ')}">아일랜드, 캐나다, 스위스</td>
+                        <td th:text="${scenario.focusPoint}">다음 tuning은 rank drift를 줄이는 방향으로 본다.</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="empty-state" th:if="${#lists.isEmpty(personaBaseline.anchorDriftScenarios)}">
+                <p>현재 엔진 기준으로는 기대 1위 anchor까지 모두 맞고 있습니다.</p>
             </div>
         </section>
 
