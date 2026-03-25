@@ -110,7 +110,7 @@ class RecommendationSurveyServiceTest {
 		));
 
 		assertThat(result.recommendations()).hasSize(3);
-		assertThat(result.recommendations().getFirst().countryNameKr()).isEqualTo("태국");
+		assertThat(result.recommendations().getFirst().countryNameKr()).isEqualTo("말레이시아");
 		assertThat(result.recommendations().getFirst().countryNameKr()).isNotEqualTo("싱가포르");
 	}
 

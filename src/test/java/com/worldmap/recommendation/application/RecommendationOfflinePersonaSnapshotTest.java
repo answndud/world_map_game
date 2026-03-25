@@ -41,7 +41,7 @@ class RecommendationOfflinePersonaSnapshotTest {
 	private static Map<String, List<String>> snapshot() {
 		Map<String, List<String>> snapshot = new LinkedHashMap<>();
 		snapshot.put("P01", List.of("싱가포르", "아랍에미리트", "미국"));
-		snapshot.put("P02", List.of("태국", "스페인", "말레이시아"));
+		snapshot.put("P02", List.of("말레이시아", "태국", "스페인"));
 		snapshot.put("P03", List.of("노르웨이", "핀란드", "덴마크"));
 		snapshot.put("P04", List.of("스페인", "아일랜드", "우루과이"));
 		snapshot.put("P05", List.of("싱가포르", "아랍에미리트", "미국"));

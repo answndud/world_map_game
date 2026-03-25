@@ -17,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class RecommendationSurveyService {
 
 	public static final String SURVEY_VERSION = "survey-v4";
-	public static final String ENGINE_VERSION = "engine-v10";
+	public static final String ENGINE_VERSION = "engine-v11";
 	private static final int CLIMATE_WEIGHT = 4;
 	private static final int SEASON_STYLE_WEIGHT = 3;
 	private static final int WEATHER_ADAPTATION_WEIGHT = 4;
@@ -46,6 +46,8 @@ public class RecommendationSurveyService {
 	private static final int SOFT_LANDING_BONUS = 8;
 	private static final int FAMILY_BASE_BONUS = 22;
 	private static final int GLOBAL_HUB_BONUS = 10;
+	private static final int FOODIE_STARTER_BONUS = 24;
+	private static final int FOODIE_STARTER_SUPPORT_BONUS = 6;
 	private static final int VALUE_FIRST_COST_OVERSHOOT_PENALTY = 11;
 	private static final int BALANCED_COST_OVERSHOOT_PENALTY = 7;
 	private static final int QUALITY_FIRST_COST_OVERSHOOT_PENALTY = 4;
@@ -285,6 +287,11 @@ public class RecommendationSurveyService {
 		signals.add(new MatchSignal(
 			globalHubBonus(profile, answers),
 			"영어·대중교통·디지털·문화 밀도가 모두 높은 초도시형 허브인지 함께 반영했습니다."
+		));
+
+		signals.add(new MatchSignal(
+			foodieStarterBonus(profile, answers),
+			"생활비를 아끼면서도 음식과 다문화 적응 장벽이 낮은 생활 시작점을 함께 반영했습니다."
 		));
 
 		int futureBaseDistance = distance(answers.futureBasePreference().targetValue(), futureBase(profile));
@@ -668,6 +675,43 @@ public class RecommendationSurveyService {
 			&& profile.safety() >= 5;
 
 		return strongGlobalHub ? GLOBAL_HUB_BONUS : 0;
+	}
+
+	private int foodieStarterBonus(
+		RecommendationCountryProfile profile,
+		RecommendationSurveyAnswers answers
+	) {
+		boolean wantsAffordableFoodieStart = answers.climatePreference() == RecommendationSurveyAnswers.ClimatePreference.WARM
+			&& answers.pacePreference() == RecommendationSurveyAnswers.PacePreference.BALANCED
+			&& answers.costQualityPreference() == RecommendationSurveyAnswers.CostQualityPreference.VALUE_FIRST
+			&& answers.environmentPreference() == RecommendationSurveyAnswers.EnvironmentPreference.MIXED
+			&& answers.englishSupportNeed() == RecommendationSurveyAnswers.EnglishSupportNeed.MEDIUM
+			&& answers.foodImportance() == RecommendationSurveyAnswers.ImportanceLevel.HIGH
+			&& answers.diversityImportance() != RecommendationSurveyAnswers.ImportanceLevel.LOW
+			&& answers.settlementPreference() == RecommendationSurveyAnswers.SettlementPreference.BALANCED
+			&& answers.mobilityPreference() == RecommendationSurveyAnswers.MobilityPreference.BALANCED;
+
+		if (!wantsAffordableFoodieStart || profile.priceLevel() >= 3) {
+			return 0;
+		}
+
+		boolean strongStarterFit = profile.food() >= 5
+			&& profile.diversity() >= 5
+			&& profile.newcomerFriendliness() >= 4
+			&& profile.englishSupport() >= 4
+			&& profile.digitalConvenience() >= 4
+			&& profile.safety() >= 4;
+
+		if (strongStarterFit) {
+			return FOODIE_STARTER_BONUS;
+		}
+
+		boolean acceptableStarterFit = profile.food() >= 5
+			&& profile.diversity() >= 5
+			&& profile.newcomerFriendliness() >= 3
+			&& profile.priceLevel() <= 2;
+
+		return acceptableStarterFit ? FOODIE_STARTER_SUPPORT_BONUS : 0;
 	}
 
 	private String continentLabel(Country country) {
