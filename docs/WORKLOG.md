@@ -2483,3 +2483,30 @@
 - 테스트 내용: 먼저 `RecommendationOfflinePersonaSnapshotTest`에서 실제 top 3를 다시 뽑아 `engine-v5` snapshot을 갱신했다. 그다음 `./gradlew test --tests com.worldmap.recommendation.application.RecommendationSurveyServiceTest --tests com.worldmap.recommendation.application.RecommendationOfflinePersonaCoverageTest --tests com.worldmap.recommendation.application.RecommendationOfflinePersonaSnapshotTest --tests com.worldmap.recommendation.RecommendationPageIntegrationTest --tests com.worldmap.recommendation.RecommendationFeedbackIntegrationTest --tests com.worldmap.admin.AdminPageIntegrationTest` 통과, 마지막으로 `./gradlew test` 전체 통과까지 확인했다.
 - 면접에서 30초 안에 설명하는 요약: 추천 엔진이 비용 민감 사용자를 충분히 구분하지 못해서, 이번에는 전체 알고리즘을 다시 짜지 않고 `초과 물가 패널티` 한 축만 분리했습니다. `VALUE_FIRST`는 더 강하게, `QUALITY_FIRST`는 더 약하게 깎게 만들어서 저비용 시나리오의 후보 구성이 실제로 달라지게 했습니다. 이 규칙은 `RecommendationSurveyService`가 맡고, 결과는 `RecommendationOfflinePersonaSnapshotTest`로 `engine-v5` snapshot을 다시 고정해 설명 가능하게 유지했습니다.
 - 아직 내가 이해가 부족한 부분: `P02`, `P14`는 원하는 방향으로 조금 움직였지만 `P15`는 아직 탐색형/교통형 신호가 충분히 반영되지 않는다. 다음 실험에서는 `newcomerSupport`, `mobility`, `futureBase` 중 어느 축을 더 손봐야 하는지 좁혀 봐야 한다.
+
+## 2026-03-25 - 추천 엔진 weak scenario 튜닝 2차: 탐색형·교통형 저예산 시나리오 보정
+
+- 단계: 6. 설문 기반 추천 엔진 / 7. AI-assisted 설문 개선 체계
+- 목적: `engine-v5`에서도 `P15`는 `포르투갈, 뉴질랜드, 남아프리카 공화국`으로 나와서, 기대했던 `말레이시아`가 top 3에 다시 들어오지 못했다. 이번 조각은 범위를 더 좁혀 `EXPERIENCE + TRANSIT_FIRST + VALUE_FIRST` 조합에서만 작동하는 보정 신호를 추가해, 탐색형/교통형 저예산 시나리오를 실제로 한 단계 더 분리하는 데 집중한다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationSurveyService.java`
+  - `src/main/resources/templates/admin/index.html`
+  - `src/main/resources/templates/admin/recommendation-feedback.html`
+  - `src/test/java/com/worldmap/recommendation/application/RecommendationOfflinePersonaCoverageTest.java`
+  - `src/test/java/com/worldmap/recommendation/application/RecommendationOfflinePersonaSnapshotTest.java`
+  - `src/test/java/com/worldmap/recommendation/RecommendationPageIntegrationTest.java`
+  - `src/test/java/com/worldmap/recommendation/RecommendationFeedbackIntegrationTest.java`
+  - `src/test/java/com/worldmap/admin/AdminPageIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/41-add-experience-transit-bonus-for-budget-explorers.md`
+- 요청 흐름 / 데이터 흐름: 추천 런타임 흐름은 그대로 `GET /recommendation/survey -> POST /recommendation/survey -> RecommendationSurveyService.recommend() -> recommendation/result -> POST /api/recommendation/feedback`이다. 이번에는 `RecommendationSurveyService` 내부에 `experienceTransitBonus()`를 추가했다. 사용자가 `EXPERIENCE + TRANSIT_FIRST + VALUE_FIRST`로 답하면, 서비스가 각 후보의 `transitSupport`, `newcomerSupport`, `digitalConvenience`, `safety`, `welfare`를 한 번 더 읽어 “가볍게 적응하면서 대중교통 중심으로 살아보기 좋은가”를 별도 보정한다.
+- 데이터 / 상태 변화: 추천 결과 top 3는 여전히 저장하지 않는다. 익명 피드백에는 이제 `engineVersion=engine-v6`이 저장되고, `/dashboard`와 `/dashboard/recommendation/feedback` 운영 화면도 현재 엔진 버전을 `engine-v6`으로 보여준다. `surveyVersion`은 계속 `survey-v4`를 유지한다. 즉, 이번 조각은 질문이 아니라 엔진만 튜닝한 버전 실험이다.
+- 핵심 도메인 개념: 이번 단계의 핵심은 “교통 친화적인 탐색형 생활”을 기존 축들만으로는 완전히 설명하기 어려웠다는 점이다. 그래서 `mobility`, `newcomer`, `digital`, `기본 안전성`을 한 번 더 묶는 작은 coherence 신호를 만들었다. 이 규칙은 컨트롤러가 아니라 `RecommendationSurveyService`가 맡아야 한다. 어떤 설문 조합에서 보정을 켜고, 어떤 프로필 속성을 함께 읽을지는 HTTP 처리보다 추천 도메인 규칙에 가깝기 때문이다.
+- 예외 상황 또는 엣지 케이스: 처음에는 `EXPERIENCE + TRANSIT_FIRST` 전체에 보정을 주었더니 `P17` 같은 도심 탐험형 시나리오까지 흔들렸다. 그래서 최종 버전에서는 `VALUE_FIRST`까지 동시에 만족할 때만 보정을 켜고, `safety`와 `welfare`가 너무 낮은 후보는 bonus를 못 받게 좁혔다. 덕분에 `P17`은 그대로 두고 `P15`만 다시 움직이게 만들었다.
+- 테스트 내용: 먼저 `RecommendationOfflinePersonaSnapshotTest`로 전체 18개 시나리오 top 3를 다시 확인했고, `P15`가 `포르투갈, 뉴질랜드, 말레이시아`로 바뀌는 것을 확인한 뒤 snapshot을 `engine-v6` 기준으로 다시 고정했다. 그 다음 `RecommendationOfflinePersonaCoverageTest`에서 `P15`가 `뉴질랜드`, `말레이시아`를 포함하고 `남아프리카 공화국`은 포함하지 않는지 고정했다. 마지막으로 `./gradlew test --tests com.worldmap.recommendation.application.RecommendationSurveyServiceTest --tests com.worldmap.recommendation.application.RecommendationOfflinePersonaCoverageTest --tests com.worldmap.recommendation.application.RecommendationOfflinePersonaSnapshotTest --tests com.worldmap.recommendation.RecommendationPageIntegrationTest --tests com.worldmap.recommendation.RecommendationFeedbackIntegrationTest --tests com.worldmap.admin.AdminPageIntegrationTest`와 `./gradlew test` 전체 통과를 확인했다.
+- 면접에서 30초 안에 설명하는 요약: `engine-v5`에서는 저예산 탐색형 시나리오가 아직 원하는 후보를 못 올렸습니다. 그래서 이번에는 추천 엔진 전체를 다시 흔드는 대신, `EXPERIENCE + TRANSIT_FIRST + VALUE_FIRST` 조합에서만 작동하는 작은 보정 신호를 추가했습니다. 이 규칙은 `RecommendationSurveyService`가 맡고, 결과는 `P15`가 `뉴질랜드 + 말레이시아`를 포함하도록 coverage와 snapshot 테스트에 다시 고정했습니다.
+- 아직 내가 이해가 부족한 부분: `P15`는 개선됐지만 `P04`, `P06`처럼 남유럽 후보가 상단에 남는 균형형/현실형 시나리오는 아직 더 봐야 한다. 다음에는 `publicService`와 `futureBase`, 혹은 `balanced cost` 구간 penalty를 어디까지 만질지 좁혀야 한다.

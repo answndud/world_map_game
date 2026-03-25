@@ -70,13 +70,14 @@
 43. [홈 첫 화면에서 모드 중복 노출을 걷어내고 진입 구조 단순화하기](./38-simplify-home-landing-structure.md)
 44. [public 디자인 패스 이후 SSR 화면과 테스트를 안정화하기](./39-stabilize-public-design-pass.md)
 45. [비용 선호에 따라 초과 물가 패널티를 다르게 주기](./40-split-cost-overshoot-penalty-by-preference.md)
+46. [탐색형·교통형 저예산 시나리오에 보정 신호 하나 더 넣기](./41-add-experience-transit-bonus-for-budget-explorers.md)
 
 ### Part E. 테스트, 확장, 취업 패키징
 
-46. 왜 핵심 게임 로직을 테스트해야 하는가
-47. 인증, 전적, 마이페이지 붙이기
-48. Level 2 난이도와 실시간성 고도화
-49. README, 아키텍처, 면접 답변 패키지 만들기
+47. 왜 핵심 게임 로직을 테스트해야 하는가
+48. 인증, 전적, 마이페이지 붙이기
+49. Level 2 난이도와 실시간성 고도화
+50. README, 아키텍처, 면접 답변 패키지 만들기
 
 ## 실제 집필 우선순위
 

@@ -441,6 +441,7 @@
 - 기존 `/recommendation/feedback-insights` public route는 `/dashboard/recommendation/feedback`으로 redirect해 북마크 호환성을 유지
 - `/dashboard/recommendation/persona-baseline` read-only 화면으로 weak scenario와 active-signal 비교 시나리오를 운영 화면에 노출
 - `survey-v4 / engine-v5`에서는 `VALUE_FIRST` 응답의 초과 물가 penalty를 더 강하게 적용해 `P02`, `P14`, `P15` 같은 저비용 시나리오의 후보 구성을 다시 실험
+- `engine-v6`에서는 `EXPERIENCE + TRANSIT_FIRST + VALUE_FIRST` 조합에 한해 `transit + newcomer + digital + 기본 안전성`을 함께 보는 보정을 추가해 `P15`에 `말레이시아`를 다시 끌어올림
 - public 헤더는 `Home / My Page`만 남기고, 게임별 직접 이동은 본문 CTA로만 남겨 진입 구조를 단순화
 - `/mypage` placeholder SSR 화면을 먼저 추가해 다음 8단계 인증/전적 확장의 진입점을 미리 고정
 - 추천 페이지 통합 테스트와 추천 서비스 단위 테스트 통과
@@ -502,6 +503,7 @@
 - `docs/recommendation/SURVEY_V2_PROPOSAL.md`로 우선 개선 대상 시나리오와 v2 개정안 초안 정리
 - `survey-v4 / engine-v4` 20문항 trade-off 설문 반영 후 baseline fixture, coverage, snapshot을 현재 결과 기준으로 다시 고정
 - `engine-v5`에서는 `VALUE_FIRST > BALANCED > QUALITY_FIRST` 순으로 초과 물가 penalty 강도를 나눠 비용 민감 시나리오의 top 3 변화를 snapshot으로 다시 고정
+- `engine-v6`에서는 탐색형/교통형 저예산 시나리오 전용 보정을 추가하고, `P15`가 `뉴질랜드 + 말레이시아`를 다시 포함하는지 coverage/snapshot으로 고정
 - `/Users/alex/project/worldmap/docs/PLAYER_COPY_AND_ADMIN_SPLIT_PLAN.md`로 public copy와 admin 운영 화면 분리 설계 정리
 - `/dashboard/recommendation/persona-baseline` read-only 화면으로 baseline 15/18, weak scenario 3개, active-signal 4개를 운영 화면에서 바로 확인
 - `/dashboard` read-only 대시보드를 추가해 현재 survey/engine 버전, 질문 수, 후보 국가 수, 만족도 수집 현황을 한 화면에서 조회
@@ -527,7 +529,7 @@
 
 이 단계에서 남은 일:
 
-- `P15` 같은 탐색형/교통형 저예산 시나리오를 다시 겨냥한 다음 penalty 실험
+- `P04`, `P06`처럼 아직 남유럽 쏠림이 남아 있는 균형형/현실형 시나리오를 다시 겨냥한 다음 penalty 실험
 - 실험 결과를 snapshot과 비교해 어떤 시나리오 순위가 움직였는지 문서화
 - `/dashboard/recommendation/persona-baseline`처럼 오프라인 baseline 확인 화면 확장
 - baseline 15/18을 더 높일 실제 개선 적용
