@@ -2644,3 +2644,28 @@
 - 테스트 내용: `AdminPersonaBaselineServiceIntegrationTest`에서 현재 baseline이 `18 / 18`, weak 0, anchor drift 13, active signal 4인지 검증했고, drift 시나리오 집합이 `P01, P02, P04, P05, P06, P07, P08, P09, P10, P11, P13, P14, P15`와 일치하는지 고정했다. `AdminPageIntegrationTest`에서는 persona baseline 페이지가 `ANCHOR DRIFT`, `1위 재검토 대상`, `P11`을 실제로 렌더링하는지 확인했다.
 - 면접에서 30초 안에 설명하는 요약: baseline이 18 / 18이 되면 weak scenario만으로는 다음 개선 포인트를 잡기 어렵습니다. 그래서 운영 화면 read model을 확장해서, 기대 후보는 top 3에 들어오지만 기대 1위가 밀리는 `anchor drift`를 따로 계산해 보여 주도록 바꿨습니다. 덕분에 이제는 추천 엔진이 완전히 빗나간 경우와, 방향은 맞지만 순위가 아쉬운 경우를 분리해 볼 수 있습니다.
 - 아직 내가 이해가 부족한 부분: `expectedCandidates[0]`을 1위 anchor로 보는 기준이 현재는 충분히 설명 가능하지만, 나중에 실제 만족도 데이터가 쌓이면 일부 시나리오는 “1위 후보 하나”보다 “허용 가능한 top 3 조합”이 더 맞을 수도 있다. 그때 anchor drift 정의를 그대로 유지할지 다시 판단해야 한다.
+
+## 2026-03-25 - 추천 만족도 운영 화면에 ops review 추가
+
+- 단계: 7. AI-assisted 설문 개선 체계
+- 목적: anchor drift까지 보이기 시작했지만, 운영자는 여전히 `/dashboard/recommendation/feedback`과 `/dashboard/recommendation/persona-baseline`을 따로 오가며 다음 액션을 판단해야 했다. 이번 조각은 현재 버전 만족도 표본과 baseline drift를 한 번에 보고, 다음에 무엇을 먼저 할지 운영 메모로 정리하는 데 집중한다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/admin/application/AdminRecommendationOpsReviewService.java`
+  - `src/main/java/com/worldmap/admin/application/AdminRecommendationOpsReviewView.java`
+  - `src/main/java/com/worldmap/admin/web/AdminPageController.java`
+  - `src/main/resources/templates/admin/recommendation-feedback.html`
+  - `src/test/java/com/worldmap/admin/AdminRecommendationOpsReviewServiceIntegrationTest.java`
+  - `src/test/java/com/worldmap/admin/AdminPageIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/47-add-ops-review-to-recommendation-feedback-dashboard.md`
+- 요청 흐름 / 데이터 흐름: 운영 요청은 `GET /dashboard/recommendation/feedback -> AdminPageController -> RecommendationFeedbackService.summarizeByVersion() + AdminRecommendationOpsReviewService.loadReview()`로 흐른다. 여기서 `AdminRecommendationOpsReviewService`는 다시 `RecommendationFeedbackService`와 `AdminPersonaBaselineService`를 호출해 현재 버전 응답 수, 현재 버전 평균 만족도, baseline 18/18 여부, weak count, anchor drift count를 한 read model로 합친다.
+- 데이터 / 상태 변화: 새 테이블은 없다. 만족도 피드백은 기존처럼 `recommendation_feedback`에만 쌓이고, baseline은 저장하지 않고 현재 엔진 결과를 다시 계산한다. 이번 조각은 이 두 source를 합쳐 운영 판단 문장과 우선 시나리오 ID를 만드는 read model만 추가했다.
+- 핵심 도메인 개념: 운영 화면에서 “다음에 뭘 먼저 할까”는 단순 템플릿 조건문이 아니라 운영 규칙이다. 현재 버전 응답이 5개 미만이면 먼저 피드백 수집, weak scenario가 있으면 weak 먼저, 평균 만족도가 낮으면 문구 점검, 그렇지 않고 drift만 남아 있으면 drift부터 보는 식의 우선순위는 `AdminRecommendationOpsReviewService`가 맡는 편이 맞다.
+- 예외 상황 또는 엣지 케이스: 현재 버전 피드백이 하나도 없으면 평균 점수는 0이지만, 이걸 곧바로 “품질 낮음”으로 해석하면 안 된다. 그래서 응답 수가 `5개 미만`이면 평균보다 먼저 `표본 수집`을 우선하는 규칙으로 막았다. drift 시나리오 목록도 너무 길어지지 않게 상위 3개 ID만 메모에 싣도록 제한했다.
+- 테스트 내용: `AdminRecommendationOpsReviewServiceIntegrationTest`에서 현재 버전 피드백이 2개일 때는 `현재 버전 피드백 더 수집`, 5개 이상이고 평균이 충분할 때는 `rank drift 줄이기`가 나오는지 고정했다. `AdminPageIntegrationTest`에서는 추천 만족도 운영 화면이 `운영 판단 메모`와 우선 액션 문구를 실제로 렌더링하는지 확인했다.
+- 면접에서 30초 안에 설명하는 요약: 추천 품질 운영은 만족도 표만 보는 것으로 끝나지 않습니다. 그래서 현재 버전 만족도와 baseline drift를 한 서비스에서 합쳐, 운영 화면이 `지금은 표본을 더 모을지, weak scenario를 볼지, drift를 줄일지`를 한 줄 메모로 바로 보여 주도록 만들었습니다.
+- 아직 내가 이해가 부족한 부분: 현재 운영 메모는 rule-based라서 설명 가능성은 높지만, 실제 만족도 데이터가 더 쌓이면 “표본 수”, “평균 점수”, “drift 수”에 어떤 가중치를 둘지 다시 손볼 수 있다.

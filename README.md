@@ -192,6 +192,7 @@
 - 결과 페이지는 서버가 계산한 매칭 점수와 핵심 이유 3개를 deterministic하게 보여준다.
 - 추천 결과 자체는 저장하지 않고, 결과 페이지에서 `1~5점 만족도 + surveyVersion + engineVersion + 사용자가 선택한 20개 답변`만 익명 피드백으로 수집한다.
 - `/dashboard/recommendation/feedback`와 `/api/recommendation/feedback/summary`에서 `surveyVersion + engineVersion` 기준 평균 점수, 응답 수, 1~5점 분포를 읽어 설문 개선 기준으로 사용한다.
+- `/dashboard/recommendation/feedback`는 현재 버전 만족도와 baseline anchor drift를 함께 읽어, 지금은 `피드백을 더 모을지`, `문구를 손볼지`, `rank drift를 줄일지`를 운영 메모로 바로 보여 준다.
 - `/dashboard/recommendation/persona-baseline`에서 18개 페르소나 baseline을 현재 엔진 결과로 다시 계산해 weak scenario, 1위 anchor drift, active-signal 비교 시나리오를 운영 화면으로 확인한다.
 - 오프라인 baseline과 snapshot은 현재 `survey-v4 / engine-v9` 기준으로 다시 고정했다.
 - `engine-v7`에서는 `MIXED + BALANCED` 생활을 원하면서 `안전 / 공공서비스`를 중시하는 경우, `safety + welfare + housing + newcomer`를 함께 보는 작은 보정을 추가해 `P04`, `P06` 같은 균형형 시나리오의 남유럽 쏠림을 한 단계 더 줄였다.
