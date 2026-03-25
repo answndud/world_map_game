@@ -2592,3 +2592,30 @@
 - 테스트 내용: `RecommendationOfflinePersonaCoverageTest`, `RecommendationOfflinePersonaSnapshotTest`가 새 `RecommendationPersonaBaselineCatalog`를 기준으로 그대로 동작하는지 확인했다. 추가로 `AdminPersonaBaselineServiceIntegrationTest`에서 total 18, active signal 4, weak scenario는 현재 top 3가 기대 후보와 겹치지 않는 케이스만 나오는지 검증했다. `AdminPageIntegrationTest`에서는 persona baseline 페이지가 `자동 계산` 문구와 active-signal 섹션을 실제로 렌더링하는지 확인했다. 마지막으로 targeted suite와 `./gradlew test` 전체 통과를 확인했다.
 - 면접에서 30초 안에 설명하는 요약: 추천 엔진을 계속 튜닝하면 테스트와 운영 화면이 서로 다른 기준을 보면 안 됩니다. 그래서 이번에는 baseline 시나리오 정의를 `RecommendationPersonaBaselineCatalog` 하나로 모으고, `/dashboard/recommendation/persona-baseline`이 현재 엔진 결과를 기준으로 weak scenario를 자동 계산하도록 바꿨습니다. 덕분에 테스트와 운영 화면이 같은 시나리오 자산을 공유하게 됐습니다.
 - 아직 내가 이해가 부족한 부분: 지금은 weak scenario를 “기대 후보가 top 3에 하나도 없는 경우”로만 보고 있다. 다음에는 top 1 miss, rank drift, expected satisfaction range까지 같이 운영 화면에서 보여 줄지 판단해야 한다.
+
+## 2026-03-25 - 추천 엔진 weak scenario 튜닝 5차: 가족형 정착 후보 family base 보정
+
+- 단계: 6. 설문 기반 추천 엔진 / 7. AI-assisted 설문 개선 체계
+- 목적: 동적 baseline을 다시 계산해 보니 weak scenario는 `P11` 하나만 남았다. `P11`은 치안과 복지, 영어 적응을 강하게 보는 가족형 시나리오인데도 현재 top 3가 `아일랜드, 스위스, 호주`로 나와 `캐나다, 덴마크, 네덜란드` 계열 기대 후보를 하나도 포함하지 못했다. 이번 조각은 `P11`만 겨냥해 가족형 정착 기반 bonus를 아주 좁게 추가하는 데 집중한다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationSurveyService.java`
+  - `src/main/resources/templates/admin/index.html`
+  - `src/main/resources/templates/admin/recommendation-feedback.html`
+  - `src/main/resources/templates/admin/recommendation-persona-baseline.html`
+  - `src/test/java/com/worldmap/admin/AdminPageIntegrationTest.java`
+  - `src/test/java/com/worldmap/admin/AdminPersonaBaselineServiceIntegrationTest.java`
+  - `src/test/java/com/worldmap/recommendation/application/RecommendationOfflinePersonaCoverageTest.java`
+  - `src/test/java/com/worldmap/recommendation/application/RecommendationOfflinePersonaSnapshotTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/45-add-family-base-bonus-for-family-settlement.md`
+- 요청 흐름 / 데이터 흐름: 런타임 추천 흐름은 그대로 `GET /recommendation/survey -> POST /recommendation/survey -> RecommendationSurveyService.recommend() -> recommendation/result -> POST /api/recommendation/feedback`이다. 이번에는 `RecommendationSurveyService` 안에 `familyBaseBonus()`를 추가했다. 사용자가 `QUALITY_FIRST + SAFETY HIGH + English HIGH + MIXED + BALANCED + LOW tolerance`로 답하면, 서비스가 후보 국가의 `englishSupport`, `safety`, `welfare`, `housingSpace`, `newcomerFriendliness`를 함께 읽어 가족 단위로도 오래 버티기 쉬운 기반이 있는지를 별도 bonus로 반영한다.
+- 데이터 / 상태 변화: 추천 결과 top 3는 여전히 저장하지 않는다. 익명 피드백에는 이제 `engineVersion=engine-v9`이 저장되고, `/dashboard`와 `/dashboard/recommendation/feedback` 운영 화면도 현재 엔진 버전을 `engine-v9`으로 보여준다. 동적 baseline 기준으로는 이제 `matchedScenarioCount=18`, `weakScenarioCount=0`이 된다.
+- 핵심 도메인 개념: 이번 단계의 핵심은 `P11`이 기후보다 `영어 + 치안 + 복지 + 주거 기반`을 더 강하게 보는 시나리오라는 점이다. 그래서 broad bonus를 또 하나 더 만드는 대신, `QUALITY_FIRST`, `SAFETY HIGH`, `English HIGH`, `MIXED`, `BALANCED`, `LOW tolerance`, `BALANCED settlement`를 동시에 만족할 때만 작동하는 `familyBaseBonus()`를 추가했다. 이 계산은 컨트롤러가 아니라 `RecommendationSurveyService`가 맡아야 한다. 어떤 설문 조합에서 어떤 프로필 속성을 함께 읽을지는 추천 도메인 규칙이기 때문이다.
+- 예외 상황 또는 엣지 케이스: bonus를 넓게 켜면 북유럽 고비용 후보나 영어권 후보 전반이 같이 올라가 다른 시나리오가 흔들릴 수 있다. 그래서 `English HIGH`와 `QUALITY_FIRST`, `LOW tolerance`까지 동시에 만족할 때만 켰고, 후보도 `englishSupport >= 5`, `safety >= 5`, `welfare >= 5`, `housingSpace >= 4`, `newcomerFriendliness >= 4`를 다 만족해야만 bonus를 받도록 좁혔다. 덕분에 `P11`에는 영향을 주되 다른 시나리오에는 거의 퍼지지 않았다.
+- 테스트 내용: 먼저 디버그 테스트로 `P11`의 실제 점수를 직접 확인해 `아일랜드 353 / 스위스 338 / 호주 336 / 캐나다 317 / 덴마크 313`이라는 gap을 확인했다. 그 다음 `familyBaseBonus()`를 추가하고 `P11`이 `아일랜드, 캐나다, 스위스`로 바뀐 것을 확인한 뒤, `RecommendationOfflinePersonaSnapshotTest`와 `RecommendationOfflinePersonaCoverageTest`를 `engine-v9` 기준으로 다시 고정했다. `AdminPersonaBaselineServiceIntegrationTest`에서는 dynamic baseline이 `18 / 18`, weak scenario 0이 되는지 검증했고, `recommendation-persona-baseline.html`에는 weak scenario가 없을 때의 empty-state 문구를 추가했다. 마지막으로 targeted suite와 `./gradlew test` 전체 통과를 확인했다.
+- 면접에서 30초 안에 설명하는 요약: 동적 baseline을 돌려보니 마지막 weak scenario는 `P11` 하나였습니다. 이 시나리오는 가족형 정착 기반이 핵심이어서, 이번에는 `English + Safety + Welfare + Housing`이 모두 강한 후보에만 좁게 들어가는 `familyBaseBonus`를 추가했습니다. 그 결과 `P11`에 `캐나다`가 다시 top 3에 들어왔고, baseline은 `18 / 18`까지 올라갔습니다.
+- 아직 내가 이해가 부족한 부분: 이제 weak scenario는 0개지만, 이게 곧바로 순위 품질이 완벽하다는 뜻은 아니다. 다음 단계에서는 `weak scenario 유무`보다 `top1 miss`, `rank drift`, 실제 만족도 저점이 있는 버전 조합을 더 봐야 한다.

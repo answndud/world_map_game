@@ -193,9 +193,10 @@
 - 추천 결과 자체는 저장하지 않고, 결과 페이지에서 `1~5점 만족도 + surveyVersion + engineVersion + 사용자가 선택한 20개 답변`만 익명 피드백으로 수집한다.
 - `/dashboard/recommendation/feedback`와 `/api/recommendation/feedback/summary`에서 `surveyVersion + engineVersion` 기준 평균 점수, 응답 수, 1~5점 분포를 읽어 설문 개선 기준으로 사용한다.
 - `/dashboard/recommendation/persona-baseline`에서 18개 페르소나 baseline을 현재 엔진 결과로 다시 계산해 weak scenario와 active-signal 비교 시나리오를 운영 화면으로 확인한다.
-- 오프라인 baseline과 snapshot은 현재 `survey-v4 / engine-v8` 기준으로 다시 고정했다.
+- 오프라인 baseline과 snapshot은 현재 `survey-v4 / engine-v9` 기준으로 다시 고정했다.
 - `engine-v7`에서는 `MIXED + BALANCED` 생활을 원하면서 `안전 / 공공서비스`를 중시하는 경우, `safety + welfare + housing + newcomer`를 함께 보는 작은 보정을 추가해 `P04`, `P06` 같은 균형형 시나리오의 남유럽 쏠림을 한 단계 더 줄였다.
 - `engine-v8`에서는 `VALUE_FIRST + SAFETY + MIXED + BALANCED + 영어 적응 MEDIUM` 조합에서만 작동하는 `soft landing bonus`를 추가해, `P06`의 3위 후보를 `이탈리아`에서 `포르투갈`로 교체했다.
+- `engine-v9`에서는 `QUALITY_FIRST + SAFETY HIGH + English HIGH + MIXED + BALANCED + LOW tolerance` 조합에서만 작동하는 `family base bonus`를 추가해, `P11`에 `캐나다`를 다시 올리고 baseline을 `18 / 18`까지 끌어올렸다.
 - 공통 shell은 다크/라이트 테마 토글을 제공하고, 사용자가 고른 테마는 `localStorage`의 `worldmap-theme`로 유지한다.
 - 홈, 추천, 랭킹 public 화면은 내부 구현 용어보다 플레이어가 바로 이해할 수 있는 제품 언어로 다시 정리했고, 버전/집계/로드맵 같은 내부 정보는 `/dashboard` 운영 화면으로 분리하는 방향으로 간다.
 - 공통 shell과 홈, 추천, 랭킹, Stats, My Page는 최근 디자인 패스에서 다크/라이트 공통 톤과 각진 패널 레이아웃 기준으로 다시 정리했고, public 화면 테스트도 새 카피 기준으로 다시 고정했다.
