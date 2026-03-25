@@ -443,6 +443,7 @@
 - `survey-v4 / engine-v5`에서는 `VALUE_FIRST` 응답의 초과 물가 penalty를 더 강하게 적용해 `P02`, `P14`, `P15` 같은 저비용 시나리오의 후보 구성을 다시 실험
 - `engine-v6`에서는 `EXPERIENCE + TRANSIT_FIRST + VALUE_FIRST` 조합에 한해 `transit + newcomer + digital + 기본 안전성`을 함께 보는 보정을 추가해 `P15`에 `말레이시아`를 다시 끌어올림
 - `engine-v7`에서는 `MIXED + BALANCED` 생활과 `안전 / 공공서비스` 중요도가 함께 높을 때 `safety + welfare + housing + newcomer`를 함께 보는 civic base bonus를 추가해 `P04`, `P06`의 균형형 후보 구성을 다시 조정
+- `engine-v8`에서는 `VALUE_FIRST + SAFETY + MIXED + BALANCED + 영어 적응 MEDIUM` 조합에 한해 `english + newcomer + housing + safety + welfare`를 함께 보는 soft landing bonus를 추가해 `P06`의 3위 후보를 `포르투갈`로 교체
 - public 헤더는 `Home / My Page`만 남기고, 게임별 직접 이동은 본문 CTA로만 남겨 진입 구조를 단순화
 - `/mypage` placeholder SSR 화면을 먼저 추가해 다음 8단계 인증/전적 확장의 진입점을 미리 고정
 - 추천 페이지 통합 테스트와 추천 서비스 단위 테스트 통과
@@ -506,6 +507,7 @@
 - `engine-v5`에서는 `VALUE_FIRST > BALANCED > QUALITY_FIRST` 순으로 초과 물가 penalty 강도를 나눠 비용 민감 시나리오의 top 3 변화를 snapshot으로 다시 고정
 - `engine-v6`에서는 탐색형/교통형 저예산 시나리오 전용 보정을 추가하고, `P15`가 `뉴질랜드 + 말레이시아`를 다시 포함하는지 coverage/snapshot으로 고정
 - `engine-v7`에서는 `P04`가 `스페인 + 아일랜드 + 우루과이`, `P06`이 `스페인 + 우루과이`를 포함하도록 snapshot/coverage를 다시 고정
+- `engine-v8`에서는 `P06`이 `스페인 + 우루과이 + 포르투갈`이 되도록 snapshot/coverage를 다시 고정
 - `/Users/alex/project/worldmap/docs/PLAYER_COPY_AND_ADMIN_SPLIT_PLAN.md`로 public copy와 admin 운영 화면 분리 설계 정리
 - `/dashboard/recommendation/persona-baseline` read-only 화면으로 baseline 15/18, weak scenario 3개, active-signal 4개를 운영 화면에서 바로 확인
 - `/dashboard` read-only 대시보드를 추가해 현재 survey/engine 버전, 질문 수, 후보 국가 수, 만족도 수집 현황을 한 화면에서 조회
@@ -531,7 +533,7 @@
 
 이 단계에서 남은 일:
 
-- `P06`의 3위 후보에서 `이탈리아`가 계속 남는 이유를 더 좁혀 보는 다음 penalty 실험
+- `P04`, `P06`, `P15` 외에 아직 놓친 weak scenario가 있는지 baseline 18개를 다시 점검
 - 실험 결과를 snapshot과 비교해 어떤 시나리오 순위가 움직였는지 문서화
 - `/dashboard/recommendation/persona-baseline`처럼 오프라인 baseline 확인 화면 확장
 - baseline 15/18을 더 높일 실제 개선 적용

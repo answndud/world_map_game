@@ -2538,3 +2538,30 @@
 - 테스트 내용: 먼저 `RecommendationOfflinePersonaSnapshotTest`로 18개 시나리오 top 3를 다시 뽑아 `P04`, `P06`, `P14` 변화를 확인했다. 그다음 snapshot을 `engine-v7` 기준으로 다시 고정했다. `RecommendationOfflinePersonaCoverageTest`에서는 `P04`가 `아일랜드`, `우루과이`를 포함하고 `이탈리아`는 빠지는지, `P06`이 `우루과이`를 포함하는지를 추가로 고정했다. 마지막으로 `./gradlew test --tests com.worldmap.recommendation.application.RecommendationSurveyServiceTest --tests com.worldmap.recommendation.application.RecommendationOfflinePersonaCoverageTest --tests com.worldmap.recommendation.application.RecommendationOfflinePersonaSnapshotTest --tests com.worldmap.recommendation.RecommendationPageIntegrationTest --tests com.worldmap.recommendation.RecommendationFeedbackIntegrationTest --tests com.worldmap.admin.AdminPageIntegrationTest`와 `./gradlew test` 전체 통과를 확인했다.
 - 면접에서 30초 안에 설명하는 요약: `P15`를 개선한 뒤에도 균형형 시나리오에서는 여전히 남유럽 후보가 너무 강했습니다. 그래서 이번에는 `MIXED + BALANCED` 생활을 원하면서 안전이나 공공서비스를 중시하는 경우에만 작동하는 `civicBaseBonus`를 추가했습니다. 이 규칙은 `RecommendationSurveyService`가 맡고, `P04`가 `스페인 + 아일랜드 + 우루과이`, `P06`이 `스페인 + 우루과이`를 포함하도록 snapshot과 coverage 테스트에 다시 고정했습니다.
 - 아직 내가 이해가 부족한 부분: `P04`는 꽤 좋아졌지만 `P06`의 3위 후보에는 아직 `이탈리아`가 남는다. 다음 실험에서는 `balanced cost` 구간에서 `food/culture`가 너무 강하게 남는지, 아니면 `futureBase`나 `english/newcomer` 쪽을 조금 더 올려야 하는지 더 좁혀 봐야 한다.
+
+## 2026-03-25 - 추천 엔진 weak scenario 튜닝 4차: 현실형 저예산 사용자 soft landing 보정
+
+- 단계: 6. 설문 기반 추천 엔진 / 7. AI-assisted 설문 개선 체계
+- 목적: `engine-v7`에서 `P06`은 `스페인, 우루과이, 이탈리아`까지는 좋아졌지만, 3위에 아직 `이탈리아`가 남아 있었다. 이번 조각은 `P06`만 겨냥해, 저예산이면서 안전을 중시하고 영어 적응도 어느 정도 원하는 현실형 사용자에게 `초기 적응 장벽이 낮은가`를 한 번 더 묻는 아주 좁은 bonus를 추가하는 데 집중한다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationSurveyService.java`
+  - `src/main/resources/templates/admin/index.html`
+  - `src/main/resources/templates/admin/recommendation-feedback.html`
+  - `src/test/java/com/worldmap/recommendation/application/RecommendationOfflinePersonaSnapshotTest.java`
+  - `src/test/java/com/worldmap/recommendation/application/RecommendationOfflinePersonaCoverageTest.java`
+  - `src/test/java/com/worldmap/recommendation/RecommendationPageIntegrationTest.java`
+  - `src/test/java/com/worldmap/recommendation/RecommendationFeedbackIntegrationTest.java`
+  - `src/test/java/com/worldmap/admin/AdminPageIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/43-add-soft-landing-bonus-for-practical-budget-users.md`
+- 요청 흐름 / 데이터 흐름: 런타임 추천 흐름은 그대로 `GET /recommendation/survey -> POST /recommendation/survey -> RecommendationSurveyService.recommend() -> recommendation/result -> POST /api/recommendation/feedback`이다. 이번에는 `RecommendationSurveyService` 안에 `softLandingBonus()`를 추가했다. 사용자가 `VALUE_FIRST + SAFETY HIGH + MIXED + BALANCED + EnglishSupport MEDIUM`으로 답하면, 서비스가 후보 국가의 `englishSupport`, `newcomerFriendliness`, `housingSpace`, `safety`, `welfare`를 함께 읽어 “현실적으로 초기에 부딪히는 장벽이 낮은가”를 별도 bonus로 반영한다.
+- 데이터 / 상태 변화: 추천 결과 top 3는 여전히 저장하지 않는다. 익명 피드백에는 이제 `engineVersion=engine-v8`이 저장되고, `/dashboard`와 `/dashboard/recommendation/feedback` 운영 화면도 현재 엔진 버전을 `engine-v8`으로 보여준다. 설문 버전은 그대로 `survey-v4`다.
+- 핵심 도메인 개념: 이번 단계의 핵심은 `저예산 + 안전 중시 + 영어 적응 중간` 사용자가 실제로 중요하게 느끼는 것은 음식/문화 점수보다 “초기 정착이 얼마나 덜 힘든가”라는 점이다. 그래서 이전 bonus를 더 넓게 키우지 않고, `softLandingBonus()`로 `english + newcomer + housing + safety + welfare`를 동시에 만족할 때만 작동하는 아주 좁은 신호를 추가했다. 이 계산은 컨트롤러가 아니라 `RecommendationSurveyService`가 맡아야 한다. 어떤 설문 조합에서 bonus를 켜고 어떤 프로필 속성을 함께 보는지는 추천 도메인 규칙이기 때문이다.
+- 예외 상황 또는 엣지 케이스: bonus를 너무 넓히면 `P04`, `P14` 같은 다른 균형형 시나리오나 영어권 고비용 후보가 같이 흔들릴 수 있다. 그래서 `VALUE_FIRST`, `SAFETY HIGH`, `MIXED`, `BALANCED`, `EnglishSupport MEDIUM`을 동시에 만족할 때만 bonus를 켜고, `priceLevel >= 4` 후보는 아예 제외했다. 이 조건이면 `P06`에는 영향을 주되 다른 weak scenario에는 거의 퍼지지 않는다.
+- 테스트 내용: 먼저 디버그 테스트로 `P06`의 실제 점수를 직접 확인해 `스페인 314 / 우루과이 298 / 이탈리아 293 / 포르투갈 287`이라는 gap을 확인했다. 그 다음 `softLandingBonus()`를 추가하고 `P06`이 `스페인, 우루과이, 포르투갈`로 바뀐 것을 확인한 뒤, `RecommendationOfflinePersonaSnapshotTest`와 `RecommendationOfflinePersonaCoverageTest`를 `engine-v8` 기준으로 다시 고정했다. 마지막으로 `./gradlew test --tests com.worldmap.recommendation.application.RecommendationOfflinePersonaSnapshotTest --tests com.worldmap.recommendation.application.RecommendationOfflinePersonaCoverageTest --tests com.worldmap.recommendation.application.RecommendationSurveyServiceTest --tests com.worldmap.recommendation.RecommendationPageIntegrationTest --tests com.worldmap.recommendation.RecommendationFeedbackIntegrationTest --tests com.worldmap.admin.AdminPageIntegrationTest`와 `./gradlew test` 전체 통과를 확인했다.
+- 면접에서 30초 안에 설명하는 요약: `P06`은 비용과 안전을 함께 보는 현실형 사용자였는데, 이전 엔진에서는 여전히 이탈리아가 3위에 남았습니다. 그래서 전체 엔진을 다시 흔들지 않고, 영어 적응과 newcomer 친화도, 주거 안정성이 모두 높은 경우에만 작동하는 `softLandingBonus`를 아주 좁게 추가했습니다. 이 규칙은 `RecommendationSurveyService`가 맡고, 결과는 `P06`이 `스페인 + 우루과이 + 포르투갈`이 되도록 snapshot과 coverage 테스트에 다시 고정했습니다.
+- 아직 내가 이해가 부족한 부분: `P06`은 원하는 방향으로 움직였지만, 이제는 `P04`, `P15` 외 다른 시나리오에 숨은 약점이 없는지 전체 coverage를 다시 훑어 봐야 한다. 다음 실험은 새 bonus를 더 키우기보다, 남은 weak scenario가 실제로 무엇인지부터 다시 확인하는 것이 맞다.
