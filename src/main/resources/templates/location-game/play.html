@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>국가 위치 찾기 플레이</title>
-    <link rel="stylesheet" th:href="@{/css/site.css(v='20260324-square-ui-2')}">
+    <link rel="stylesheet" th:href="@{/css/site.css(v='20260325-light-depth-10')}">
     <script th:src="@{/vendor/globe.gl.min.js}" defer></script>
-    <script th:src="@{/js/location-game.js(v='20260324-location-ui-2')}" defer></script>
+    <script th:src="@{/js/location-game.js(v='20260324-light-system-3')}" defer></script>
 </head>
 <body data-page="location-play" th:attr="data-session-id=${sessionId}">
 <div class="page-shell">
@@ -42,7 +42,7 @@
             </form>
 
             <div id="location-answer-feedback" class="feedback-card" hidden></div>
-            <p id="location-play-message" class="message-box">세션과 지구본을 준비하는 중입니다. 첫 진입에서는 잠시 걸릴 수 있습니다.</p>
+            <p id="location-play-message" class="message-box" data-tone="info">세션과 지구본을 준비하는 중입니다. 첫 진입에서는 잠시 걸릴 수 있습니다.</p>
         </section>
     </main>
 </div>

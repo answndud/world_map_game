@@ -2,7 +2,7 @@
     var storageKey = "worldmap-theme";
 
     function normalizeTheme(value) {
-        return value === "light" ? "light" : "dark";
+        return value === "dark" ? "dark" : "light";
     }
 
     function readStoredTheme() {
@@ -25,11 +25,11 @@
         document.querySelectorAll("[data-theme-toggle]").forEach(function (button) {
             var label = button.querySelector("[data-theme-toggle-label]");
             if (label) {
-                label.textContent = theme === "dark" ? "Light" : "Dark";
+                label.textContent = theme === "light" ? "Light" : "Dark";
             }
 
             button.setAttribute("aria-pressed", theme === "light" ? "true" : "false");
-            button.setAttribute("title", theme === "dark" ? "라이트 모드로 전환" : "다크 모드로 전환");
+            button.setAttribute("title", theme === "dark" ? "현재 다크 모드, 클릭하면 라이트 모드로 전환" : "현재 라이트 모드, 클릭하면 다크 모드로 전환");
         });
     }
 

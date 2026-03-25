@@ -5,9 +5,9 @@
     (function () {
         try {
             var storedTheme = window.localStorage.getItem("worldmap-theme");
-            document.documentElement.dataset.theme = storedTheme === "light" ? "light" : "dark";
+            document.documentElement.dataset.theme = storedTheme === "dark" ? "dark" : "light";
         } catch (error) {
-            document.documentElement.dataset.theme = "dark";
+            document.documentElement.dataset.theme = "light";
         }
     }());
 </script>
@@ -44,7 +44,7 @@
             </button>
         </div>
     </header>
-    <script th:src="@{/js/theme-toggle.js(v='20260324-theme-1')}"></script>
+    <script th:src="@{/js/theme-toggle.js(v='20260325-theme-2')}"></script>
 </th:block>
 </body>
 </html>

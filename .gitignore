@@ -39,3 +39,10 @@ out/
 
 .env
 .env.local
+.env.*
+*.pem
+*.key
+*.p12
+*.jks
+*.keystore
+*.crt

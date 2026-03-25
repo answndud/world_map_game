@@ -97,7 +97,7 @@
 
 완료 항목:
 
-- Spring Boot 3.5.12 + Java 21 + Gradle wrapper 기반 프로젝트 생성
+- Spring Boot 3.5.12 + Java 25 + Gradle wrapper 기반 프로젝트 생성
 - `Spring Web`, `Thymeleaf`, `Validation`, `Spring Data JPA`, `Spring Data Redis` 의존성 구성
 - `compose.yaml`로 PostgreSQL / Redis 개발 환경 뼈대 구성
 - `application.yml`, `application-local.yml`, `application-test.yml` 분리
@@ -423,6 +423,18 @@
 - 공통 CSS에서 버튼, 패널, 입력창, 모달, 테이블 셸, 배지의 모서리를 완전한 사각형으로 통일하고, 스타일 버전 쿼리까지 적용해 실제 반영 경로를 함께 정리
 - 공통 shell에 dark/light theme toggle을 추가하고, `html[data-theme] + CSS 변수 + localStorage` 조합으로 테마 상태를 사이트 전체에서 유지
 - light theme에서 primary button 텍스트, secondary button 표면, filter/option 선택 상태가 다크 값으로 남지 않도록 공통 interactive color token을 정리해 버튼 대비를 다시 맞춤
+- light theme 홈 화면에서 dark slab처럼 남던 panel, hero callout, mode card, form input 표면을 밝은 blue-tinted layer로 다시 맞춰 섹션 간 색 계층을 정리
+- public/admin/game 템플릿 전체를 다시 읽고, light theme용 subtitle/meta/hint/badge/chip/globe/modal/message token을 추가해 화면별 다크 하드코딩과 단일 경고 박스 스타일을 정리
+- `message-box`를 neutral / info / error / success tone으로 분리하고, location/population/ranking JS도 로딩/성공/에러 상황에 맞는 tone을 넘기도록 보정
+- globe playfield, stage overlay, game-over modal도 light theme에서 검은 slab처럼 보이지 않도록 전용 surface token으로 다시 맞추고, location/population/ranking JS asset version을 함께 올려 캐시 혼선을 줄임
+- light theme 기본 진입값을 `light`로 바꾸고, hero account callout / panel / 공통 shell surface를 더 하얗고 덜 흐리게 다시 조정해 사용자가 체감하는 dark 잔재를 한 번 더 제거
+- theme toggle은 다음 액션이 아니라 현재 모드를 표시하도록 바꾸고, fragment script와 asset version도 함께 올려 토글 의미와 캐시 혼선을 줄임
+- light theme를 dark shell의 완화판이 아니라 `white surface + slate text + cobalt accent` 팔레트로 다시 정의하고, body noise / panel glint를 꺼서 홈과 공통 화면이 처음부터 light 제품처럼 보이도록 리부트
+- 홈 화면은 hero 2열, 우측 요약 패널, 2x2 모드 카드, 더 읽기 쉬운 header/nav/button/type scale로 재구성해 라이트 모드 첫 화면의 위계를 다시 세움
+- 홈 hero 우측 `바로 시작하는 흐름` 박스를 제거하고, public 홈 copy에서는 `모드` 대신 `게임`을 사용해 제품 언어를 더 단순하게 맞춤
+- 홈 hero에서는 `서비스 현황 보기` 옆에 계정 callout을 붙여 보조 행동을 한 줄로 묶고, 실시간 랭킹은 게임 카드가 아니라 공통 header navigation으로 올려 정보 탐색과 게임 시작 경로를 분리
+- 홈 hero support row에서는 `서비스 현황 보기` 링크도 callout과 같은 surface/border/shadow 계층으로 맞춰, 같은 수평선에서 보이는 보조 행동 카드의 높이와 덩어리감을 통일
+- light theme는 flat white shell에 머무르지 않도록 배경 radial layer, glass-like chrome, panel glint, card shadow, hover lift를 다시 올려 밝은 화면에서도 생동감과 입체감이 느껴지게 보정
 - public 화면에서 내부 구현 문구를 제거하고, 버전/집계/로드맵은 별도 admin 화면으로 옮기기 위한 `/Users/alex/project/worldmap/docs/PLAYER_COPY_AND_ADMIN_SPLIT_PLAN.md` 설계 초안 작성
 - 홈, 추천 설문/결과, 랭킹 public 화면의 copy를 제품 언어 중심으로 다시 쓰고, 추천 결과 화면에서 내부 운영 페이지 링크를 제거
 - `/admin` read-only 대시보드와 `AdminDashboardService`, `AdminPageController`를 추가해 public과 내부 운영 화면을 실제 라우트 수준에서 분리
@@ -439,6 +451,8 @@
 - `/admin/build`처럼 남은 운영 화면을 더 확장
 - 다음 단계에서 서브 에이전트 평가에 사용할 설문 버전/시나리오 자산 고정
 - 지구본 플레이 화면과 게임오버 모달까지 light theme 시각 톤을 더 다듬을지 결정
+- 추천 결과 / auth form / stats 화면까지 light theme 실화면 검증을 더 할지 결정
+- 모바일 폭에서 dashboard / ranking / recommendation 결과 카드 밀도가 적절한지 추가 확인
 
 반드시 이해할 것:
 
@@ -577,6 +591,9 @@
 - local demo bootstrap은 `country seed -> admin bootstrap -> demo bootstrap` 순서를 `@Order`로 고정해, DB를 비운 뒤 서버를 다시 띄워도 같은 확인용 상태를 재생성하게 했다
 - 저장소 루트의 gitignored `.env.local`에 local bootstrap 기본값을 같이 두고, source 후 `bootRun` 하면 같은 확인용 계정 / 샘플 데이터를 바로 불러오게 정리했다
 - 홈 첫 화면은 guest면 `로그인 / 회원가입`, 로그인 상태면 `My Page / 로그아웃`을 바로 보여 주도록 바꿔 계정 연결 진입점을 홈에서도 명확하게 만들었다
+- 홈 첫 화면은 hero에서 개별 게임 CTA를 반복하지 않고, 실제 모드 선택은 `지금 플레이할 모드` 카드 영역 한 곳에서만 하도록 다시 정리했다
+- hero는 서비스 소개, 계정 연결, 공개 `Stats` 진입만 맡고, 각 모드별 직접 이동은 본문 카드와 `My Page`/`Stats` 흐름으로만 연결해 첫 진입 구조를 단순화했다
+- 최근 디자인 패스 이후 public 화면 테스트를 새 카피와 레이아웃 기준으로 다시 맞추고, 홈 / 추천 / 랭킹 / Stats / My Page의 공통 shell 안정화 여부를 먼저 확인하는 작은 안정화 조각을 별도로 두었다
 - `DemoBootstrapIntegrationTest`, `StatsPageControllerTest`로 local dummy data bootstrap과 public stats 렌더링을 고정했다
 
 이후 고도화 아이디어:
@@ -610,6 +627,9 @@
 - 왜 local demo 계정 / 샘플 run 생성은 signup이나 SQL seed보다 startup runner + service 조합으로 두는 것이 현재 구조에 더 맞는지
 - 왜 demo bootstrap은 country seed 이후에만 돌도록 순서를 고정해야 하는지
 - 왜 홈 첫 화면에서 guest와 member의 계정 CTA를 다르게 보여 주는 것이 `My Page` 하나만 남기는 것보다 더 명확한지
+- 왜 홈 hero에서 개별 모드 CTA를 반복하지 않고, 모드 선택을 카드 영역 한 곳으로 모으는 것이 더 자연스러운지
+- 왜 홈 hero는 서비스 소개와 계정/Stats 진입만 맡고, 실제 모드 선택은 본문으로 내리는 편이 구조적으로 더 깔끔한지
+- 왜 큰 디자인 패스 직후에는 기능 추가보다 먼저 컨트롤러/SSR 테스트를 새 카피 기준으로 다시 고정해야 하는지
 
 면접 포인트:
 
@@ -623,6 +643,7 @@
 - 왜 `오늘 활성 수`는 session 시작 기준, `오늘 완료 수`는 leaderboard record 기준으로 분리했는가
 - 왜 일반 사용자에게는 `/dashboard` 대신 공개 `/stats`를 별도로 열어 두었는가
 - DB가 비어도 local demo 계정과 샘플 run을 어떻게 다시 재현하는가
+- 왜 홈 첫 화면에서 정보 카드, 모드 목록, 직접 CTA를 중복 노출하지 않고 한 번씩만 보여 주는 편이 더 나은가
 
 완료 기준:
 

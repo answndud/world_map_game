@@ -34,6 +34,338 @@
 - 면접용 30초 요약:
 ```
 
+## 2026-03-25 - 라이트 테마 입체감 보강
+
+- 단계: 6. 설문 기반 추천 엔진 보조 UI 조각
+- 목적: 사용자가 라이트 모드가 다크 모드와 달리 생동감과 입체감이 느껴지지 않는다고 지적했다. 실제로 기존 light theme는 `white surface + weak shadow` 수준에 머물러 배경 레이어, shell depth, card glint가 부족했다. 이번 조각은 밝은 화면에서도 떠 있는 느낌이 나도록 공통 theme token과 card surface 질감을 올리는 데 집중했다.
+- 변경 파일:
+  - `src/main/resources/static/css/site.css`
+  - `src/main/resources/templates/home.html`
+  - `src/main/resources/templates/recommendation/survey.html`
+  - `src/main/resources/templates/recommendation/result.html`
+  - `src/main/resources/templates/stats/index.html`
+  - `src/main/resources/templates/ranking/index.html`
+  - `src/main/resources/templates/location-game/start.html`
+  - `src/main/resources/templates/location-game/play.html`
+  - `src/main/resources/templates/location-game/result.html`
+  - `src/main/resources/templates/population-game/start.html`
+  - `src/main/resources/templates/population-game/play.html`
+  - `src/main/resources/templates/population-game/result.html`
+  - `src/main/resources/templates/mypage.html`
+  - `src/main/resources/templates/auth/login.html`
+  - `src/main/resources/templates/auth/signup.html`
+  - `src/main/resources/templates/admin/index.html`
+  - `src/main/resources/templates/admin/recommendation-feedback.html`
+  - `src/main/resources/templates/admin/recommendation-persona-baseline.html`
+  - `src/main/resources/templates/error/403.html`
+  - `src/main/resources/templates/error/404.html`
+  - `src/main/resources/templates/error/500.html`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 서버 요청과 도메인 흐름은 그대로다. `site-header`, `panel`, `mode-card`, `message-box`, `table-shell` 같은 공통 surface가 모두 `site.css`의 light theme token을 읽고 있으므로, 이번 변화는 `html[data-theme="light"] -> CSS 변수 -> 공통 component surface` 흐름에서 전파된다.
+- 데이터 / 상태 변화: DB, 세션, 게임 상태, 랭킹, 추천 결과는 전혀 바뀌지 않는다. 브라우저가 해석하는 light theme의 배경 레이어, shell shadow, panel glint, card shadow, hover lift와 스타일 버전 query만 바뀌었다.
+- 핵심 도메인 개념: 이 문제는 기능 부족이 아니라 시각 계층 부족이다. 그래서 컨트롤러나 서비스가 아니라 공통 theme token을 source of truth로 두고, 여러 화면이 공유하는 `site.css`에서 해결하는 편이 가장 설명 가능하다. 한 화면만 예외적으로 꾸미면 시스템 전체 일관성이 깨지기 때문이다.
+- 예외 / 엣지 케이스: 입체감을 과하게 올리면 light theme가 다시 무겁거나 유리판처럼 과장될 수 있어, `panel-glint`, `chrome-shadow`, `card-shadow`를 모두 같은 blue/slate 계열 안에서만 강화했다. hover lift도 light theme에서만 2px 수준으로 제한해 dark theme와 동작 차이를 최소화했다.
+- 테스트: `git diff --check -- docs/PORTFOLIO_PLAYBOOK.md docs/WORKLOG.md src/main/resources/static/css/site.css src/main/resources/templates` 통과. `./gradlew test --tests com.worldmap.web.HomeControllerTest` 통과. 블로그는 순수 표현 계층 조정이라 생략한다.
+- 배운 점: 라이트 모드는 배경을 희게 만드는 것만으로 완성되지 않는다. 같은 컴포넌트라도 shadow 층, glint, edge highlight가 빠지면 제품이 아니라 와이어프레임처럼 보일 수 있다.
+- 아직 약한 부분: 지금은 정적 화면 기준 입체감을 보강한 단계라, 실제 모바일 Safari나 저성능 브라우저에서 blur와 gradient가 얼마나 자연스럽게 보이는지는 한 번 더 확인해야 한다.
+- 면접용 30초 요약: 라이트 모드가 밋밋했던 이유는 색이 아니라 레이어가 부족했기 때문입니다. 그래서 공통 CSS의 light theme token을 다시 잡아 배경 radial layer, glass-like header, panel glint, card shadow, hover lift를 함께 올렸고, 홈뿐 아니라 추천·랭킹·게임 화면까지 같은 밝은 입체감을 공유하도록 맞췄습니다.
+
+## 2026-03-25 - 홈 hero support row 높이 정렬
+
+- 단계: 6. 설문 기반 추천 엔진 보조 UI 조각
+- 목적: 홈 hero에서 `서비스 현황 보기` 링크와 `hero-account-callout`이 같은 줄에 놓였지만, 하나는 얇은 버튼이고 하나는 큰 카드처럼 보여 높이와 덩어리감이 어긋나 있었다. 이번 조각은 두 요소를 같은 support card 계층으로 보이게 맞춰 수평 정렬의 어색함을 줄이는 데 집중했다.
+- 변경 파일:
+  - `src/main/resources/templates/home.html`
+  - `src/main/resources/static/css/site.css`
+  - `src/main/resources/templates/recommendation/survey.html`
+  - `src/main/resources/templates/recommendation/result.html`
+  - `src/main/resources/templates/stats/index.html`
+  - `src/main/resources/templates/ranking/index.html`
+  - `src/main/resources/templates/location-game/start.html`
+  - `src/main/resources/templates/location-game/play.html`
+  - `src/main/resources/templates/location-game/result.html`
+  - `src/main/resources/templates/population-game/start.html`
+  - `src/main/resources/templates/population-game/play.html`
+  - `src/main/resources/templates/population-game/result.html`
+  - `src/main/resources/templates/mypage.html`
+  - `src/main/resources/templates/auth/login.html`
+  - `src/main/resources/templates/auth/signup.html`
+  - `src/main/resources/templates/admin/index.html`
+  - `src/main/resources/templates/admin/recommendation-feedback.html`
+  - `src/main/resources/templates/admin/recommendation-persona-baseline.html`
+  - `src/main/resources/templates/error/403.html`
+  - `src/main/resources/templates/error/404.html`
+  - `src/main/resources/templates/error/500.html`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 서버 요청 흐름은 바뀌지 않는다. `/` 요청이 들어오면 기존처럼 `home.html`이 렌더링되고, 이번에는 `서비스 현황 보기` 링크에 support 전용 클래스가 붙는다. 실제 시각적 상태 변화는 `site.css`의 `home-hero-support` grid와 `hero-support-link` 스타일이 만든다.
+- 데이터 / 상태 변화: DB, 세션, 게임 상태, 추천 결과에는 변화가 없다. 달라진 것은 홈 hero support row의 표현과, 브라우저가 새 CSS를 받도록 올린 style version query다.
+- 핵심 도메인 개념: 이 문제는 비즈니스 로직이 아니라 표현 계층의 시각적 위계 문제다. 그래서 컨트롤러나 서비스가 아니라 `home.html`의 클래스 지정과 `site.css`의 grid/stretch/surface 규칙에서 해결하는 것이 맞다.
+- 예외 / 엣지 케이스: 두 요소를 같은 높이로 맞추려면 첫 번째 열의 폭이 너무 좁거나 콘텐츠 길이에 따라 요동치지 않아야 하므로, `home-hero-support` 첫 칼럼을 `minmax(220px, 260px)`로 고정 범위화했다. 동시에 모바일에서는 기존처럼 1열로 접히도록 규칙은 그대로 유지했다.
+- 테스트: `git diff --check -- docs/PORTFOLIO_PLAYBOOK.md docs/WORKLOG.md src/main/resources/static/css/site.css src/main/resources/templates/home.html` 통과. `./gradlew test --tests com.worldmap.web.HomeControllerTest` 통과. 블로그는 작은 CSS/UI polish 조각이라 생략한다.
+- 배운 점: 같은 줄에 있다는 것만으로 통일감이 생기지 않는다. surface, padding, stretch 규칙까지 맞춰야 같은 계층의 정보처럼 보인다.
+- 아직 약한 부분: 실제 브라우저에서 로그인 상태 callout 길이가 더 길 때도 `서비스 현황 보기` 카드가 충분히 자연스럽게 늘어나는지는 다시 확인할 필요가 있다.
+- 면접용 30초 요약: 홈 hero의 보조 액션 row에서 링크 하나만 얇은 버튼처럼 남아 있어 시각적으로 튀었습니다. 그래서 `서비스 현황 보기`도 callout과 같은 surface card로 올리고, grid row 높이를 공유하게 만들어 두 요소가 같은 계층의 보조 행동처럼 보이도록 정리했습니다.
+
+## 2026-03-25 - 홈 IA 정리와 랭킹 헤더 이동
+
+- 단계: 6. 설문 기반 추천 엔진 보조 UI 조각
+- 목적: 사용자가 홈 첫 화면에서 `게임 선택하기` CTA가 불필요하고, 계정 연결 callout은 `서비스 현황 보기` 옆에 붙는 편이 낫다고 지적했다. 또 추천 게임 이름은 `나에게 어울리는 국가 찾기`로 더 분명하게 바꾸고, `실시간 랭킹`은 게임 카드가 아니라 전역 탐색에 가까우므로 header로 이동시켜 홈 본문을 실제 플레이 시작용 3개 게임만 남기도록 정리했다.
+- 변경 파일:
+  - `src/main/resources/templates/home.html`
+  - `src/main/resources/templates/fragments/site-header.html`
+  - `src/main/resources/static/css/site.css`
+  - `src/main/resources/templates/recommendation/survey.html`
+  - `src/main/resources/templates/recommendation/result.html`
+  - `src/main/resources/templates/stats/index.html`
+  - `src/main/resources/templates/ranking/index.html`
+  - `src/main/resources/templates/location-game/start.html`
+  - `src/main/resources/templates/mypage.html`
+  - `src/main/resources/templates/error/403.html`
+  - `src/main/resources/templates/error/404.html`
+  - `src/main/resources/templates/error/500.html`
+  - `src/main/java/com/worldmap/web/HomeController.java`
+  - `src/test/java/com/worldmap/web/HomeControllerTest.java`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: `/` 요청은 여전히 `HomeController`에서 시작해 `modeCards`, `entrySteps`, `accountNotes`를 만들어 `home.html`로 넘긴다. 이번에는 여기서 실시간 랭킹 카드를 제거하고 추천 게임 이름을 바꿨다. 전역 이동 구조는 `site-header.html`이 담당하므로, 랭킹 이동 경로는 홈 카드가 아니라 공통 header nav에서 시작하게 바뀌었다. 계정 연결 callout의 위치는 `home.html + site.css`가 함께 결정한다.
+- 데이터 / 상태 변화: DB, Redis, 세션, 게임 상태, 추천 계산 결과는 변하지 않는다. 바뀐 것은 SSR로 렌더링되는 홈 정보 구조, 전역 navigation, 사용자-facing copy, 그리고 새 CSS를 강제로 받도록 올린 asset version query다.
+- 핵심 도메인 개념: `실시간 랭킹`은 게임을 새로 시작하는 action보다 기존 기록을 탐색하는 browse destination에 가깝다. 그래서 `HomeController`의 게임 카드 컬렉션에서 빼고, 공통 전역 탐색 책임을 가진 `site-header`로 올리는 편이 정보 구조가 더 설명 가능하다. 반대로 계정 callout 위치 조정은 표현 계층 문제이므로 서비스나 도메인이 아니라 `home.html`과 `site.css`에서 끝내는 것이 맞다.
+- 예외 / 엣지 케이스: 랭킹 카드를 빼면 홈 게임 카드가 3개가 되므로, 데스크톱에서는 3열, 중간 폭에서는 2열, 좁은 화면에서는 1열로 접히도록 `home-mode-grid` 반응형을 다시 맞췄다. 또 새로운 CSS가 바로 반영되지 않으면 header nav와 hero 배치가 예전처럼 보일 수 있어 전체 템플릿의 style version query를 `20260325-home-ia-8`로 함께 올렸다.
+- 테스트: `git diff --check -- docs/PORTFOLIO_PLAYBOOK.md docs/WORKLOG.md src/main/resources/static/css/site.css src/main/resources/templates src/main/java/com/worldmap/web/HomeController.java src/test/java/com/worldmap/web/HomeControllerTest.java` 통과. `./gradlew test --tests com.worldmap.web.HomeControllerTest` 통과. 블로그는 작은 UI/copy/navigation 정리라 생략한다.
+- 배운 점: 홈 본문에 기능과 탐색 목적지를 같이 섞어 두면 카드 수가 늘어날수록 메시지가 흐려진다. 랭킹처럼 “보러 가는 화면”은 전역 navigation으로 빼고, 본문은 실제 플레이 시작 버튼만 남기는 편이 훨씬 명확하다.
+- 아직 약한 부분: header nav에 `Ranking`을 추가한 뒤 모바일 폭에서 링크 수가 많아질 때 균형이 충분히 좋은지는 실제 브라우저로 한 번 더 확인해야 한다.
+- 면접용 30초 요약: 이번에는 기능을 추가한 게 아니라 홈 정보 구조를 다시 정리했습니다. 게임을 시작하는 3개 카드만 홈 본문에 남기고, 실시간 랭킹은 전역 header navigation으로 옮겼습니다. 또 `서비스 현황 보기` 옆에 계정 callout을 붙여 보조 행동을 한 줄로 묶고, 추천 게임 이름도 `나에게 어울리는 국가 찾기`로 바꿔 제품 언어를 더 분명하게 맞췄습니다.
+
+## 2026-03-25 - 홈 시작 박스 제거와 게임 용어 통일
+
+- 단계: 6. 설문 기반 추천 엔진 보조 UI 조각
+- 목적: 사용자가 홈 hero 오른쪽 `바로 시작하는 흐름` 박스가 필요 없다고 했고, `모드`라는 표현도 `게임`으로 바꿔 달라고 요청했다. 이번 조각의 핵심은 홈 첫 화면에서 설명 박스를 하나 더 쌓기보다 CTA와 게임 카드만 남겨 진입을 더 단순하게 만드는 것이다.
+- 변경 파일:
+  - `src/main/resources/templates/home.html`
+  - `src/main/java/com/worldmap/web/HomeController.java`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 서버 요청 흐름은 바뀌지 않는다. `/` 요청이 들어오면 여전히 `HomeController`가 카드/진입 설명 데이터를 만든 뒤 `home.html`에 렌더링한다. 달라진 것은 hero 우측 설명 박스가 제거됐고, 홈에서 보이는 copy가 `게임` 기준으로 바뀌었다는 점이다.
+- 데이터 / 상태 변화: DB, 세션, 게임 상태, 랭킹, 추천 결과에는 전혀 변화가 없다. SSR 렌더링 텍스트와 홈 첫 화면의 구성만 단순해졌다.
+- 핵심 도메인 개념: 이 수정은 비즈니스 로직이 아니라 public 홈의 제품 언어와 표현 계층 책임이다. 그래서 서비스가 아니라 `HomeController`의 copy source와 `home.html` 템플릿만 손봤다.
+- 예외 상황 또는 엣지 케이스: `모드`라는 표현은 랭킹 필터처럼 실제 기능 의미가 강한 다른 화면에는 남을 수 있지만, 최소한 홈 public 화면에서는 `게임`으로 통일해 플레이어 언어를 더 직관적으로 맞췄다.
+- 테스트 내용: `rg -n "모드" src/main/resources/templates/home.html src/main/java/com/worldmap/web/HomeController.java` 결과가 비어 있는 것으로 홈 기준 `모드` 표현 제거 확인. `git diff --check -- src/main/resources/templates/home.html src/main/java/com/worldmap/web/HomeController.java docs/PORTFOLIO_PLAYBOOK.md docs/WORKLOG.md` 통과.
+- 배운 점: 홈 첫 화면은 설명을 더하는 것보다 덜어내는 편이 훨씬 낫다. 특히 제품 언어가 흔들리면 구조를 정리해도 인상이 어색해질 수 있다.
+- 아직 약한 부분: 다른 public 화면과 admin 화면에는 `모드`라는 단어가 일부 남아 있으므로, 전체 제품 언어를 `게임` 기준으로 완전히 통일할지 여부는 한 번 더 정리할 필요가 있다.
+- 면접용 30초 요약: 이번에는 기능을 추가하지 않고 홈 첫 화면의 진입 경험만 더 단순하게 다듬었습니다. hero 오른쪽 설명 박스를 제거하고 홈에서 보이는 `모드` 표현을 `게임`으로 통일해서, 사용자가 바로 카드에서 게임을 고르고 시작하는 흐름만 남겼습니다.
+
+## 2026-03-25 - Java 25 toolchain 전환
+
+- 단계: 1. 프로젝트 뼈대 보정 조각
+- 목적: 사용자가 Java 25를 쓰고 싶다고 했고, 실제 로컬 머신에도 Java 25가 이미 설치돼 있었기 때문에 프로젝트 toolchain 기준을 21에서 25로 올렸다. 핵심은 서버 코드가 아니라 Gradle이 어떤 JDK를 source of truth로 삼는지 정리해 `test`, `bootRun`이 일관되게 동작하도록 만드는 것이었다.
+- 변경 파일:
+  - `build.gradle`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/02-spring-boot-bootstrap.md`
+- 요청 흐름 / 데이터 흐름: HTTP 요청 흐름과 게임/추천 상태 흐름은 전혀 바뀌지 않는다. 바뀐 것은 `build.gradle -> java.toolchain.languageVersion` 기준과, 개발자가 로컬에서 어떤 JDK로 컴파일/실행하는가다.
+- 데이터 / 상태 변화: DB, Redis, 세션, 게임 상태, 추천 결과에는 변화가 없다. 빌드 시 사용되는 JDK 기준만 `Java 25`로 올라갔다.
+- 핵심 도메인 개념: 이 변경은 컨트롤러나 서비스 책임이 아니라 프로젝트 뼈대 책임이다. 기능 코드가 멀쩡해도 toolchain 기준이 맞지 않으면 서버 자체가 뜨지 않기 때문에, 이 조각은 애플리케이션 로직보다 먼저 정리해야 하는 실행 기반에 속한다.
+- 예외 상황 또는 엣지 케이스: Java 21은 설치돼 있어도 프로젝트가 Java 25를 요구하면 다시 같은 종류의 toolchain 오류가 날 수 있다. 반대로 Java 25가 macOS `java_home`에 등록되어 있지 않으면 Gradle이 찾지 못할 수 있으므로, 실제 인식 경로도 함께 확인했다.
+- 테스트 내용: `./gradlew test` 통과. `./gradlew bootRun --args='--spring.profiles.active=local'`로 Java 25 기준 서버 기동 확인. `curl -I http://localhost:8080`에서 `HTTP/1.1 200` 확인.
+- 배운 점: 로컬에 JDK가 "설치돼 있음"과 Gradle toolchain이 "그 JDK를 찾을 수 있음"은 다른 문제다. 프로젝트 문서와 build 설정을 같이 맞춰 두지 않으면 같은 오류를 반복하게 된다.
+- 아직 약한 부분: Spring Boot 3.5.x와 Java 25 조합은 현재 로컬에서 정상 기동했지만, CI나 다른 개발 머신에서도 동일하게 인식되는지는 별도로 확인해야 한다.
+- 면접용 30초 요약: 기능 코드는 안 바꾸고 프로젝트 실행 기반만 정리한 작업입니다. `build.gradle`의 toolchain을 Java 25로 올리고 README, 플레이북, 작업 로그, 부트스트랩 글까지 함께 업데이트해서 로컬에서 `test`와 `bootRun`이 같은 기준의 JDK로 돌도록 맞췄습니다.
+
+## 2026-03-25 - 홈 라이트 레이아웃 재구성
+
+- 단계: 6. 설문 기반 추천 엔진 보조 UI 조각
+- 목적: 사용자가 계속 디자인 자체가 별로라고 했기 때문에, 색상만 바꾸는 접근을 멈추고 홈 첫 화면의 구조와 위계를 다시 잡았다. 핵심은 giant hero 아래에 눌린 4개 카드와 무거운 공통 패널을 그대로 둔 채 색만 밝히면 라이트 제품처럼 보이지 않는다는 점이었다.
+- 변경 파일:
+  - `src/main/resources/static/css/site.css`
+  - `src/main/resources/templates/home.html`
+  - `src/main/resources/templates/stats/index.html`
+  - `src/main/resources/templates/ranking/index.html`
+  - `src/main/resources/templates/mypage.html`
+  - `src/main/resources/templates/recommendation/survey.html`
+  - `src/main/resources/templates/recommendation/result.html`
+  - `src/main/resources/templates/auth/login.html`
+  - `src/main/resources/templates/auth/signup.html`
+  - `src/main/resources/templates/location-game/start.html`
+  - `src/main/resources/templates/location-game/play.html`
+  - `src/main/resources/templates/location-game/result.html`
+  - `src/main/resources/templates/population-game/start.html`
+  - `src/main/resources/templates/population-game/play.html`
+  - `src/main/resources/templates/population-game/result.html`
+  - `src/main/resources/templates/admin/index.html`
+  - `src/main/resources/templates/admin/recommendation-feedback.html`
+  - `src/main/resources/templates/admin/recommendation-persona-baseline.html`
+  - `src/main/resources/templates/error/403.html`
+  - `src/main/resources/templates/error/404.html`
+  - `src/main/resources/templates/error/500.html`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 서버 요청 흐름은 그대로다. 홈 화면에서 달라진 것은 템플릿 구조와 공통 CSS 위계다. `home.html`은 `hero-grid` 위에 좌측 설명 + CTA, 우측 요약 패널 구조로 바뀌었고, `modeCards`는 4개가 한 줄에 눌리는 대신 2x2 card grid로 배치된다.
+- 데이터 / 상태 변화: 데이터 구조와 model attribute는 그대로다. 바뀐 것은 SSR 템플릿에서 같은 `modeCards`, `principles`, `roadmap`를 어떻게 보여주느냐와, 새 CSS가 바로 반영되도록 올린 style version query다.
+- 핵심 도메인 개념: 이 변경은 여전히 컨트롤러 책임이 아니라 표현 계층 책임이다. 서버는 모드 목록과 설명만 넘기고, 어떤 레이아웃으로 보여 줄지는 `home.html + site.css`가 결정한다. 그래서 자바 로직을 바꾸지 않고도 홈 첫 화면의 인상과 가독성을 크게 바꿀 수 있다.
+- 예외 상황 또는 엣지 케이스: 홈 레이아웃을 2열로 바꾸면서 중간 폭 이하에서 카드 밀도가 다시 나빠질 수 있으므로, `hero-grid`, `split`, `home-mode-grid`는 반응형에서 1열로 접히게 했다. 또한 공통 nav와 theme toggle도 Orbitron 위주에서 Space Grotesk 중심으로 눌러 가독성을 높였다.
+- 테스트 내용: `git diff --check -- docs/PORTFOLIO_PLAYBOOK.md docs/WORKLOG.md src/main/resources/static/css/site.css src/main/resources/templates` 통과. `./gradlew test`는 다시 실행하지 않았고, 현재 머신에 Java 21 toolchain이 없어 이전과 동일하게 실행 불가 상태다.
+- 배운 점: 라이트 모드 품질은 색보다 구조와 밀도가 더 크게 좌우된다. 특히 홈 첫 화면은 4개 기능을 한 줄에 다 넣는 것보다, hero 정보와 모드 카드를 분리해 위계를 주는 편이 훨씬 낫다.
+- 아직 약한 부분: 홈은 재구성했지만, 추천 결과와 대시보드처럼 정보량이 더 많은 화면에서 같은 타이포 스케일과 카드 밀도가 충분히 자연스러운지는 추가 확인이 필요하다.
+- 면접용 30초 요약: 홈 화면 디자인이 계속 어색했던 이유는 다크 계열 색을 조금 밝힌 게 아니라, 구조 자체가 무거웠기 때문입니다. 그래서 이번에는 서버가 넘기는 데이터는 그대로 두고, 홈 템플릿을 hero 2열과 2x2 모드 카드 구조로 다시 짜고 공통 타입 스케일과 버튼, 패널 밀도를 같이 조정해 라이트 모드 첫 인상을 제품답게 다시 만들었습니다.
+
+## 2026-03-25 - 라이트 팔레트 리부트
+
+- 단계: 6. 설문 기반 추천 엔진 보조 UI 조각
+- 목적: 사용자가 "라이트 모드를 처음부터 개발한다고 가정하고 색 조합을 다시 잡아달라"고 했기 때문에, 기존 dark shell을 희석한 light theme가 아니라 light 전용 제품 팔레트를 다시 정의했다. 특히 홈 화면에서 `panel`, `hero-account-callout`, 섹션 박스가 검은 프레임처럼 남아 보이는 문제를 없애는 데 집중했다.
+- 변경 파일:
+  - `src/main/resources/static/css/site.css`
+  - `src/main/resources/templates/home.html`
+  - `src/main/resources/templates/stats/index.html`
+  - `src/main/resources/templates/ranking/index.html`
+  - `src/main/resources/templates/mypage.html`
+  - `src/main/resources/templates/recommendation/survey.html`
+  - `src/main/resources/templates/recommendation/result.html`
+  - `src/main/resources/templates/auth/login.html`
+  - `src/main/resources/templates/auth/signup.html`
+  - `src/main/resources/templates/location-game/start.html`
+  - `src/main/resources/templates/location-game/play.html`
+  - `src/main/resources/templates/location-game/result.html`
+  - `src/main/resources/templates/population-game/start.html`
+  - `src/main/resources/templates/population-game/play.html`
+  - `src/main/resources/templates/population-game/result.html`
+  - `src/main/resources/templates/admin/index.html`
+  - `src/main/resources/templates/admin/recommendation-feedback.html`
+  - `src/main/resources/templates/admin/recommendation-persona-baseline.html`
+  - `src/main/resources/templates/error/403.html`
+  - `src/main/resources/templates/error/404.html`
+  - `src/main/resources/templates/error/500.html`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 서버 요청과 게임 상태 흐름은 그대로다. 바뀐 것은 `html[data-theme="light"]` 아래에서 어떤 색 토큰이 선택되는가다. 배경은 거의 white/gray 계열, 텍스트는 slate, accent는 cobalt로 재설정했고, `panel`과 `mode-card`, `message-box`, `table`, `modal`이 모두 같은 light surface 계층을 공유한다.
+- 데이터 / 상태 변화: DB와 세션 상태는 변하지 않는다. 브라우저에서 보이는 theme 표현만 달라졌고, 새 CSS를 강제로 받도록 템플릿의 style version query를 `20260325-light-reboot-5`로 올렸다.
+- 핵심 도메인 개념: 이 변경은 서버 책임이 아니라 공통 표현 계층 책임이다. 그래서 홈 템플릿 한 곳에 임시 색을 넣지 않고, `site.css`의 light theme semantic token 집합을 source of truth로 바꾸는 방식으로 처리했다.
+- 예외 상황 또는 엣지 케이스: dark theme의 별빛/글로우 효과가 light에서도 남아 있으면 화면이 탁하고 중간톤이 쉽게 더러워 보인다. 이번에는 light에서 `body::before` 별빛을 끄고, `panel-glint`도 제거해 white surface가 실제 white처럼 보이게 했다.
+- 테스트 내용: `git diff --check -- docs/PORTFOLIO_PLAYBOOK.md docs/WORKLOG.md src/main/resources/static/css/site.css src/main/resources/templates` 통과. `./gradlew test`는 다시 실행했지만 현재 머신에 Java 21 toolchain이 없어 실패했다.
+- 배운 점: 라이트 모드는 다크 토큰을 연하게 만드는 방식보다, 배경 노이즈와 반투명 레이어를 줄이고 surface hierarchy를 거의 종이처럼 다시 정하는 편이 훨씬 낫다.
+- 아직 약한 부분: 홈 기준 팔레트는 다시 잡았지만, 실제 브라우저에서 recommendation result / dashboard / game overlay가 같은 밀도와 톤으로 느껴지는지는 한 번 더 눈으로 확인할 필요가 있다.
+- 면접용 30초 요약: 이번에는 light theme를 dark theme의 변형으로 보지 않고, white surface와 slate text 중심의 별도 제품 팔레트로 다시 설계했습니다. 핵심은 홈 한 장만 고치는 게 아니라 `html[data-theme="light"]` 아래의 공통 surface token을 바꾸고, 패널과 카드, 메시지, 모달, 배경 노이즈까지 같은 기준으로 맞춘 것입니다.
+
+## 2026-03-25 - 라이트 모드 기본값과 공통 표면 재보정
+
+- 단계: 6. 설문 기반 추천 엔진 보조 UI 조각
+- 목적: 사용자가 `hero-account-callout`, `panel`, `split`까지 여전히 어둡다고 지적했기 때문에, 단순 색 토큰 추가 수준에서 끝내지 않고 light theme 기본 진입값과 공통 표면 레이어를 다시 조정했다. 핵심 문제는 light token이 있어도 기본 진입이 dark였고, panel/header surface에 남은 blur와 반투명 계열이 실제 체감상 탁하고 어둡게 보일 수 있다는 점이었다.
+- 변경 파일:
+  - `src/main/resources/static/css/site.css`
+  - `src/main/resources/static/js/theme-toggle.js`
+  - `src/main/resources/templates/fragments/site-header.html`
+  - `src/main/resources/templates/fragments/admin-header.html`
+  - `src/main/resources/templates/home.html`
+  - `src/main/resources/templates/stats/index.html`
+  - `src/main/resources/templates/ranking/index.html`
+  - `src/main/resources/templates/mypage.html`
+  - `src/main/resources/templates/recommendation/survey.html`
+  - `src/main/resources/templates/recommendation/result.html`
+  - `src/main/resources/templates/auth/login.html`
+  - `src/main/resources/templates/auth/signup.html`
+  - `src/main/resources/templates/location-game/start.html`
+  - `src/main/resources/templates/location-game/play.html`
+  - `src/main/resources/templates/location-game/result.html`
+  - `src/main/resources/templates/population-game/start.html`
+  - `src/main/resources/templates/population-game/play.html`
+  - `src/main/resources/templates/population-game/result.html`
+  - `src/main/resources/templates/admin/index.html`
+  - `src/main/resources/templates/admin/recommendation-feedback.html`
+  - `src/main/resources/templates/admin/recommendation-persona-baseline.html`
+  - `src/main/resources/templates/error/403.html`
+  - `src/main/resources/templates/error/404.html`
+  - `src/main/resources/templates/error/500.html`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 서버 요청 흐름은 그대로고, 브라우저에서 `localStorage.worldmap-theme -> documentElement.dataset.theme -> CSS variable`로 내려가는 theme 적용 흐름만 바뀌었다. 이제 저장된 값이 없으면 light로 시작하고, theme toggle은 현재 모드를 표시한다. `panel`, `hero-account-callout`, header shell은 더 불투명하고 밝은 surface를 사용한다.
+- 데이터 / 상태 변화: DB, 세션, 게임 상태, 추천 계산, 랭킹 데이터는 바뀌지 않는다. 브라우저의 theme 상태만 기본값이 `light`가 되었고, CSS asset version과 theme toggle script version이 함께 올라갔다.
+- 핵심 도메인 개념: 이 수정은 여전히 컨트롤러/서비스 책임이 아니라 공통 shell 책임이다. 사용자가 보는 표면 계층과 theme 기본값은 서버 비즈니스 규칙이 아니라 렌더링 시스템 규칙이므로, 템플릿에 임시 색을 박는 대신 fragment + theme script + semantic token 조합으로 고쳤다.
+- 예외 상황 또는 엣지 케이스: 기존에는 localStorage가 비어 있거나 script가 먼저 적용되기 전에는 dark로 진입할 수 있었고, theme toggle 버튼도 다음 액션처럼 보여 현재 모드를 오해할 수 있었다. 이번에는 저장값이 없으면 light로 맞췄고, header/panel blur를 light에서 제거해 탁한 표면을 줄였다.
+- 테스트 내용: `git diff --check -- docs/PORTFOLIO_PLAYBOOK.md docs/WORKLOG.md src/main/resources/static/css/site.css src/main/resources/static/js/theme-toggle.js src/main/resources/templates` 통과. `node --check src/main/resources/static/js/theme-toggle.js` 통과. `./gradlew test`는 다시 실행했지만 현재 머신에 Java 21 toolchain이 없어 실패했다.
+- 배운 점: 라이트 모드는 토큰 몇 개만 바꾸는 문제가 아니라 기본 진입값, 토글 의미, 배경 투명도와 blur까지 같이 맞춰야 실제 체감 품질이 올라간다.
+- 아직 약한 부분: 실제 브라우저에서 사용자가 본 화면과 완전히 같은 조건으로 확인한 것은 아니어서, 모바일 폭과 특정 모니터 밝기에서 여전히 탁하게 보이는지 한 번 더 실기기 확인이 필요하다.
+- 면접용 30초 요약: light theme 토큰을 넣는 것만으로는 부족해서, 이번에는 theme 기본 진입값과 공통 surface 자체를 다시 손봤습니다. `localStorage -> html[data-theme] -> CSS token` 흐름은 유지하되 기본값을 light로 바꾸고, header/panel/hero callout을 더 불투명한 밝은 표면으로 재조정해 사용자가 실제로 느끼는 dark 잔재를 줄였습니다.
+
+## 2026-03-24 - 전체 화면 라이트 모드 시스템 정비
+
+- 단계: 6. 설문 기반 추천 엔진 보조 UI 조각
+- 목적: 사용자 요청대로 홈만이 아니라 모든 화면 관련 코드를 다시 읽고 light theme를 전체적으로 정리했다. 핵심 문제는 일부 버튼만이 아니라 public/admin/game 화면 전체에서 다크 하드코딩 표면, 흐린 secondary text, 모든 상황을 빨간 경고로 처리하는 `message-box`, 게임 overlay/modal의 검은 slab가 섞여 있던 점이었다.
+- 변경 파일:
+  - `src/main/resources/static/css/site.css`
+  - `src/main/resources/static/js/location-game.js`
+  - `src/main/resources/static/js/population-game.js`
+  - `src/main/resources/static/js/ranking.js`
+  - `src/main/resources/templates/home.html`
+  - `src/main/resources/templates/stats/index.html`
+  - `src/main/resources/templates/ranking/index.html`
+  - `src/main/resources/templates/mypage.html`
+  - `src/main/resources/templates/recommendation/survey.html`
+  - `src/main/resources/templates/recommendation/result.html`
+  - `src/main/resources/templates/auth/login.html`
+  - `src/main/resources/templates/auth/signup.html`
+  - `src/main/resources/templates/location-game/start.html`
+  - `src/main/resources/templates/location-game/play.html`
+  - `src/main/resources/templates/location-game/result.html`
+  - `src/main/resources/templates/population-game/start.html`
+  - `src/main/resources/templates/population-game/play.html`
+  - `src/main/resources/templates/population-game/result.html`
+  - `src/main/resources/templates/admin/index.html`
+  - `src/main/resources/templates/admin/recommendation-feedback.html`
+  - `src/main/resources/templates/admin/recommendation-persona-baseline.html`
+  - `src/main/resources/templates/error/403.html`
+  - `src/main/resources/templates/error/404.html`
+  - `src/main/resources/templates/error/500.html`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: HTTP 요청 흐름은 바뀌지 않았다. 바뀐 것은 `localStorage.worldmap-theme -> html[data-theme] -> CSS token` 아래에서 실제 화면이 어떤 표면과 텍스트 계층을 쓰는가다. 공통 CSS는 panel, card, badge, chip, input, table head, globe, stage overlay, game-over modal, message box tone을 semantic token으로 분리했고, location/population/ranking JS는 로딩/성공/에러 메시지에 맞는 `data-tone`을 넘기도록 바뀌었다.
+- 데이터 / 상태 변화: DB, 세션, 추천 결과, 게임 상태, 랭킹 데이터는 전혀 바뀌지 않는다. 브라우저 로컬 theme 상태 구조도 그대로다. 달라진 것은 light theme surface hierarchy, message tone 체계, 그리고 새 CSS/JS가 즉시 보이도록 올린 asset version query다.
+- 핵심 도메인 개념: 이 변경은 컨트롤러나 서비스 책임이 아니다. 서버는 게임 상태와 추천 계산을 관리하고, UI shell은 사용자가 읽고 조작하는 표면 계층을 책임진다. 그래서 이번 수정도 개별 템플릿에서 임시 색을 덧대지 않고, `site.css`의 semantic token 레이어를 source of truth로 두고 전 화면을 맞추는 방향으로 처리했다.
+- 예외 상황 또는 엣지 케이스: `message-box`는 이전에는 로딩 안내, 빈 상태, 검증 에러, 네트워크 실패가 모두 같은 빨간 경고 박스로 보였다. 이번에 tone을 분리하면서 auth/survey는 `error`, start/play 로딩은 `info`, population restart 완료는 `success`로 나눴다. 또한 지구본 playfield는 light theme에서도 완전 흰 판으로 바꾸지 않고, 시인성을 위해 blue-tinted playfield로 유지했다.
+- 테스트 내용: `git diff --check -- src/main/resources/static/css/site.css src/main/resources/static/js/location-game.js src/main/resources/static/js/population-game.js src/main/resources/static/js/ranking.js src/main/resources/templates docs/PORTFOLIO_PLAYBOOK.md docs/WORKLOG.md` 통과. `node --check src/main/resources/static/js/location-game.js`, `node --check src/main/resources/static/js/population-game.js`, `node --check src/main/resources/static/js/ranking.js` 통과. `./gradlew test`는 현재 머신에 Java 21 toolchain이 없어 실행하지 못했다.
+- 배운 점: 라이트 모드는 배경색 하나 바꾸는 기능이 아니라, surface hierarchy와 message semantics를 다시 정의하는 작업에 가깝다. 특히 게임 화면이 있는 서비스에서는 panel/card/modal/overlay를 따로 토큰화하지 않으면 페이지마다 다크 잔재가 쉽게 남는다.
+- 아직 약한 부분: 템플릿과 공통 CSS/JS는 모두 읽고 정리했지만, 실제 브라우저에서 recommendation result와 dashboard 데이터 밀도가 모바일에서 얼마나 편한지는 한 번 더 확인할 가치가 있다. 또한 Java 21이 없는 로컬 환경이라 서버 렌더링 회귀 테스트까지는 이번 턴에 못 돌렸다.
+- 면접용 30초 요약: 이번에는 홈 한 장만 고치지 않고 public, admin, game 화면 템플릿과 공통 CSS/JS를 전부 다시 읽었습니다. 문제는 라이트 모드인데도 패널, 모달, 메시지 박스가 여전히 다크 하드코딩을 끌고 있던 점이어서, `html[data-theme]` 아래에 panel/card/message/globe/modal semantic token을 새로 두고 전체 화면을 같은 체계로 맞췄습니다. 서버 상태는 그대로 두고 표현 계층만 정리했기 때문에 구조 설명도 단순합니다.
+
+## 2026-03-24 - 라이트 모드 홈 화면 표면 계층 재정리
+
+- 단계: 6. 설문 기반 추천 엔진 보조 UI 조각
+- 목적: 사용자 스크린샷 기준으로 라이트 모드는 버튼만의 문제가 아니라 홈 화면 전체의 표면 계층이 어긋나 있었다. 배경은 밝은데 hero callout과 섹션 panel은 여전히 짙은 slab이고, 본문 텍스트는 회색이라 가독성이 무너졌다. 이번 조각은 홈과 공통 shell의 light theme surface hierarchy를 다시 맞추는 데 집중한다.
+- 변경 파일:
+  - `src/main/resources/static/css/site.css`
+  - `src/main/resources/templates/home.html`
+  - `src/main/resources/templates/recommendation/survey.html`
+  - `src/main/resources/templates/recommendation/result.html`
+  - `src/main/resources/templates/ranking/index.html`
+  - `src/main/resources/templates/location-game/start.html`
+  - `src/main/resources/templates/location-game/play.html`
+  - `src/main/resources/templates/location-game/result.html`
+  - `src/main/resources/templates/population-game/start.html`
+  - `src/main/resources/templates/population-game/play.html`
+  - `src/main/resources/templates/population-game/result.html`
+  - `src/main/resources/templates/stats/index.html`
+  - `src/main/resources/templates/mypage.html`
+  - `src/main/resources/templates/auth/login.html`
+  - `src/main/resources/templates/auth/signup.html`
+  - `src/main/resources/templates/admin/index.html`
+  - `src/main/resources/templates/admin/recommendation-feedback.html`
+  - `src/main/resources/templates/admin/recommendation-persona-baseline.html`
+  - `src/main/resources/templates/error/403.html`
+  - `src/main/resources/templates/error/404.html`
+  - `src/main/resources/templates/error/500.html`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 요청 흐름은 여전히 없다. `localStorage.worldmap-theme -> html[data-theme] -> CSS variable` 흐름은 그대로 두고, 이번에는 그 아래의 `panel shell`, `hero callout`, `mode card`, `input surface`가 light theme에서 어떤 색 레이어를 쓸지만 다시 정의했다. 즉 브라우저 로컬의 theme 값은 그대로고, 같은 theme 값이 더 일관된 표면 계층으로 렌더링되도록 매핑을 조정한 것이다.
+- 데이터 / 상태 변화: 서버 데이터, 세션, 추천 결과, 게임 상태는 바뀌지 않는다. 바뀐 것은 `--panel-shell-surface`, `--hero-callout-surface`, `--card-shadow`, `--input-surface`, `--display-ink` 같은 표현 토큰과, 새 CSS가 바로 반영되도록 모든 SSR 페이지의 style version query를 한 번 더 올린 점이다.
+- 핵심 도메인 개념: 이번 문제도 표현 계층의 책임이다. panel과 callout이 dark slab처럼 남아 있던 이유는 light theme가 “배경색만 밝아진 상태”였기 때문이다. 그래서 개별 템플릿에서 요소마다 직접 색을 덮는 대신, 공통 CSS token 레이어에서 밝은 화면용 surface hierarchy를 다시 설계하는 편이 더 설명 가능하고 유지보수하기 쉽다.
+- 예외 상황 또는 엣지 케이스: home만 고치면 로그인/추천/랭킹 화면은 이전 CSS 캐시를 계속 들고 있을 수 있어 version query를 전체 페이지에서 같이 올렸다. 또한 panel/head/body text가 같은 `muted` 계열을 공유하던 구조는 밝은 표면에서만이 아니라 짙은 패널에서도 가독성을 흔들 수 있어, `text-muted`와 `text-strong` 토큰을 명시적으로 나눠 재사용했다.
+- 테스트 내용: `git diff --check -- src/main/resources/static/css/site.css src/main/resources/templates docs/PORTFOLIO_PLAYBOOK.md docs/WORKLOG.md` 통과. `./gradlew test`는 현재 머신에 Java 21 toolchain이 없어 시작 단계에서 실패했다. 오류는 `Cannot find a Java installation ... matching: {languageVersion=21}`였다.
+- 배운 점: 라이트 모드는 “밝은 배경 + 기존 다크 패널 유지”처럼 중간 단계에서 가장 어색해진다. 실제로는 버튼 색 하나보다, 어떤 표면이 가장 위 레이어인지부터 다시 정리해야 홈 화면 전체 인상이 안정된다.
+- 아직 약한 부분: 이번 수정은 스크린샷 기준으로 가장 거슬리던 홈/public shell 표면을 정리한 것이다. recommendation result, auth form, stats 같은 다른 public 화면이 실제 브라우저에서 같은 톤으로 충분히 안정적인지는 한 번 더 확인할 필요가 있다.
+- 면접용 30초 요약: 라이트 모드가 어색했던 이유는 버튼만 아니라 패널과 콜아웃이 여전히 다크 surface를 유지하고 있었기 때문입니다. 그래서 `html[data-theme]` 아래에서 버튼 토큰만 고치는 데서 멈추지 않고, panel shell, hero callout, card, input까지 밝은 blue-tinted layer로 다시 정의해 표면 계층을 정리했습니다. 서버 상태는 그대로 두고 CSS token 레이어만 바꿔 문제를 풀었습니다.
+
 ## 2026-03-24 - 라이트 모드 버튼 대비 보정
 
 - 단계: 6. 설문 기반 추천 엔진 보조 UI 조각
@@ -2080,3 +2412,47 @@
 - 테스트 내용: `./gradlew test --tests com.worldmap.recommendation.RecommendationPageIntegrationTest --tests com.worldmap.recommendation.RecommendationFeedbackIntegrationTest --tests com.worldmap.recommendation.application.RecommendationSurveyServiceTest --tests com.worldmap.recommendation.application.RecommendationOfflinePersonaCoverageTest --tests com.worldmap.recommendation.application.RecommendationOfflinePersonaSnapshotTest --tests com.worldmap.admin.AdminPageIntegrationTest` 통과 후 `./gradlew test` 전체 통과.
 - 면접에서 30초 안에 설명하는 요약: 12문항 설문은 시작점으로는 괜찮았지만, 실제 생활 선택에서는 집 크기, 초기 적응 친화도, 디지털 인프라, 문화·여가, 장기 기반 같은 축이 더 필요했습니다. 그래서 설문만 20개로 늘린 게 아니라 `RecommendationSurveyAnswers`, 나라 프로필, 점수식, 익명 feedback snapshot, offline persona baseline을 전부 같이 확장했습니다. 요청은 여전히 `survey -> service -> result -> feedback` 흐름으로 가고, 추천 계산은 서버가 deterministic하게 유지합니다.
 - 아직 내가 이해가 부족한 부분: 현재 `survey-v4 / engine-v4` baseline은 다시 고정했지만, `P04`, `P06`, `P14`처럼 남유럽 / 저예산 균형 시나리오가 과하게 스페인·이탈리아 쪽으로 끌리는지, newcomer support와 future base 가중치가 충분히 분리됐는지는 다음 tuning에서 더 봐야 한다.
+
+## 2026-03-25 - 홈 첫 화면에서 중복 모드 노출을 걷어내고 진입 구조 단순화
+
+- 단계: 8. 인증, 전적, 마이페이지 보조 public shell 정리
+- 목적: 홈 첫 화면에는 `위치 미션 시작`, `인구수 퀴즈 시작` 같은 hero CTA와 `모드 구성` 카드가 동시에 있어 같은 정보를 여러 번 보게 됐다. 이번 조각은 홈에서 모드 이름을 한 번만 보여 주고, hero는 서비스 소개와 계정/Stats 진입만 맡도록 구조를 단순화하는 데 집중한다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/web/HomeController.java`
+  - `src/main/resources/templates/home.html`
+  - `src/main/resources/static/css/site.css`
+  - `src/test/java/com/worldmap/web/HomeControllerTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/38-simplify-home-landing-structure.md`
+- 요청 흐름 / 데이터 흐름: 요청은 그대로 `GET / -> HomeController -> home.html`이다. 이번에는 `HomeController`가 `modeCards`, `entrySteps`, `accountNotes`만 내려 주고, `home.html`은 그 세 가지 read model과 현재 세션을 합쳐 홈 첫 화면을 렌더링한다. guest / member 분기는 기존처럼 템플릿이 세션을 직접 읽고, hero는 `모드 선택하기 -> #home-modes`, `서비스 현황 보기 -> /stats`만 제공한다. 실제 모드별 직접 이동은 `지금 플레이할 모드` 카드에만 남겼다.
+- 데이터 / 상태 변화: 새로운 테이블이나 인증 규칙 변화는 없다. 바뀐 것은 public 홈 첫 화면의 정보 구조다. 모드 선택, 기록 연결, 통계 진입을 서로 다른 위치에서 중복 노출하던 구조를 줄이고, 홈에서는 “무슨 서비스인지”와 “어떻게 시작하는지”만 먼저 보여 주도록 정리했다.
+- 핵심 도메인 개념: 이 작업은 도메인 로직 추가가 아니라 public shell의 read model 정리다. 그래서 `HomeController`는 게임 상태나 인증 상태를 바꾸지 않고, 홈에서 반복해서 써야 하는 설명 리스트만 만든다. 반대로 guest/member 인증 상태, 로그아웃, 실제 모드 시작은 기존 auth/game 흐름이 계속 맡는다. 즉, 홈은 상태를 바꾸지 않고 진입 구조를 어떻게 보여 줄지만 책임진다.
+- 예외 상황 또는 엣지 케이스: guest는 여전히 홈에서 `로그인 / 회원가입`을 보지만, 직접 게임은 가입 없이 바로 시작할 수 있다. 로그인 사용자는 hero에서 `My Page / 로그아웃`을 그대로 본다. ADMIN 세션은 헤더에 `Dashboard`가 계속 보이지만, hero나 본문에는 운영용 링크를 추가로 두지 않는다. `Stats`는 공개 페이지라 guest와 member 모두 동일하게 진입할 수 있다.
+- 테스트 내용: `./gradlew test --tests com.worldmap.web.HomeControllerTest` 통과. guest 홈에서 `모드 선택하기`, `지금 플레이할 모드`, `기록은 이렇게 이어집니다`, `Stats`가 보이고, 기존 중복 문구였던 `위치 미션 시작`, `인구수 퀴즈 시작`, `모드 구성`, `플레이 방식`은 더 이상 보이지 않는지 확인했다. ADMIN 세션에서는 `Dashboard` 노출도 계속 유지되는지 확인했다.
+- 면접에서 30초 안에 설명하는 요약: 홈 화면은 첫 진입점이라 정보가 많아질수록 사용자가 어디를 눌러야 할지 헷갈립니다. 그래서 hero에서는 서비스 소개와 계정/Stats 진입만 남기고, 실제 모드 선택은 카드 영역 한 곳에서만 하게 구조를 다시 정리했습니다. 요청 흐름은 그대로 `HomeController -> home.html`이고, 상태 변경은 auth나 game 흐름이 맡고 홈은 SSR에서 진입 구조를 어떻게 보여 줄지만 책임집니다.
+- 아직 내가 이해가 부족한 부분: 지금은 홈 hero를 단순화했지만, `Stats`를 hero에 둘지 아니면 카드/하단 정보 영역으로 옮길지가 완전히 고정된 것은 아니다. 이후 홈/Stats/My Page 사이의 공개 진입 흐름을 한 번 더 시연 기준으로 검토할 필요가 있다.
+
+## 2026-03-25 - 디자인 패스 이후 public 화면 테스트와 문서를 현재 카피 기준으로 안정화
+
+- 단계: 8. 인증, 전적, 마이페이지 보조 public shell 안정화
+- 목적: 다른 세션에서 home, stats, recommendation, ranking, mypage 등 public 화면 디자인이 크게 바뀌었다. 그런데 이 상태에서 기존 SSR 테스트는 옛 문구를 기대하고 있어 실패가 생겼다. 그래서 이번 조각은 기능을 더 추가하지 않고, 새 디자인과 카피가 실제 테스트와 문서에 반영되도록 안정화하는 데 집중한다.
+- 변경 파일:
+  - `src/test/java/com/worldmap/recommendation/RecommendationPageIntegrationTest.java`
+  - `src/test/java/com/worldmap/ranking/LeaderboardIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/39-stabilize-public-design-pass.md`
+- 요청 흐름 / 데이터 흐름: 런타임 요청 흐름 자체는 바뀌지 않았다. 추천은 여전히 `GET /recommendation/survey -> RecommendationPageController -> survey.html`, 랭킹은 `GET /ranking -> LeaderboardPageController -> ranking/index.html`이다. 이번에는 컨트롤러가 내려 주는 SSR 화면의 문구와 테스트 기대값만 새 디자인 기준으로 맞췄다.
+- 데이터 / 상태 변화: DB, 세션, 도메인 모델 변화는 없다. 바뀐 것은 public 화면의 표현과, 그 표현을 검증하는 통합 테스트 기대값이다.
+- 핵심 도메인 개념: 큰 디자인 패스 직후에는 먼저 “서버가 어떤 HTML을 내려 주는가”를 다시 고정해야 한다. 이 프로젝트는 SSR 기반이라, 카피와 레이아웃이 바뀌면 기능 로직은 그대로여도 테스트는 깨질 수 있다. 그래서 이번 조각은 새 디자인을 또 바꾸기보다, `RecommendationPageIntegrationTest`, `LeaderboardIntegrationTest`가 현재 문구와 구조를 기준으로 다시 통과하도록 만드는 안정화 작업이다.
+- 예외 상황 또는 엣지 케이스: 이번 워킹트리에는 디자인과 직접 무관한 변경도 같이 들어 있었다. 그래서 이번 조각은 그 변경을 억지로 되돌리지 않고, public 디자인 패스와 직접 연결되는 테스트/문서만 먼저 맞췄다. `build.gradle`의 Java toolchain 변경처럼 디자인과 직접 무관한 diff는 다음 정리 조각에서 의도를 다시 확인하는 편이 안전하다.
+- 테스트 내용: `./gradlew test --tests com.worldmap.web.HomeControllerTest --tests com.worldmap.web.MyPageControllerTest --tests com.worldmap.stats.StatsPageControllerTest --tests com.worldmap.recommendation.RecommendationPageIntegrationTest --tests com.worldmap.ranking.LeaderboardIntegrationTest`, `./gradlew test` 전체를 다시 돌려 새 카피 기준으로 통과 여부를 확인한다.
+- 면접에서 30초 안에 설명하는 요약: 큰 UI 개편 뒤에는 기능을 더 넣기보다 먼저 SSR 테스트를 새 화면 기준으로 다시 고정하는 것이 중요합니다. 이 프로젝트는 Thymeleaf 기반이라 문구와 레이아웃이 바뀌면 컨트롤러 로직은 그대로여도 테스트가 깨질 수 있기 때문입니다. 그래서 추천 설문과 랭킹 통합 테스트를 현재 public 화면 카피에 맞춰 다시 고정하고, 문서도 그 상태 기준으로 정리했습니다.
+- 아직 내가 이해가 부족한 부분: 현재 디자인 패스에 포함된 모든 변경 중 어떤 것이 최종 확정본인지와, 디자인과 무관한 `build.gradle` 변경 같은 diff를 이번 커밋에 포함할지 분리할지는 한 번 더 정리할 필요가 있다.

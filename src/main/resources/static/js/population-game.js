@@ -22,7 +22,7 @@ function initStartPage() {
         hidePopulationMessage(messageBox);
         submitButton.disabled = true;
         submitButton.textContent = "게임 준비 중...";
-        showPopulationMessage(messageBox, "첫 번째 Stage와 보기 데이터를 준비하는 중입니다. 잠시만 기다려주세요.");
+        showPopulationMessage(messageBox, "첫 번째 Stage와 보기 데이터를 준비하는 중입니다. 잠시만 기다려주세요.", "info");
 
         try {
             const response = await fetch("/api/games/population/sessions", {
@@ -40,7 +40,7 @@ function initStartPage() {
         } catch (error) {
             submitButton.disabled = false;
             submitButton.textContent = defaultButtonText;
-            showPopulationMessage(messageBox, error.message);
+            showPopulationMessage(messageBox, error.message, "error");
         }
     });
 }
@@ -72,7 +72,7 @@ function initPlayPage() {
         hidePopulationMessage(messageBox);
         nextStageButton.disabled = true;
         loadState()
-            .catch((error) => showPopulationMessage(messageBox, error.message))
+            .catch((error) => showPopulationMessage(messageBox, error.message, "error"))
             .finally(() => {
                 nextStageButton.disabled = false;
             });
@@ -83,7 +83,7 @@ function initPlayPage() {
         hidePopulationMessage(messageBox);
 
         if (!currentState) {
-            showPopulationMessage(messageBox, "현재 Stage를 아직 불러오지 못했습니다.");
+            showPopulationMessage(messageBox, "현재 Stage를 아직 불러오지 못했습니다.", "error");
             return;
         }
 
@@ -93,7 +93,7 @@ function initPlayPage() {
 
         const selectedOption = form.querySelector("input[name='population-option']:checked");
         if (!selectedOption) {
-            showPopulationMessage(messageBox, "보기 하나를 먼저 선택해주세요.");
+            showPopulationMessage(messageBox, "보기 하나를 먼저 선택해주세요.", "error");
             return;
         }
 
@@ -174,15 +174,15 @@ function initPlayPage() {
             }, 950);
         } catch (error) {
             lockInteraction(false);
-            showPopulationMessage(messageBox, error.message);
+            showPopulationMessage(messageBox, error.message, "error");
         }
     });
 
-    showPopulationMessage(messageBox, "Stage와 보기 데이터를 불러오는 중입니다.");
+    showPopulationMessage(messageBox, "Stage와 보기 데이터를 불러오는 중입니다.", "info");
     hideGameOverModal();
     loadState()
         .then(() => hidePopulationMessage(messageBox))
-        .catch((error) => showPopulationMessage(messageBox, error.message));
+        .catch((error) => showPopulationMessage(messageBox, error.message, "error"));
 
     async function loadState() {
         const response = await fetch(`/api/games/population/sessions/${sessionId}/state`, {
@@ -223,10 +223,10 @@ function initPlayPage() {
             feedback.hidden = true;
             overlay.hidden = true;
             hideNextStageAction();
-            showPopulationMessage(messageBox, "같은 세션을 Stage 1부터 다시 시작했습니다.");
+            showPopulationMessage(messageBox, "같은 세션을 Stage 1부터 다시 시작했습니다.", "success");
             await loadState();
         } catch (error) {
-            showPopulationMessage(messageBox, error.message);
+            showPopulationMessage(messageBox, error.message, "error");
         } finally {
             restartButton.disabled = false;
         }
@@ -380,12 +380,14 @@ function formatPopulation(population) {
     return `${Number(population).toLocaleString()}명`;
 }
 
-function showPopulationMessage(target, message) {
+function showPopulationMessage(target, message, tone = "info") {
     target.hidden = false;
-    target.innerHTML = message;
+    target.textContent = message;
+    target.dataset.tone = tone;
 }
 
 function hidePopulationMessage(target) {
     target.hidden = true;
-    target.innerHTML = "";
+    target.textContent = "";
+    delete target.dataset.tone;
 }

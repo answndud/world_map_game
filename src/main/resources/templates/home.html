@@ -4,60 +4,56 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WorldMap</title>
-    <link rel="stylesheet" th:href="@{/css/site.css(v='20260324-square-ui-1')}">
+    <link rel="stylesheet" th:href="@{/css/site.css(v='20260325-light-depth-10')}">
 </head>
 <body>
 <div class="page-shell">
     <th:block th:replace="~{fragments/site-header :: siteHeader('home')}"></th:block>
-    <header class="hero">
-        <div>
+    <header class="hero home-hero">
+        <div class="home-hero-copy">
             <p class="eyebrow">Explore The World</p>
             <h1>WorldMap Command</h1>
             <p class="hero-copy">
-                지구본 탐색 미션, 인구 퀴즈, 나라 추천, 실시간 랭킹을
+                지구본 탐색 게임, 인구 퀴즈, 나에게 어울리는 국가 찾기, 실시간 랭킹을
                 한곳에서 이어서 즐길 수 있는 월드 플레이 허브입니다.
             </p>
-            <div class="hero-actions">
-                <a class="primary-link" th:href="@{/games/location/start}">위치 미션 시작</a>
-                <a class="ghost-link" th:href="@{/games/population/start}">인구수 퀴즈 시작</a>
-                <a class="ghost-link" th:href="@{/recommendation/survey}">나라 추천 받기</a>
-                <a class="ghost-link" th:href="@{/ranking}">랭킹 보기</a>
-            </div>
-
-            <div class="hero-account-callout"
-                 th:if="${session == null or session.WORLDMAP_MEMBER_ID == null}">
-                <p class="hero-account-copy">
-                    점수와 랭킹 기록을 계속 이어가고 싶다면 계정을 연결하세요.
-                </p>
-                <div class="page-actions">
-                    <a class="secondary-button" th:href="@{/login}">로그인</a>
-                    <a class="ghost-link" th:href="@{/signup}">회원가입</a>
+            <div class="home-hero-support">
+                <a class="ghost-link hero-support-link" th:href="@{/stats}">서비스 현황 보기</a>
+                <div class="hero-account-callout"
+                     th:if="${session == null or session.WORLDMAP_MEMBER_ID == null}">
+                    <p class="hero-account-copy">
+                        점수와 랭킹 기록을 계속 이어가고 싶다면 계정을 연결하세요.
+                    </p>
+                    <div class="page-actions">
+                        <a class="secondary-button" th:href="@{/login}">로그인</a>
+                        <a class="ghost-link" th:href="@{/signup}">회원가입</a>
+                    </div>
                 </div>
-            </div>
 
-            <div class="hero-account-callout"
-                 th:if="${session != null and session.WORLDMAP_MEMBER_ID != null}">
-                <p class="hero-account-copy">
-                    <span class="account-chip" th:text="${session.WORLDMAP_MEMBER_NICKNAME}">orbit_runner</span>
-                    계정으로 기록을 이어서 남기고 있습니다.
-                </p>
-                <div class="page-actions">
-                    <a class="secondary-button" th:href="@{/mypage}">My Page</a>
-                    <form class="inline-form" th:action="@{/logout}" method="post">
-                        <button class="ghost-link" type="submit">로그아웃</button>
-                    </form>
+                <div class="hero-account-callout"
+                     th:if="${session != null and session.WORLDMAP_MEMBER_ID != null}">
+                    <p class="hero-account-copy">
+                        <span class="account-chip" th:text="${session.WORLDMAP_MEMBER_NICKNAME}">orbit_runner</span>
+                        계정으로 기록을 이어서 남기고 있습니다.
+                    </p>
+                    <div class="page-actions">
+                        <a class="secondary-button" th:href="@{/mypage}">My Page</a>
+                        <form class="inline-form" th:action="@{/logout}" method="post">
+                            <button class="ghost-link" type="submit">로그아웃</button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
     </header>
 
-    <main class="layout">
-        <section class="panel">
+    <main class="layout home-layout">
+        <section class="panel home-mode-panel" id="home-modes">
             <div class="panel-head">
-                <h2>모드 구성</h2>
-                <p>원하는 방식으로 바로 플레이를 시작하고, 기록과 추천까지 한 흐름으로 이어서 볼 수 있습니다.</p>
+                <h2>지금 플레이할 게임</h2>
+                <p>실제 게임 선택은 이 카드 영역 하나에서만 하도록 줄였습니다. 서버가 문제 생성, 판정, 점수, 진행 상태를 직접 관리합니다.</p>
             </div>
-            <div class="card-grid">
+            <div class="card-grid home-mode-grid">
                 <article class="mode-card" th:each="card : ${modeCards}">
                     <div class="card-top">
                         <span class="status" th:text="${card.status}">Planned</span>
@@ -65,34 +61,36 @@
                     </div>
                     <h3 th:text="${card.title}">국가 위치 찾기</h3>
                     <p th:text="${card.description}">
-                        원하는 모드를 골라 바로 플레이를 시작할 수 있습니다.
+                        원하는 게임을 골라 바로 플레이를 시작할 수 있습니다.
                     </p>
-                    <a class="ghost-link" th:href="${card.href}">모드 열기</a>
+                    <a class="ghost-link home-mode-link" th:href="${card.href}">게임 열기</a>
                 </article>
             </div>
         </section>
 
-        <section class="split">
-            <article class="panel">
+        <section class="split home-info-grid">
+            <article class="panel home-info-panel">
                 <div class="panel-head">
-                    <h2>플레이 방식</h2>
-                </div>
-                <ul class="check-list">
-                    <li th:each="principle : ${principles}" th:text="${principle}">
-                        각 모드마다 다른 방식으로 플레이를 이어갈 수 있습니다.
-                    </li>
-                </ul>
-            </article>
-
-            <article class="panel">
-                <div class="panel-head">
-                    <h2>처음이라면</h2>
+                    <h2>처음 시작한다면</h2>
+                    <p>복잡하게 비교하지 말고 가장 끌리는 게임 하나로 먼저 들어가면 됩니다.</p>
                 </div>
                 <ol class="roadmap">
-                    <li th:each="step : ${roadmap}" th:text="${step}">
-                        위치 미션부터 차례대로 즐겨보세요.
+                    <li th:each="step : ${entrySteps}" th:text="${step}">
+                        게임을 고르고 바로 플레이를 시작할 수 있습니다.
                     </li>
                 </ol>
+            </article>
+
+            <article class="panel home-info-panel">
+                <div class="panel-head">
+                    <h2>기록은 이렇게 이어집니다</h2>
+                    <p>가볍게 시작하고 싶을 때는 guest, 계속 남기고 싶을 때는 계정으로 연결하면 됩니다.</p>
+                </div>
+                <ul class="check-list">
+                    <li th:each="note : ${accountNotes}" th:text="${note}">
+                        기록과 계정 흐름을 한눈에 확인할 수 있습니다.
+                    </li>
+                </ul>
             </article>
         </section>
     </main>

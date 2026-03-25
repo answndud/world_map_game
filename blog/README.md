@@ -100,12 +100,14 @@
 40. [추천 설문을 12문항 trade-off 구조로 다시 설계하기](./35-redesign-recommendation-survey-with-twelve-questions.md)
 41. [공통 셸에 다크/라이트 테마 토글 붙이기](./36-add-sitewide-light-mode-toggle.md)
 42. [추천 설문을 20문항 생활 시나리오형으로 다시 확장하기](./37-expand-recommendation-survey-to-twenty-questions.md)
+43. [홈 첫 화면에서 모드 중복 노출을 걷어내고 진입 구조 단순화하기](./38-simplify-home-landing-structure.md)
+44. [public 디자인 패스 이후 SSR 화면과 테스트를 안정화하기](./39-stabilize-public-design-pass.md)
 
 ### Part E. 확장과 포트폴리오 정리
 
-43. 인증과 내 전적 조회 고도화하기
-44. Level 2와 실시간 전달 방식 고도화하기
-45. 테스트, 아키텍처, 면접 패키지로 프로젝트 마감하기
+45. 인증과 내 전적 조회 고도화하기
+46. Level 2와 실시간 전달 방식 고도화하기
+47. 테스트, 아키텍처, 면접 패키지로 프로젝트 마감하기
 
 ## 읽는 순서
 

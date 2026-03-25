@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>실시간 랭킹</title>
-    <link rel="stylesheet" th:href="@{/css/site.css(v='20260324-square-ui-1')}">
-    <script th:src="@{/js/ranking.js}" defer></script>
+    <link rel="stylesheet" th:href="@{/css/site.css(v='20260325-light-depth-10')}">
+    <script th:src="@{/js/ranking.js(v='20260324-light-system-3')}" defer></script>
 </head>
 <body data-page="ranking">
 <div class="page-shell">
@@ -42,8 +42,8 @@
             <div class="ranking-controls-grid">
                 <section class="panel ranking-filter-shell">
                     <div class="ranking-filter-group">
-                        <span class="subtitle">게임 모드</span>
-                        <div class="ranking-filter-buttons" role="group" aria-label="게임 모드 필터">
+                        <span class="subtitle">게임 종류</span>
+                        <div class="ranking-filter-buttons" role="group" aria-label="게임 종류 필터">
                             <button class="secondary-button ranking-filter-button is-active"
                                     id="ranking-mode-location"
                                     type="button"
@@ -90,7 +90,7 @@
                     </p>
                 </aside>
             </div>
-            <p id="ranking-refresh-message" class="message-box" hidden></p>
+            <p id="ranking-refresh-message" class="message-box" data-tone="error" hidden></p>
 
             <div class="panel-head">
                 <h2 id="ranking-active-title">위치 찾기 · 전체 Top 10</h2>

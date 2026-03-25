@@ -164,6 +164,7 @@
         }
 
         messageBox.hidden = false;
+        messageBox.dataset.tone = "error";
         messageBox.textContent = message;
     }
 
@@ -174,6 +175,7 @@
 
         messageBox.hidden = true;
         messageBox.textContent = "";
+        delete messageBox.dataset.tone;
     }
 
     function handleVisibilityChange() {

@@ -67,13 +67,15 @@
 40. [추천 설문을 12문항 trade-off 구조로 다시 설계하기](./35-redesign-recommendation-survey-with-twelve-questions.md)
 41. [공통 셸에 다크/라이트 테마 토글 붙이기](./36-add-sitewide-light-mode-toggle.md)
 42. [추천 설문을 20문항 생활 시나리오형으로 다시 확장하기](./37-expand-recommendation-survey-to-twenty-questions.md)
+43. [홈 첫 화면에서 모드 중복 노출을 걷어내고 진입 구조 단순화하기](./38-simplify-home-landing-structure.md)
+44. [public 디자인 패스 이후 SSR 화면과 테스트를 안정화하기](./39-stabilize-public-design-pass.md)
 
 ### Part E. 테스트, 확장, 취업 패키징
 
-43. 왜 핵심 게임 로직을 테스트해야 하는가
-44. 인증, 전적, 마이페이지 붙이기
-45. Level 2 난이도와 실시간성 고도화
-46. README, 아키텍처, 면접 답변 패키지 만들기
+45. 왜 핵심 게임 로직을 테스트해야 하는가
+46. 인증, 전적, 마이페이지 붙이기
+47. Level 2 난이도와 실시간성 고도화
+48. README, 아키텍처, 면접 답변 패키지 만들기
 
 ## 실제 집필 우선순위
 

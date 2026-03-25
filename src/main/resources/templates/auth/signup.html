@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>회원가입</title>
-    <link rel="stylesheet" th:href="@{/css/site.css(v='20260324-square-ui-1')}">
+    <link rel="stylesheet" th:href="@{/css/site.css(v='20260325-light-depth-10')}">
 </head>
 <body>
 <div class="page-shell">
@@ -35,8 +35,8 @@
                     <span>비밀번호</span>
                     <input type="password" th:field="*{password}" maxlength="100" placeholder="4자 이상 입력">
                 </label>
-                <p class="message-box" th:if="${#fields.hasErrors('*')}" th:text="${#fields.errors('*')[0]}"></p>
-                <p class="message-box" th:if="${authErrorMessage}" th:text="${authErrorMessage}"></p>
+                <p class="message-box" data-tone="error" th:if="${#fields.hasErrors('*')}" th:text="${#fields.errors('*')[0]}"></p>
+                <p class="message-box" data-tone="error" th:if="${authErrorMessage}" th:text="${authErrorMessage}"></p>
                 <div class="page-actions">
                     <button class="primary-button" type="submit">회원가입</button>
                     <a class="secondary-button" th:href="@{/login}">이미 계정이 있어요</a>

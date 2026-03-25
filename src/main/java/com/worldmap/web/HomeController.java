@@ -12,8 +12,8 @@ public class HomeController {
 	@GetMapping("/")
 	public String home(Model model) {
 		model.addAttribute("modeCards", modeCards());
-		model.addAttribute("principles", principles());
-		model.addAttribute("roadmap", roadmap());
+		model.addAttribute("entrySteps", entrySteps());
+		model.addAttribute("accountNotes", accountNotes());
 		return "home";
 	}
 
@@ -34,37 +34,30 @@ public class HomeController {
 				"/games/population/start"
 			),
 			new ModeCardView(
-				"어울리는 나라 추천",
+				"나에게 어울리는 국가 찾기",
 				"20 Questions",
-				"생활 조건 사이의 우선순위를 고르면 지금 나와 잘 맞는 나라 3곳을 골라 보여줍니다.",
+				"생활 조건 사이의 우선순위를 고르면 지금 나와 잘 맞는 국가 3곳을 골라 보여줍니다.",
 				"Discover",
 				"/recommendation/survey"
-			),
-			new ModeCardView(
-				"실시간 랭킹",
-				"Top Scores",
-				"방금 끝난 플레이 결과를 기준으로 전체 기록과 오늘의 상위 점수를 확인합니다.",
-				"Live",
-				"/ranking"
 			)
 		);
 	}
 
-	private List<String> principles() {
+	private List<String> entrySteps() {
 		return List.of(
-			"위치 미션은 지구본에서 나라를 고르고, 제출 순간에만 정답이 공개됩니다.",
-			"인구 퀴즈는 하트가 남아 있는 동안 계속 이어지는 아케이드 방식으로 진행됩니다.",
-			"나라 추천은 생활 조건과 우선순위를 묻는 20문항에 답하면 바로 top 3 결과를 확인할 수 있습니다.",
-			"랭킹은 전체 기록과 오늘의 기록을 나눠서 볼 수 있습니다."
+			"아래 카드에서 지금 해보고 싶은 게임을 하나 고른다.",
+			"게스트로 바로 시작하고, 한 판이 끝나면 결과와 랭킹을 확인한다.",
+			"기록을 이어가고 싶으면 로그인해 현재 브라우저 기록을 계정에 연결한다.",
+			"Stats와 My Page에서 서비스 흐름과 내 기록을 함께 살펴본다."
 		);
 	}
 
-	private List<String> roadmap() {
+	private List<String> accountNotes() {
 		return List.of(
-			"처음이면 위치 미션으로 지구본 조작에 익숙해지기",
-			"그다음 인구 퀴즈로 리듬감 있는 연속 플레이 즐기기",
-			"설문으로 내 취향과 잘 맞는 나라 3곳 찾기",
-			"랭킹에서 오늘의 상위 기록과 전체 기록 비교하기"
+			"게스트는 현재 브라우저 세션 기준으로 점수와 진행 기록을 유지한다.",
+			"회원가입이나 로그인 후에는 방금까지의 게스트 기록을 내 계정으로 이어받을 수 있다.",
+			"My Page에서는 최고 점수, 최근 플레이, 게임별 플레이 성향을 다시 확인할 수 있다.",
+			"공개 Stats 페이지에서는 오늘 활성 플레이와 상위 기록 흐름을 가볍게 볼 수 있다."
 		);
 	}
 }

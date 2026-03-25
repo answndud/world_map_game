@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>국가 위치 찾기 시작</title>
-    <link rel="stylesheet" th:href="@{/css/site.css(v='20260324-square-ui-1')}">
-    <script th:src="@{/js/location-game.js}" defer></script>
+    <link rel="stylesheet" th:href="@{/css/site.css(v='20260325-light-depth-10')}">
+    <script th:src="@{/js/location-game.js(v='20260324-light-system-3')}" defer></script>
 </head>
 <body data-page="location-start">
 <div class="page-shell">
@@ -14,7 +14,7 @@
         <p class="eyebrow">Orbital Mission Level 1</p>
         <h1>국가 위치 찾기</h1>
         <p class="hero-copy">
-            3D 지구본을 회전하며 목표 국가를 찾는 엔드리스 아케이드 모드입니다.
+            3D 지구본을 회전하며 목표 국가를 찾는 엔드리스 아케이드 게임입니다.
             하트, 점수, Stage, 난이도 확장, 정답 판정은 모두 서버가 관리합니다.
         </p>
     </header>
@@ -53,7 +53,7 @@
                     <strong>Top 72 First</strong>
                 </article>
             </div>
-            <p id="location-start-message" class="message-box" hidden></p>
+            <p id="location-start-message" class="message-box" data-tone="info" hidden></p>
         </section>
     </main>
 </div>

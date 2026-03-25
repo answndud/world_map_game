@@ -22,7 +22,7 @@ function initStartPage() {
         hideLocationMessage(messageBox);
         submitButton.disabled = true;
         submitButton.textContent = "게임 준비 중...";
-        showLocationMessage(messageBox, "게임 화면과 첫 번째 Stage를 준비하는 중입니다. 잠시만 기다려주세요.");
+        showLocationMessage(messageBox, "게임 화면과 첫 번째 Stage를 준비하는 중입니다. 잠시만 기다려주세요.", "info");
 
         try {
             const response = await fetch("/api/games/location/sessions", {
@@ -40,7 +40,7 @@ function initStartPage() {
         } catch (error) {
             submitButton.disabled = false;
             submitButton.textContent = defaultButtonText;
-            showLocationMessage(messageBox, error.message);
+            showLocationMessage(messageBox, error.message, "error");
         }
     });
 }
@@ -99,12 +99,12 @@ function initPlayPage() {
         hideLocationMessage(messageBox);
 
         if (!currentState) {
-            showLocationMessage(messageBox, "현재 Stage를 아직 불러오지 못했습니다.");
+            showLocationMessage(messageBox, "현재 Stage를 아직 불러오지 못했습니다.", "error");
             return;
         }
 
         if (!selectedCountryIso3Code) {
-            showLocationMessage(messageBox, "지구본에서 국가를 먼저 선택해주세요.");
+            showLocationMessage(messageBox, "지구본에서 국가를 먼저 선택해주세요.", "error");
             return;
         }
 
@@ -152,7 +152,7 @@ function initPlayPage() {
                 }
 
                 setTimeout(() => {
-                    loadState().catch((error) => showLocationMessage(messageBox, error.message));
+                    loadState().catch((error) => showLocationMessage(messageBox, error.message, "error"));
                 }, 950);
                 return;
             }
@@ -191,14 +191,14 @@ function initPlayPage() {
             }, 950);
         } catch (error) {
             lockInteraction(false);
-            showLocationMessage(messageBox, error.message);
+            showLocationMessage(messageBox, error.message, "error");
         }
     });
 
-    showLocationMessage(messageBox, "세션과 지구본을 준비하는 중입니다. 첫 진입에서는 잠시 걸릴 수 있습니다.");
+    showLocationMessage(messageBox, "세션과 지구본을 준비하는 중입니다. 첫 진입에서는 잠시 걸릴 수 있습니다.", "info");
     hideGameOverModal();
     initializePlayScreen()
-        .catch((error) => showLocationMessage(messageBox, error.message));
+        .catch((error) => showLocationMessage(messageBox, error.message, "error"));
 
     async function initializePlayScreen() {
         installPointerIntentDetection();
@@ -277,7 +277,7 @@ function initPlayPage() {
             hideGameOverModal();
             await loadState();
         } catch (error) {
-            showLocationMessage(messageBox, error.message);
+            showLocationMessage(messageBox, error.message, "error");
         } finally {
             if (restartButton) {
                 restartButton.disabled = false;
@@ -375,7 +375,7 @@ function initPlayPage() {
         }
 
         if (!activeCountryIsoCodes.has(iso3Code)) {
-            showLocationMessage(messageBox, "현재 Level 1에 포함된 국가만 선택할 수 있습니다.");
+            showLocationMessage(messageBox, "현재 Level 1에 포함된 국가만 선택할 수 있습니다.", "error");
             return;
         }
 
@@ -712,12 +712,14 @@ function renderStageOverlay(target, title, description, tone) {
     `;
 }
 
-function showLocationMessage(target, message) {
+function showLocationMessage(target, message, tone = "info") {
     target.hidden = false;
-    target.innerHTML = message;
+    target.textContent = message;
+    target.dataset.tone = tone;
 }
 
 function hideLocationMessage(target) {
     target.hidden = true;
-    target.innerHTML = "";
+    target.textContent = "";
+    delete target.dataset.tone;
 }

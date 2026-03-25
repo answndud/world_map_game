@@ -5,9 +5,9 @@
     (function () {
         try {
             var storedTheme = window.localStorage.getItem("worldmap-theme");
-            document.documentElement.dataset.theme = storedTheme === "light" ? "light" : "dark";
+            document.documentElement.dataset.theme = storedTheme === "dark" ? "dark" : "light";
         } catch (error) {
-            document.documentElement.dataset.theme = "dark";
+            document.documentElement.dataset.theme = "light";
         }
     }());
 </script>
@@ -26,6 +26,9 @@
                    th:classappend="${activeSection == 'stats'} ? ' is-active'"
                    th:href="@{/stats}">Stats</a>
                 <a class="site-nav-link"
+                   th:classappend="${activeSection == 'ranking'} ? ' is-active'"
+                   th:href="@{/ranking}">Ranking</a>
+                <a class="site-nav-link"
                    th:if="${session != null and session.WORLDMAP_MEMBER_ROLE == 'ADMIN'}"
                    th:classappend="${activeSection == 'dashboard'} ? ' is-active'"
                    th:href="@{/dashboard}">Dashboard</a>
@@ -43,7 +46,7 @@
             </button>
         </div>
     </header>
-    <script th:src="@{/js/theme-toggle.js(v='20260324-theme-1')}"></script>
+    <script th:src="@{/js/theme-toggle.js(v='20260325-theme-2')}"></script>
 </th:block>
 </body>
 </html>

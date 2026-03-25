@@ -10,7 +10,7 @@ description = 'WorldMap backend-driven game platform'
 
 java {
 	toolchain {
-		languageVersion = JavaLanguageVersion.of(21)
+		languageVersion = JavaLanguageVersion.of(25)
 	}
 }
 
