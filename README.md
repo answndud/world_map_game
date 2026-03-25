@@ -63,7 +63,7 @@
 - 비회원은 지금처럼 세션 기반으로 바로 플레이
 - 로그인하면 내 계정에 기록과 랭킹 이력이 누적
 - 계정 정보는 `닉네임 + 비밀번호` 수준으로 단순하게 유지
-- 현재는 8단계 11차 기준으로 `member`, `guestSessionKey`, 게임 세션 / 랭킹 레코드 ownership 필드, 닉네임 + 비밀번호 기반 회원가입 / 로그인 / 로그아웃, 로그인 직후 현재 브라우저의 guest 기록 귀속, `/mypage` 기록 허브, raw stage 기반 플레이 성향 요약, `/dashboard/**` 접근 제어, 환경변수 기반 bootstrap admin provisioning, Dashboard 1차 운영 수치 카드, 공개 `/stats` 화면, local demo 계정 / 샘플 run bootstrap, 홈 첫 화면 계정 진입 CTA까지 연결했다.
+- 현재는 8단계 11차 기준으로 `member`, `guestSessionKey`, 게임 세션 / 랭킹 레코드 ownership 필드, 닉네임 + 비밀번호 기반 회원가입 / 로그인 / 로그아웃, 로그인 직후 현재 브라우저의 guest 기록 귀속, `/mypage` 기록 허브, raw stage 기반 플레이 성향 요약, `/dashboard/**` 접근 제어, 환경변수 기반 bootstrap admin provisioning, Dashboard 1차 운영 수치 카드, 공개 `/stats` 화면, local demo 계정 / 샘플 run bootstrap, 현재 survey/engine 버전 추천 피드백 샘플 bootstrap, 홈 첫 화면 계정 진입 CTA까지 연결했다.
 
 ### 이후 확장
 
@@ -206,6 +206,7 @@
 - public 헤더는 기본 `Home`, `My Page`를 유지하고, `ADMIN` 로그인일 때만 `Dashboard` 버튼을 추가로 노출한다.
 - Dashboard 첫 화면은 `총 회원 수`, `오늘 활성 회원 수`, `오늘 활성 게스트 수`, `오늘 시작된 세션 수`, `오늘 완료된 게임 수`, `오늘 모드별 완료 수`를 바로 보여준다.
 - 이 지표는 모두 같은 테이블에서 읽지 않는다. 회원 수는 `member_account`, 오늘 활성은 각 게임 세션의 `startedAt`, 오늘 완료 수는 `leaderboard_record.finishedAt`를 source of truth로 사용한다.
+- local demo bootstrap은 현재 `survey-v4 / engine-v9` 기준 추천 만족도 샘플도 함께 만들어, fresh local 환경에서도 `/dashboard/recommendation/feedback`이 바로 `rank drift 줄이기` 메모까지 보여 주도록 한다.
 - public 헤더는 게임별 직접 이동을 제거하고 `Home`, `My Page`만 남겨 이동 구조를 단순화했다.
 - `/mypage`는 비회원에게는 로그인 유도 화면, 로그인 사용자에게는 계정별 기록 허브로 동작한다.
 - 8단계 계정 구조는 `게스트 세션 유지 + 로그인 시 현재 브라우저 세션 기록 귀속`을 기본 원칙으로 설계한다.

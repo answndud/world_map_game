@@ -512,6 +512,7 @@
 - `RecommendationPersonaBaselineCatalog`로 baseline 시나리오 정의를 main source로 올리고, `/dashboard/recommendation/persona-baseline`이 현재 엔진 결과를 기준으로 weak scenario를 자동 계산하게 정리
 - weak scenario가 0개가 된 뒤에는 `/dashboard/recommendation/persona-baseline`이 기대 후보 top 3 여부뿐 아니라 `기대 1위 anchor`가 실제 top 1인지도 같이 계산하도록 확장
 - `/dashboard/recommendation/feedback`는 현재 버전 만족도와 baseline drift를 함께 읽어, 다음 액션을 `피드백 수집 / weak scenario / 문구 점검 / rank drift` 중 하나로 정리하는 운영 메모를 추가
+- local demo bootstrap은 current `survey-v4 / engine-v9` 피드백 샘플 5개를 함께 만들어, fresh local 환경에서도 `/dashboard/recommendation/feedback`이 `rank drift 줄이기` 메모를 바로 보여 주도록 정리
 - `/Users/alex/project/worldmap/docs/PLAYER_COPY_AND_ADMIN_SPLIT_PLAN.md`로 public copy와 admin 운영 화면 분리 설계 정리
 - `/dashboard/recommendation/persona-baseline` read-only 화면으로 현재 baseline 18/18, weak scenario 자동 계산, anchor drift 13개, active-signal 4개를 운영 화면에서 바로 확인
 - `/dashboard` read-only 대시보드를 추가해 현재 survey/engine 버전, 질문 수, 후보 국가 수, 만족도 수집 현황을 한 화면에서 조회

@@ -110,6 +110,7 @@
 50. [가족형 정착 시나리오에 family base bonus 추가하기](./45-add-family-base-bonus-for-family-settlement.md)
 51. [dashboard persona baseline에 anchor drift까지 보이게 하기](./46-add-anchor-drift-to-dashboard-persona-baseline.md)
 52. [추천 만족도 운영 화면에 다음 액션 메모 붙이기](./47-add-ops-review-to-recommendation-feedback-dashboard.md)
+53. [local demo bootstrap에 현재 추천 피드백 샘플 넣기](./48-seed-current-recommendation-feedback-in-local-demo.md)
 
 ### Part E. 확장과 포트폴리오 정리
 

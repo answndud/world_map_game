@@ -2669,3 +2669,25 @@
 - 테스트 내용: `AdminRecommendationOpsReviewServiceIntegrationTest`에서 현재 버전 피드백이 2개일 때는 `현재 버전 피드백 더 수집`, 5개 이상이고 평균이 충분할 때는 `rank drift 줄이기`가 나오는지 고정했다. `AdminPageIntegrationTest`에서는 추천 만족도 운영 화면이 `운영 판단 메모`와 우선 액션 문구를 실제로 렌더링하는지 확인했다.
 - 면접에서 30초 안에 설명하는 요약: 추천 품질 운영은 만족도 표만 보는 것으로 끝나지 않습니다. 그래서 현재 버전 만족도와 baseline drift를 한 서비스에서 합쳐, 운영 화면이 `지금은 표본을 더 모을지, weak scenario를 볼지, drift를 줄일지`를 한 줄 메모로 바로 보여 주도록 만들었습니다.
 - 아직 내가 이해가 부족한 부분: 현재 운영 메모는 rule-based라서 설명 가능성은 높지만, 실제 만족도 데이터가 더 쌓이면 “표본 수”, “평균 점수”, “drift 수”에 어떤 가중치를 둘지 다시 손볼 수 있다.
+## 2026-03-25 - local demo bootstrap에 현재 추천 피드백 샘플 추가
+
+- 단계: 7. AI-assisted 설문 개선 체계 보조 조각
+- 목적: 추천 운영 화면은 잘 만들어졌지만, fresh local 환경에서는 current version 피드백이 0개라 `/dashboard/recommendation/feedback`이 계속 `피드백 더 수집`만 보여 줬다. 이번 조각은 demo bootstrap이 현재 survey/engine 기준 만족도 샘플까지 같이 만들어, local에서 drift 메모와 운영 흐름을 바로 재현하게 만드는 데 집중한다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/demo/application/DemoBootstrapService.java`
+  - `src/main/java/com/worldmap/recommendation/domain/RecommendationFeedbackRepository.java`
+  - `src/test/java/com/worldmap/demo/DemoBootstrapIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/LOCAL_DEMO_BOOTSTRAP.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/48-seed-current-recommendation-feedback-in-local-demo.md`
+- 요청 흐름 / 데이터 흐름: 이 조각은 HTTP 요청이 아니라 startup bootstrap 흐름이다. `CountrySeedInitializer -> AdminBootstrapInitializer -> DemoBootstrapInitializer -> DemoBootstrapService.ensureLocalDemoData()` 순서에서, demo service가 기존 member run / guest session을 만든 뒤 `RecommendationFeedbackRepository.countBySurveyVersionAndEngineVersion()`로 현재 버전 응답 수를 확인하고, 5개 미만이면 부족한 개수만큼 샘플 피드백을 추가한다.
+- 데이터 / 상태 변화: 기존처럼 `leaderboard_record`, `location_game_session`, `population_game_session` 샘플이 생기고, 이번에는 `recommendation_feedback`에도 current `survey-v4 / engine-v9` 샘플 5개가 추가된다. 이미 응답이 5개 이상 있으면 건드리지 않고, 5개 미만일 때만 top-up 한다.
+- 핵심 도메인 개념: local demo bootstrap의 목적은 “화면이 비어 있지 않게 만든다”가 아니라 “로컬에서 설명 가능한 상태를 재현한다”는 것이다. 그래서 추천 운영 화면도 게임 기록처럼 sample source of truth가 있어야 한다. 이 로직은 컨트롤러가 아니라 `DemoBootstrapService`가 맡아야 한다. startup runner가 책임지는 개발용 재현 상태이기 때문이다.
+- 예외 상황 또는 엣지 케이스: 피드백 엔티티에는 `demo source` 마커가 따로 없어서, 같은 버전 데이터가 일부만 있는 상태에서 앱을 다시 띄우면 부족한 개수만큼만 보충한다. 이건 local/dev 전용 bootstrap이라 허용 가능한 trade-off다. 반대로 5개 이상이면 덮어쓰지 않아 사용자가 local에서 직접 쌓은 데이터가 유지된다.
+- 테스트 내용: `DemoBootstrapIntegrationTest`에서 local profile 부팅 후 current `survey-v4 / engine-v9` 피드백이 5개 이상 생성되는지, 그리고 `AdminRecommendationOpsReviewService.loadReview()`가 `rank drift 줄이기` 메모를 반환하는지 확인했다. `AdminRecommendationOpsReviewServiceIntegrationTest`도 함께 다시 통과시켰다.
+- 면접에서 30초 안에 설명하는 요약: 운영 화면을 만들었더라도 local에서 빈 상태로 뜨면 설명하기가 어렵습니다. 그래서 이번에는 demo bootstrap이 현재 추천 버전 피드백 5개도 같이 만들게 해서, fresh local 환경에서도 `/dashboard/recommendation/feedback`이 바로 `rank drift 줄이기` 메모를 보여 주도록 재현성을 맞췄습니다.
+- 아직 내가 이해가 부족한 부분: 지금은 local bootstrap이 current 버전 피드백을 “최소 5개 보장” 방식으로만 채운다. 나중에 survey/engine 버전이 바뀌면 어떤 샘플 답변 집합을 같이 바꿔야 자연스러운지 운영 문서 기준을 더 명확히 적어둘 필요가 있다.

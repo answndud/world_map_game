@@ -8,6 +8,7 @@ local 개발 환경에서 앱을 띄우자마자 아래를 바로 확인할 수 
 - 일반 `USER` 계정으로 `/mypage`와 로그인 흐름 확인
 - `/stats`, `/ranking`에 보이는 샘플 기록 확인
 - 진행 중 guest 세션과 완료된 member run을 동시에 가진 상태 재현
+- 현재 버전 추천 만족도 표본과 운영 메모 확인
 
 이 문서는 "데이터가 날아가도 어떻게 다시 같은 상태를 만들 수 있는가"를 기록한다.
 
@@ -50,6 +51,10 @@ demo bootstrap은 아래 확인용 데이터를 local DB에 넣는다.
 - guest 진행 중 위치 게임 세션 1개
   - `guestSessionKey = demo-guest-live`
   - `status = IN_PROGRESS`
+- 현재 추천 버전 만족도 샘플 5개
+  - 기준 버전: `survey-v4 / engine-v9`
+  - 평균 만족도: 약 `4.4`
+  - `/dashboard/recommendation/feedback`에서 `rank drift 줄이기` 메모가 바로 보이는 수준으로 seed
 
 이 데이터로 아래 화면을 바로 점검할 수 있다.
 
@@ -57,6 +62,7 @@ demo bootstrap은 아래 확인용 데이터를 local DB에 넣는다.
 - `/ranking`
 - `/mypage`
 - `/dashboard`
+- `/dashboard/recommendation/feedback`
 
 ## 재생성 방법
 
@@ -77,6 +83,7 @@ docker compose up -d
 ```
 
 이미 데이터가 있는 상태에서 다시 시작해도, demo bootstrap은 `run_signature`, `guestSessionKey`, `nickname`을 기준으로 중복 생성을 피한다.
+추천 만족도 샘플은 현재 `surveyVersion + engineVersion` 조합의 응답 수가 5개 미만일 때만 부족한 개수만큼 보충한다.
 
 ## 환경변수 오버라이드
 
