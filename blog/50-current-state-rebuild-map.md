@@ -98,6 +98,68 @@
 - [LOCAL_DEMO_BOOTSTRAP.md](/Users/alex/project/worldmap/docs/LOCAL_DEMO_BOOTSTRAP.md)
 - [.env.local](/Users/alex/project/worldmap/.env.local)
 
+## 현재 상태 재현 체크리스트
+
+현재 저장소를 실제로 다시 올려 확인하려면 아래 순서가 가장 안전하다.
+
+### 1. local demo 상태로 서버 띄우기
+
+```bash
+set -a
+source .env.local
+set +a
+./gradlew bootRun
+```
+
+또는 profile을 명시해서 띄운다.
+
+```bash
+./gradlew bootRun --args='--spring.profiles.active=local'
+```
+
+### 2. 브라우저에서 public 화면 확인
+
+아래 URL이 현재 기준 핵심 확인 포인트다.
+
+- `/`
+  - `Home`, `Stats`, `Ranking`, `My Page` 헤더가 보이는가
+- `/stats`
+  - public 활동 지표가 보이는가
+- `/ranking`
+  - 랭킹 표가 뜨는가
+- `/recommendation/survey`
+  - 20문항 설문이 보이는가
+
+### 3. local demo 계정으로 로그인 확인
+
+- USER
+  - `orbit_runner / secret123`
+  - 로그인 후 `/mypage`에서 최고 점수, 최근 플레이, 성향 지표가 보이는가
+- ADMIN
+  - `worldmap_admin / secret123`
+  - 로그인 후 헤더에 `Dashboard` 버튼이 생기는가
+
+### 4. 운영 화면 확인
+
+- `/dashboard`
+  - 현재 survey/engine 버전과 운영 수치 카드가 보이는가
+- `/dashboard/recommendation/feedback`
+  - current version 응답 수와 `rank drift 줄이기` 메모가 보이는가
+- `/dashboard/recommendation/persona-baseline`
+  - baseline 18/18, weak/anchor drift 상태가 보이는가
+
+### 5. local demo 데이터가 실제로 들어갔는지 확인
+
+현재 기준으로는 아래 상태가 보여야 한다.
+
+- `worldmap_admin` 계정 존재
+- `orbit_runner` 계정 존재
+- `orbit_runner` 완료 run 2개
+- `demo-guest-live` 진행 중 guest 세션 1개
+- current recommendation feedback sample 5개 이상
+
+여기까지 확인되면 현재 저장소 기준 핵심 흐름은 대체로 재현된 것이다.
+
 ## 현재 코드 재현용 추천 읽기 순서
 
 현재 저장소를 기준으로 다시 만들고 싶다면 아래 순서가 가장 안전하다.

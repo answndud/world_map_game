@@ -541,6 +541,7 @@
 
 - baseline은 18 / 18을 유지하고 anchor drift도 11개까지 줄였으니, 다음엔 drift 상위 시나리오 중 실제 만족도 저점과 겹치는 조합을 더 우선해서 볼지 판단
 - 블로그는 연대기 성격이 강하므로, 현재 코드 재현이 목적일 때는 `blog/50-current-state-rebuild-map.md` 기준으로 최신 글과 구버전 글을 구분해 읽는 흐름을 유지
+- local demo / blog 재현성은 `blog/50-current-state-rebuild-map.md`의 실행 체크리스트와 `docs/LOCAL_DEMO_BOOTSTRAP.md`를 함께 기준으로 본다
 - 현재는 `/dashboard/recommendation/feedback`이 그 판단을 운영 메모로 내려주므로, 다음 실험은 메모가 가리키는 우선순위 하나만 좁게 집행
 - 실험 결과를 snapshot과 비교해 어떤 시나리오 순위가 움직였는지 문서화
 - rank drift가 큰 시나리오 중 실제 만족도 저점과 겹치는 조합이 있는지 확인

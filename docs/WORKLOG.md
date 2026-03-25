@@ -2746,3 +2746,20 @@
 - 테스트 내용: 코드나 라우트 자체는 바꾸지 않은 문서 조각이라 애플리케이션 테스트는 다시 돌리지 않았다. 대신 각 글의 상단 안내와 허브 글이 현재 코드 기준([AdminPageController.java](/Users/alex/project/worldmap/src/main/java/com/worldmap/admin/web/AdminPageController.java), [RecommendationSurveyService.java](/Users/alex/project/worldmap/src/main/java/com/worldmap/recommendation/application/RecommendationSurveyService.java), [survey.html](/Users/alex/project/worldmap/src/main/resources/templates/recommendation/survey.html), [site-header.html](/Users/alex/project/worldmap/src/main/resources/templates/fragments/site-header.html))과 직접 연결되도록 점검했고 `git diff --check`로 문서 형식도 확인했다.
 - 면접에서 30초 안에 설명하는 요약: 블로그는 원래 변경 과정을 기록하는 연대기라서, 현재 저장소를 그대로 재현하려는 사람에게는 중간 단계 글이 혼동을 줄 수 있었습니다. 그래서 최신 라우트, 최신 설문 버전, 최신 local demo 기준을 한 번에 모은 rebuild map을 따로 만들고, 구버전 글 상단에는 `현재 기준 안내`를 붙여 연대기와 현재 재현 가이드를 분리했습니다.
 - 아직 내가 이해가 부족한 부분: 지금 허브 글은 추천과 운영 화면처럼 많이 바뀐 축을 중심으로 정리했다. 이후 Level 2가 시작되면 게임 쪽도 같은 방식으로 “현재 기준 허브”를 더 촘촘히 나눌지 검토가 필요하다.
+
+## 2026-03-26 - 블로그 현재 상태 허브에 실행 체크리스트 추가
+
+- 단계: 10. 포트폴리오 정리와 발표 준비 보조 조각
+- 목적: 현재 상태 허브를 만든 뒤에도 “그래서 실제로 무엇을 실행하고 어떤 URL에서 무엇을 확인해야 하는가”는 독자가 다시 조합해야 했다. 이번 조각은 `blog/50-current-state-rebuild-map.md`를 실제 실행 체크리스트까지 가진 재현 허브로 보강하는 데 집중한다.
+- 변경 파일:
+  - `blog/50-current-state-rebuild-map.md`
+  - `blog/33-bootstrap-local-demo-accounts-and-sample-runs.md`
+  - `blog/48-seed-current-recommendation-feedback-in-local-demo.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 런타임 코드나 요청 흐름은 바뀌지 않았다. 이번 조각은 문서가 실제 실행 순서를 더 직접 안내하도록 바뀐 것이다. 허브 글은 이제 `.env.local -> bootRun -> public URL 확인 -> USER/ADMIN 로그인 -> dashboard 확인` 순서를 한 번에 정리하고, local demo 관련 글도 current `survey-v4 / engine-v10` 기준으로 맞췄다.
+- 핵심 도메인 개념: 블로그 재현성은 “최신 글 링크를 모아두는 것”만으로 끝나지 않는다. 실제 재현형 문서는 `무엇을 먼저 실행하고`, `어떤 상태가 보여야 정상인지`까지 포함해야 한다. 그래서 허브 글에 runtime verification checklist를 추가했다.
+- 예외 상황 또는 엣지 케이스: 지금 체크리스트는 public 화면, 계정, dashboard, 추천 피드백 sample 기준으로 짜여 있다. 이후 Level 2가 시작되면 게임 규칙까지 달라질 수 있으므로, 그때는 허브의 확인 포인트도 같이 업데이트해야 한다.
+- 테스트 내용: 문서 조각이라 애플리케이션 테스트는 다시 돌리지 않았고, 대신 `git diff --check`로 형식을 확인했다. 체크리스트 내용은 [docs/LOCAL_DEMO_BOOTSTRAP.md](/Users/alex/project/worldmap/docs/LOCAL_DEMO_BOOTSTRAP.md), [README.md](/Users/alex/project/worldmap/README.md), 현재 코드 라우트와 직접 대조해 맞췄다.
+- 면접에서 30초 안에 설명하는 요약: 블로그 허브를 만든 뒤에는 “현재 기준은 알겠는데 실제로 어떤 순서로 확인해야 하는가”가 남았습니다. 그래서 이번에는 local demo 실행, public URL 확인, USER/ADMIN 로그인, dashboard 점검까지 한 번에 볼 수 있는 실행 체크리스트를 허브 글에 추가해, 블로그만 보고도 현재 저장소 상태를 더 안전하게 재현할 수 있게 만들었습니다.
+- 아직 내가 이해가 부족한 부분: 지금 재현 체크리스트는 운영 화면과 추천 엔진 쪽에 더 무게가 있다. 이후 Level 2와 실시간성 고도화가 시작되면 게임 플레이 자체의 정상 동작 체크리스트도 더 자세히 분리할 필요가 있다.

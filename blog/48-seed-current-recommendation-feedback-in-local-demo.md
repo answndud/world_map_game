@@ -23,7 +23,7 @@
 실제로 `rank drift 줄이기` 단계까지 local에서 바로 설명하기는 어려웠습니다.
 
 그래서 이번에는 demo bootstrap이
-현재 `survey-v4 / engine-v9` 추천 만족도 샘플도 같이 넣도록 바꿨습니다.
+현재 `survey-v4 / engine-v10` 추천 만족도 샘플도 같이 넣도록 유지하고 있습니다.
 
 ## 어떤 파일이 바뀌는가
 
@@ -74,7 +74,7 @@
 ## 테스트는 무엇을 했는가
 
 - [DemoBootstrapIntegrationTest.java](/Users/alex/project/worldmap/src/test/java/com/worldmap/demo/DemoBootstrapIntegrationTest.java)
-  - current `survey-v4 / engine-v9` 피드백 5개 이상 생성 확인
+  - current `survey-v4 / engine-v10` 피드백 5개 이상 생성 확인
   - ops review가 `rank drift 줄이기`를 반환하는지 확인
 - [AdminRecommendationOpsReviewServiceIntegrationTest.java](/Users/alex/project/worldmap/src/test/java/com/worldmap/admin/AdminRecommendationOpsReviewServiceIntegrationTest.java)
   - current version 응답 수와 우선 메모 규칙 유지 확인
