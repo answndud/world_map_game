@@ -187,13 +187,13 @@
 - `RecommendationSurveyService`가 30개 국가 프로필 카탈로그와 비교해 가중치 점수를 계산하고 상위 3개 국가를 반환한다.
 - 현재 설문은 단순 선호보다 `따뜻함/시원함`, `사계절 변화`, `기후 적응 성향`, `집 크기 vs 중심 접근성`, `초기 적응 친화도`, `디지털 생활 편의`, `문화·여가`, `장기 기반`까지 함께 묻는 20문항 trade-off 구조로 다시 설계했다.
 - 추천 후보 풀은 북미, 유럽, 동아시아, 동남아, 중동, 남미, 아프리카, 오세아니아까지 분산해 한 지역에만 결과가 몰리지 않도록 넓혔다.
-- 현재 점수식은 `정확 일치 보너스`, `초과 물가 패널티`, `영어 지원 필요도 가중치`, `극단 기후 mismatch penalty`, `핵심 생활 조건 coherence bonus`를 포함하도록 다시 조정했다.
+- 현재 점수식은 `정확 일치 보너스`, `비용 선호별 초과 물가 패널티`, `영어 지원 필요도 가중치`, `극단 기후 mismatch penalty`, `핵심 생활 조건 coherence bonus`를 포함하도록 다시 조정했다.
 - 정렬은 총점 우선이지만, 동점 구간에서는 `강한 신호 개수 -> 정확 일치 개수 -> 국가명` 순으로 보조 비교한다.
 - 결과 페이지는 서버가 계산한 매칭 점수와 핵심 이유 3개를 deterministic하게 보여준다.
 - 추천 결과 자체는 저장하지 않고, 결과 페이지에서 `1~5점 만족도 + surveyVersion + engineVersion + 사용자가 선택한 20개 답변`만 익명 피드백으로 수집한다.
 - `/dashboard/recommendation/feedback`와 `/api/recommendation/feedback/summary`에서 `surveyVersion + engineVersion` 기준 평균 점수, 응답 수, 1~5점 분포를 읽어 설문 개선 기준으로 사용한다.
 - `/dashboard/recommendation/persona-baseline`에서 18개 페르소나 baseline 중 weak scenario와 active-signal 비교 시나리오를 운영 화면으로 확인한다.
-- 오프라인 baseline과 snapshot은 현재 `survey-v4 / engine-v4` 기준으로 다시 고정했다.
+- 오프라인 baseline과 snapshot은 현재 `survey-v4 / engine-v5` 기준으로 다시 고정했다.
 - 공통 shell은 다크/라이트 테마 토글을 제공하고, 사용자가 고른 테마는 `localStorage`의 `worldmap-theme`로 유지한다.
 - 홈, 추천, 랭킹 public 화면은 내부 구현 용어보다 플레이어가 바로 이해할 수 있는 제품 언어로 다시 정리했고, 버전/집계/로드맵 같은 내부 정보는 `/dashboard` 운영 화면으로 분리하는 방향으로 간다.
 - 공통 shell과 홈, 추천, 랭킹, Stats, My Page는 최근 디자인 패스에서 다크/라이트 공통 톤과 각진 패널 레이아웃 기준으로 다시 정리했고, public 화면 테스트도 새 카피 기준으로 다시 고정했다.

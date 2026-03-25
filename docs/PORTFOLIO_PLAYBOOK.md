@@ -413,12 +413,12 @@
 - `RecommendationCountryProfileCatalog`로 추천 계산에 쓰는 국가 프로필 30개 정의
 - `RecommendationSurveyForm`으로 요청 바인딩 및 답변 유효성 검증 추가
 - `RecommendationSurveyService.recommend()`에서 가중치 기반 상위 3개 국가 계산 구현
-- `RecommendationSurveyService` 점수식을 trade-off 중심으로 조정해 정확 일치 보너스, 초과 물가 패널티, 영어 지원 필요도 가중치, 극단 기후 mismatch penalty, coherence bonus, 동점 보조 비교 기준을 추가
+- `RecommendationSurveyService` 점수식을 trade-off 중심으로 조정해 정확 일치 보너스, 비용 선호별 초과 물가 패널티, 영어 지원 필요도 가중치, 극단 기후 mismatch penalty, coherence bonus, 동점 보조 비교 기준을 추가
 - 단순 취향 체크 대신 `기후 방향`, `사계절 변화`, `기후 적응 성향`, `집 크기 vs 중심 접근성`, `초기 적응 친화도`, `디지털 생활 편의`, `문화·여가`, `장기 기반`까지 묻는 20문항 구조로 재설계하고, 피드백 스냅샷도 20개 답변 기준으로 확장
 - `/recommendation/survey` 설문 페이지와 `/recommendation/survey` POST 결과 페이지 SSR 흐름 추가
 - 결과 페이지에서 설문 입력 요약, top 3 국가, 서버 계산 이유 3개 노출
 - 결과 페이지에서 추천 결과 자체는 저장하지 않고, `1~5점 만족도 + surveyVersion + engineVersion + 선택한 20개 답변`만 익명 피드백으로 수집
-- `/admin/recommendation/feedback` SSR 페이지와 `/api/recommendation/feedback/summary` API로 버전 조합별 평균 점수, 응답 수, 점수 분포 조회 추가
+- `/dashboard/recommendation/feedback` SSR 페이지와 `/api/recommendation/feedback/summary` API로 버전 조합별 평균 점수, 응답 수, 점수 분포 조회 추가
 - 추천 기능을 홈 화면과 공통 헤더 내비게이션에 연결
 - 공통 CSS에서 버튼, 패널, 입력창, 모달, 테이블 셸, 배지의 모서리를 완전한 사각형으로 통일하고, 스타일 버전 쿼리까지 적용해 실제 반영 경로를 함께 정리
 - 공통 shell에 dark/light theme toggle을 추가하고, `html[data-theme] + CSS 변수 + localStorage` 조합으로 테마 상태를 사이트 전체에서 유지
@@ -437,9 +437,10 @@
 - light theme는 flat white shell에 머무르지 않도록 배경 radial layer, glass-like chrome, panel glint, card shadow, hover lift를 다시 올려 밝은 화면에서도 생동감과 입체감이 느껴지게 보정
 - public 화면에서 내부 구현 문구를 제거하고, 버전/집계/로드맵은 별도 admin 화면으로 옮기기 위한 `/Users/alex/project/worldmap/docs/PLAYER_COPY_AND_ADMIN_SPLIT_PLAN.md` 설계 초안 작성
 - 홈, 추천 설문/결과, 랭킹 public 화면의 copy를 제품 언어 중심으로 다시 쓰고, 추천 결과 화면에서 내부 운영 페이지 링크를 제거
-- `/admin` read-only 대시보드와 `AdminDashboardService`, `AdminPageController`를 추가해 public과 내부 운영 화면을 실제 라우트 수준에서 분리
-- 기존 `/recommendation/feedback-insights` public route는 `/admin/recommendation/feedback`으로 redirect해 북마크 호환성을 유지
-- `/admin/recommendation/persona-baseline` read-only 화면으로 weak scenario와 active-signal 비교 시나리오를 운영 화면에 노출
+- `/dashboard` read-only 대시보드와 `AdminDashboardService`, `AdminPageController`를 추가해 public과 내부 운영 화면을 실제 라우트 수준에서 분리
+- 기존 `/recommendation/feedback-insights` public route는 `/dashboard/recommendation/feedback`으로 redirect해 북마크 호환성을 유지
+- `/dashboard/recommendation/persona-baseline` read-only 화면으로 weak scenario와 active-signal 비교 시나리오를 운영 화면에 노출
+- `survey-v4 / engine-v5`에서는 `VALUE_FIRST` 응답의 초과 물가 penalty를 더 강하게 적용해 `P02`, `P14`, `P15` 같은 저비용 시나리오의 후보 구성을 다시 실험
 - public 헤더는 `Home / My Page`만 남기고, 게임별 직접 이동은 본문 CTA로만 남겨 진입 구조를 단순화
 - `/mypage` placeholder SSR 화면을 먼저 추가해 다음 8단계 인증/전적 확장의 진입점을 미리 고정
 - 추천 페이지 통합 테스트와 추천 서비스 단위 테스트 통과
@@ -500,10 +501,11 @@
 - 기존 14개 중립 baseline 외에, 새 두 문항을 적극적으로 쓰는 `P15~P18` 비교 시나리오를 추가해 `EXPERIENCE / TRANSIT_FIRST`와 `STABILITY / SPACE_FIRST`가 실제 후보 구성을 바꾸는지 검증
 - `docs/recommendation/SURVEY_V2_PROPOSAL.md`로 우선 개선 대상 시나리오와 v2 개정안 초안 정리
 - `survey-v4 / engine-v4` 20문항 trade-off 설문 반영 후 baseline fixture, coverage, snapshot을 현재 결과 기준으로 다시 고정
+- `engine-v5`에서는 `VALUE_FIRST > BALANCED > QUALITY_FIRST` 순으로 초과 물가 penalty 강도를 나눠 비용 민감 시나리오의 top 3 변화를 snapshot으로 다시 고정
 - `/Users/alex/project/worldmap/docs/PLAYER_COPY_AND_ADMIN_SPLIT_PLAN.md`로 public copy와 admin 운영 화면 분리 설계 정리
-- `/admin/recommendation/persona-baseline` read-only 화면으로 baseline 15/18, weak scenario 3개, active-signal 4개를 운영 화면에서 바로 확인
-- `/admin` read-only 대시보드를 추가해 현재 survey/engine 버전, 질문 수, 후보 국가 수, 만족도 수집 현황을 한 화면에서 조회
-- `/admin/recommendation/feedback`로 버전별 만족도 집계를 실제 운영 화면으로 이동
+- `/dashboard/recommendation/persona-baseline` read-only 화면으로 baseline 15/18, weak scenario 3개, active-signal 4개를 운영 화면에서 바로 확인
+- `/dashboard` read-only 대시보드를 추가해 현재 survey/engine 버전, 질문 수, 후보 국가 수, 만족도 수집 현황을 한 화면에서 조회
+- `/dashboard/recommendation/feedback`로 버전별 만족도 집계를 실제 운영 화면으로 이동
 
 반드시 이해할 것:
 
@@ -525,9 +527,9 @@
 
 이 단계에서 남은 일:
 
-- 다음 버전 추천 엔진 가중치와 penalty 실험
+- `P15` 같은 탐색형/교통형 저예산 시나리오를 다시 겨냥한 다음 penalty 실험
 - 실험 결과를 snapshot과 비교해 어떤 시나리오 순위가 움직였는지 문서화
-- `/admin/recommendation/persona-baseline`처럼 오프라인 baseline 확인 화면 확장
+- `/dashboard/recommendation/persona-baseline`처럼 오프라인 baseline 확인 화면 확장
 - baseline 15/18을 더 높일 실제 개선 적용
 
 ### 8. 인증, 전적, 마이페이지

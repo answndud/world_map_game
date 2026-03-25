@@ -2456,3 +2456,30 @@
 - 테스트 내용: `./gradlew test --tests com.worldmap.web.HomeControllerTest --tests com.worldmap.web.MyPageControllerTest --tests com.worldmap.stats.StatsPageControllerTest --tests com.worldmap.recommendation.RecommendationPageIntegrationTest --tests com.worldmap.ranking.LeaderboardIntegrationTest`, `./gradlew test` 전체를 다시 돌려 새 카피 기준으로 통과 여부를 확인한다.
 - 면접에서 30초 안에 설명하는 요약: 큰 UI 개편 뒤에는 기능을 더 넣기보다 먼저 SSR 테스트를 새 화면 기준으로 다시 고정하는 것이 중요합니다. 이 프로젝트는 Thymeleaf 기반이라 문구와 레이아웃이 바뀌면 컨트롤러 로직은 그대로여도 테스트가 깨질 수 있기 때문입니다. 그래서 추천 설문과 랭킹 통합 테스트를 현재 public 화면 카피에 맞춰 다시 고정하고, 문서도 그 상태 기준으로 정리했습니다.
 - 아직 내가 이해가 부족한 부분: 현재 디자인 패스에 포함된 모든 변경 중 어떤 것이 최종 확정본인지와, 디자인과 무관한 `build.gradle` 변경 같은 diff를 이번 커밋에 포함할지 분리할지는 한 번 더 정리할 필요가 있다.
+
+## 2026-03-25 - 추천 엔진 weak scenario 튜닝 1차: 비용 선호별 초과 물가 패널티 분리
+
+- 단계: 6. 설문 기반 추천 엔진 / 7. AI-assisted 설문 개선 체계
+- 목적: `survey-v4 / engine-v4`에서는 `VALUE_FIRST` 사용자가 응답해도 저비용 시나리오가 남유럽 고비용 후보 쪽으로 자주 끌렸다. 이번 조각은 추천 엔진 전체를 다시 흔들지 않고, `비용을 얼마나 우선하는가` 한 축만 더 정교하게 분리해 `P02`, `P14` 같은 저비용 페르소나의 top 3 구성을 다시 조정하는 데 집중한다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationSurveyService.java`
+  - `src/main/resources/templates/admin/index.html`
+  - `src/main/resources/templates/admin/recommendation-feedback.html`
+  - `src/test/java/com/worldmap/recommendation/application/RecommendationOfflinePersonaSnapshotTest.java`
+  - `src/test/java/com/worldmap/recommendation/application/RecommendationOfflinePersonaCoverageTest.java`
+  - `src/test/java/com/worldmap/recommendation/RecommendationPageIntegrationTest.java`
+  - `src/test/java/com/worldmap/recommendation/RecommendationFeedbackIntegrationTest.java`
+  - `src/test/java/com/worldmap/admin/AdminPageIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/40-split-cost-overshoot-penalty-by-preference.md`
+- 요청 흐름 / 데이터 흐름: 런타임 요청 흐름은 그대로 `GET /recommendation/survey -> POST /recommendation/survey -> RecommendationSurveyService.recommend() -> recommendation/result -> POST /api/recommendation/feedback`이다. 바뀐 것은 `RecommendationSurveyService` 내부의 비용 점수 계산뿐이다. 사용자가 `CostQualityPreference`를 고르면 서비스가 이제 `VALUE_FIRST / BALANCED / QUALITY_FIRST`에 따라 초과 물가 패널티 강도를 다르게 적용한다. 결과 페이지와 feedback 저장은 기존처럼 `survey-v4`, 새 `engine-v5`, 20개 답변 snapshot을 함께 내려 주고 저장한다.
+- 데이터 / 상태 변화: 추천 결과 top 3는 여전히 저장하지 않는다. 익명 피드백에는 `surveyVersion=survey-v4`, `engineVersion=engine-v5`, `satisfactionScore`, 20개 답변 snapshot만 저장된다. 이 버전 문자열은 `/dashboard/recommendation/feedback`과 `/dashboard` 운영 화면에도 그대로 노출되어, 어느 엔진 실험의 응답인지 나중에 집계할 수 있게 한다.
+- 핵심 도메인 개념: 이번 단계의 핵심은 “비용 민감도도 사람마다 다르다”는 점을 점수식에 드러내는 것이다. 이전에는 초과 물가 패널티가 하나였기 때문에 `QUALITY_FIRST`와 `VALUE_FIRST` 모두 같은 강도로 깎였다. 이제는 `VALUE_FIRST > BALANCED > QUALITY_FIRST` 순으로 penalty 강도를 나눴다. 이 계산은 컨트롤러가 아니라 `RecommendationSurveyService`가 맡아야 한다. 사용자의 비용 선호를 실제 나라 `priceLevel`과 비교해 몇 점을 주거나 깎을지는 HTTP 바인딩이 아니라 추천 도메인 규칙이기 때문이다.
+- 예외 상황 또는 엣지 케이스: 이번 튜닝으로 `P02`, `P14`의 3위 후보는 `이탈리아 -> 말레이시아`처럼 더 저비용 쪽으로 움직였지만, `P15`는 `우루과이 -> 남아프리카 공화국`으로 바뀌었다. 즉 `VALUE_FIRST` penalty를 분리하는 것만으로는 탐색형/교통형 저예산 시나리오를 완전히 원하는 방향으로 고정하지 못했다. 그래서 `P15`는 다음 penalty 실험에서도 계속 weak scenario로 볼 예정이다.
+- 테스트 내용: 먼저 `RecommendationOfflinePersonaSnapshotTest`에서 실제 top 3를 다시 뽑아 `engine-v5` snapshot을 갱신했다. 그다음 `./gradlew test --tests com.worldmap.recommendation.application.RecommendationSurveyServiceTest --tests com.worldmap.recommendation.application.RecommendationOfflinePersonaCoverageTest --tests com.worldmap.recommendation.application.RecommendationOfflinePersonaSnapshotTest --tests com.worldmap.recommendation.RecommendationPageIntegrationTest --tests com.worldmap.recommendation.RecommendationFeedbackIntegrationTest --tests com.worldmap.admin.AdminPageIntegrationTest` 통과, 마지막으로 `./gradlew test` 전체 통과까지 확인했다.
+- 면접에서 30초 안에 설명하는 요약: 추천 엔진이 비용 민감 사용자를 충분히 구분하지 못해서, 이번에는 전체 알고리즘을 다시 짜지 않고 `초과 물가 패널티` 한 축만 분리했습니다. `VALUE_FIRST`는 더 강하게, `QUALITY_FIRST`는 더 약하게 깎게 만들어서 저비용 시나리오의 후보 구성이 실제로 달라지게 했습니다. 이 규칙은 `RecommendationSurveyService`가 맡고, 결과는 `RecommendationOfflinePersonaSnapshotTest`로 `engine-v5` snapshot을 다시 고정해 설명 가능하게 유지했습니다.
+- 아직 내가 이해가 부족한 부분: `P02`, `P14`는 원하는 방향으로 조금 움직였지만 `P15`는 아직 탐색형/교통형 신호가 충분히 반영되지 않는다. 다음 실험에서는 `newcomerSupport`, `mobility`, `futureBase` 중 어느 축을 더 손봐야 하는지 좁혀 봐야 한다.

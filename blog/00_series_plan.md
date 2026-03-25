@@ -69,13 +69,14 @@
 42. [추천 설문을 20문항 생활 시나리오형으로 다시 확장하기](./37-expand-recommendation-survey-to-twenty-questions.md)
 43. [홈 첫 화면에서 모드 중복 노출을 걷어내고 진입 구조 단순화하기](./38-simplify-home-landing-structure.md)
 44. [public 디자인 패스 이후 SSR 화면과 테스트를 안정화하기](./39-stabilize-public-design-pass.md)
+45. [비용 선호에 따라 초과 물가 패널티를 다르게 주기](./40-split-cost-overshoot-penalty-by-preference.md)
 
 ### Part E. 테스트, 확장, 취업 패키징
 
-45. 왜 핵심 게임 로직을 테스트해야 하는가
-46. 인증, 전적, 마이페이지 붙이기
-47. Level 2 난이도와 실시간성 고도화
-48. README, 아키텍처, 면접 답변 패키지 만들기
+46. 왜 핵심 게임 로직을 테스트해야 하는가
+47. 인증, 전적, 마이페이지 붙이기
+48. Level 2 난이도와 실시간성 고도화
+49. README, 아키텍처, 면접 답변 패키지 만들기
 
 ## 실제 집필 우선순위
 
