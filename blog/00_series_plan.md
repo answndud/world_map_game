@@ -80,6 +80,7 @@
 53. [local demo bootstrap에 현재 추천 피드백 샘플 넣기](./48-seed-current-recommendation-feedback-in-local-demo.md)
 54. [따뜻한 초도시 허브 시나리오에 global hub bonus 추가하기](./49-add-global-hub-bonus-for-warm-city-hubs.md)
 55. [현재 코드 재현용 블로그 허브](./50-current-state-rebuild-map.md)
+56. [저비용 음식·다문화 시나리오의 1위 drift 줄이기](./51-reduce-p02-anchor-drift-with-foodie-starter-bonus.md)
 
 ### Part E. 테스트, 확장, 취업 패키징
 

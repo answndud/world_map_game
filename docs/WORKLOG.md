@@ -2763,3 +2763,36 @@
 - 테스트 내용: 문서 조각이라 애플리케이션 테스트는 다시 돌리지 않았고, 대신 `git diff --check`로 형식을 확인했다. 체크리스트 내용은 [docs/LOCAL_DEMO_BOOTSTRAP.md](/Users/alex/project/worldmap/docs/LOCAL_DEMO_BOOTSTRAP.md), [README.md](/Users/alex/project/worldmap/README.md), 현재 코드 라우트와 직접 대조해 맞췄다.
 - 면접에서 30초 안에 설명하는 요약: 블로그 허브를 만든 뒤에는 “현재 기준은 알겠는데 실제로 어떤 순서로 확인해야 하는가”가 남았습니다. 그래서 이번에는 local demo 실행, public URL 확인, USER/ADMIN 로그인, dashboard 점검까지 한 번에 볼 수 있는 실행 체크리스트를 허브 글에 추가해, 블로그만 보고도 현재 저장소 상태를 더 안전하게 재현할 수 있게 만들었습니다.
 - 아직 내가 이해가 부족한 부분: 지금 재현 체크리스트는 운영 화면과 추천 엔진 쪽에 더 무게가 있다. 이후 Level 2와 실시간성 고도화가 시작되면 게임 플레이 자체의 정상 동작 체크리스트도 더 자세히 분리할 필요가 있다.
+
+## 2026-03-26 - 추천 엔진 anchor drift 튜닝 2차: P02에 foodie starter bonus 추가
+
+- 단계: 6. 설문 기반 추천 엔진 / 7. AI-assisted 설문 개선 체계
+- 목적: `engine-v10`에서는 `P02`의 top 3가 `태국, 말레이시아, 스페인`으로 나와 baseline 18 / 18은 유지했지만 기대 1위 anchor였던 `말레이시아`가 계속 밀렸다. 이번 조각은 전체 cost penalty를 다시 흔들지 않고, “저비용 + 음식 + 다문화 + 초반 적응성”이 함께 있는 시나리오에만 좁게 보정 신호를 넣어 `P02`의 anchor drift를 줄이는 데 집중한다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationSurveyService.java`
+  - `src/main/resources/templates/admin/index.html`
+  - `src/main/resources/templates/admin/recommendation-feedback.html`
+  - `src/test/java/com/worldmap/admin/AdminPageIntegrationTest.java`
+  - `src/test/java/com/worldmap/admin/AdminPersonaBaselineServiceIntegrationTest.java`
+  - `src/test/java/com/worldmap/admin/AdminRecommendationOpsReviewServiceIntegrationTest.java`
+  - `src/test/java/com/worldmap/recommendation/RecommendationFeedbackIntegrationTest.java`
+  - `src/test/java/com/worldmap/recommendation/RecommendationPageIntegrationTest.java`
+  - `src/test/java/com/worldmap/recommendation/application/RecommendationOfflinePersonaCoverageTest.java`
+  - `src/test/java/com/worldmap/recommendation/application/RecommendationOfflinePersonaSnapshotTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/LOCAL_DEMO_BOOTSTRAP.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/33-bootstrap-local-demo-accounts-and-sample-runs.md`
+  - `blog/48-seed-current-recommendation-feedback-in-local-demo.md`
+  - `blog/50-current-state-rebuild-map.md`
+  - `blog/51-reduce-p02-anchor-drift-with-foodie-starter-bonus.md`
+- 요청 흐름 / 데이터 흐름: 런타임 추천 흐름은 그대로 `GET /recommendation/survey -> POST /recommendation/survey -> RecommendationSurveyService.recommend() -> recommendation/result -> POST /api/recommendation/feedback`이다. 이번에는 `RecommendationSurveyService` 안에 `foodieStarterBonus()`를 추가했다. 사용자가 `WARM + BALANCED + VALUE_FIRST + MIXED + English MEDIUM + FOOD HIGH + DIVERSITY MEDIUM+ + BALANCED settlement/mobility`로 답하면, 서비스가 후보 국가의 `food`, `diversity`, `newcomerFriendliness`, `englishSupport`, `digitalConvenience`, `safety`, `priceLevel`을 함께 읽어 “저렴하면서도 초반 적응이 쉬운 음식·다문화 시작점인가”를 별도 bonus로 반영한다.
+- 데이터 / 상태 변화: 추천 결과 top 3는 여전히 저장하지 않는다. 익명 피드백에는 이제 `engineVersion=engine-v11`이 저장되고, `/dashboard`, `/dashboard/recommendation/feedback`, `/dashboard/recommendation/persona-baseline` 운영 화면도 현재 엔진 버전을 `engine-v11`로 보여준다. dynamic baseline 기준으로는 `18 / 18`을 유지하면서 anchor drift 수가 `11 -> 10`으로 줄었고, ops review의 우선 시나리오는 `P04, P06, P07`로 이동했다.
+- 핵심 도메인 개념: `P02`는 단순히 “따뜻하고 싼 나라”를 고르는 시나리오가 아니라, “생활비를 아끼면서도 음식 만족도와 다문화 적응성을 같이 보는 초반 정착형” 시나리오다. 그래서 broad cost penalty를 다시 건드리기보다, 이 설문 조합에만 작동하는 `foodieStarterBonus()`를 따로 추가했다. 이 계산은 컨트롤러가 아니라 `RecommendationSurveyService`가 맡아야 한다. 어떤 설문 조합에서 어떤 프로필 속성을 함께 읽어 rank drift를 줄일지는 추천 도메인 규칙이기 때문이다.
+- 예외 상황 또는 엣지 케이스: bonus를 넓게 켜면 `P14` 같은 다른 저비용 시나리오나 남유럽 후보까지 같이 흔들릴 수 있다. 그래서 `WARM`, `VALUE_FIRST`, `FOOD HIGH`, `DIVERSITY != LOW`, `MIXED`, `English MEDIUM`, `BALANCED settlement/mobility`까지 모두 묶고, 후보도 `priceLevel < 3`인 경우에만 보정했다. strong bonus는 `말레이시아`처럼 영어·디지털·정착 친화도가 높은 경우에만, weaker bonus는 `태국`처럼 음식/다양성은 강하지만 적응성은 조금 약한 경우에만 주도록 나눴다.
+- 테스트 내용: 먼저 임시 디버그 테스트로 `P02`의 실제 점수를 직접 확인해 `태국 316 / 말레이시아 310 / 스페인 297` gap을 본 뒤, `foodieStarterBonus()` 강도를 올려 `말레이시아 318 / 태국 316 / 스페인 297`로 바뀐 것을 확인했다. 그 다음 `RecommendationOfflinePersonaSnapshotTest`와 `RecommendationOfflinePersonaCoverageTest`를 `engine-v11` 기준으로 다시 고정했고, `AdminPersonaBaselineServiceIntegrationTest`에서는 anchor drift가 `10`으로 줄었는지, `AdminRecommendationOpsReviewServiceIntegrationTest`에서는 우선 시나리오가 `P04, P06, P07`으로 바뀌는지 확인했다. `RecommendationPageIntegrationTest`, `RecommendationFeedbackIntegrationTest`, `AdminPageIntegrationTest`까지 포함한 targeted suite와 `./gradlew test` 전체도 다시 통과시켰다.
+- 면접에서 30초 안에 설명하는 요약: baseline 18 / 18을 맞춘 뒤에는 weak scenario보다 1위 순위 drift를 줄이는 일이 더 중요해졌습니다. 이번에는 `P02`처럼 저렴하면서도 음식과 다문화 적응성을 같이 보는 시나리오에만 좁게 작동하는 `foodieStarterBonus`를 추가해서, 기대 1위였던 `말레이시아`가 `태국`보다 앞서도록 보정했습니다. 그 결과 baseline은 유지하면서 anchor drift를 `11 -> 10`으로 줄였습니다.
+- 아직 내가 이해가 부족한 부분: `P02`의 1위는 해결했지만 3위 후보는 아직 `멕시코`가 아니라 `스페인`이다. 다음엔 broad food/diversity bonus를 더 키우기보다, `P04 / P06 / P07`처럼 아직 우선순위에 남는 drift와 실제 만족도 저점을 먼저 함께 보고 어떤 시나리오를 다음 실험 대상으로 잡을지 정하는 편이 맞다.

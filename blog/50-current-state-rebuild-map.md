@@ -78,7 +78,7 @@
 ### 현재 추천 엔진 기준
 
 - 설문 버전: `survey-v4`
-- 엔진 버전: `engine-v10`
+- 엔진 버전: `engine-v11`
 - 질문 수: `20`
 - 추천 후보 국가 수: `30`
 
@@ -205,6 +205,7 @@ set +a
 12. [46-add-anchor-drift-to-dashboard-persona-baseline.md](./46-add-anchor-drift-to-dashboard-persona-baseline.md)
 13. [47-add-ops-review-to-recommendation-feedback-dashboard.md](./47-add-ops-review-to-recommendation-feedback-dashboard.md)
 14. [49-add-global-hub-bonus-for-warm-city-hubs.md](./49-add-global-hub-bonus-for-warm-city-hubs.md)
+15. [51-reduce-p02-anchor-drift-with-foodie-starter-bonus.md](./51-reduce-p02-anchor-drift-with-foodie-starter-bonus.md)
 
 이 순서가 현재 추천 엔진과 가장 가깝다.
 
@@ -240,7 +241,7 @@ set +a
 - [35-redesign-recommendation-survey-with-twelve-questions.md](./35-redesign-recommendation-survey-with-twelve-questions.md)
   - 현재는 12문항이 아니라 20문항
 - [48-seed-current-recommendation-feedback-in-local-demo.md](./48-seed-current-recommendation-feedback-in-local-demo.md)
-  - local demo 개념은 유효하지만 현재 버전은 `engine-v10`
+  - local demo 개념은 유효하지만 현재 버전은 `engine-v11`
 
 ## 이 허브를 어떻게 써야 하나
 
