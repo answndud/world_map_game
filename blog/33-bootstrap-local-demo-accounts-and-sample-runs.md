@@ -23,7 +23,7 @@ local profile로 서버를 시작하면 아래가 자동으로 만들어진다.
 - `orbit_runner` 위치 찾기 완료 run 1개
 - `orbit_runner` 인구수 퀴즈 완료 run 1개
 - guest 진행 중 위치 게임 세션 1개
-- current `survey-v4 / engine-v14` 추천 만족도 샘플 5개
+- current `survey-v4 / engine-v15` 추천 만족도 샘플 5개
 
 즉, 앱을 켜자마자 admin, user, public 화면을 모두 바로 시연할 수 있는 상태가 된다.
 
@@ -111,7 +111,7 @@ local 서버는 여러 번 재시작할 수 있다.
   - demo leaderboard run 2개가 생성됐는지
   - `demo-guest-live` 진행 중 세션이 있는지
   - sample population 완료 세션이 member ownership으로 남는지
-  - current `survey-v4 / engine-v14` 추천 피드백이 최소 5개 보장되는지
+  - current `survey-v4 / engine-v15` 추천 피드백이 최소 5개 보장되는지
 
 ## DB가 날아가면 어떻게 하나
 

@@ -120,6 +120,7 @@
 57. [온화한 공공서비스형 시나리오의 1위 drift 줄이기](./52-reduce-p04-anchor-drift-with-temperate-public-base-bonus.md)
 58. [현실형 온화 기후 시나리오의 1위 drift 줄이기](./53-reduce-p06-anchor-drift-with-practical-public-value-bonus.md)
 59. [따뜻한 프리미엄 허브 시나리오의 1위 drift 줄이기](./54-reduce-p09-anchor-drift-with-premium-warm-hub-bonus.md)
+60. [자연형 저자극 정착 시나리오의 1위 drift 줄이기](./55-reduce-p08-anchor-drift-with-soft-nature-base-bonus.md)
 
 ### Part E. 확장과 포트폴리오 정리
 
