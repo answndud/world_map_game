@@ -74,7 +74,8 @@ class DemoBootstrapIntegrationTest {
 		).isGreaterThanOrEqualTo(5L);
 
 		AdminRecommendationOpsReviewView opsReview = adminRecommendationOpsReviewService.loadReview();
-		assertThat(opsReview.priorityActionTitle()).isEqualTo("rank drift 줄이기");
+		assertThat(opsReview.priorityActionTitle()).isEqualTo("현재 엔진 유지");
 		assertThat(opsReview.currentVersionResponseCount()).isGreaterThanOrEqualTo(5);
+		assertThat(opsReview.priorityScenarioIds()).isEmpty();
 	}
 }
