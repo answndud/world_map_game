@@ -3024,3 +3024,36 @@
 - 테스트 내용: 먼저 임시 디버그 테스트로 `P14`의 실제 점수를 확인해 `스페인 322 / 말레이시아 312 / 태국 310` gap을 본 뒤, `accessibleWarmValueHubBonus()`를 추가해 `말레이시아 330 / 스페인 322 / 태국 319`로 바뀐 것을 확인했다. 그 다음 임시 디버그 테스트는 제거하고, `RecommendationSurveyServiceTest`에 `말레이시아` 1위 unit test를 추가했다. `RecommendationOfflinePersonaSnapshotTest`는 `engine-v18` 기준으로 `P14 -> 말레이시아, 스페인, 태국`을 다시 고정했고, `RecommendationOfflinePersonaCoverageTest`는 `P14`의 1위가 `말레이시아`인지까지 고정했다. `AdminPersonaBaselineServiceIntegrationTest`에서는 anchor drift가 `3`으로 줄었는지, `AdminRecommendationOpsReviewServiceIntegrationTest`에서는 우선 시나리오가 `P07, P11, P15`로 바뀌는지 확인했다. 마지막으로 추천/admin targeted suite와 `./gradlew test` 전체 통과를 확인했다.
 - 면접에서 30초 안에 설명하는 요약: baseline 18 / 18을 맞춘 뒤에는 weak scenario보다 1위 순위 drift를 줄이는 일이 더 중요해졌습니다. 이번에는 `P14`처럼 따뜻한 기후권에서 생활비와 편의성 균형을 찾는 실용형 시나리오에만 좁게 작동하는 `accessibleWarmValueHubBonus`를 추가해서, 기대 1위였던 `말레이시아`가 `스페인`보다 앞서도록 보정했습니다. 그 결과 baseline은 유지하면서 anchor drift를 `4 -> 3`으로 줄였습니다.
 - 아직 내가 이해가 부족한 부분: `P14`는 해결됐지만 이제 운영 우선순위는 `P07`, `P11`, `P15`로 이동했다. 다음에는 이 셋 중 실제 만족도 저점과 가장 겹치는 시나리오를 먼저 골라, broad regional bonus가 아니라 한 시나리오만 좁게 보는 편이 맞다.
+
+## 2026-03-26 - 추천 엔진 anchor drift 튜닝 10차: P11에 temperate family bridge bonus 추가
+
+- 단계: 6. 설문 기반 추천 엔진 / 7. AI-assisted 설문 개선 체계
+- 목적: `engine-v18`에서는 baseline `18 / 18`은 유지됐지만, `P11` 같은 `온화한 기후 + 영어 적응 + 안전 + 복지 + 가족형 정착` 시나리오에서 기대 1위였던 `캐나다`가 여전히 `아일랜드` 뒤에 있었다. 이번 조각은 family/safety 시나리오 전체를 다시 흔들지 않고, 온화한 기후권에서도 영어 적응과 복지, 주거 안정성이 모두 받쳐주는 가족형 기반만 좁게 밀어 주는 신호를 넣어 `P11`의 anchor drift를 줄이는 데 집중한다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationSurveyService.java`
+  - `src/test/java/com/worldmap/recommendation/application/RecommendationSurveyServiceTest.java`
+  - `src/test/java/com/worldmap/recommendation/application/RecommendationOfflinePersonaSnapshotTest.java`
+  - `src/test/java/com/worldmap/recommendation/application/RecommendationOfflinePersonaCoverageTest.java`
+  - `src/test/java/com/worldmap/admin/AdminPersonaBaselineServiceIntegrationTest.java`
+  - `src/test/java/com/worldmap/admin/AdminRecommendationOpsReviewServiceIntegrationTest.java`
+  - `src/test/java/com/worldmap/admin/AdminPageIntegrationTest.java`
+  - `src/test/java/com/worldmap/recommendation/RecommendationPageIntegrationTest.java`
+  - `src/test/java/com/worldmap/recommendation/RecommendationFeedbackIntegrationTest.java`
+  - `src/main/resources/templates/admin/index.html`
+  - `src/main/resources/templates/admin/recommendation-feedback.html`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/LOCAL_DEMO_BOOTSTRAP.md`
+  - `docs/WORKLOG.md`
+  - `blog/00_series_plan.md`
+  - `blog/33-bootstrap-local-demo-accounts-and-sample-runs.md`
+  - `blog/48-seed-current-recommendation-feedback-in-local-demo.md`
+  - `blog/50-current-state-rebuild-map.md`
+  - `blog/59-reduce-p11-anchor-drift-with-temperate-family-bridge-bonus.md`
+- 요청 흐름 / 데이터 흐름: 런타임 추천 흐름은 그대로 `GET /recommendation/survey -> POST /recommendation/survey -> RecommendationSurveyService.recommend() -> recommendation/result -> POST /api/recommendation/feedback`이다. 이번에는 `RecommendationSurveyService` 안에 `temperateFamilyBridgeBonus()`를 추가했다. 사용자가 `MILD + QUALITY_FIRST + MIXED + English HIGH + safety HIGH`에 가까운 조합으로 답하면, 서비스가 후보 국가의 `climateValue`, `seasonality`, `englishSupport`, `safety`, `welfare`, `housingSpace`, `digitalConvenience`, `diversity`, `newcomerFriendliness`를 함께 읽어 “온화한 기후권에서도 가족형 정착 기반이 충분한가”를 별도 bonus로 반영한다.
+- 데이터 / 상태 변화: 추천 결과 top 3는 여전히 저장하지 않는다. 익명 피드백에는 이제 `engineVersion=engine-v19`이 저장되고, `/dashboard`, `/dashboard/recommendation/feedback`, `/dashboard/recommendation/persona-baseline` 운영 화면도 현재 엔진 버전을 `engine-v19`으로 보여준다. dynamic baseline 기준으로는 `18 / 18`을 유지하면서 anchor drift 수가 `3 -> 2`로 줄었고, ops review의 우선 시나리오는 `P07, P15`로 이동했다.
+- 핵심 도메인 개념: `P11`은 단순히 “영어와 안전이 좋은 나라”를 고르는 시나리오가 아니라, “온화한 기후권에서도 영어 적응, 복지, 주거 안정성, 디지털 생활이 함께 받쳐주는 가족형 정착지”를 찾는 시나리오다. 그래서 기존 `familyBaseBonus()`를 더 키우지 않고, 이 설문 조합에만 작동하는 `temperateFamilyBridgeBonus()`를 따로 추가했다. 이 계산은 컨트롤러가 아니라 `RecommendationSurveyService`가 맡아야 한다. 어떤 설문 조합에서 어떤 프로필 속성을 함께 읽어 rank drift를 줄일지는 추천 도메인 규칙이기 때문이다.
+- 예외 상황 또는 엣지 케이스: bonus를 넓게 켜면 `P03`, `P08` 같은 북유럽 안정형 시나리오나 `덴마크`, `스웨덴` 같은 후보가 같이 과하게 올라갈 수 있다. 그래서 `MILD`, `QUALITY_FIRST`, `MIXED`, `English HIGH`, `newcomer HIGH`, `safety HIGH`, `publicService MEDIUM`, `BALANCED settlement`까지 모두 묶고, 후보도 `climate 2~3`, `seasonality >= 5`, `english >= 5`, `safety >= 5`, `welfare >= 5`, `housing >= 4`, `digital >= 5`를 충족할 때만 strong bonus를 받게 제한했다. 덕분에 `캐나다`만 올라오고 `아일랜드`나 `덴마크`는 과하게 움직이지 않게 막았다.
+- 테스트 내용: 먼저 임시 디버그 테스트로 `P11`의 실제 점수를 확인해 `아일랜드 353 / 캐나다 339 / 스위스 338` gap을 본 뒤, `temperateFamilyBridgeBonus()`를 추가해 `캐나다 355 / 아일랜드 353 / 스위스 338`로 바뀐 것을 확인했다. 그 다음 임시 디버그 테스트는 제거하고, `RecommendationSurveyServiceTest`에 `캐나다` 1위 unit test를 추가했다. `RecommendationOfflinePersonaSnapshotTest`는 `engine-v19` 기준으로 `P11 -> 캐나다, 아일랜드, 스위스`를 다시 고정했고, `RecommendationOfflinePersonaCoverageTest`는 `P11`의 1위가 `캐나다`인지까지 고정했다. `AdminPersonaBaselineServiceIntegrationTest`에서는 anchor drift가 `2`로 줄었는지, `AdminRecommendationOpsReviewServiceIntegrationTest`에서는 우선 시나리오가 `P07, P15`로 바뀌는지 확인했다. 마지막으로 추천/admin targeted suite와 `./gradlew test` 전체 통과를 확인했다.
+- 면접에서 30초 안에 설명하는 요약: baseline 18 / 18을 맞춘 뒤에는 weak scenario보다 1위 순위 drift를 줄이는 일이 더 중요해졌습니다. 이번에는 `P11`처럼 온화한 기후권에서 가족형 정착 기반을 찾는 시나리오에만 좁게 작동하는 `temperateFamilyBridgeBonus`를 추가해서, 기대 1위였던 `캐나다`가 `아일랜드`보다 앞서도록 보정했습니다. 그 결과 baseline은 유지하면서 anchor drift를 `3 -> 2`로 줄였습니다.
+- 아직 내가 이해가 부족한 부분: `P11`은 해결됐지만 이제 운영 우선순위는 `P07`, `P15`로 이동했다. 다음에는 도시형 warm anchor인 `P07`을 실제로 건드릴지, 아니면 `P15`처럼 active-signal과 겹치는 시나리오를 먼저 줄일지 판단이 필요하다.

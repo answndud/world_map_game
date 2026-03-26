@@ -88,6 +88,7 @@
 61. [영어 의존이 낮은 고도시 다양성 시나리오의 1위 drift 줄이기](./56-reduce-p10-anchor-drift-with-cosmopolitan-pulse-bonus.md)
 62. [온화한 글로벌 도시 시나리오의 1위 drift 줄이기](./57-reduce-p13-anchor-drift-with-temperate-global-city-bonus.md)
 63. [따뜻한 실용형 아시아 시나리오의 1위 drift 줄이기](./58-reduce-p14-anchor-drift-with-accessible-warm-value-hub-bonus.md)
+64. [온화한 가족형 정착 시나리오의 1위 drift 줄이기](./59-reduce-p11-anchor-drift-with-temperate-family-bridge-bonus.md)
 
 ### Part E. 테스트, 확장, 취업 패키징
 
