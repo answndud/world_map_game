@@ -70,6 +70,24 @@ class StatsPageControllerTest {
 				List.of(new LeaderboardEntryView(1, "guest_live", 390, 3, 5, LocalDateTime.now()))
 			)
 		);
+		given(leaderboardService.getLeaderboard(LeaderboardGameMode.LOCATION, LeaderboardGameLevel.LEVEL_2, LeaderboardScope.ALL, 1)).willReturn(
+			new LeaderboardView(
+				LeaderboardGameMode.LOCATION,
+				LeaderboardGameLevel.LEVEL_2,
+				LeaderboardScope.ALL,
+				null,
+				List.of(new LeaderboardEntryView(1, "orbit_runner", 280, 4, 7, LocalDateTime.now()))
+			)
+		);
+		given(leaderboardService.getLeaderboard(LeaderboardGameMode.POPULATION, LeaderboardGameLevel.LEVEL_2, LeaderboardScope.ALL, 1)).willReturn(
+			new LeaderboardView(
+				LeaderboardGameMode.POPULATION,
+				LeaderboardGameLevel.LEVEL_2,
+				LeaderboardScope.ALL,
+				null,
+				List.of(new LeaderboardEntryView(1, "guest_live", 240, 3, 6, LocalDateTime.now()))
+			)
+		);
 
 		mockMvc.perform(get("/stats"))
 			.andExpect(status().isOk())
@@ -79,7 +97,10 @@ class StatsPageControllerTest {
 			.andExpect(content().string(containsString(">Stats<")))
 			.andExpect(content().string(not(containsString(">Dashboard<"))))
 			.andExpect(content().string(containsString("TODAY ACTIVE PLAYERS")))
-			.andExpect(content().string(containsString("orbit_runner")));
+			.andExpect(content().string(containsString("orbit_runner")))
+			.andExpect(content().string(containsString("Level 2 하이라이트")))
+			.andExpect(content().string(containsString("위치 찾기 Level 2 최고 기록")))
+			.andExpect(content().string(containsString("인구수 Level 2 최고 기록")));
 	}
 
 	@Test
@@ -92,6 +113,12 @@ class StatsPageControllerTest {
 		);
 		given(leaderboardService.getLeaderboard(LeaderboardGameMode.POPULATION, LeaderboardScope.DAILY, 3)).willReturn(
 			new LeaderboardView(LeaderboardGameMode.POPULATION, LeaderboardGameLevel.LEVEL_1, LeaderboardScope.DAILY, LocalDate.now(), List.of())
+		);
+		given(leaderboardService.getLeaderboard(LeaderboardGameMode.LOCATION, LeaderboardGameLevel.LEVEL_2, LeaderboardScope.ALL, 1)).willReturn(
+			new LeaderboardView(LeaderboardGameMode.LOCATION, LeaderboardGameLevel.LEVEL_2, LeaderboardScope.ALL, null, List.of())
+		);
+		given(leaderboardService.getLeaderboard(LeaderboardGameMode.POPULATION, LeaderboardGameLevel.LEVEL_2, LeaderboardScope.ALL, 1)).willReturn(
+			new LeaderboardView(LeaderboardGameMode.POPULATION, LeaderboardGameLevel.LEVEL_2, LeaderboardScope.ALL, null, List.of())
 		);
 
 		MockHttpSession session = new MockHttpSession();

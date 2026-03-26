@@ -1,6 +1,7 @@
 package com.worldmap.stats.web;
 
 import com.worldmap.ranking.application.LeaderboardService;
+import com.worldmap.ranking.domain.LeaderboardGameLevel;
 import com.worldmap.ranking.domain.LeaderboardGameMode;
 import com.worldmap.ranking.domain.LeaderboardScope;
 import com.worldmap.stats.application.ServiceActivityService;
@@ -34,6 +35,18 @@ public class StatsPageController {
 			LeaderboardGameMode.POPULATION,
 			LeaderboardScope.DAILY,
 			3
+		));
+		model.addAttribute("locationLevel2Highlight", leaderboardService.getLeaderboard(
+			LeaderboardGameMode.LOCATION,
+			LeaderboardGameLevel.LEVEL_2,
+			LeaderboardScope.ALL,
+			1
+		));
+		model.addAttribute("populationLevel2Highlight", leaderboardService.getLeaderboard(
+			LeaderboardGameMode.POPULATION,
+			LeaderboardGameLevel.LEVEL_2,
+			LeaderboardScope.ALL,
+			1
 		));
 		return "stats/index";
 	}

@@ -111,6 +111,65 @@
 
         <section class="panel">
             <div class="panel-head">
+                <h2>Level 2 하이라이트</h2>
+                <p>고급 규칙 모드에서 나온 현재 최고 기록을 모드별로 한 장씩만 보여 줍니다.</p>
+            </div>
+
+            <div class="card-grid"
+                 th:if="${!#lists.isEmpty(locationLevel2Highlight.entries) or !#lists.isEmpty(populationLevel2Highlight.entries)}">
+                <article class="mode-card" th:if="${!#lists.isEmpty(locationLevel2Highlight.entries)}">
+                    <div class="card-top">
+                        <span class="status">Location L2</span>
+                        <span class="subtitle">ALL TIME BEST</span>
+                    </div>
+                    <h3>위치 찾기 Level 2 최고 기록</h3>
+                    <ul class="signal-list">
+                        <li>
+                            <span>플레이어</span>
+                            <strong th:text="${locationLevel2Highlight.entries[0].playerNickname}">Guest</strong>
+                        </li>
+                        <li>
+                            <span>점수</span>
+                            <strong th:text="${locationLevel2Highlight.entries[0].totalScore} + '점'">0점</strong>
+                        </li>
+                        <li>
+                            <span>도달 Stage</span>
+                            <strong th:text="${locationLevel2Highlight.entries[0].clearedStageCount} + '단계'">0단계</strong>
+                        </li>
+                    </ul>
+                </article>
+
+                <article class="mode-card" th:if="${!#lists.isEmpty(populationLevel2Highlight.entries)}">
+                    <div class="card-top">
+                        <span class="status">Population L2</span>
+                        <span class="subtitle">ALL TIME BEST</span>
+                    </div>
+                    <h3>인구수 Level 2 최고 기록</h3>
+                    <ul class="signal-list">
+                        <li>
+                            <span>플레이어</span>
+                            <strong th:text="${populationLevel2Highlight.entries[0].playerNickname}">Guest</strong>
+                        </li>
+                        <li>
+                            <span>점수</span>
+                            <strong th:text="${populationLevel2Highlight.entries[0].totalScore} + '점'">0점</strong>
+                        </li>
+                        <li>
+                            <span>도달 Stage</span>
+                            <strong th:text="${populationLevel2Highlight.entries[0].clearedStageCount} + '단계'">0단계</strong>
+                        </li>
+                    </ul>
+                </article>
+            </div>
+
+            <p class="message-box"
+               th:if="${#lists.isEmpty(locationLevel2Highlight.entries) and #lists.isEmpty(populationLevel2Highlight.entries)}">
+                아직 공개 가능한 Level 2 완료 기록이 없습니다. 첫 기록이 생기면 이 영역에 바로 반영됩니다.
+            </p>
+        </section>
+
+        <section class="panel">
+            <div class="panel-head">
                 <h2>공개 기준</h2>
                 <p>내부 추천 버전, 만족도 집계, persona baseline 같은 운영 판단용 정보는 공개 Stats에서 숨기고 Dashboard에서만 봅니다.</p>
             </div>
