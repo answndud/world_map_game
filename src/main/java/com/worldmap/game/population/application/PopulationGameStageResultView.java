@@ -10,6 +10,7 @@ public record PopulationGameStageResultView(
 	Integer populationYear,
 	Long targetPopulation,
 	String correctOptionLabel,
+	PopulationGamePrecisionBand precisionBand,
 	PopulationGameStageStatus status,
 	Integer attemptCount,
 	Integer awardedScore,

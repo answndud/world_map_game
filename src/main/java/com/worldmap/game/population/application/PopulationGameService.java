@@ -305,6 +305,7 @@ public class PopulationGameService {
 			session.getStatus() == GameSessionStatus.IN_PROGRESS ? session.getCurrentStageNumber() : null,
 			nextDifficultyPlan != null ? nextDifficultyPlan.label() : null,
 			judgement.errorRatePercent(),
+			judgement.precisionBand(),
 			session.getStatus(),
 			outcome,
 			"/games/population/result/" + session.getId()
@@ -325,6 +326,15 @@ public class PopulationGameService {
 					attempt.getStage().getSession().getGameLevel().usesExactInput()
 						? formatPopulation(attempt.getSelectedPopulation())
 						: populationOptionLabelFormatter.labelForLowerBound(attempt.getSelectedPopulation()),
+					attempt.getStage().getSession().getGameLevel().usesExactInput()
+						? calculateErrorRatePercent(attempt.getSelectedPopulation(), attempt.getStage().getTargetPopulation())
+						: null,
+					attempt.getStage().getSession().getGameLevel().usesExactInput()
+						? populationGamePrecisionScoringPolicy.resolveBand(
+							attempt.getSelectedPopulation(),
+							attempt.getStage().getTargetPopulation()
+						)
+						: null,
 					attempt.getCorrect(),
 					attempt.getLivesRemainingAfter(),
 					attempt.getAttemptedAt()
@@ -340,6 +350,7 @@ public class PopulationGameService {
 				stage.getSession().getGameLevel().usesExactInput()
 					? formatPopulation(stage.getTargetPopulation())
 					: populationOptionLabelFormatter.labelForLowerBound(stage.getOptions().get(stage.getCorrectOptionNumber() - 1)),
+				resolvePrecisionBand(stage.getSession().getGameLevel(), attemptsByStageId.getOrDefault(stage.getId(), List.of())),
 				stage.getStatus(),
 				stage.getAttemptCount(),
 				stage.getAwardedScore(),
@@ -508,5 +519,27 @@ public class PopulationGameService {
 
 	private String formatPopulation(Long population) {
 		return "%,d명".formatted(population);
+	}
+
+	private Double calculateErrorRatePercent(Long submittedPopulation, Long targetPopulation) {
+		if (submittedPopulation == null || targetPopulation == null || targetPopulation <= 0L) {
+			return null;
+		}
+		return (Math.abs(submittedPopulation - targetPopulation) * 100.0) / targetPopulation;
+	}
+
+	private PopulationGamePrecisionBand resolvePrecisionBand(
+		PopulationGameLevel gameLevel,
+		List<PopulationGameAttemptResultView> attempts
+	) {
+		if (!gameLevel.usesExactInput()) {
+			return null;
+		}
+
+		return attempts.stream()
+			.filter(PopulationGameAttemptResultView::correct)
+			.map(PopulationGameAttemptResultView::precisionBand)
+			.findFirst()
+			.orElse(null);
 	}
 }

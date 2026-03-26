@@ -65,9 +65,36 @@
                 </article>
             </div>
 
+            <section class="panel inset-panel" th:if="${result.gameLevel.name() == 'LEVEL_2'}">
+                <div class="panel-head">
+                    <h2>Level 2 판정 기준</h2>
+                    <p>직접 입력한 수치와 실제 인구수의 오차율로 정답 여부와 점수 band를 나눕니다.</p>
+                </div>
+                <div class="stats-grid compact-stats-grid">
+                    <article class="stat-card">
+                        <span class="subtitle">정밀 적중</span>
+                        <strong>오차율 5% 이하</strong>
+                    </article>
+                    <article class="stat-card">
+                        <span class="subtitle">근접 적중</span>
+                        <strong>오차율 12% 이하</strong>
+                    </article>
+                    <article class="stat-card">
+                        <span class="subtitle">허용 범위 정답</span>
+                        <strong>오차율 20% 이하</strong>
+                    </article>
+                    <article class="stat-card">
+                        <span class="subtitle">오답</span>
+                        <strong>오차율 20% 초과</strong>
+                    </article>
+                </div>
+            </section>
+
             <div class="panel-head">
                 <h2>Stage별 기록</h2>
-                <p>한 Stage 안에 여러 번의 Attempt가 쌓이고, 하트가 0이 되면 해당 Stage에서 게임이 종료됩니다.</p>
+                <p th:text="${result.gameLevel.name() == 'LEVEL_2' ? 'Level 2에서는 각 Attempt의 오차율과 precision band를 함께 읽을 수 있습니다.' : '한 Stage 안에 여러 번의 Attempt가 쌓이고, 하트가 0이 되면 해당 Stage에서 게임이 종료됩니다.'}">
+                    한 Stage 안에 여러 번의 Attempt가 쌓이고, 하트가 0이 되면 해당 Stage에서 게임이 종료됩니다.
+                </p>
             </div>
 
             <div class="table-shell">
@@ -77,6 +104,7 @@
                         <th>Stage</th>
                         <th>국가</th>
                         <th th:text="${result.gameLevel.name() == 'LEVEL_2' ? '정답 값' : '정답 구간'}">정답 구간</th>
+                        <th th:if="${result.gameLevel.name() == 'LEVEL_2'}">판정 band</th>
                         <th>상태</th>
                         <th>시도 기록</th>
                         <th>점수</th>
@@ -87,11 +115,17 @@
                         <td th:text="${stage.stageNumber}">1</td>
                         <td th:text="${stage.targetCountryName + ' (' + stage.populationYear + ')'}">대한민국 (2024)</td>
                         <td th:text="${stage.correctOptionLabel}">3천만 ~ 7천만</td>
+                        <td th:if="${result.gameLevel.name() == 'LEVEL_2'}"
+                            th:text="${stage.precisionBand() != null ? stage.precisionBand().label() + ' · ' + stage.precisionBand().guide() : '-'}">
+                            정밀 적중 · 오차율 5% 이하
+                        </td>
                         <td th:text="${stage.status}">CLEARED</td>
                         <td>
                             <div class="attempt-log" th:if="${!#lists.isEmpty(stage.attempts)}">
                                 <p th:each="attempt : ${stage.attempts}"
-                                   th:text="${attempt.attemptNumber + '차: ' + attempt.selectedOptionLabel + ' / ' + (attempt.correct ? 'Correct' : 'Wrong') + ' / 하트 ' + attempt.livesRemainingAfter}">
+                                   th:text="${result.gameLevel.name() == 'LEVEL_2'
+                                        ? attempt.attemptNumber + '차: ' + attempt.selectedOptionLabel + ' / 오차율 ' + #numbers.formatDecimal(attempt.errorRatePercent, 1, 1) + '% / ' + attempt.precisionBand().label() + ' / 하트 ' + attempt.livesRemainingAfter
+                                        : attempt.attemptNumber + '차: ' + attempt.selectedOptionLabel + ' / ' + (attempt.correct ? 'Correct' : 'Wrong') + ' / 하트 ' + attempt.livesRemainingAfter}">
                                     1차: 3천만 ~ 7천만 / Wrong / 하트 2
                                 </p>
                             </div>

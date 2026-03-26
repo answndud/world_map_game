@@ -366,6 +366,7 @@ function initPlayPage() {
                 <p>내 입력 값: ${payload.selectedOptionLabel}</p>
                 <p>실제 인구: ${formatPopulation(payload.correctPopulation)}</p>
                 <p>오차율: ${formatErrorRate(payload.errorRatePercent)}</p>
+                <p>판정 band: ${formatPrecisionBand(payload.precisionBand)}</p>
                 <p>획득 점수: ${payload.awardedScore}</p>
                 <p>현재 총점: ${payload.totalScore}</p>
             `;
@@ -525,6 +526,21 @@ function formatErrorRate(errorRatePercent) {
         return "-";
     }
     return `${Number(errorRatePercent).toFixed(1)}%`;
+}
+
+function formatPrecisionBand(precisionBand) {
+    switch (precisionBand) {
+        case "PRECISE_HIT":
+            return "정밀 적중";
+        case "CLOSE_HIT":
+            return "근접 적중";
+        case "SAFE_HIT":
+            return "허용 범위 정답";
+        case "MISS":
+            return "오답";
+        default:
+            return "-";
+    }
 }
 
 function showPopulationMessage(target, message, tone = "info") {

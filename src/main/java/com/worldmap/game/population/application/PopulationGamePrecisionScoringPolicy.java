@@ -13,9 +13,10 @@ public class PopulationGamePrecisionScoringPolicy {
 		int livesRemaining
 	) {
 		double errorRatePercent = calculateErrorRatePercent(submittedPopulation, targetPopulation);
+		PopulationGamePrecisionBand precisionBand = resolveBand(errorRatePercent);
 
-		if (errorRatePercent > 20.0) {
-			return new PopulationAnswerJudgement(false, 0, errorRatePercent);
+		if (precisionBand == PopulationGamePrecisionBand.MISS) {
+			return new PopulationAnswerJudgement(false, 0, errorRatePercent, precisionBand);
 		}
 
 		int baseScore = baseScore(errorRatePercent, stageNumber);
@@ -26,7 +27,24 @@ public class PopulationGamePrecisionScoringPolicy {
 			default -> 0;
 		};
 
-		return new PopulationAnswerJudgement(true, baseScore + lifeBonus + attemptBonus, errorRatePercent);
+		return new PopulationAnswerJudgement(true, baseScore + lifeBonus + attemptBonus, errorRatePercent, precisionBand);
+	}
+
+	public PopulationGamePrecisionBand resolveBand(Long submittedPopulation, Long targetPopulation) {
+		return resolveBand(calculateErrorRatePercent(submittedPopulation, targetPopulation));
+	}
+
+	public PopulationGamePrecisionBand resolveBand(double errorRatePercent) {
+		if (errorRatePercent <= 5.0) {
+			return PopulationGamePrecisionBand.PRECISE_HIT;
+		}
+		if (errorRatePercent <= 12.0) {
+			return PopulationGamePrecisionBand.CLOSE_HIT;
+		}
+		if (errorRatePercent <= 20.0) {
+			return PopulationGamePrecisionBand.SAFE_HIT;
+		}
+		return PopulationGamePrecisionBand.MISS;
 	}
 
 	private double calculateErrorRatePercent(Long submittedPopulation, Long targetPopulation) {
@@ -42,10 +60,11 @@ public class PopulationGamePrecisionScoringPolicy {
 	}
 
 	private int baseScore(double errorRatePercent, int stageNumber) {
-		if (errorRatePercent <= 5.0) {
+		PopulationGamePrecisionBand precisionBand = resolveBand(errorRatePercent);
+		if (precisionBand == PopulationGamePrecisionBand.PRECISE_HIT) {
 			return 170 + ((stageNumber - 1) * 20);
 		}
-		if (errorRatePercent <= 12.0) {
+		if (precisionBand == PopulationGamePrecisionBand.CLOSE_HIT) {
 			return 125 + ((stageNumber - 1) * 16);
 		}
 		return 90 + ((stageNumber - 1) * 12);

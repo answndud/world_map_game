@@ -14,6 +14,7 @@ class PopulationGamePrecisionScoringPolicyTest {
 
 		assertThat(judgement.correct()).isTrue();
 		assertThat(judgement.errorRatePercent()).isEqualTo(5.0);
+		assertThat(judgement.precisionBand()).isEqualTo(PopulationGamePrecisionBand.PRECISE_HIT);
 		assertThat(judgement.awardedScore()).isGreaterThan(200);
 	}
 
@@ -24,5 +25,6 @@ class PopulationGamePrecisionScoringPolicyTest {
 		assertThat(judgement.correct()).isFalse();
 		assertThat(judgement.awardedScore()).isZero();
 		assertThat(judgement.errorRatePercent()).isEqualTo(50.0);
+		assertThat(judgement.precisionBand()).isEqualTo(PopulationGamePrecisionBand.MISS);
 	}
 }

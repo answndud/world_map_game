@@ -7,6 +7,8 @@ public record PopulationGameAttemptResultView(
 	Integer selectedOptionNumber,
 	Long selectedPopulation,
 	String selectedOptionLabel,
+	Double errorRatePercent,
+	PopulationGamePrecisionBand precisionBand,
 	Boolean correct,
 	Integer livesRemainingAfter,
 	LocalDateTime attemptedAt

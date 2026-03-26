@@ -24,6 +24,7 @@ public record PopulationGameAnswerView(
 	Integer nextStageNumber,
 	String nextDifficultyLabel,
 	Double errorRatePercent,
+	PopulationGamePrecisionBand precisionBand,
 	GameSessionStatus gameStatus,
 	PopulationGameAnswerOutcome outcome,
 	String resultPageUrl

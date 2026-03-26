@@ -1,6 +1,7 @@
 package com.worldmap.game.population;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -168,6 +169,7 @@ class PopulationGameFlowIntegrationTest {
 			.andExpect(jsonPath("$.gameLevel").value("LEVEL_2"))
 			.andExpect(jsonPath("$.correct").value(true))
 			.andExpect(jsonPath("$.errorRatePercent").value(0.0))
+			.andExpect(jsonPath("$.precisionBand").value("PRECISE_HIT"))
 			.andExpect(jsonPath("$.selectedOptionNumber").doesNotExist())
 			.andExpect(jsonPath("$.correctOptionNumber").doesNotExist())
 			.andExpect(jsonPath("$.selectedOptionLabel").exists())
@@ -188,7 +190,39 @@ class PopulationGameFlowIntegrationTest {
 			.andExpect(jsonPath("$.correct").value(false))
 			.andExpect(jsonPath("$.outcome").value("WRONG"))
 			.andExpect(jsonPath("$.livesRemaining").value(2))
-			.andExpect(jsonPath("$.errorRatePercent").isNumber());
+			.andExpect(jsonPath("$.errorRatePercent").isNumber())
+			.andExpect(jsonPath("$.precisionBand").value("MISS"));
+	}
+
+	@Test
+	void levelTwoResultPageShowsPrecisionGuideAndAttemptBands() throws Exception {
+		UUID sessionId = UUID.fromString(startGame("population-l2-result", "LEVEL_2"));
+		PopulationGameStage firstStage = populationGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
+			.orElseThrow();
+
+		mockMvc.perform(
+			post("/api/games/population/sessions/{sessionId}/answer", sessionId)
+				.contentType("application/json")
+				.content(exactAnswerPayload(1, firstStage.getTargetPopulation()))
+		)
+			.andExpect(status().isOk());
+
+		for (int attempt = 1; attempt <= 3; attempt++) {
+			mockMvc.perform(
+				post("/api/games/population/sessions/{sessionId}/answer", sessionId)
+					.contentType("application/json")
+					.content(exactAnswerPayload(2, 1L))
+			)
+				.andExpect(status().isOk());
+		}
+
+		mockMvc.perform(get("/games/population/result/{sessionId}", sessionId))
+			.andExpect(status().isOk())
+			.andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.view().name("population-game/result"))
+			.andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().string(containsString("Level 2 판정 기준")))
+			.andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().string(containsString("정밀 적중")))
+			.andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().string(containsString("오차율")))
+			.andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().string(containsString("허용 범위 정답")));
 	}
 
 	@Test
