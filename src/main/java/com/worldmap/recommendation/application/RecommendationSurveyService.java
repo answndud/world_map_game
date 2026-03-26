@@ -17,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class RecommendationSurveyService {
 
 	public static final String SURVEY_VERSION = "survey-v4";
-	public static final String ENGINE_VERSION = "engine-v14";
+	public static final String ENGINE_VERSION = "engine-v15";
 	private static final int CLIMATE_WEIGHT = 4;
 	private static final int SEASON_STYLE_WEIGHT = 3;
 	private static final int WEATHER_ADAPTATION_WEIGHT = 4;
@@ -51,6 +51,7 @@ public class RecommendationSurveyService {
 	private static final int TEMPERATE_PUBLIC_BASE_BONUS = 20;
 	private static final int PRACTICAL_PUBLIC_VALUE_BONUS = 18;
 	private static final int PREMIUM_WARM_HUB_BONUS = 8;
+	private static final int SOFT_NATURE_BASE_BONUS = 12;
 	private static final int VALUE_FIRST_COST_OVERSHOOT_PENALTY = 11;
 	private static final int BALANCED_COST_OVERSHOOT_PENALTY = 7;
 	private static final int QUALITY_FIRST_COST_OVERSHOOT_PENALTY = 4;
@@ -310,6 +311,11 @@ public class RecommendationSurveyService {
 		signals.add(new MatchSignal(
 			premiumWarmHubBonus(profile, answers),
 			"높은 비용을 감수하더라도 영어 적응과 중심 생활 인프라가 강한 프리미엄 허브인지 함께 반영했습니다."
+		));
+
+		signals.add(new MatchSignal(
+			softNatureBaseBonus(profile, answers),
+			"너무 거칠지 않은 기후와 영어 적응성을 갖춘 자연형 정착지인지 함께 반영했습니다."
 		));
 
 		int futureBaseDistance = distance(answers.futureBasePreference().targetValue(), futureBase(profile));
@@ -862,6 +868,53 @@ public class RecommendationSurveyService {
 			&& profile.newcomerFriendliness() >= 4;
 
 		return acceptablePremiumWarmHubFit ? PREMIUM_WARM_HUB_BONUS / 2 : 0;
+	}
+
+	private int softNatureBaseBonus(
+		RecommendationCountryProfile profile,
+		RecommendationSurveyAnswers answers
+	) {
+		boolean wantsSoftNatureBase = answers.climatePreference() == RecommendationSurveyAnswers.ClimatePreference.COLD
+			&& answers.seasonTolerance() == RecommendationSurveyAnswers.SeasonTolerance.MEDIUM
+			&& answers.pacePreference() == RecommendationSurveyAnswers.PacePreference.RELAXED
+			&& answers.costQualityPreference() == RecommendationSurveyAnswers.CostQualityPreference.BALANCED
+			&& answers.environmentPreference() == RecommendationSurveyAnswers.EnvironmentPreference.NATURE
+			&& answers.housingPreference() == RecommendationSurveyAnswers.HousingPreference.SPACE_FIRST
+			&& answers.englishSupportNeed() == RecommendationSurveyAnswers.EnglishSupportNeed.MEDIUM
+			&& answers.newcomerSupportNeed() == RecommendationSurveyAnswers.NewcomerSupportNeed.LOW
+			&& answers.safetyPriority() == RecommendationSurveyAnswers.ImportanceLevel.HIGH
+			&& answers.publicServicePriority() == RecommendationSurveyAnswers.ImportanceLevel.MEDIUM
+			&& answers.foodImportance() == RecommendationSurveyAnswers.ImportanceLevel.LOW
+			&& answers.diversityImportance() == RecommendationSurveyAnswers.ImportanceLevel.LOW
+			&& answers.cultureLeisureImportance() == RecommendationSurveyAnswers.ImportanceLevel.LOW
+			&& answers.settlementPreference() == RecommendationSurveyAnswers.SettlementPreference.BALANCED
+			&& answers.mobilityPreference() == RecommendationSurveyAnswers.MobilityPreference.BALANCED;
+
+		if (!wantsSoftNatureBase) {
+			return 0;
+		}
+
+		boolean strongNatureFit = profile.climateValue() >= 2
+			&& profile.climateValue() <= 3
+			&& profile.urbanityValue() <= 2
+			&& profile.paceValue() <= 2
+			&& profile.englishSupport() >= 5
+			&& profile.safety() >= 5
+			&& profile.housingSpace() >= 5
+			&& profile.newcomerFriendliness() >= 4;
+
+		if (strongNatureFit) {
+			return SOFT_NATURE_BASE_BONUS;
+		}
+
+		boolean acceptableNatureFit = profile.climateValue() >= 2
+			&& profile.urbanityValue() <= 2
+			&& profile.paceValue() <= 2
+			&& profile.englishSupport() >= 4
+			&& profile.safety() >= 5
+			&& profile.housingSpace() >= 4;
+
+		return acceptableNatureFit ? SOFT_NATURE_BASE_BONUS / 2 : 0;
 	}
 
 	private String continentLabel(Country country) {

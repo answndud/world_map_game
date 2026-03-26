@@ -31,7 +31,7 @@
                 </article>
                 <article class="stat-card">
                     <span class="subtitle">CURRENT ENGINE</span>
-                    <strong th:text="${dashboard.currentEngineVersion}">engine-v14</strong>
+                    <strong th:text="${dashboard.currentEngineVersion}">engine-v15</strong>
                 </article>
                 <article class="stat-card">
                     <span class="subtitle">TOTAL FEEDBACK</span>
@@ -69,7 +69,7 @@
                 </article>
                 <article class="stat-card">
                     <span class="subtitle">ANCHOR DRIFT</span>
-                    <strong th:text="${opsReview.anchorDriftScenarioCount}">7</strong>
+                    <strong th:text="${opsReview.anchorDriftScenarioCount}">6</strong>
                 </article>
             </div>
 
@@ -80,7 +80,7 @@
                 </p>
                 <p th:if="${!#lists.isEmpty(opsReview.priorityScenarioIds)}"
                    th:text="${'우선 볼 시나리오 · ' + #strings.listJoin(opsReview.priorityScenarioIds, ', ')}">
-                    우선 볼 시나리오 · P07, P08, P10
+                    우선 볼 시나리오 · P07, P10, P11
                 </p>
             </div>
         </section>
