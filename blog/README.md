@@ -125,6 +125,8 @@
 62. [온화한 글로벌 도시 시나리오의 1위 drift 줄이기](./57-reduce-p13-anchor-drift-with-temperate-global-city-bonus.md)
 63. [탐색형 자연 정착 시나리오의 1위 drift 줄이기](./60-reduce-p15-anchor-drift-with-exploratory-nature-runway-bonus.md)
 64. [warm megacity 시나리오의 baseline anchor를 다시 정의하기](./61-recalibrate-p07-baseline-anchor-for-warm-megacity-scenario.md)
+65. [인구수 게임 Level 2를 직접 수치 입력형으로 시작하기](./62-start-population-level-2-exact-input-mode.md)
+66. [인구수 게임 Level 2 결과를 공개 랭킹에 노출하기](./63-expose-population-level-2-on-public-ranking.md)
 
 ### Part E. 확장과 포트폴리오 정리
 

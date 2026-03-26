@@ -32,7 +32,7 @@
 | 6 | 설문 기반 추천 엔진 | In Progress |
 | 7 | AI-assisted 설문 개선 체계 | In Progress |
 | 8 | 인증, 전적, 마이페이지 | Done |
-| 9 | Level 2와 실시간성 고도화 | Not Started |
+| 9 | Level 2와 실시간성 고도화 | In Progress |
 | 10 | 포트폴리오 정리와 발표 준비 | Not Started |
 
 ## 공통 체크리스트
@@ -683,7 +683,7 @@
 
 ### 9. Level 2와 실시간성 고도화
 
-상태: Not Started
+상태: In Progress
 
 목표:
 
@@ -696,10 +696,32 @@
 - SSE 또는 WebSocket 기반 실시간 랭킹 반영
 - 힌트, 부분 점수, 오차 거리 표시
 
+현재까지 완료된 항목:
+
+- 인구수 게임 시작 화면에서 `Level 1 / Level 2`를 선택할 수 있게 구성
+- `PopulationGameSession`이 `gameLevel`을 저장하도록 확장
+- Level 2는 보기형 대신 `직접 수치 입력`을 받도록 플레이 화면 분기
+- `PopulationGamePrecisionScoringPolicy`를 추가해 오차율 기반 정답 판정과 부분 점수 계산 분리
+- Level 2 run은 `leaderboard_record.game_level=LEVEL_2`로 저장
+- `/mypage` 최근 플레이와 최고 기록 라벨에서 `Level 1 / Level 2`를 구분 표시
+- `LeaderboardService`가 `gameMode + gameLevel + scope` 기준으로 Level 2 조회를 지원하도록 확장
+- 공개 `/ranking` 화면에 인구수 게임 `Level 1 / Level 2` 필터와 Level 2 보드 추가
+- Level 2 랭킹 Redis key와 DB fallback 조회를 통합 테스트로 고정
+- Level 2 state/answer/result 통합 테스트와 precision scoring 단위 테스트 통과
+
+다음에 이어서 할 일:
+
+- 인구수 Level 2 결과 화면에서 오차율 / 점수 band 설명 더 다듬기
+- 위치 찾기 Level 2 첫 조각 설계와 구현 시작
+- 공개 `/stats` 또는 `/mypage`에서 Level 2 하이라이트를 더 보여 줄지 결정
+
 반드시 이해할 것:
 
 - 1차 구조가 왜 확장 가능했는가
 - SSE와 WebSocket 중 무엇을 선택했는가
+- 왜 인구수 Level 2는 `세션 / Stage / Attempt` 구조를 유지한 채 입력 방식만 바꿀 수 있었는가
+- 왜 Level 2 점수식은 서비스가 아니라 별도 precision policy로 분리했는가
+- 왜 공개 랭킹 확장도 컨트롤러가 아니라 `LeaderboardService`의 level-aware 조회 규칙으로 풀어야 하는가
 
 면접 포인트:
 

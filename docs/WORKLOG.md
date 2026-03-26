@@ -3115,3 +3115,68 @@
 - 테스트 내용: `AdminPersonaBaselineServiceIntegrationTest`에서 anchor drift가 `0`인지 확인했고, `AdminRecommendationOpsReviewServiceIntegrationTest`에서는 current version 샘플이 충분할 때 우선 액션이 `현재 엔진 유지`로 바뀌는지 고정했다. 추천/admin targeted suite와 `./gradlew test` 전체도 통과했다.
 - 면접에서 30초 안에 설명하는 요약: 마지막으로 남은 `P07`은 엔진이 틀렸다기보다 baseline anchor가 현재 20문항 의미와 어긋난 상태였습니다. 그래서 추천 엔진을 더 비틀지 않고, `warm megacity + food` 의미에 맞게 `P07`의 기대 anchor를 `싱가포르`로 재정의했습니다. 그 결과 baseline `18 / 18`을 유지하면서 anchor drift를 `0`으로 닫고, 운영 메모도 `현재 엔진 유지`로 바뀌었습니다.
 - 아직 내가 이해가 부족한 부분: baseline drift를 `0`으로 맞춘 지금부터는 더 이상 rank 튜닝보다 실제 만족도 데이터가 부족한 시나리오를 어떻게 늘릴지가 더 중요해진다. 다음에는 6단계를 여기서 닫고 Level 2로 넘어갈지, 아니면 추천 설문 카피를 더 다듬을지 우선순위를 다시 확인해야 한다.
+
+## 2026-03-26 - 9단계 1차: 인구수 게임 Level 2 직접 수치 입력형 시작
+
+- 단계: 9. Level 2와 실시간성 고도화
+- 목적: 9단계를 너무 크게 열지 않고, 기존 `세션 / Stage / Attempt` 구조를 그대로 재사용할 수 있는 가장 작은 확장부터 시작한다. 인구수 게임은 이미 `targetPopulation`, `selectedPopulation`, 하트, Stage 흐름이 있기 때문에, 보기형 Level 1 위에 `직접 수치 입력 + 오차율 판정`을 얹는 첫 조각으로 적합하다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/game/population/domain/PopulationGameLevel.java`
+  - `src/main/java/com/worldmap/game/population/domain/PopulationGameSession.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationGamePrecisionScoringPolicy.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationGameService.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationAnswerJudgement.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationGameScoringPolicy.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationGameStartView.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationGameStateView.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationGameAnswerView.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationGameSessionResultView.java`
+  - `src/main/java/com/worldmap/game/population/web/StartPopulationGameRequest.java`
+  - `src/main/java/com/worldmap/game/population/web/SubmitPopulationAnswerRequest.java`
+  - `src/main/java/com/worldmap/game/population/web/PopulationGameApiController.java`
+  - `src/main/resources/templates/population-game/start.html`
+  - `src/main/resources/templates/population-game/play.html`
+  - `src/main/resources/templates/population-game/result.html`
+  - `src/main/resources/static/js/population-game.js`
+  - `src/main/java/com/worldmap/ranking/domain/LeaderboardGameLevel.java`
+  - `src/main/java/com/worldmap/ranking/application/LeaderboardService.java`
+  - `src/main/java/com/worldmap/ranking/domain/LeaderboardRecordRepository.java`
+  - `src/main/java/com/worldmap/mypage/application/MyPageService.java`
+  - `src/test/java/com/worldmap/game/population/PopulationGameFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/game/population/application/PopulationGamePrecisionScoringPolicyTest.java`
+  - `src/test/java/com/worldmap/admin/AdminPageIntegrationTest.java`
+  - `src/main/java/com/worldmap/demo/application/DemoBootstrapService.java`
+- 요청 흐름 / 데이터 흐름: 시작 요청은 `POST /api/games/population/sessions`에서 `gameLevel`을 함께 받고, `PopulationGameApiController -> PopulationGameService.startGuestGame/startMemberGame`으로 들어간다. 세션은 `PopulationGameSession.gameLevel`에 `LEVEL_1` 또는 `LEVEL_2`를 저장한다. 플레이 중 `GET /state`는 현재 level을 내려주고, Level 1이면 보기 4개를, Level 2이면 빈 options와 직접 입력 모드를 내려준다. 제출은 `POST /answer`에서 Level 1이면 `selectedOptionNumber`, Level 2이면 `submittedPopulation`을 받아 서비스가 branch한다.
+- 데이터 / 상태 변화: `population_game_session`에 `game_level`이 추가되고, Level 2 run은 `leaderboard_record.game_level=LEVEL_2`로 저장된다. `population_game_attempt`는 기존 `selectedPopulation` 필드를 그대로 재사용하고, Level 2에서는 `selected_option_number=0` sentinel만 사용해 “보기형과 직접 입력형이 같은 attempt 테이블을 공유한다”는 구조를 유지했다. `/mypage`는 최근 플레이와 최고 기록을 이제 level 구분 라벨과 함께 보여 준다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “입력 방식이 바뀌어도 게임 루프는 그대로 유지된다”는 점이다. 세션, Stage, Attempt, 하트, 재시작, endless 흐름은 그대로 두고, Level 2만 `PopulationGamePrecisionScoringPolicy`가 오차율을 계산해 `20% 이하만 정답`, `오차율 band별 부분 점수`를 주게 했다. 이런 정책은 컨트롤러가 아니라 별도 policy가 맡는 편이 맞다. HTTP 입력과 점수 계산 규칙을 섞지 않아야 Level 1/Level 2를 같은 서비스 위에서 설명하기 쉽다.
+- 예외 상황 또는 엣지 케이스: Level 2는 숫자 입력형이라 프런트가 빈 값이나 문자 입력을 줄 수 있다. 그래서 JS에서 숫자만 남기고 천 단위 구분을 붙여 주고, 서버도 `submittedPopulation <= 0`이면 바로 막는다. 또 Level 2 run이 public `/ranking`에 아직 드러나지 않으므로, 현재는 `/mypage`에서 level 라벨을 먼저 보강하고 공개 랭킹 필터는 다음 조각으로 넘겼다.
+- 테스트 내용: `PopulationGameFlowIntegrationTest`에 `LEVEL_2 state는 options가 비어 있다`, `정확 입력 시 errorRatePercent=0.0으로 정답 처리된다`, `멀리 틀린 입력은 하트를 잃는다`를 추가했다. `PopulationGamePrecisionScoringPolicyTest`에서는 `5% 이내면 최고 band`, `20% 초과면 오답`을 단위 테스트로 고정했다. 그 외 `MyPageControllerTest`, `MyPageServiceIntegrationTest`, `AdminPageIntegrationTest`, `DemoBootstrapService` 연계가 시그니처 변경 이후에도 깨지지 않도록 확인했고, 마지막으로 `node --check src/main/resources/static/js/population-game.js`와 `./gradlew test` 전체 통과를 확인했다.
+- 면접에서 30초 안에 설명하는 요약: 9단계 첫 조각으로 인구수 게임 Level 2를 추가했습니다. 기존 `세션 / Stage / Attempt / 하트` 구조는 그대로 두고, 입력 방식만 `보기형`에서 `직접 수치 입력`으로 바꾸고 오차율 기반 점수 policy를 분리했습니다. 그래서 Level 1 구조를 깨지 않고도 Level 2를 확장할 수 있다는 점을 설명할 수 있게 됐습니다.
+- 아직 내가 이해가 부족한 부분: 현재 Level 2 결과는 `leaderboard_record`에 `LEVEL_2`로 저장되지만, 공개 `/ranking` 화면은 아직 Level 1만 노출한다. 다음에는 Level 2 랭킹을 public에서 어떻게 보여 줄지, 그리고 위치 찾기 Level 2는 어떤 규칙 조합으로 먼저 시작할지 판단이 필요하다.
+
+## 2026-03-26 - 9단계 2차: 인구수 게임 Level 2 결과를 공개 랭킹으로 연결
+
+- 단계: 9. Level 2와 실시간성 고도화
+- 목적: 이전 조각에서 Level 2 run은 이미 `leaderboard_record.game_level=LEVEL_2`로 저장되고 있었지만, public `/ranking`은 여전히 Level 1만 보여 줬다. 이번 조각은 저장 구조와 공개 조회 구조 사이의 간극을 닫아서, 사용자가 Level 2를 플레이한 뒤 결과를 실제 public 랭킹에서 확인할 수 있게 만드는 데 집중한다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/ranking/domain/LeaderboardGameLevel.java`
+  - `src/main/java/com/worldmap/ranking/application/LeaderboardService.java`
+  - `src/main/java/com/worldmap/ranking/web/LeaderboardApiController.java`
+  - `src/main/java/com/worldmap/ranking/web/LeaderboardPageController.java`
+  - `src/main/resources/templates/ranking/index.html`
+  - `src/main/resources/static/js/ranking.js`
+  - `src/test/java/com/worldmap/ranking/LeaderboardIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/50-current-state-rebuild-map.md`
+  - `blog/63-expose-population-level-2-on-public-ranking.md`
+- 요청 흐름 / 데이터 흐름: 공개 랭킹은 `GET /ranking -> LeaderboardPageController -> LeaderboardService.getLeaderboard(mode, level, scope, limit)` 흐름으로 첫 SSR을 만들고, 이후 `ranking.js`가 `GET /api/rankings/{gameMode}?level={gameLevel}&scope={scope}`를 주기적으로 호출해 같은 board를 갱신한다. 이번 조각으로 조회 기준에 `gameLevel`이 추가됐고, Redis key와 DB fallback도 같은 기준으로 분기한다.
+- 데이터 / 상태 변화: `leaderboard_record` 저장 방식은 바뀌지 않는다. 대신 Redis key가 `population:l1`, `population:l2`처럼 level별로 분리되고, public `/ranking`은 인구수 게임에서만 `Level 1 / Level 2`를 따로 볼 수 있게 바뀌었다. 위치 찾기 랭킹은 아직 Level 1만 제공하므로, 공개 필터도 그 상태를 그대로 반영한다.
+- 핵심 도메인 개념: 이번 단계의 핵심은 “Level 2 노출을 화면 if문으로만 처리하지 않는다”는 점이다. 조회 기준은 `LeaderboardService`가 맡아야 한다. 어떤 `gameMode + gameLevel + scope` 조합을 어떤 Redis key로 읽고, 키가 비었을 때 어떤 DB 쿼리로 fallback할지는 HTTP 분기보다 read model 규칙에 가깝기 때문이다. 컨트롤러는 request param을 전달하고, 템플릿과 JS는 active board만 바꾼다.
+- 예외 상황 또는 엣지 케이스: 위치 찾기 Level 2는 아직 없으므로 `location + LEVEL_2` 공개 보드는 일부러 만들지 않았다. 인구수 게임만 Level 필터를 열고, 위치 찾기에서는 `현재 Level 1만 제공` 안내를 유지했다. Level 2 랭킹이 비어 있는 fresh 환경에서는 board가 비어 보여도 정상이며, local demo나 실제 플레이 이후부터 값이 채워진다.
+- 테스트 내용: `LeaderboardIntegrationTest`에서 실제 `LEVEL_2` population session을 만들고 `1 Stage 정답 -> 2 Stage 오답 3회 -> GAME_OVER -> /api/rankings/population?level=LEVEL_2` 흐름을 검증했다. Redis key를 지운 뒤에도 DB fallback으로 같은 결과가 나오는지 확인했고, `GET /ranking` SSR 응답에 `게임 레벨`, `Level 2`, `populationLevel2All` 모델이 포함되는지도 같이 고정했다. `node --check src/main/resources/static/js/ranking.js`와 `./gradlew test` 전체도 통과했다.
+- 면접에서 30초 안에 설명하는 요약: 인구수 게임 Level 2는 이미 저장되고 있었지만 public 랭킹은 Level 1만 보여 주고 있었습니다. 그래서 이번에는 랭킹 조회를 `gameMode + gameLevel + scope` 기준으로 확장하고, `/ranking`에 인구수 게임 Level 1 / Level 2 보드를 추가했습니다. 핵심은 화면만 바꾼 것이 아니라 Redis key와 DB fallback까지 같은 level 기준으로 맞춰서 저장 구조와 조회 구조를 일관되게 만든 점입니다.
+- 아직 내가 이해가 부족한 부분: 지금은 인구수 게임만 공개 Level 2 보드를 열었다. 다음에는 위치 찾기 Level 2를 어떤 규칙으로 시작할지, 그리고 인구수 Level 2 결과 화면에서 오차율 / score band 설명을 public에 얼마나 더 드러낼지 판단이 필요하다.

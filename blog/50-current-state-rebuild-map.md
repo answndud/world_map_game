@@ -128,9 +128,14 @@ set +a
 - `/stats`
   - public 활동 지표가 보이는가
 - `/ranking`
-  - 랭킹 표가 뜨는가
+  - 인구수 게임에서 `Level 1 / Level 2` 필터가 보이는가
+  - `Level 2`를 선택하면 직접 수치 입력형 랭킹 보드가 보이는가
 - `/recommendation/survey`
   - 20문항 설문이 보이는가
+- `/games/population/start`
+  - Level 1 / Level 2 선택이 보이는가
+- `/games/population/play/{sessionId}`
+  - Level 2로 시작하면 보기 4개 대신 직접 수치 입력칸이 보이는가
 
 ### 3. local demo 계정으로 로그인 확인
 
@@ -186,6 +191,7 @@ set +a
 5. [06-redis-leaderboard-vertical-slice.md](./06-redis-leaderboard-vertical-slice.md)
 6. [07-leaderboard-polling-refresh.md](./07-leaderboard-polling-refresh.md)
 7. [08-ranking-filter-and-tie-rule.md](./08-ranking-filter-and-tie-rule.md)
+8. [63-expose-population-level-2-on-public-ranking.md](./63-expose-population-level-2-on-public-ranking.md)
 
 이 구간은 현재 코드와 비교적 직접 대응된다.
 

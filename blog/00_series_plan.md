@@ -91,6 +91,8 @@
 64. [온화한 가족형 정착 시나리오의 1위 drift 줄이기](./59-reduce-p11-anchor-drift-with-temperate-family-bridge-bonus.md)
 65. [탐색형 자연 정착 시나리오의 1위 drift 줄이기](./60-reduce-p15-anchor-drift-with-exploratory-nature-runway-bonus.md)
 66. [warm megacity 시나리오의 baseline anchor를 다시 정의하기](./61-recalibrate-p07-baseline-anchor-for-warm-megacity-scenario.md)
+67. [인구수 게임 Level 2를 직접 수치 입력형으로 시작하기](./62-start-population-level-2-exact-input-mode.md)
+68. [인구수 게임 Level 2 결과를 공개 랭킹에 노출하기](./63-expose-population-level-2-on-public-ranking.md)
 
 ### Part E. 테스트, 확장, 취업 패키징
 
