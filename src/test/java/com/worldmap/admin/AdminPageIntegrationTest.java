@@ -126,7 +126,7 @@ class AdminPageIntegrationTest {
 			.andExpect(content().string(containsString("L 1 / P 1")))
 			.andExpect(content().string(containsString("추천 운영 상태")))
 			.andExpect(content().string(containsString("survey-v4")))
-			.andExpect(content().string(containsString("engine-v18")))
+			.andExpect(content().string(containsString("engine-v19")))
 			.andExpect(content().string(containsString("Dashboard 화면은 `ADMIN` role 세션으로만 접근 가능하게 보호한다.")));
 	}
 
@@ -160,7 +160,6 @@ class AdminPageIntegrationTest {
 			.andExpect(content().string(containsString("자동 계산")))
 			.andExpect(content().string(containsString("ANCHOR DRIFT")))
 			.andExpect(content().string(containsString("1위 재검토 대상")))
-			.andExpect(content().string(containsString("P11")))
 			.andExpect(content().string(containsString("P15")))
 			.andExpect(content().string(containsString("/ 18")));
 	}
