@@ -87,6 +87,7 @@
 60. [자연형 저자극 정착 시나리오의 1위 drift 줄이기](./55-reduce-p08-anchor-drift-with-soft-nature-base-bonus.md)
 61. [영어 의존이 낮은 고도시 다양성 시나리오의 1위 drift 줄이기](./56-reduce-p10-anchor-drift-with-cosmopolitan-pulse-bonus.md)
 62. [온화한 글로벌 도시 시나리오의 1위 drift 줄이기](./57-reduce-p13-anchor-drift-with-temperate-global-city-bonus.md)
+63. [따뜻한 실용형 아시아 시나리오의 1위 drift 줄이기](./58-reduce-p14-anchor-drift-with-accessible-warm-value-hub-bonus.md)
 
 ### Part E. 테스트, 확장, 취업 패키징
 
