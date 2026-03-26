@@ -17,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class RecommendationSurveyService {
 
 	public static final String SURVEY_VERSION = "survey-v4";
-	public static final String ENGINE_VERSION = "engine-v16";
+	public static final String ENGINE_VERSION = "engine-v17";
 	private static final int CLIMATE_WEIGHT = 4;
 	private static final int SEASON_STYLE_WEIGHT = 3;
 	private static final int WEATHER_ADAPTATION_WEIGHT = 4;
@@ -53,6 +53,7 @@ public class RecommendationSurveyService {
 	private static final int PREMIUM_WARM_HUB_BONUS = 8;
 	private static final int SOFT_NATURE_BASE_BONUS = 12;
 	private static final int COSMOPOLITAN_PULSE_BONUS = 16;
+	private static final int TEMPERATE_GLOBAL_CITY_BONUS = 10;
 	private static final int VALUE_FIRST_COST_OVERSHOOT_PENALTY = 11;
 	private static final int BALANCED_COST_OVERSHOOT_PENALTY = 7;
 	private static final int QUALITY_FIRST_COST_OVERSHOOT_PENALTY = 4;
@@ -322,6 +323,11 @@ public class RecommendationSurveyService {
 		signals.add(new MatchSignal(
 			cosmopolitanPulseBonus(profile, answers),
 			"영어 의존이 낮아도 다문화 자극과 빠른 도시 에너지를 충분히 느낄 수 있는지 함께 반영했습니다."
+		));
+
+		signals.add(new MatchSignal(
+			temperateGlobalCityBonus(profile, answers),
+			"온화한 기후에서도 영어 적응과 글로벌 도시 연결성이 충분한지 함께 반영했습니다."
 		));
 
 		int futureBaseDistance = distance(answers.futureBasePreference().targetValue(), futureBase(profile));
@@ -972,6 +978,60 @@ public class RecommendationSurveyService {
 			&& profile.priceLevel() <= 2;
 
 		return acceptableCosmopolitanPulse ? COSMOPOLITAN_PULSE_BONUS / 2 : 0;
+	}
+
+	private int temperateGlobalCityBonus(
+		RecommendationCountryProfile profile,
+		RecommendationSurveyAnswers answers
+	) {
+		boolean wantsTemperateGlobalCity = answers.climatePreference() == RecommendationSurveyAnswers.ClimatePreference.MILD
+			&& answers.seasonTolerance() == RecommendationSurveyAnswers.SeasonTolerance.LOW
+			&& answers.pacePreference() == RecommendationSurveyAnswers.PacePreference.FAST
+			&& answers.crowdPreference() == RecommendationSurveyAnswers.CrowdPreference.LIVELY
+			&& answers.costQualityPreference() == RecommendationSurveyAnswers.CostQualityPreference.QUALITY_FIRST
+			&& answers.environmentPreference() == RecommendationSurveyAnswers.EnvironmentPreference.CITY
+			&& answers.englishSupportNeed() == RecommendationSurveyAnswers.EnglishSupportNeed.HIGH
+			&& answers.newcomerSupportNeed() == RecommendationSurveyAnswers.NewcomerSupportNeed.HIGH
+			&& answers.safetyPriority() == RecommendationSurveyAnswers.ImportanceLevel.LOW
+			&& answers.publicServicePriority() == RecommendationSurveyAnswers.ImportanceLevel.LOW
+			&& answers.digitalConveniencePriority() == RecommendationSurveyAnswers.ImportanceLevel.HIGH
+			&& answers.foodImportance() == RecommendationSurveyAnswers.ImportanceLevel.LOW
+			&& answers.diversityImportance() == RecommendationSurveyAnswers.ImportanceLevel.HIGH
+			&& answers.cultureLeisureImportance() == RecommendationSurveyAnswers.ImportanceLevel.HIGH
+			&& answers.workLifePreference() == RecommendationSurveyAnswers.WorkLifePreference.DRIVE_FIRST
+			&& answers.settlementPreference() == RecommendationSurveyAnswers.SettlementPreference.BALANCED
+			&& answers.futureBasePreference() == RecommendationSurveyAnswers.FutureBasePreference.BALANCED;
+
+		if (!wantsTemperateGlobalCity) {
+			return 0;
+		}
+
+		boolean strongTemperateGlobalCity = profile.climateValue() >= 2
+			&& profile.climateValue() <= 3
+			&& profile.seasonality() >= 4
+			&& profile.paceValue() >= 4
+			&& profile.urbanityValue() >= 5
+			&& profile.englishSupport() >= 5
+			&& profile.digitalConvenience() >= 5
+			&& profile.diversity() >= 5
+			&& profile.cultureScene() >= 5
+			&& profile.newcomerFriendliness() >= 4
+			&& profile.priceLevel() <= 4;
+
+		if (strongTemperateGlobalCity) {
+			return TEMPERATE_GLOBAL_CITY_BONUS;
+		}
+
+		boolean acceptableTemperateGlobalCity = profile.climateValue() >= 2
+			&& profile.climateValue() <= 3
+			&& profile.seasonality() >= 4
+			&& profile.urbanityValue() >= 5
+			&& profile.englishSupport() >= 5
+			&& profile.diversity() >= 5
+			&& profile.cultureScene() >= 5
+			&& profile.newcomerFriendliness() >= 4;
+
+		return acceptableTemperateGlobalCity ? TEMPERATE_GLOBAL_CITY_BONUS / 2 : 0;
 	}
 
 	private String continentLabel(Country country) {

@@ -516,12 +516,13 @@
 - `engine-v14`에서는 `WARM + QUALITY_FIRST + CITY + English HIGH + publicService HIGH` 조합에만 작동하는 premium warm hub bonus를 추가해 `P09`의 1위 anchor를 `아랍에미리트`로 되돌리고 snapshot/coverage를 다시 고정
 - `engine-v15`에서는 `COLD + RELAXED + NATURE + English MEDIUM + safety HIGH` 조합에만 작동하는 soft nature base bonus를 추가해 `P08`의 1위 anchor를 `뉴질랜드`로 되돌리고 snapshot/coverage를 다시 고정
 - `engine-v16`에서는 `MILD + FAST + CITY + BALANCED + English LOW + diversity HIGH` 조합에만 작동하는 cosmopolitan pulse bonus를 추가해 `P10`의 1위 anchor를 `미국`으로 되돌리고 snapshot/coverage를 다시 고정
+- `engine-v17`에서는 `MILD + FAST + CITY + QUALITY_FIRST + English HIGH + diversity HIGH` 조합에만 작동하는 temperate global city bonus를 추가해 `P13`의 1위 anchor를 `미국`으로 되돌리고 snapshot/coverage를 다시 고정
 - `RecommendationPersonaBaselineCatalog`로 baseline 시나리오 정의를 main source로 올리고, `/dashboard/recommendation/persona-baseline`이 현재 엔진 결과를 기준으로 weak scenario를 자동 계산하게 정리
 - weak scenario가 0개가 된 뒤에는 `/dashboard/recommendation/persona-baseline`이 기대 후보 top 3 여부뿐 아니라 `기대 1위 anchor`가 실제 top 1인지도 같이 계산하도록 확장
 - `/dashboard/recommendation/feedback`는 현재 버전 만족도와 baseline drift를 함께 읽어, 다음 액션을 `피드백 수집 / weak scenario / 문구 점검 / rank drift` 중 하나로 정리하는 운영 메모를 추가
-- local demo bootstrap은 current `survey-v4 / engine-v16` 피드백 샘플 5개를 함께 만들어, fresh local 환경에서도 `/dashboard/recommendation/feedback`이 `rank drift 줄이기` 메모를 바로 보여 주도록 정리
+- local demo bootstrap은 current `survey-v4 / engine-v17` 피드백 샘플 5개를 함께 만들어, fresh local 환경에서도 `/dashboard/recommendation/feedback`이 `rank drift 줄이기` 메모를 바로 보여 주도록 정리
 - `/Users/alex/project/worldmap/docs/PLAYER_COPY_AND_ADMIN_SPLIT_PLAN.md`로 public copy와 admin 운영 화면 분리 설계 정리
-- `/dashboard/recommendation/persona-baseline` read-only 화면으로 현재 baseline 18/18, weak scenario 자동 계산, anchor drift 5개, active-signal 4개를 운영 화면에서 바로 확인
+- `/dashboard/recommendation/persona-baseline` read-only 화면으로 현재 baseline 18/18, weak scenario 자동 계산, anchor drift 4개, active-signal 4개를 운영 화면에서 바로 확인
 - `/dashboard` read-only 대시보드를 추가해 현재 survey/engine 버전, 질문 수, 후보 국가 수, 만족도 수집 현황을 한 화면에서 조회
 - `/dashboard/recommendation/feedback`로 버전별 만족도 집계를 실제 운영 화면으로 이동
 
@@ -545,7 +546,7 @@
 
 이 단계에서 남은 일:
 
-- baseline은 18 / 18을 유지하고 anchor drift도 5개까지 줄였으니, 다음엔 `P07 / P11 / P13`처럼 아직 운영 우선순위에 남는 drift를 실제 만족도와 함께 다시 볼지 판단
+- baseline은 18 / 18을 유지하고 anchor drift도 4개까지 줄였으니, 다음엔 `P07 / P11 / P14`처럼 아직 운영 우선순위에 남는 drift를 실제 만족도와 함께 다시 볼지 판단
 - 블로그는 연대기 성격이 강하므로, 현재 코드 재현이 목적일 때는 `blog/50-current-state-rebuild-map.md` 기준으로 최신 글과 구버전 글을 구분해 읽는 흐름을 유지
 - local demo / blog 재현성은 `blog/50-current-state-rebuild-map.md`의 실행 체크리스트와 `docs/LOCAL_DEMO_BOOTSTRAP.md`를 함께 기준으로 본다
 - 현재는 `/dashboard/recommendation/feedback`이 그 판단을 운영 메모로 내려주므로, 다음 실험은 메모가 가리키는 우선순위 하나만 좁게 집행
