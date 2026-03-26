@@ -99,7 +99,15 @@
                             </div>
                             <span th:if="${#lists.isEmpty(stage.attempts)}">-</span>
                         </td>
-                        <td th:text="${stage.awardedScore != null ? stage.awardedScore : '-'}">100</td>
+                        <td>
+                            <div>
+                                <strong th:text="${stage.awardedScore != null ? stage.awardedScore : '-'}">100</strong>
+                                <span th:if="${stage.hintPenalty != null and stage.hintPenalty > 0}"
+                                      th:text="${'힌트 감점 -' + stage.hintPenalty}">
+                                    힌트 감점 -15
+                                </span>
+                            </div>
+                        </td>
                     </tr>
                     </tbody>
                 </table>

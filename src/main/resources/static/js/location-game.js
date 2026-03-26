@@ -719,6 +719,7 @@ function renderFeedback(target, payload) {
         <h3>${summary}</h3>
         <p>${followUp}</p>
         <p>획득 점수: ${payload.awardedScore}</p>
+        ${payload.hintPenalty > 0 ? `<p>힌트 감점: -${payload.hintPenalty}</p>` : ""}
         <p>현재 총점: ${payload.totalScore}</p>
     `;
 }

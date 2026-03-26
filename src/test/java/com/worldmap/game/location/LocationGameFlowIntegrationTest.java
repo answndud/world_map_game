@@ -248,6 +248,44 @@ class LocationGameFlowIntegrationTest {
 			.andExpect(content().string(containsString("거리 힌트")));
 	}
 
+	@Test
+	void levelTwoCorrectAnswerAfterHintAppliesHintDebt() throws Exception {
+		UUID sessionId = UUID.fromString(startGame("hint-debt", "LEVEL_2"));
+		LocationGameStage firstStage = locationGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
+			.orElseThrow();
+		String wrongCountryIso3Code = findWrongCountryIso3Code(sessionId, firstStage.getTargetCountryIso3Code());
+
+		mockMvc.perform(
+			post("/api/games/location/sessions/{sessionId}/answer", sessionId)
+				.contentType("application/json")
+				.content(answerPayload(1, wrongCountryIso3Code))
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.correct").value(false))
+			.andExpect(jsonPath("$.distanceKm").isNumber());
+
+		mockMvc.perform(
+			post("/api/games/location/sessions/{sessionId}/answer", sessionId)
+				.contentType("application/json")
+				.content(answerPayload(1, firstStage.getTargetCountryIso3Code()))
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.correct").value(true))
+			.andExpect(jsonPath("$.hintPenalty").value(15))
+			.andExpect(jsonPath("$.awardedScore").value(115))
+			.andExpect(jsonPath("$.totalScore").value(115));
+
+		mockMvc.perform(get("/api/games/location/sessions/{sessionId}/result", sessionId))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.gameLevel").value("LEVEL_2"))
+			.andExpect(jsonPath("$.stages[0].hintPenalty").value(15))
+			.andExpect(jsonPath("$.stages[0].awardedScore").value(115));
+
+		mockMvc.perform(get("/games/location/result/{sessionId}", sessionId))
+			.andExpect(status().isOk())
+			.andExpect(content().string(containsString("힌트 감점 -15")));
+	}
+
 	private String startGame(String nickname, String gameLevel) throws Exception {
 		MvcResult result = mockMvc.perform(
 			post("/api/games/location/sessions")

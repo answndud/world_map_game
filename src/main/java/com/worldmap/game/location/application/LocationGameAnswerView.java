@@ -14,6 +14,7 @@ public record LocationGameAnswerView(
 	Integer distanceKm,
 	String directionHint,
 	Boolean correct,
+	Integer hintPenalty,
 	Integer awardedScore,
 	Integer totalScore,
 	Integer clearedStageCount,

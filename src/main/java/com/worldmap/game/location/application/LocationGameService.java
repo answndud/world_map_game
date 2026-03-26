@@ -194,6 +194,7 @@ public class LocationGameService {
 		int attemptNumber = stage.nextAttemptNumber();
 		LocalDateTime attemptedAt = LocalDateTime.now();
 		LocationAnswerJudgement judgement = locationGameScoringPolicy.judge(
+			gameLevel,
 			selectedCountry.getIso3Code(),
 			stage.getTargetCountryIso3Code(),
 			stageNumber,
@@ -256,6 +257,7 @@ public class LocationGameService {
 			distanceHint != null ? distanceHint.distanceKm() : null,
 			distanceHint != null ? distanceHint.directionHint() : null,
 			judgement.correct(),
+			judgement.hintPenalty(),
 			judgement.awardedScore(),
 			session.getTotalScore(),
 			session.getClearedStageCount(),
@@ -285,16 +287,20 @@ public class LocationGameService {
 
 		List<LocationGameStageResultView> stages = locationGameStageRepository.findAllBySessionIdOrderByStageNumber(sessionId)
 			.stream()
-			.map(stage -> new LocationGameStageResultView(
-				stage.getStageNumber(),
-				stage.getTargetCountryName(),
-				stage.getTargetCountryIso3Code(),
-				stage.getStatus(),
-				stage.getAttemptCount(),
-				stage.getAwardedScore(),
-				stage.getClearedAt(),
-				attemptsByStageId.getOrDefault(stage.getId(), List.of())
-			))
+			.map(stage -> {
+				List<LocationGameAttemptResultView> attempts = attemptsByStageId.getOrDefault(stage.getId(), List.of());
+				return new LocationGameStageResultView(
+					stage.getStageNumber(),
+					stage.getTargetCountryName(),
+					stage.getTargetCountryIso3Code(),
+					stage.getStatus(),
+					stage.getAttemptCount(),
+					calculateStageHintPenalty(session.getGameLevel(), stage.getStatus(), attempts),
+					stage.getAwardedScore(),
+					stage.getClearedAt(),
+					attempts
+				);
+			})
 			.toList();
 		int totalAttemptCount = attemptsByStageId.values().stream()
 			.mapToInt(List::size)
@@ -369,6 +375,22 @@ public class LocationGameService {
 			attempt.getLivesRemainingAfter(),
 			attempt.getAttemptedAt()
 		);
+	}
+
+	private Integer calculateStageHintPenalty(
+		LocationGameLevel gameLevel,
+		LocationGameStageStatus status,
+		List<LocationGameAttemptResultView> attempts
+	) {
+		if (!gameLevel.usesDistanceHint() || status != LocationGameStageStatus.CLEARED) {
+			return 0;
+		}
+
+		long wrongAttemptCount = attempts.stream()
+			.filter(attempt -> !Boolean.TRUE.equals(attempt.correct()))
+			.count();
+
+		return locationGameScoringPolicy.hintPenaltyFor(gameLevel, Math.toIntExact(wrongAttemptCount));
 	}
 
 	private List<Country> getCountriesSortedByPopulation(LocationGameLevel gameLevel) {
