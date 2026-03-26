@@ -4,7 +4,7 @@
 >
 > 이 글은 local demo bootstrap에 current recommendation feedback sample을 처음 넣던 단계 기록이다.
 > 개념은 그대로 유효하지만, 본문에 적힌 current engine 버전은 당시 기준(`engine-v9`)이다.
-> 현재 저장소 재현 기준 버전은 `survey-v4 / engine-v20`이고, 최신 기준은 [50-current-state-rebuild-map.md](./50-current-state-rebuild-map.md), [60-reduce-p15-anchor-drift-with-exploratory-nature-runway-bonus.md](./60-reduce-p15-anchor-drift-with-exploratory-nature-runway-bonus.md), [LOCAL_DEMO_BOOTSTRAP.md](/Users/alex/project/worldmap/docs/LOCAL_DEMO_BOOTSTRAP.md)를 본다.
+> 현재 저장소 재현 기준 버전은 `survey-v4 / engine-v20`이고, 최신 기준은 [50-current-state-rebuild-map.md](./50-current-state-rebuild-map.md), [61-recalibrate-p07-baseline-anchor-for-warm-megacity-scenario.md](./61-recalibrate-p07-baseline-anchor-for-warm-megacity-scenario.md), [LOCAL_DEMO_BOOTSTRAP.md](/Users/alex/project/worldmap/docs/LOCAL_DEMO_BOOTSTRAP.md)를 본다.
 
 ## 왜 이 작업이 필요했는가
 
@@ -16,8 +16,8 @@
 문제는 fresh local 환경에서 recommendation feedback이 0개라는 점이었습니다.
 
 그러면 `/dashboard/recommendation/feedback`은 계속
-`현재 버전 피드백 더 수집`
-메모만 보여 줍니다.
+`현재 엔진 유지`
+또는 그 이전 단계 메모만 보여 줍니다.
 
 즉, 운영 화면 구조는 있어도
 실제로 `rank drift 줄이기` 단계까지 local에서 바로 설명하기는 어려웠습니다.
@@ -69,13 +69,13 @@
 - current recommendation feedback 5개
 
 그래서 `/dashboard/recommendation/feedback`에 들어가면
-바로 `rank drift 줄이기` 메모까지 볼 수 있습니다.
+현재 엔진 기준 운영 메모까지 바로 볼 수 있습니다.
 
 ## 테스트는 무엇을 했는가
 
 - [DemoBootstrapIntegrationTest.java](/Users/alex/project/worldmap/src/test/java/com/worldmap/demo/DemoBootstrapIntegrationTest.java)
   - current `survey-v4 / engine-v20` 피드백 5개 이상 생성 확인
-  - ops review가 `rank drift 줄이기`를 반환하는지 확인
+  - ops review가 현재 버전 기준 메모를 정상 계산하는지 확인
 - [AdminRecommendationOpsReviewServiceIntegrationTest.java](/Users/alex/project/worldmap/src/test/java/com/worldmap/admin/AdminRecommendationOpsReviewServiceIntegrationTest.java)
   - current version 응답 수와 우선 메모 규칙 유지 확인
 

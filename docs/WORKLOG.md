@@ -3089,3 +3089,29 @@
 - 테스트 내용: 먼저 `RecommendationOfflinePersonaSnapshotTest`와 `AdminPersonaBaselineServiceIntegrationTest`로 현재 결과를 확인해 `P15`가 `뉴질랜드, 포르투갈, 말레이시아`로 바뀌고 anchor drift가 `1`로 줄었는지 검증했다. 이어서 `RecommendationSurveyServiceTest`에 `P15`형 입력에서 `뉴질랜드`가 1위가 되는 unit test를 추가했고, `AdminRecommendationOpsReviewServiceIntegrationTest`에서는 우선 시나리오가 `P07` 하나로 줄어드는지 고정했다. 마지막으로 추천/admin targeted suite와 `./gradlew test` 전체 통과를 확인했다.
 - 면접에서 30초 안에 설명하는 요약: baseline 18 / 18을 맞춘 뒤에는 weak scenario보다 1위 순위 drift를 줄이는 일이 더 중요해졌습니다. 이번에는 `P15`처럼 자연형 탐색 정착 시나리오에만 좁게 작동하는 `exploratoryNatureRunwayBonus`를 추가해서, 기대 1위였던 `뉴질랜드`가 `포르투갈`보다 앞서도록 보정했습니다. 그 결과 baseline은 유지하면서 anchor drift를 `2 -> 1`로 줄였습니다.
 - 아직 내가 이해가 부족한 부분: 이제 남은 운영 우선 시나리오는 `P07` 하나다. 다음에는 정말 `P07`까지 좁게 손볼지, 아니면 drift를 1개 남긴 상태에서 6단계를 닫고 9단계 Level 2로 넘어가는 편이 더 설명 가치가 큰지 판단이 필요하다.
+
+## 2026-03-26 - baseline anchor 재정의: P07 warm megacity 시나리오 정리
+
+- 단계: 6. 설문 기반 추천 엔진 / 7. AI-assisted 설문 개선 체계
+- 목적: `engine-v20`까지 오면서 baseline `18 / 18`, anchor drift `1`까지 줄었지만 마지막 `P07`은 엔진보다 baseline 정의가 현재 20문항 의미와 어긋난 상태였다. `WARM + FAST + CITY + FOOD` 조합을 `일본` 1위로 강제하면 과적합 bonus가 필요해져서, 이번 조각은 엔진 보정보다 baseline anchor를 현재 설문 의미에 맞게 재정의하는 데 집중한다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationPersonaBaselineCatalog.java`
+  - `docs/recommendation/PERSONA_EVAL_SET.md`
+  - `src/test/java/com/worldmap/admin/AdminPersonaBaselineServiceIntegrationTest.java`
+  - `src/test/java/com/worldmap/admin/AdminRecommendationOpsReviewServiceIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/LOCAL_DEMO_BOOTSTRAP.md`
+  - `docs/WORKLOG.md`
+  - `blog/00_series_plan.md`
+  - `blog/33-bootstrap-local-demo-accounts-and-sample-runs.md`
+  - `blog/48-seed-current-recommendation-feedback-in-local-demo.md`
+  - `blog/50-current-state-rebuild-map.md`
+  - `blog/61-recalibrate-p07-baseline-anchor-for-warm-megacity-scenario.md`
+- 요청 흐름 / 데이터 흐름: 런타임 추천 흐름은 그대로 `GET /recommendation/survey -> POST /recommendation/survey -> RecommendationSurveyService.recommend() -> recommendation/result -> POST /api/recommendation/feedback`이다. 이번 조각은 런타임 점수식이 아니라 운영 평가 read model이 기대하는 baseline 정의를 바꿨다. `RecommendationPersonaBaselineCatalog`에서 `P07`의 expected candidates를 `싱가포르, 대한민국, 일본`으로 재정의했고, `AdminPersonaBaselineService`와 `AdminRecommendationOpsReviewService`는 그 현재 baseline 정의를 읽어 weak/drift/ops memo를 다시 계산한다.
+- 데이터 / 상태 변화: 추천 결과 top 3 저장 방식은 바뀌지 않는다. `survey-v4 / engine-v20`도 그대로다. 달라진 것은 baseline 해석이다. dynamic baseline 기준으로는 `18 / 18`을 유지하면서 anchor drift가 `1 -> 0`이 되었고, `/dashboard/recommendation/feedback`의 현재 버전 메모는 이제 `현재 엔진 유지`로 떨어진다.
+- 핵심 도메인 개념: 모든 mismatch를 엔진 bonus로 해결하면 과적합이 생긴다. `P07`은 현재 20문항에서 `WARM + FAST + CITY`가 warm megacity 쪽으로 읽히는데, anchor를 `일본`으로 두고 있었던 것이 문제였다. 이런 판단은 컨트롤러가 아니라 `RecommendationPersonaBaselineCatalog`가 맡아야 한다. 이건 요청 처리 규칙이 아니라 운영 평가 기준 정의이기 때문이다.
+- 예외 상황 또는 엣지 케이스: baseline anchor를 바꾸는 것은 숫자를 맞추기 위한 임시방편이 되면 안 된다. 그래서 이번 변경은 `P07` 점수 gap(`싱가포르 285 / 브라질 284 / 아랍에미리트 281 / 대한민국 258 / 일본 198`)을 먼저 확인한 뒤, 엔진을 더 비틀기보다 현재 20문항 의미에 맞는지 검토한 결과로만 적용했다.
+- 테스트 내용: `AdminPersonaBaselineServiceIntegrationTest`에서 anchor drift가 `0`인지 확인했고, `AdminRecommendationOpsReviewServiceIntegrationTest`에서는 current version 샘플이 충분할 때 우선 액션이 `현재 엔진 유지`로 바뀌는지 고정했다. 추천/admin targeted suite와 `./gradlew test` 전체도 통과했다.
+- 면접에서 30초 안에 설명하는 요약: 마지막으로 남은 `P07`은 엔진이 틀렸다기보다 baseline anchor가 현재 20문항 의미와 어긋난 상태였습니다. 그래서 추천 엔진을 더 비틀지 않고, `warm megacity + food` 의미에 맞게 `P07`의 기대 anchor를 `싱가포르`로 재정의했습니다. 그 결과 baseline `18 / 18`을 유지하면서 anchor drift를 `0`으로 닫고, 운영 메모도 `현재 엔진 유지`로 바뀌었습니다.
+- 아직 내가 이해가 부족한 부분: baseline drift를 `0`으로 맞춘 지금부터는 더 이상 rank 튜닝보다 실제 만족도 데이터가 부족한 시나리오를 어떻게 늘릴지가 더 중요해진다. 다음에는 6단계를 여기서 닫고 Level 2로 넘어갈지, 아니면 추천 설문 카피를 더 다듬을지 우선순위를 다시 확인해야 한다.

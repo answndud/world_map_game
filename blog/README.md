@@ -124,6 +124,7 @@
 61. [영어 의존이 낮은 고도시 다양성 시나리오의 1위 drift 줄이기](./56-reduce-p10-anchor-drift-with-cosmopolitan-pulse-bonus.md)
 62. [온화한 글로벌 도시 시나리오의 1위 drift 줄이기](./57-reduce-p13-anchor-drift-with-temperate-global-city-bonus.md)
 63. [탐색형 자연 정착 시나리오의 1위 drift 줄이기](./60-reduce-p15-anchor-drift-with-exploratory-nature-runway-bonus.md)
+64. [warm megacity 시나리오의 baseline anchor를 다시 정의하기](./61-recalibrate-p07-baseline-anchor-for-warm-megacity-scenario.md)
 
 ### Part E. 확장과 포트폴리오 정리
 

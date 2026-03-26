@@ -81,8 +81,8 @@
 - 엔진 버전: `engine-v20`
 - 질문 수: `20`
 - 추천 후보 국가 수: `30`
-- dynamic baseline: `18 / 18`, `anchor drift 1`
-- 현재 운영 우선 시나리오: `P07`
+- dynamic baseline: `18 / 18`, `anchor drift 0`
+- 현재 운영 우선 시나리오: 없음
 
 근거:
 

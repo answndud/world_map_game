@@ -112,6 +112,7 @@ local 서버는 여러 번 재시작할 수 있다.
   - `demo-guest-live` 진행 중 세션이 있는지
   - sample population 완료 세션이 member ownership으로 남는지
   - current `survey-v4 / engine-v20` 추천 피드백이 최소 5개 보장되는지
+  - ops review가 `현재 엔진 유지`를 반환하는지
 
 ## DB가 날아가면 어떻게 하나
 
