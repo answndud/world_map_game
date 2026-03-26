@@ -3180,3 +3180,34 @@
 - 테스트 내용: `LeaderboardIntegrationTest`에서 실제 `LEVEL_2` population session을 만들고 `1 Stage 정답 -> 2 Stage 오답 3회 -> GAME_OVER -> /api/rankings/population?level=LEVEL_2` 흐름을 검증했다. Redis key를 지운 뒤에도 DB fallback으로 같은 결과가 나오는지 확인했고, `GET /ranking` SSR 응답에 `게임 레벨`, `Level 2`, `populationLevel2All` 모델이 포함되는지도 같이 고정했다. `node --check src/main/resources/static/js/ranking.js`와 `./gradlew test` 전체도 통과했다.
 - 면접에서 30초 안에 설명하는 요약: 인구수 게임 Level 2는 이미 저장되고 있었지만 public 랭킹은 Level 1만 보여 주고 있었습니다. 그래서 이번에는 랭킹 조회를 `gameMode + gameLevel + scope` 기준으로 확장하고, `/ranking`에 인구수 게임 Level 1 / Level 2 보드를 추가했습니다. 핵심은 화면만 바꾼 것이 아니라 Redis key와 DB fallback까지 같은 level 기준으로 맞춰서 저장 구조와 조회 구조를 일관되게 만든 점입니다.
 - 아직 내가 이해가 부족한 부분: 지금은 인구수 게임만 공개 Level 2 보드를 열었다. 다음에는 위치 찾기 Level 2를 어떤 규칙으로 시작할지, 그리고 인구수 Level 2 결과 화면에서 오차율 / score band 설명을 public에 얼마나 더 드러낼지 판단이 필요하다.
+
+## 2026-03-26 - 9단계 3차: 인구수 게임 Level 2 결과 화면에 precision band 설명 추가
+
+- 단계: 9. Level 2와 실시간성 고도화
+- 목적: Level 2는 이미 직접 입력과 오차율 계산이 동작했지만, 결과 화면에서는 “왜 이 점수를 받았는가”를 읽기 어려웠다. 이번 조각은 기존 계산 규칙을 바꾸지 않고, `errorRate + precision band`를 answer/result view로 끌어올려 설명 가능성을 높이는 데 집중한다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/game/population/application/PopulationGamePrecisionBand.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationAnswerJudgement.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationGamePrecisionScoringPolicy.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationGameScoringPolicy.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationGameAnswerView.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationGameAttemptResultView.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationGameStageResultView.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationGameService.java`
+  - `src/main/resources/templates/population-game/result.html`
+  - `src/main/resources/static/js/population-game.js`
+  - `src/test/java/com/worldmap/game/population/application/PopulationGamePrecisionScoringPolicyTest.java`
+  - `src/test/java/com/worldmap/game/population/PopulationGameFlowIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/64-explain-population-level-2-result-bands.md`
+- 요청 흐름 / 데이터 흐름: 플레이 중 제출은 그대로 `POST /api/games/population/sessions/{id}/answer -> PopulationGameService.submitAnswer() -> PopulationGamePrecisionScoringPolicy.judge()` 흐름이다. 달라진 것은 policy가 이제 `correct / score / errorRatePercent`뿐 아니라 `precisionBand`도 함께 내려준다는 점이다. 최종 결과는 `GET /games/population/result/{id} -> PopulationGameService.getSessionResult() -> population-game/result.html`에서 Level 2 attempt마다 `오차율 + band`를 같이 렌더링한다.
+- 데이터 / 상태 변화: DB 스키마는 바뀌지 않았다. `population_game_attempt`에 새 컬럼을 추가하지 않고, 기존 `selectedPopulation`과 stage의 `targetPopulation`을 이용해 결과 read model에서 오차율과 band를 다시 계산한다. 즉 이번 단계는 persistence를 키우지 않고 설명용 read model만 보강한 조각이다.
+- 핵심 도메인 개념: `정밀 적중 / 근접 적중 / 허용 범위 정답 / 오답`은 화면 카피가 아니라 점수 정책의 일부다. 그래서 이 기준은 템플릿 if문이 아니라 `PopulationGamePrecisionScoringPolicy`와 `PopulationGamePrecisionBand`가 같이 가져야 한다. 컨트롤러는 제출을 받고 응답을 내릴 뿐이고, 어떤 오차율이 어느 band에 속하는지는 policy가 책임져야 Level 2 규칙을 한 문장으로 설명할 수 있다.
+- 예외 상황 또는 엣지 케이스: Level 1에는 precision band 개념이 없으므로 answer/result view에서 null을 허용하고, 템플릿은 `LEVEL_2`일 때만 판정 기준 패널과 band 로그를 렌더링한다. 결과 attempt 로그도 DB에 별도 error rate를 저장하지 않고 계산하기 때문에, `selectedPopulation` 또는 `targetPopulation`이 비정상적으로 비어 있으면 band를 비울 수 있게 방어했다.
+- 테스트 내용: `PopulationGamePrecisionScoringPolicyTest`에 `5% 이내 -> PRECISE_HIT`, `20% 초과 -> MISS`를 추가했다. `PopulationGameFlowIntegrationTest`에서는 Level 2 answer 응답에 `precisionBand`가 들어가는지, 그리고 실제 Level 2 game over 뒤 결과 페이지 HTML에 `Level 2 판정 기준`, `정밀 적중`, `오차율`, `허용 범위 정답`이 렌더링되는지까지 고정했다. `node --check src/main/resources/static/js/population-game.js`와 targeted suite도 통과했다.
+- 면접에서 30초 안에 설명하는 요약: Level 2는 오차율로 정답과 점수를 판정하지만, 이전에는 그 기준이 코드 안에만 있었습니다. 그래서 이번에는 `PopulationGamePrecisionBand`를 도입해 오차율 기준을 도메인 개념으로 올리고, answer/result view가 그 band를 같이 내려주도록 바꿨습니다. 그 결과 사용자가 결과 화면만 봐도 왜 그 점수를 받았는지 다시 설명할 수 있게 됐습니다.
+- 아직 내가 이해가 부족한 부분: 지금은 Level 2 band 설명을 결과 화면과 play feedback에만 붙였다. 다음에는 이 정보를 `/stats`나 홈 하이라이트 같은 공개 요약 화면으로도 끌어올릴지, 아니면 Level 2 내부 결과 설명에만 남길지 판단이 필요하다.

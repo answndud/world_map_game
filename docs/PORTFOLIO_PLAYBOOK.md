@@ -707,13 +707,15 @@
 - `LeaderboardService`가 `gameMode + gameLevel + scope` 기준으로 Level 2 조회를 지원하도록 확장
 - 공개 `/ranking` 화면에 인구수 게임 `Level 1 / Level 2` 필터와 Level 2 보드 추가
 - Level 2 랭킹 Redis key와 DB fallback 조회를 통합 테스트로 고정
+- `PopulationGamePrecisionBand`를 추가해 Level 2 결과와 feedback가 `오차율 + band`를 같이 설명하도록 보강
+- Level 2 결과 화면 상단에 판정 기준 패널과 attempt별 오차율 / band 로그 추가
 - Level 2 state/answer/result 통합 테스트와 precision scoring 단위 테스트 통과
 
 다음에 이어서 할 일:
 
-- 인구수 Level 2 결과 화면에서 오차율 / 점수 band 설명 더 다듬기
 - 위치 찾기 Level 2 첫 조각 설계와 구현 시작
 - 공개 `/stats` 또는 `/mypage`에서 Level 2 하이라이트를 더 보여 줄지 결정
+- 인구수 Level 2 결과를 `/stats`나 홈 하이라이트에도 노출할지 결정
 
 반드시 이해할 것:
 
@@ -722,6 +724,7 @@
 - 왜 인구수 Level 2는 `세션 / Stage / Attempt` 구조를 유지한 채 입력 방식만 바꿀 수 있었는가
 - 왜 Level 2 점수식은 서비스가 아니라 별도 precision policy로 분리했는가
 - 왜 공개 랭킹 확장도 컨트롤러가 아니라 `LeaderboardService`의 level-aware 조회 규칙으로 풀어야 하는가
+- 왜 precision band는 프론트 if문이 아니라 서버 policy가 기준이 되어야 하는가
 
 면접 포인트:
 
