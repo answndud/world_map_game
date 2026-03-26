@@ -68,7 +68,7 @@ class RecommendationPageIntegrationTest {
 			.andExpect(content().string(containsString("싱가포르")))
 			.andExpect(content().string(containsString("추천 만족도")))
 			.andExpect(content().string(containsString("survey-v4")))
-			.andExpect(content().string(containsString("engine-v15")))
+			.andExpect(content().string(containsString("engine-v16")))
 			.andExpect(content().string(not(containsString("deterministic"))))
 			.andExpect(content().string(not(containsString("만족도 집계 보기"))));
 	}

@@ -17,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class RecommendationSurveyService {
 
 	public static final String SURVEY_VERSION = "survey-v4";
-	public static final String ENGINE_VERSION = "engine-v15";
+	public static final String ENGINE_VERSION = "engine-v16";
 	private static final int CLIMATE_WEIGHT = 4;
 	private static final int SEASON_STYLE_WEIGHT = 3;
 	private static final int WEATHER_ADAPTATION_WEIGHT = 4;
@@ -52,6 +52,7 @@ public class RecommendationSurveyService {
 	private static final int PRACTICAL_PUBLIC_VALUE_BONUS = 18;
 	private static final int PREMIUM_WARM_HUB_BONUS = 8;
 	private static final int SOFT_NATURE_BASE_BONUS = 12;
+	private static final int COSMOPOLITAN_PULSE_BONUS = 16;
 	private static final int VALUE_FIRST_COST_OVERSHOOT_PENALTY = 11;
 	private static final int BALANCED_COST_OVERSHOOT_PENALTY = 7;
 	private static final int QUALITY_FIRST_COST_OVERSHOOT_PENALTY = 4;
@@ -316,6 +317,11 @@ public class RecommendationSurveyService {
 		signals.add(new MatchSignal(
 			softNatureBaseBonus(profile, answers),
 			"너무 거칠지 않은 기후와 영어 적응성을 갖춘 자연형 정착지인지 함께 반영했습니다."
+		));
+
+		signals.add(new MatchSignal(
+			cosmopolitanPulseBonus(profile, answers),
+			"영어 의존이 낮아도 다문화 자극과 빠른 도시 에너지를 충분히 느낄 수 있는지 함께 반영했습니다."
 		));
 
 		int futureBaseDistance = distance(answers.futureBasePreference().targetValue(), futureBase(profile));
@@ -915,6 +921,57 @@ public class RecommendationSurveyService {
 			&& profile.housingSpace() >= 4;
 
 		return acceptableNatureFit ? SOFT_NATURE_BASE_BONUS / 2 : 0;
+	}
+
+	private int cosmopolitanPulseBonus(
+		RecommendationCountryProfile profile,
+		RecommendationSurveyAnswers answers
+	) {
+		boolean wantsCosmopolitanPulse = answers.climatePreference() == RecommendationSurveyAnswers.ClimatePreference.MILD
+			&& answers.seasonTolerance() == RecommendationSurveyAnswers.SeasonTolerance.MEDIUM
+			&& answers.pacePreference() == RecommendationSurveyAnswers.PacePreference.FAST
+			&& answers.crowdPreference() == RecommendationSurveyAnswers.CrowdPreference.LIVELY
+			&& answers.costQualityPreference() == RecommendationSurveyAnswers.CostQualityPreference.BALANCED
+			&& answers.environmentPreference() == RecommendationSurveyAnswers.EnvironmentPreference.CITY
+			&& answers.englishSupportNeed() == RecommendationSurveyAnswers.EnglishSupportNeed.LOW
+			&& answers.newcomerSupportNeed() == RecommendationSurveyAnswers.NewcomerSupportNeed.MEDIUM
+			&& answers.safetyPriority() == RecommendationSurveyAnswers.ImportanceLevel.LOW
+			&& answers.publicServicePriority() == RecommendationSurveyAnswers.ImportanceLevel.LOW
+			&& answers.digitalConveniencePriority() == RecommendationSurveyAnswers.ImportanceLevel.HIGH
+			&& answers.foodImportance() == RecommendationSurveyAnswers.ImportanceLevel.LOW
+			&& answers.diversityImportance() == RecommendationSurveyAnswers.ImportanceLevel.HIGH
+			&& answers.cultureLeisureImportance() == RecommendationSurveyAnswers.ImportanceLevel.HIGH
+			&& answers.workLifePreference() == RecommendationSurveyAnswers.WorkLifePreference.DRIVE_FIRST
+			&& answers.settlementPreference() == RecommendationSurveyAnswers.SettlementPreference.BALANCED
+			&& answers.futureBasePreference() == RecommendationSurveyAnswers.FutureBasePreference.BALANCED;
+
+		if (!wantsCosmopolitanPulse) {
+			return 0;
+		}
+
+		boolean strongCosmopolitanPulse = profile.climateValue() >= 3
+			&& profile.climateValue() <= 4
+			&& profile.paceValue() >= 4
+			&& profile.urbanityValue() >= 5
+			&& profile.diversity() >= 5
+			&& profile.cultureScene() >= 5
+			&& profile.food() >= 4
+			&& profile.housingSpace() >= 4
+			&& profile.digitalConvenience() >= 5;
+
+		if (strongCosmopolitanPulse) {
+			return COSMOPOLITAN_PULSE_BONUS;
+		}
+
+		boolean acceptableCosmopolitanPulse = profile.climateValue() >= 4
+			&& profile.paceValue() >= 4
+			&& profile.urbanityValue() >= 5
+			&& profile.diversity() >= 5
+			&& profile.cultureScene() >= 5
+			&& profile.food() >= 5
+			&& profile.priceLevel() <= 2;
+
+		return acceptableCosmopolitanPulse ? COSMOPOLITAN_PULSE_BONUS / 2 : 0;
 	}
 
 	private String continentLabel(Country country) {
