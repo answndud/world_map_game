@@ -3271,3 +3271,28 @@
 - 테스트 내용: `LocationGameDistanceHintPolicyTest`에서 대표 좌표 기반 거리/방향 계산을 단위 테스트로 고정했다. `LocationGameFlowIntegrationTest`에서는 `LEVEL_2` 시작, state의 `gameLevel`, 오답 answer의 `distanceKm / directionHint`를 통합 테스트로 확인했다. `node --check src/main/resources/static/js/location-game.js`, targeted suite, `./gradlew test`, `git diff --check`까지 통과했다.
 - 면접에서 30초 안에 설명하는 요약: 위치 게임 Level 2는 지구본 입력 방식을 다시 만들지 않고, 세션에 `gameLevel`을 저장한 뒤 오답일 때만 서버가 거리와 방향 힌트를 계산해 내려주는 방식으로 열었습니다. 그래서 기존 Level 1의 `세션 / Stage / Attempt / 하트` 구조를 유지하면서도, 난도와 피드백 규칙은 분명히 다르게 설명할 수 있습니다.
 - 아직 내가 이해가 부족한 부분: 지금은 힌트를 payload로만 보여 주고 점수에는 직접 반영하지 않는다. 다음에는 `hint debt`를 점수에 넣을지, 결과 화면 attempt 로그에도 거리/방향을 계산해 다시 보여 줄지 판단이 필요하다.
+
+## 2026-03-26 - 9단계 6차: 위치 찾기 Level 2 결과 힌트 로그 read model 보강
+
+- 단계: 9. Level 2와 실시간성 고도화
+- 목적: 직전 조각에서 Level 2 오답 힌트는 answer payload에만 들어 있었기 때문에, 사용자가 플레이 중 overlay를 놓치면 결과 화면만으로는 “어느 시도에서 얼마나 빗나갔는지”를 다시 설명하기 어려웠다. 이번 조각은 persistence를 더 키우지 않고, 결과 read model이 attempt 로그에서도 거리/방향 힌트를 다시 계산해 보여 주도록 만드는 데 집중한다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/game/location/application/LocationGameAttemptResultView.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameService.java`
+  - `src/main/resources/templates/location-game/result.html`
+  - `src/test/java/com/worldmap/game/location/LocationGameFlowIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/50-current-state-rebuild-map.md`
+  - `blog/67-add-location-level-2-hint-log-to-result-read-model.md`
+- 요청 흐름 / 데이터 흐름: 플레이 중 정답/오답 판정 흐름은 그대로 `POST /api/games/location/sessions/{id}/answer -> LocationGameService.submitAnswer() -> LocationGameDistanceHintPolicy`다. 이번 조각에서 달라진 것은 결과 조회 흐름이다. `GET /api/games/location/sessions/{id}/result -> LocationGameService.getSessionResult()`에서 서비스가 attempt와 country 정보를 같이 읽은 뒤, Level 2 오답 attempt에 한해 `LocationGameDistanceHintPolicy`를 다시 호출해 `distanceKm + directionHint`를 `LocationGameAttemptResultView`에 채운다. 그 결과 `GET /games/location/result/{id}`에서도 같은 힌트 로그를 SSR로 보여 줄 수 있다.
+- 데이터 / 상태 변화: DB 스키마는 바뀌지 않았다. 힌트를 별도 컬럼으로 저장하지 않고, 이미 저장된 `stage.countryId`와 `attempt.selectedCountryIso3Code`를 이용해 결과 read model에서 다시 계산한다. 즉 이번 조각은 write model이 아니라 read model 설명력을 보강한 작업이다.
+- 핵심 도메인 개념: “결과에서 다시 설명 가능한 힌트”도 게임 규칙이다. 그래서 템플릿이 문자열을 조합하는 방식이 아니라, `LocationGameService`가 `LocationGameDistanceHintPolicy`를 재사용해 attempt view를 만들도록 두는 편이 맞다. 어떤 시도에 힌트를 붙일지, 언제 null이어야 할지는 화면보다 도메인 read model 규칙에 가깝기 때문이다.
+- 예외 상황 또는 엣지 케이스: Level 1은 힌트를 쓰지 않으므로 attempt log의 `distanceKm`, `directionHint`는 null이어야 한다. Level 2라도 selected country나 target country를 찾지 못하면 억지 값을 넣지 않고 null로 둔다. 정답 attempt에는 힌트를 붙이지 않는다.
+- 테스트 내용: `LocationGameFlowIntegrationTest`에 `levelTwoResultIncludesHintLogForWrongAttempt()`를 추가해 `GET /api/games/location/sessions/{id}/result` JSON의 `distanceKm`, `directionHint`와 `GET /games/location/result/{id}` HTML의 `거리 힌트` 렌더링까지 같이 고정했다. 이어서 `./gradlew test` 전체와 `git diff --check`도 통과했다.
+- 배운 점: answer payload에만 있는 값은 결과 설명에서 쉽게 사라진다. 게임 결과를 다시 보여 주는 read model이 같은 규칙을 재사용하도록 만들어야 “플레이 중 상태”와 “끝난 뒤 설명”이 어긋나지 않는다.
+- 아직 내가 이해가 부족한 부분: 지금은 힌트를 결과 화면에만 다시 붙였다. 다음에는 이 힌트 사용 사실을 점수 감점으로 반영할지, 공개 `/ranking`이나 `/mypage` 하이라이트에도 끌어올릴지 판단이 필요하다.
+- 면접에서 30초 안에 설명하는 요약: 위치 게임 Level 2는 오답 때 거리와 방향 힌트를 줍니다. 이전에는 이 값이 answer payload에만 있어서 결과 화면만 보면 추적 과정을 다시 설명하기 어려웠습니다. 그래서 이번에는 write model을 더 키우지 않고, 결과 read model이 `stage.countryId + selectedCountryIso3Code`를 이용해 힌트를 다시 계산하도록 바꿨고, 결과 API와 SSR 화면 모두 같은 attempt 로그를 보여 주도록 맞췄습니다.

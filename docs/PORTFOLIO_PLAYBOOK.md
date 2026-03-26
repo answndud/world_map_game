@@ -715,11 +715,11 @@
 - Level 2는 입력 방식을 바꾸지 않고, 오답 시 `distanceKm + directionHint`를 서버가 계산해 answer payload에 포함
 - `LocationGameDistanceHintPolicy`를 추가해 거리/방향 계산을 프론트가 아니라 서버 정책으로 분리
 - 위치 게임 결과 / 랭킹 레코드도 `gameLevel`을 이해하도록 맞춤
+- 위치 게임 Level 2 결과 read model이 attempt별 `distanceKm + directionHint`를 다시 계산해 결과 API와 결과 화면 로그에 함께 노출
 - 위치 게임 Level 2 state/answer 통합 테스트와 distance hint 단위 테스트 통과
 
 다음에 이어서 할 일:
 
-- 위치 찾기 Level 2 결과 화면에 attempt별 거리/방향 힌트를 read model로도 보여 줄지 결정
 - 위치 찾기 Level 2 run을 공개 `/ranking`까지 분리 노출할지 결정
 - 위치 게임 Level 2에서 `hint debt`를 점수에 실제 반영할지 결정
 - 공개 `/stats` 또는 `/mypage`에서 Level 2 하이라이트를 더 보여 줄지 결정

@@ -140,6 +140,8 @@ set +a
   - Level 1 / Level 2 선택이 보이는가
 - `/games/location/play/{sessionId}`
   - Level 2로 시작하면 오답 시 거리(km)와 방향 힌트가 feedback에 보이는가
+- `/games/location/result/{sessionId}`
+  - Level 2에서 오답이 있었다면 attempt 로그에 `거리 힌트 약 ...km ...쪽`이 남는가
 
 ### 3. local demo 계정으로 로그인 확인
 
@@ -196,6 +198,7 @@ set +a
 6. [07-leaderboard-polling-refresh.md](./07-leaderboard-polling-refresh.md)
 7. [08-ranking-filter-and-tie-rule.md](./08-ranking-filter-and-tie-rule.md)
 8. [63-expose-population-level-2-on-public-ranking.md](./63-expose-population-level-2-on-public-ranking.md)
+9. [67-add-location-level-2-hint-log-to-result-read-model.md](./67-add-location-level-2-hint-log-to-result-read-model.md)
 
 이 구간은 현재 코드와 비교적 직접 대응된다.
 
