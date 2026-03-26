@@ -3057,3 +3057,35 @@
 - 테스트 내용: 먼저 임시 디버그 테스트로 `P11`의 실제 점수를 확인해 `아일랜드 353 / 캐나다 339 / 스위스 338` gap을 본 뒤, `temperateFamilyBridgeBonus()`를 추가해 `캐나다 355 / 아일랜드 353 / 스위스 338`로 바뀐 것을 확인했다. 그 다음 임시 디버그 테스트는 제거하고, `RecommendationSurveyServiceTest`에 `캐나다` 1위 unit test를 추가했다. `RecommendationOfflinePersonaSnapshotTest`는 `engine-v19` 기준으로 `P11 -> 캐나다, 아일랜드, 스위스`를 다시 고정했고, `RecommendationOfflinePersonaCoverageTest`는 `P11`의 1위가 `캐나다`인지까지 고정했다. `AdminPersonaBaselineServiceIntegrationTest`에서는 anchor drift가 `2`로 줄었는지, `AdminRecommendationOpsReviewServiceIntegrationTest`에서는 우선 시나리오가 `P07, P15`로 바뀌는지 확인했다. 마지막으로 추천/admin targeted suite와 `./gradlew test` 전체 통과를 확인했다.
 - 면접에서 30초 안에 설명하는 요약: baseline 18 / 18을 맞춘 뒤에는 weak scenario보다 1위 순위 drift를 줄이는 일이 더 중요해졌습니다. 이번에는 `P11`처럼 온화한 기후권에서 가족형 정착 기반을 찾는 시나리오에만 좁게 작동하는 `temperateFamilyBridgeBonus`를 추가해서, 기대 1위였던 `캐나다`가 `아일랜드`보다 앞서도록 보정했습니다. 그 결과 baseline은 유지하면서 anchor drift를 `3 -> 2`로 줄였습니다.
 - 아직 내가 이해가 부족한 부분: `P11`은 해결됐지만 이제 운영 우선순위는 `P07`, `P15`로 이동했다. 다음에는 도시형 warm anchor인 `P07`을 실제로 건드릴지, 아니면 `P15`처럼 active-signal과 겹치는 시나리오를 먼저 줄일지 판단이 필요하다.
+
+## 2026-03-26 - 추천 엔진 anchor drift 튜닝 11차: P15에 exploratory nature runway bonus 추가
+
+- 단계: 6. 설문 기반 추천 엔진 / 7. AI-assisted 설문 개선 체계
+- 목적: `engine-v19`에서는 baseline `18 / 18`은 유지됐지만, `P15` 같은 `온화한 기후 + 자연 + 저비용 + 교통 중심 + 가볍게 살아보기` 시나리오에서 기대 1위였던 `뉴질랜드`가 여전히 `포르투갈` 뒤에 있었다. 이번 조각은 자연형 탐색 시나리오 전체를 다시 흔들지 않고, 영어 적응과 안전, 생활 여유가 함께 받쳐주는 후보만 좁게 밀어 주는 신호를 넣어 `P15`의 anchor drift를 줄이는 데 집중한다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationSurveyService.java`
+  - `src/test/java/com/worldmap/recommendation/application/RecommendationSurveyServiceTest.java`
+  - `src/test/java/com/worldmap/recommendation/application/RecommendationOfflinePersonaSnapshotTest.java`
+  - `src/test/java/com/worldmap/admin/AdminPersonaBaselineServiceIntegrationTest.java`
+  - `src/test/java/com/worldmap/admin/AdminRecommendationOpsReviewServiceIntegrationTest.java`
+  - `src/test/java/com/worldmap/admin/AdminPageIntegrationTest.java`
+  - `src/test/java/com/worldmap/recommendation/RecommendationPageIntegrationTest.java`
+  - `src/test/java/com/worldmap/recommendation/RecommendationFeedbackIntegrationTest.java`
+  - `src/main/resources/templates/admin/index.html`
+  - `src/main/resources/templates/admin/recommendation-feedback.html`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/LOCAL_DEMO_BOOTSTRAP.md`
+  - `docs/WORKLOG.md`
+  - `blog/00_series_plan.md`
+  - `blog/33-bootstrap-local-demo-accounts-and-sample-runs.md`
+  - `blog/48-seed-current-recommendation-feedback-in-local-demo.md`
+  - `blog/50-current-state-rebuild-map.md`
+  - `blog/60-reduce-p15-anchor-drift-with-exploratory-nature-runway-bonus.md`
+- 요청 흐름 / 데이터 흐름: 런타임 추천 흐름은 그대로 `GET /recommendation/survey -> POST /recommendation/survey -> RecommendationSurveyService.recommend() -> recommendation/result -> POST /api/recommendation/feedback`이다. 이번에는 `RecommendationSurveyService` 안에 `exploratoryNatureRunwayBonus()`를 추가했다. 사용자가 `MILD + BALANCED + RELAXED + NATURE + VALUE_FIRST + TRANSIT_FIRST + EXPERIENCE`에 가까운 조합으로 답하면, 서비스가 후보 국가의 `climateValue`, `seasonality`, `paceValue`, `urbanityValue`, `englishSupport`, `safety`, `housingSpace`, `newcomerFriendliness`, `priceLevel`을 함께 읽어 “가볍게 살아보는 탐색 단계에서도 자연, 영어 적응, 생활 여유가 같이 확보되는가”를 별도 bonus로 반영한다.
+- 데이터 / 상태 변화: 추천 결과 top 3는 여전히 저장하지 않는다. 익명 피드백에는 이제 `engineVersion=engine-v20`이 저장되고, `/dashboard`, `/dashboard/recommendation/feedback`, `/dashboard/recommendation/persona-baseline` 운영 화면도 현재 엔진 버전을 `engine-v20`으로 보여준다. dynamic baseline 기준으로는 `18 / 18`을 유지하면서 anchor drift 수가 `2 -> 1`로 줄었고, ops review의 우선 시나리오는 `P07` 하나로 좁혀졌다.
+- 핵심 도메인 개념: `P15`는 단순히 “자연을 좋아하는 저비용 사용자”를 고르는 시나리오가 아니라, “먼저 가볍게 살아보면서도 영어 적응과 안전, 생활 공간, 이동 편의가 함께 받쳐주는 탐색형 정착지”를 찾는 시나리오다. 그래서 기존 `experienceTransitBonus()`를 더 키우지 않고, 이 설문 조합에만 작동하는 `exploratoryNatureRunwayBonus()`를 따로 추가했다. 이 계산은 컨트롤러가 아니라 `RecommendationSurveyService`가 맡아야 한다. 어떤 설문 조합에서 어떤 프로필 속성을 함께 읽어 rank drift를 줄일지는 추천 도메인 규칙이기 때문이다.
+- 예외 상황 또는 엣지 케이스: bonus를 넓게 켜면 `P08`, `P16`, `P18` 같은 자연형·탐색형 시나리오나 `포르투갈`, `우루과이` 같은 이미 맞는 후보도 함께 과하게 올라갈 수 있다. 그래서 `MILD`, `BALANCED`, `RELAXED`, `CALM`, `VALUE_FIRST`, `SPACE_FIRST`, `NATURE`, `TRANSIT_FIRST`, `English MEDIUM`, `Newcomer LOW`, `Safety HIGH`, `PublicService MEDIUM`, `Food/Diversity/Culture LOW`, `LIFE_FIRST`, `EXPERIENCE`, `LIGHT_START`까지 모두 묶고, 후보도 `climate 2~3`, `seasonality >= 4`, `pace <= 1`, `urbanity <= 3`, `english >= 5`, `safety >= 5`, `housing >= 5`, `newcomer >= 4`, `price <= 4`일 때만 strong bonus를 받게 제한했다.
+- 테스트 내용: 먼저 `RecommendationOfflinePersonaSnapshotTest`와 `AdminPersonaBaselineServiceIntegrationTest`로 현재 결과를 확인해 `P15`가 `뉴질랜드, 포르투갈, 말레이시아`로 바뀌고 anchor drift가 `1`로 줄었는지 검증했다. 이어서 `RecommendationSurveyServiceTest`에 `P15`형 입력에서 `뉴질랜드`가 1위가 되는 unit test를 추가했고, `AdminRecommendationOpsReviewServiceIntegrationTest`에서는 우선 시나리오가 `P07` 하나로 줄어드는지 고정했다. 마지막으로 추천/admin targeted suite와 `./gradlew test` 전체 통과를 확인했다.
+- 면접에서 30초 안에 설명하는 요약: baseline 18 / 18을 맞춘 뒤에는 weak scenario보다 1위 순위 drift를 줄이는 일이 더 중요해졌습니다. 이번에는 `P15`처럼 자연형 탐색 정착 시나리오에만 좁게 작동하는 `exploratoryNatureRunwayBonus`를 추가해서, 기대 1위였던 `뉴질랜드`가 `포르투갈`보다 앞서도록 보정했습니다. 그 결과 baseline은 유지하면서 anchor drift를 `2 -> 1`로 줄였습니다.
+- 아직 내가 이해가 부족한 부분: 이제 남은 운영 우선 시나리오는 `P07` 하나다. 다음에는 정말 `P07`까지 좁게 손볼지, 아니면 drift를 1개 남긴 상태에서 6단계를 닫고 9단계 Level 2로 넘어가는 편이 더 설명 가치가 큰지 판단이 필요하다.

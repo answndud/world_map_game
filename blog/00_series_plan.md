@@ -89,6 +89,7 @@
 62. [온화한 글로벌 도시 시나리오의 1위 drift 줄이기](./57-reduce-p13-anchor-drift-with-temperate-global-city-bonus.md)
 63. [따뜻한 실용형 아시아 시나리오의 1위 drift 줄이기](./58-reduce-p14-anchor-drift-with-accessible-warm-value-hub-bonus.md)
 64. [온화한 가족형 정착 시나리오의 1위 drift 줄이기](./59-reduce-p11-anchor-drift-with-temperate-family-bridge-bonus.md)
+65. [탐색형 자연 정착 시나리오의 1위 drift 줄이기](./60-reduce-p15-anchor-drift-with-exploratory-nature-runway-bonus.md)
 
 ### Part E. 테스트, 확장, 취업 패키징
 

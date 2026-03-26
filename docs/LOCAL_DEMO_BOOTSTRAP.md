@@ -52,7 +52,7 @@ demo bootstrap은 아래 확인용 데이터를 local DB에 넣는다.
   - `guestSessionKey = demo-guest-live`
   - `status = IN_PROGRESS`
 - 현재 추천 버전 만족도 샘플 5개
-  - 기준 버전: `survey-v4 / engine-v19`
+  - 기준 버전: `survey-v4 / engine-v20`
   - 평균 만족도: 약 `4.4`
   - `/dashboard/recommendation/feedback`에서 `rank drift 줄이기` 메모가 바로 보이는 수준으로 seed
 
