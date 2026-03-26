@@ -98,7 +98,7 @@
             </div>
             <div class="ranking-panel-stack">
                 <article class="panel ranking-board-panel"
-                         data-ranking-panel="location:LEVEL_1:ALL"
+                         data-ranking-panel="location:ALL"
                          data-title="위치 찾기 · 전체 Top 10"
                          data-copy="현재 운영 중인 기본 모드 기준 위치 찾기 전체 누적 랭킹입니다.">
                     <div class="table-shell">
@@ -112,7 +112,7 @@
                                 <th>시도 수</th>
                             </tr>
                             </thead>
-                            <tbody id="ranking-location-all-body" data-game-mode="location" data-level="LEVEL_1" data-scope="ALL">
+                            <tbody id="ranking-location-all-body" data-game-mode="location" data-scope="ALL">
                             <tr th:each="entry : ${locationAll.entries}">
                                 <td th:text="${entry.rank}">1</td>
                                 <td th:text="${entry.playerNickname}">Guest</td>
@@ -129,7 +129,7 @@
                 </article>
 
                 <article class="panel ranking-board-panel"
-                         data-ranking-panel="population:LEVEL_1:ALL"
+                         data-ranking-panel="population:ALL"
                          data-title="인구수 맞추기 · 전체 Top 10"
                          data-copy="현재 운영 중인 기본 모드 기준 인구수 맞추기 전체 누적 랭킹입니다."
                          hidden>
@@ -144,7 +144,7 @@
                                 <th>시도 수</th>
                             </tr>
                             </thead>
-                            <tbody id="ranking-population-all-body" data-game-mode="population" data-level="LEVEL_1" data-scope="ALL">
+                            <tbody id="ranking-population-all-body" data-game-mode="population" data-scope="ALL">
                             <tr th:each="entry : ${populationAll.entries}">
                                 <td th:text="${entry.rank}">1</td>
                                 <td th:text="${entry.playerNickname}">Guest</td>
@@ -161,7 +161,7 @@
                 </article>
 
                 <article class="panel ranking-board-panel"
-                         data-ranking-panel="location:LEVEL_1:DAILY"
+                         data-ranking-panel="location:DAILY"
                          data-title="위치 찾기 · 오늘 Top 10"
                          th:data-copy="${'오늘 기준 위치 찾기 랭킹입니다. 기준 날짜: ' + locationDaily.targetDate}"
                          hidden>
@@ -176,7 +176,7 @@
                                 <th>시도 수</th>
                             </tr>
                             </thead>
-                            <tbody id="ranking-location-daily-body" data-game-mode="location" data-level="LEVEL_1" data-scope="DAILY">
+                            <tbody id="ranking-location-daily-body" data-game-mode="location" data-scope="DAILY">
                             <tr th:each="entry : ${locationDaily.entries}">
                                 <td th:text="${entry.rank}">1</td>
                                 <td th:text="${entry.playerNickname}">Guest</td>
@@ -193,7 +193,7 @@
                 </article>
 
                 <article class="panel ranking-board-panel"
-                         data-ranking-panel="population:LEVEL_1:DAILY"
+                         data-ranking-panel="population:DAILY"
                          data-title="인구수 맞추기 · 오늘 Top 10"
                          th:data-copy="${'오늘 인구수 맞추기 랭킹입니다. 기준 날짜: ' + populationDaily.targetDate}"
                          hidden>
@@ -208,7 +208,7 @@
                                 <th>시도 수</th>
                             </tr>
                             </thead>
-                            <tbody id="ranking-population-daily-body" data-game-mode="population" data-level="LEVEL_1" data-scope="DAILY">
+                            <tbody id="ranking-population-daily-body" data-game-mode="population" data-scope="DAILY">
                             <tr th:each="entry : ${populationDaily.entries}">
                                 <td th:text="${entry.rank}">1</td>
                                 <td th:text="${entry.playerNickname}">Guest</td>

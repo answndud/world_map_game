@@ -15,13 +15,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.worldmap.auth.domain.Member;
 import com.worldmap.auth.domain.MemberRepository;
-import com.worldmap.game.location.domain.LocationGameLevel;
 import com.worldmap.game.location.domain.LocationGameSession;
 import com.worldmap.game.location.domain.LocationGameSessionRepository;
-import com.worldmap.game.population.domain.PopulationGameLevel;
 import com.worldmap.game.population.domain.PopulationGameSession;
 import com.worldmap.game.population.domain.PopulationGameSessionRepository;
-import com.worldmap.ranking.domain.LeaderboardGameLevel;
 import com.worldmap.ranking.domain.LeaderboardGameMode;
 import com.worldmap.ranking.domain.LeaderboardRecord;
 import com.worldmap.ranking.domain.LeaderboardRecordRepository;
@@ -80,7 +77,6 @@ class AdminPageIntegrationTest {
 			"member_one",
 			1L,
 			null,
-			LocationGameLevel.LEVEL_1,
 			5
 		);
 		activeMemberLocation.startGame(LocalDateTime.now().minusHours(2));
@@ -90,7 +86,6 @@ class AdminPageIntegrationTest {
 			"guest_one",
 			null,
 			"guest-key-1",
-			PopulationGameLevel.LEVEL_1,
 			5
 		);
 		activeGuestPopulation.startGame(LocalDateTime.now().minusHours(1));
@@ -100,7 +95,6 @@ class AdminPageIntegrationTest {
 			"run-location-today",
 			activeMemberLocation.getId(),
 			LeaderboardGameMode.LOCATION,
-			LeaderboardGameLevel.LEVEL_1,
 			"member_one",
 			1L,
 			null,
@@ -114,7 +108,6 @@ class AdminPageIntegrationTest {
 			"run-population-today",
 			activeGuestPopulation.getId(),
 			LeaderboardGameMode.POPULATION,
-			LeaderboardGameLevel.LEVEL_1,
 			"guest_one",
 			null,
 			"guest-key-1",

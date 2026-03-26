@@ -51,12 +51,11 @@ class LocationGameFlowIntegrationTest {
 
 	@Test
 	void locationGameContinuesBeyondFiveStages() throws Exception {
-		UUID sessionId = UUID.fromString(startGame("geo-player", "LEVEL_1"));
+		UUID sessionId = UUID.fromString(startGame("geo-player"));
 
 		for (int stageNumber = 1; stageNumber <= 7; stageNumber++) {
 			mockMvc.perform(get("/api/games/location/sessions/{sessionId}/state", sessionId))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.gameLevel").value("LEVEL_1"))
 				.andExpect(jsonPath("$.stageNumber").value(stageNumber))
 				.andExpect(jsonPath("$.livesRemaining").value(3))
 				.andExpect(jsonPath("$.difficultyLabel").isNotEmpty());
@@ -96,7 +95,7 @@ class LocationGameFlowIntegrationTest {
 
 	@Test
 	void wrongAnswerConsumesLifeAndKeepsSameStage() throws Exception {
-		UUID sessionId = UUID.fromString(startGame("life-check", "LEVEL_1"));
+		UUID sessionId = UUID.fromString(startGame("life-check"));
 		LocationGameStage firstStage = locationGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
 			.orElseThrow();
 		String wrongCountryIso3Code = findWrongCountryIso3Code(sessionId, firstStage.getTargetCountryIso3Code());
@@ -124,7 +123,7 @@ class LocationGameFlowIntegrationTest {
 
 	@Test
 	void threeWrongAnswersLeadToGameOver() throws Exception {
-		UUID sessionId = UUID.fromString(startGame("game-over", "LEVEL_1"));
+		UUID sessionId = UUID.fromString(startGame("game-over"));
 		LocationGameStage firstStage = locationGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
 			.orElseThrow();
 		String wrongCountryIso3Code = findWrongCountryIso3Code(sessionId, firstStage.getTargetCountryIso3Code());
@@ -160,7 +159,7 @@ class LocationGameFlowIntegrationTest {
 
 	@Test
 	void restartReusesSameSessionAndResetsProgress() throws Exception {
-		UUID sessionId = UUID.fromString(startGame("restart-check", "LEVEL_1"));
+		UUID sessionId = UUID.fromString(startGame("restart-check"));
 		LocationGameStage firstStage = locationGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
 			.orElseThrow();
 		String wrongCountryIso3Code = findWrongCountryIso3Code(sessionId, firstStage.getTargetCountryIso3Code());
@@ -178,7 +177,6 @@ class LocationGameFlowIntegrationTest {
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.sessionId").value(sessionId.toString()))
 			.andExpect(jsonPath("$.status").value("IN_PROGRESS"))
-			.andExpect(jsonPath("$.gameLevel").value("LEVEL_1"))
 			.andExpect(jsonPath("$.livesRemaining").value(3))
 			.andExpect(jsonPath("$.totalStages").value(1))
 			.andExpect(jsonPath("$.playPageUrl").value("/games/location/play/" + sessionId));
@@ -196,21 +194,11 @@ class LocationGameFlowIntegrationTest {
 			.hasSize(1);
 	}
 
-	@Test
-	void levelTwoStartRequestFallsBackToLevelOne() throws Exception {
-		UUID sessionId = UUID.fromString(startGame("hint-check", "LEVEL_2"));
-
-		mockMvc.perform(get("/api/games/location/sessions/{sessionId}/state", sessionId))
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.gameLevel").value("LEVEL_1"))
-			.andExpect(jsonPath("$.difficultyLabel").value(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Vector"))));
-	}
-
-	private String startGame(String nickname, String gameLevel) throws Exception {
+	private String startGame(String nickname) throws Exception {
 		MvcResult result = mockMvc.perform(
 			post("/api/games/location/sessions")
 				.contentType("application/json")
-				.content("{\"nickname\":\"" + nickname + "\",\"gameLevel\":\"" + gameLevel + "\"}")
+				.content("{\"nickname\":\"" + nickname + "\"}")
 		)
 			.andExpect(status().isCreated())
 			.andReturn();

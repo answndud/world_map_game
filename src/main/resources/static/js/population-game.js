@@ -54,8 +54,6 @@ function initPlayPage() {
     const countryName = document.getElementById("population-target-country-name");
     const yearLabel = document.getElementById("population-year");
     const optionsBox = document.getElementById("population-options");
-    const exactInputCard = document.getElementById("population-exact-input-card");
-    const exactInput = document.getElementById("population-exact-input");
     const feedback = document.getElementById("population-answer-feedback");
     const overlay = document.getElementById("population-stage-overlay");
     const messageBox = document.getElementById("population-play-message");
@@ -80,20 +78,6 @@ function initPlayPage() {
             .finally(() => {
                 nextStageButton.disabled = false;
             });
-    });
-
-    exactInput?.addEventListener("input", () => {
-        const normalizedValue = normalizePopulationInput(exactInput.value);
-        exactInput.value = normalizedValue ? Number(normalizedValue).toLocaleString() : "";
-
-        if (normalizedValue) {
-            setSelectionState(`입력 중: ${Number(normalizedValue).toLocaleString()}명`);
-            setStageHint("입력한 추정치로 제출하면 서버가 오차율과 점수를 판정합니다.");
-        } else {
-            setSelectionState("아직 입력하지 않았습니다.");
-        }
-
-        submitButton.disabled = interactionLocked || !canSubmitCurrentAnswer();
     });
 
     form.addEventListener("submit", async (event) => {
@@ -129,7 +113,6 @@ function initPlayPage() {
             }
 
             renderStatus(statusBox, {
-                gameLevel: payload.gameLevel,
                 stageNumber: payload.nextStageNumber || currentState.stageNumber,
                 difficultyLabel: payload.nextDifficultyLabel || currentState.difficultyLabel,
                 clearedStageCount: payload.clearedStageCount,
@@ -263,7 +246,6 @@ function initPlayPage() {
     }
 
     function configureAnswerMode(payload) {
-        exactInputCard.hidden = true;
         optionsBox.hidden = false;
     }
 
@@ -343,9 +325,6 @@ function initPlayPage() {
         optionsBox.querySelectorAll("input[name='population-option']").forEach((input) => {
             input.disabled = true;
         });
-        if (exactInput) {
-            exactInput.disabled = true;
-        }
     }
 
     function hideNextStageAction() {
@@ -362,11 +341,6 @@ function initPlayPage() {
         optionsBox.querySelectorAll(".option-card").forEach((card) => {
             card.classList.remove("is-selected");
         });
-
-        if (exactInput) {
-            exactInput.value = "";
-            exactInput.disabled = false;
-        }
 
         submitButton.disabled = true;
     }
@@ -432,44 +406,11 @@ function initPlayPage() {
         optionsBox.querySelectorAll("input[name='population-option']").forEach((input) => {
             input.disabled = locked;
         });
-        if (exactInput) {
-            exactInput.disabled = true;
-        }
     }
-}
-
-function normalizePopulationInput(rawValue) {
-    const digitsOnly = String(rawValue || "").replace(/[^\d]/g, "");
-    if (!digitsOnly) {
-        return null;
-    }
-    return digitsOnly;
 }
 
 function formatPopulation(population) {
     return `${Number(population).toLocaleString()}명`;
-}
-
-function formatErrorRate(errorRatePercent) {
-    if (errorRatePercent == null) {
-        return "-";
-    }
-    return `${Number(errorRatePercent).toFixed(1)}%`;
-}
-
-function formatPrecisionBand(precisionBand) {
-    switch (precisionBand) {
-        case "PRECISE_HIT":
-            return "정밀 적중";
-        case "CLOSE_HIT":
-            return "근접 적중";
-        case "SAFE_HIT":
-            return "허용 범위 정답";
-        case "MISS":
-            return "오답";
-        default:
-            return "-";
-    }
 }
 
 function showPopulationMessage(target, message, tone = "info") {

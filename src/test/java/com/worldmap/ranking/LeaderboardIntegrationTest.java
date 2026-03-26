@@ -70,7 +70,7 @@ class LeaderboardIntegrationTest {
 
 	@Test
 	void gameOverRecordsLocationLeaderboardAndRendersRankingPage() throws Exception {
-		UUID sessionId = UUID.fromString(startLocationGame("rank-location", "LEVEL_1"));
+		UUID sessionId = UUID.fromString(startLocationGame("rank-location"));
 
 		LocationGameStage firstStage = locationGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
 			.orElseThrow();
@@ -126,18 +126,14 @@ class LeaderboardIntegrationTest {
 			.andExpect(model().attributeExists("populationAll"));
 
 		assertThat(leaderboardRecordRepository.count()).isEqualTo(1);
-		assertThat(stringRedisTemplate.opsForZSet().zCard(TEST_PREFIX + ":all:location:l1")).isEqualTo(1L);
+		assertThat(stringRedisTemplate.opsForZSet().zCard(TEST_PREFIX + ":all:location")).isEqualTo(1L);
 	}
 
 	private String startLocationGame(String nickname) throws Exception {
-		return startLocationGame(nickname, "LEVEL_1");
-	}
-
-	private String startLocationGame(String nickname, String gameLevel) throws Exception {
 		MvcResult result = mockMvc.perform(
 			post("/api/games/location/sessions")
 				.contentType("application/json")
-				.content("{\"nickname\":\"" + nickname + "\",\"gameLevel\":\"" + gameLevel + "\"}")
+				.content("{\"nickname\":\"" + nickname + "\"}")
 		)
 			.andExpect(status().isCreated())
 			.andReturn();

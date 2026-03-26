@@ -10,7 +10,6 @@ public record LocationGameStageResultView(
 	String targetCountryIso3Code,
 	LocationGameStageStatus status,
 	Integer attemptCount,
-	Integer hintPenalty,
 	Integer awardedScore,
 	LocalDateTime clearedAt,
 	List<LocationGameAttemptResultView> attempts

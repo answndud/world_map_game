@@ -14,7 +14,7 @@ public class PopulationGameScoringPolicy {
 	) {
 		boolean correct = selectedOptionNumber.equals(correctOptionNumber);
 		if (!correct) {
-			return new PopulationAnswerJudgement(false, 0, null, null);
+			return new PopulationAnswerJudgement(false, 0);
 		}
 
 		int baseScore = 90 + ((stageNumber - 1) * 15);
@@ -25,6 +25,6 @@ public class PopulationGameScoringPolicy {
 			default -> 0;
 		};
 
-		return new PopulationAnswerJudgement(true, baseScore + lifeBonus + attemptBonus, null, null);
+		return new PopulationAnswerJudgement(true, baseScore + lifeBonus + attemptBonus);
 	}
 }

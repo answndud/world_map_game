@@ -134,7 +134,6 @@ function initPlayPage() {
             }
 
             renderStatus(statusBox, {
-                gameLevel: payload.gameLevel,
                 stageNumber: payload.nextStageNumber || currentState.stageNumber,
                 difficultyLabel: payload.nextDifficultyLabel || currentState.difficultyLabel,
                 clearedStageCount: payload.clearedStageCount,
@@ -249,7 +248,7 @@ function initPlayPage() {
 
         currentState = payload;
         countryName.textContent = payload.targetCountryName;
-        renderLevelCopy(payload.gameLevel, heroCopy, stageHint);
+        renderLevelCopy(heroCopy, stageHint);
         renderStatus(statusBox, payload);
         refreshGlobe();
     }
@@ -659,10 +658,6 @@ function waitForNextPaint() {
 function renderStatus(target, payload) {
     target.innerHTML = `
         <article class="stat-card">
-            <span class="subtitle">Mode</span>
-            <strong>${formatLocationGameLevel(payload.gameLevel)}</strong>
-        </article>
-        <article class="stat-card">
             <span class="subtitle">Stage</span>
             <strong>${payload.stageNumber}</strong>
         </article>
@@ -717,7 +712,7 @@ function wrongFollowUp(payload) {
     return "같은 Stage를 다시 시도하세요.";
 }
 
-function renderLevelCopy(gameLevel, heroCopyTarget, stageHintTarget) {
+function renderLevelCopy(heroCopyTarget, stageHintTarget) {
     if (heroCopyTarget) {
         heroCopyTarget.textContent = "플레이 중 지구본 위 나라 이름은 표시되지 않습니다. 국가를 클릭하면 지구본 위에서만 선택 하이라이트가 보이고, 실제 국가명은 제출 후 판정 단계에서만 공개됩니다. 현재는 상위 72개 주요 국가를 대상으로 먼저 감을 익히는 기본 모드만 운영합니다.";
     }
@@ -725,10 +720,6 @@ function renderLevelCopy(gameLevel, heroCopyTarget, stageHintTarget) {
     if (stageHintTarget) {
         stageHintTarget.textContent = "지구본을 회전해 해당 국가를 찾은 뒤 클릭하세요. 현재는 상위 72개 주요 국가를 대상으로 먼저 안정성과 클릭 정확도를 맞추고 있습니다.";
     }
-}
-
-function formatLocationGameLevel(gameLevel) {
-    return "기본 탐색";
 }
 
 function renderStageOverlay(target, title, description, tone) {

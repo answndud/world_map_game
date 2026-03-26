@@ -9,20 +9,17 @@ import com.worldmap.country.domain.Country;
 import com.worldmap.country.domain.CountryRepository;
 import com.worldmap.game.location.domain.LocationGameAttempt;
 import com.worldmap.game.location.domain.LocationGameAttemptRepository;
-import com.worldmap.game.location.domain.LocationGameLevel;
 import com.worldmap.game.location.domain.LocationGameSession;
 import com.worldmap.game.location.domain.LocationGameSessionRepository;
 import com.worldmap.game.location.domain.LocationGameStage;
 import com.worldmap.game.location.domain.LocationGameStageRepository;
 import com.worldmap.game.population.domain.PopulationGameAttempt;
 import com.worldmap.game.population.domain.PopulationGameAttemptRepository;
-import com.worldmap.game.population.domain.PopulationGameLevel;
 import com.worldmap.game.population.domain.PopulationGameSession;
 import com.worldmap.game.population.domain.PopulationGameSessionRepository;
 import com.worldmap.game.population.domain.PopulationGameStage;
 import com.worldmap.game.population.domain.PopulationGameStageRepository;
 import com.worldmap.ranking.application.LeaderboardRankingPolicy;
-import com.worldmap.ranking.domain.LeaderboardGameLevel;
 import com.worldmap.ranking.domain.LeaderboardGameMode;
 import com.worldmap.ranking.domain.LeaderboardRecord;
 import com.worldmap.ranking.domain.LeaderboardRecordRepository;
@@ -141,7 +138,6 @@ public class DemoBootstrapService {
 			demoMember.getNickname(),
 			demoMember.getId(),
 			null,
-			LocationGameLevel.LEVEL_1,
 			4
 		);
 		session.startGame(startedAt);
@@ -216,7 +212,6 @@ public class DemoBootstrapService {
 			demoMember.getNickname(),
 			demoMember.getId(),
 			null,
-			PopulationGameLevel.LEVEL_1,
 			4
 		);
 		session.startGame(startedAt);
@@ -310,7 +305,6 @@ public class DemoBootstrapService {
 			"guest_live",
 			null,
 			DEMO_GUEST_SESSION_KEY,
-			LocationGameLevel.LEVEL_1,
 			5
 		);
 		liveGuestSession.startGame(LocalDateTime.now().minusMinutes(20));
@@ -490,7 +484,6 @@ public class DemoBootstrapService {
 				runSignature,
 				sessionId,
 				gameMode,
-				LeaderboardGameLevel.LEVEL_1,
 				playerNickname,
 				memberId,
 				guestSessionKey,

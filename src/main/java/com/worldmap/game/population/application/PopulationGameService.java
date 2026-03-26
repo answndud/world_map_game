@@ -6,7 +6,6 @@ import com.worldmap.country.domain.CountryRepository;
 import com.worldmap.game.common.domain.GameSessionStatus;
 import com.worldmap.game.population.domain.PopulationGameAttempt;
 import com.worldmap.game.population.domain.PopulationGameAttemptRepository;
-import com.worldmap.game.population.domain.PopulationGameLevel;
 import com.worldmap.game.population.domain.PopulationGameSession;
 import com.worldmap.game.population.domain.PopulationGameSessionRepository;
 import com.worldmap.game.population.domain.PopulationGameStage;
@@ -38,7 +37,6 @@ public class PopulationGameService {
 	private final PopulationGameOptionGenerator populationGameOptionGenerator;
 	private final PopulationGameDifficultyPolicy populationGameDifficultyPolicy;
 	private final PopulationGameScoringPolicy populationGameScoringPolicy;
-	private final PopulationGamePrecisionScoringPolicy populationGamePrecisionScoringPolicy;
 	private final PopulationOptionLabelFormatter populationOptionLabelFormatter;
 	private final LeaderboardService leaderboardService;
 
@@ -50,7 +48,6 @@ public class PopulationGameService {
 		PopulationGameOptionGenerator populationGameOptionGenerator,
 		PopulationGameDifficultyPolicy populationGameDifficultyPolicy,
 		PopulationGameScoringPolicy populationGameScoringPolicy,
-		PopulationGamePrecisionScoringPolicy populationGamePrecisionScoringPolicy,
 		PopulationOptionLabelFormatter populationOptionLabelFormatter,
 		LeaderboardService leaderboardService
 	) {
@@ -61,36 +58,24 @@ public class PopulationGameService {
 		this.populationGameOptionGenerator = populationGameOptionGenerator;
 		this.populationGameDifficultyPolicy = populationGameDifficultyPolicy;
 		this.populationGameScoringPolicy = populationGameScoringPolicy;
-		this.populationGamePrecisionScoringPolicy = populationGamePrecisionScoringPolicy;
 		this.populationOptionLabelFormatter = populationOptionLabelFormatter;
 		this.leaderboardService = leaderboardService;
 	}
 
 	@Transactional
 	public PopulationGameStartView startGuestGame(String nickname, String guestSessionKey) {
-		return startGuestGame(nickname, guestSessionKey, PopulationGameLevel.LEVEL_1);
-	}
-
-	@Transactional
-	public PopulationGameStartView startGuestGame(String nickname, String guestSessionKey, PopulationGameLevel gameLevel) {
-		return startGame(normalizeNickname(nickname), null, guestSessionKey, gameLevel);
+		return startGame(normalizeNickname(nickname), null, guestSessionKey);
 	}
 
 	@Transactional
 	public PopulationGameStartView startMemberGame(Long memberId, String memberNickname) {
-		return startMemberGame(memberId, memberNickname, PopulationGameLevel.LEVEL_1);
-	}
-
-	@Transactional
-	public PopulationGameStartView startMemberGame(Long memberId, String memberNickname, PopulationGameLevel gameLevel) {
-		return startGame(memberNickname, memberId, null, gameLevel);
+		return startGame(memberNickname, memberId, null);
 	}
 
 	private PopulationGameStartView startGame(
 		String playerNickname,
 		Long memberId,
-		String guestSessionKey,
-		PopulationGameLevel gameLevel
+		String guestSessionKey
 	) {
 		List<Country> countries = getCountriesSortedByPopulation();
 
@@ -98,7 +83,7 @@ public class PopulationGameService {
 			throw new IllegalStateException("인구수 게임을 시작하기 위한 국가 데이터가 충분하지 않습니다.");
 		}
 
-		PopulationGameSession session = PopulationGameSession.ready(playerNickname, memberId, guestSessionKey, gameLevel, 1);
+		PopulationGameSession session = PopulationGameSession.ready(playerNickname, memberId, guestSessionKey, 1);
 		session = populationGameSessionRepository.save(session);
 		createNextStage(session, 1, countries, List.of());
 		session.startGame(LocalDateTime.now());
@@ -107,7 +92,6 @@ public class PopulationGameService {
 			session.getId(),
 			session.getPlayerNickname(),
 			session.getStatus(),
-			session.getGameLevel(),
 			session.getTotalRounds(),
 			session.getLivesRemaining(),
 			"/games/population/play/" + session.getId()
@@ -127,7 +111,6 @@ public class PopulationGameService {
 
 		return new PopulationGameStateView(
 			session.getId(),
-			session.getGameLevel(),
 			stage.getStageNumber(),
 			difficultyPlan.label(),
 			session.getClearedStageCount(),
@@ -135,7 +118,7 @@ public class PopulationGameService {
 			session.getLivesRemaining(),
 			stage.getTargetCountryName(),
 			stage.getPopulationYear(),
-			session.getGameLevel().usesExactInput() ? List.of() : toOptionViews(stage),
+			toOptionViews(stage),
 			session.getStatus()
 		);
 	}
@@ -166,7 +149,6 @@ public class PopulationGameService {
 			session.getId(),
 			session.getPlayerNickname(),
 			session.getStatus(),
-			session.getGameLevel(),
 			session.getTotalRounds(),
 			session.getLivesRemaining(),
 			"/games/population/play/" + session.getId()
@@ -175,16 +157,10 @@ public class PopulationGameService {
 
 	@Transactional
 	public PopulationGameAnswerView submitAnswer(UUID sessionId, Integer stageNumber, Integer selectedOptionNumber) {
-		return submitAnswer(sessionId, stageNumber, selectedOptionNumber, null);
-	}
+		if (selectedOptionNumber == null || selectedOptionNumber < 1 || selectedOptionNumber > 4) {
+			throw new IllegalArgumentException("보기 번호를 선택해야 합니다.");
+		}
 
-	@Transactional
-	public PopulationGameAnswerView submitAnswer(
-		UUID sessionId,
-		Integer stageNumber,
-		Integer selectedOptionNumber,
-		Long submittedPopulation
-	) {
 		PopulationGameSession session = getSession(sessionId);
 
 		if (session.getStatus() != GameSessionStatus.IN_PROGRESS) {
@@ -198,53 +174,18 @@ public class PopulationGameService {
 		PopulationGameStage stage = getStage(sessionId, stageNumber);
 		int attemptNumber = stage.nextAttemptNumber();
 		LocalDateTime attemptedAt = LocalDateTime.now();
-		PopulationAnswerJudgement judgement;
-		Long selectedPopulation;
-		Integer recordedOptionNumber;
-		Integer answerOptionNumber;
-		Integer correctOptionNumber;
-		String selectedAnswerLabel;
-		String correctAnswerLabel;
-
-		if (session.getGameLevel().usesExactInput()) {
-			if (submittedPopulation == null || submittedPopulation <= 0L) {
-				throw new IllegalArgumentException("Level 2에서는 추정 인구수를 숫자로 입력해야 합니다.");
-			}
-
-			judgement = populationGamePrecisionScoringPolicy.judge(
-				submittedPopulation,
-				stage.getTargetPopulation(),
-				stageNumber,
-				attemptNumber,
-				session.getLivesRemaining()
-			);
-			selectedPopulation = submittedPopulation;
-			recordedOptionNumber = 0;
-			answerOptionNumber = null;
-			correctOptionNumber = null;
-			selectedAnswerLabel = formatPopulation(selectedPopulation);
-			correctAnswerLabel = formatPopulation(stage.getTargetPopulation());
-		} else {
-			if (selectedOptionNumber == null || selectedOptionNumber < 1 || selectedOptionNumber > 4) {
-				throw new IllegalArgumentException("Level 1에서는 보기 번호를 선택해야 합니다.");
-			}
-
-			judgement = populationGameScoringPolicy.judge(
-				selectedOptionNumber,
-				stage.getCorrectOptionNumber(),
-				stageNumber,
-				attemptNumber,
-				session.getLivesRemaining()
-			);
-			selectedPopulation = stage.getOptions().get(selectedOptionNumber - 1);
-			recordedOptionNumber = selectedOptionNumber;
-			answerOptionNumber = selectedOptionNumber;
-			correctOptionNumber = stage.getCorrectOptionNumber();
-			selectedAnswerLabel = populationOptionLabelFormatter.labelForLowerBound(selectedPopulation);
-			correctAnswerLabel = populationOptionLabelFormatter.labelForLowerBound(
-				stage.getOptions().get(stage.getCorrectOptionNumber() - 1)
-			);
-		}
+		PopulationAnswerJudgement judgement = populationGameScoringPolicy.judge(
+			selectedOptionNumber,
+			stage.getCorrectOptionNumber(),
+			stageNumber,
+			attemptNumber,
+			session.getLivesRemaining()
+		);
+		Long selectedPopulation = stage.getOptions().get(selectedOptionNumber - 1);
+		String selectedAnswerLabel = populationOptionLabelFormatter.labelForLowerBound(selectedPopulation);
+		String correctAnswerLabel = populationOptionLabelFormatter.labelForLowerBound(
+			stage.getOptions().get(stage.getCorrectOptionNumber() - 1)
+		);
 
 		stage.recordAttempt(judgement.correct(), judgement.awardedScore(), attemptedAt);
 
@@ -265,7 +206,7 @@ public class PopulationGameService {
 			PopulationGameAttempt.create(
 				stage,
 				attemptNumber,
-				recordedOptionNumber,
+				selectedOptionNumber,
 				selectedPopulation,
 				judgement.correct(),
 				session.getLivesRemaining(),
@@ -287,14 +228,13 @@ public class PopulationGameService {
 
 		return new PopulationGameAnswerView(
 			session.getId(),
-			session.getGameLevel(),
 			stage.getStageNumber(),
 			stage.getTargetCountryName(),
 			stage.getPopulationYear(),
-			answerOptionNumber,
+			selectedOptionNumber,
 			selectedPopulation,
 			selectedAnswerLabel,
-			correctOptionNumber,
+			stage.getCorrectOptionNumber(),
 			stage.getTargetPopulation(),
 			correctAnswerLabel,
 			judgement.correct(),
@@ -304,8 +244,6 @@ public class PopulationGameService {
 			session.getLivesRemaining(),
 			session.getStatus() == GameSessionStatus.IN_PROGRESS ? session.getCurrentStageNumber() : null,
 			nextDifficultyPlan != null ? nextDifficultyPlan.label() : null,
-			judgement.errorRatePercent(),
-			judgement.precisionBand(),
 			session.getStatus(),
 			outcome,
 			"/games/population/result/" + session.getId()
@@ -323,18 +261,7 @@ public class PopulationGameService {
 					attempt.getAttemptNumber(),
 					attempt.getSelectedOptionNumber(),
 					attempt.getSelectedPopulation(),
-					attempt.getStage().getSession().getGameLevel().usesExactInput()
-						? formatPopulation(attempt.getSelectedPopulation())
-						: populationOptionLabelFormatter.labelForLowerBound(attempt.getSelectedPopulation()),
-					attempt.getStage().getSession().getGameLevel().usesExactInput()
-						? calculateErrorRatePercent(attempt.getSelectedPopulation(), attempt.getStage().getTargetPopulation())
-						: null,
-					attempt.getStage().getSession().getGameLevel().usesExactInput()
-						? populationGamePrecisionScoringPolicy.resolveBand(
-							attempt.getSelectedPopulation(),
-							attempt.getStage().getTargetPopulation()
-						)
-						: null,
+					populationOptionLabelFormatter.labelForLowerBound(attempt.getSelectedPopulation()),
 					attempt.getCorrect(),
 					attempt.getLivesRemainingAfter(),
 					attempt.getAttemptedAt()
@@ -347,10 +274,7 @@ public class PopulationGameService {
 				stage.getTargetCountryName(),
 				stage.getPopulationYear(),
 				stage.getTargetPopulation(),
-				stage.getSession().getGameLevel().usesExactInput()
-					? formatPopulation(stage.getTargetPopulation())
-					: populationOptionLabelFormatter.labelForLowerBound(stage.getOptions().get(stage.getCorrectOptionNumber() - 1)),
-				resolvePrecisionBand(stage.getSession().getGameLevel(), attemptsByStageId.getOrDefault(stage.getId(), List.of())),
+				populationOptionLabelFormatter.labelForLowerBound(stage.getOptions().get(stage.getCorrectOptionNumber() - 1)),
 				stage.getStatus(),
 				stage.getAttemptCount(),
 				stage.getAwardedScore(),
@@ -370,7 +294,6 @@ public class PopulationGameService {
 			session.getId(),
 			session.getPlayerNickname(),
 			session.getStatus(),
-			session.getGameLevel(),
 			session.getTotalRounds(),
 			session.getClearedStageCount(),
 			totalAttemptCount,
@@ -519,27 +442,5 @@ public class PopulationGameService {
 
 	private String formatPopulation(Long population) {
 		return "%,d명".formatted(population);
-	}
-
-	private Double calculateErrorRatePercent(Long submittedPopulation, Long targetPopulation) {
-		if (submittedPopulation == null || targetPopulation == null || targetPopulation <= 0L) {
-			return null;
-		}
-		return (Math.abs(submittedPopulation - targetPopulation) * 100.0) / targetPopulation;
-	}
-
-	private PopulationGamePrecisionBand resolvePrecisionBand(
-		PopulationGameLevel gameLevel,
-		List<PopulationGameAttemptResultView> attempts
-	) {
-		if (!gameLevel.usesExactInput()) {
-			return null;
-		}
-
-		return attempts.stream()
-			.filter(PopulationGameAttemptResultView::correct)
-			.map(PopulationGameAttemptResultView::precisionBand)
-			.findFirst()
-			.orElse(null);
 	}
 }

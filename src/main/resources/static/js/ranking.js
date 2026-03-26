@@ -9,14 +9,13 @@
     const messageBox = document.getElementById("ranking-refresh-message");
     const activeTitleBox = document.getElementById("ranking-active-title");
     const activeCopyBox = document.getElementById("ranking-active-copy");
-    const tableBodies = Array.from(document.querySelectorAll("tbody[data-game-mode][data-level][data-scope]"));
+    const tableBodies = Array.from(document.querySelectorAll("tbody[data-game-mode][data-scope]"));
     const rankingPanels = Array.from(document.querySelectorAll("[data-ranking-panel]"));
     const modeButtons = Array.from(document.querySelectorAll("[data-ranking-mode]"));
     const scopeButtons = Array.from(document.querySelectorAll("[data-ranking-scope]"));
     const refreshIntervalMs = 15000;
     let activeMode = modeButtons.find((button) => button.classList.contains("is-active"))?.dataset.rankingMode ?? "location";
     let activeScope = scopeButtons.find((button) => button.classList.contains("is-active"))?.dataset.rankingScope ?? "ALL";
-    const activeLevel = "LEVEL_1";
     let refreshTimer = null;
     let refreshInFlight = false;
 
@@ -56,9 +55,8 @@
         try {
             const responses = await Promise.all(tableBodies.map(async (tbody) => {
                 const gameMode = tbody.dataset.gameMode;
-                const gameLevel = tbody.dataset.level;
                 const scope = tbody.dataset.scope;
-                const response = await fetch(`/api/rankings/${gameMode}?level=${gameLevel}&scope=${scope}&limit=10`, {
+                const response = await fetch(`/api/rankings/${gameMode}?scope=${scope}&limit=10`, {
                     cache: "no-store"
                 });
                 const payload = await response.json();
@@ -191,7 +189,7 @@
     }
 
     function currentBoardKey() {
-        return `${activeMode}:${activeLevel}:${activeScope}`;
+        return `${activeMode}:${activeScope}`;
     }
 
     function escapeHtml(value) {

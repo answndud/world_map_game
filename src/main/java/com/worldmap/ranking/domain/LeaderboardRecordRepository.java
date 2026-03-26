@@ -16,10 +16,9 @@ public interface LeaderboardRecordRepository extends JpaRepository<LeaderboardRe
 
 	long countByMemberId(Long memberId);
 
-	long countByMemberIdAndGameModeAndGameLevel(
+	long countByMemberIdAndGameMode(
 		Long memberId,
-		LeaderboardGameMode gameMode,
-		LeaderboardGameLevel gameLevel
+		LeaderboardGameMode gameMode
 	);
 
 	Page<LeaderboardRecord> findByMemberIdOrderByFinishedAtDesc(Long memberId, Pageable pageable);
@@ -32,31 +31,17 @@ public interface LeaderboardRecordRepository extends JpaRepository<LeaderboardRe
 		LocalDateTime endExclusive
 	);
 
-	Optional<LeaderboardRecord> findFirstByMemberIdAndGameModeAndGameLevelOrderByRankingScoreDescFinishedAtAsc(
-		Long memberId,
-		LeaderboardGameMode gameMode,
-		LeaderboardGameLevel gameLevel
-	);
-
 	Optional<LeaderboardRecord> findFirstByMemberIdAndGameModeOrderByRankingScoreDescFinishedAtAsc(
 		Long memberId,
 		LeaderboardGameMode gameMode
 	);
 
-	List<LeaderboardRecord> findAllByGameModeAndGameLevelOrderByRankingScoreDescFinishedAtAsc(
-		LeaderboardGameMode gameMode,
-		LeaderboardGameLevel gameLevel
-	);
+	List<LeaderboardRecord> findAllByGameModeOrderByRankingScoreDescFinishedAtAsc(LeaderboardGameMode gameMode);
 
-	Page<LeaderboardRecord> findByGameModeAndGameLevelOrderByRankingScoreDescFinishedAtAsc(
-		LeaderboardGameMode gameMode,
-		LeaderboardGameLevel gameLevel,
-		Pageable pageable
-	);
+	Page<LeaderboardRecord> findByGameModeOrderByRankingScoreDescFinishedAtAsc(LeaderboardGameMode gameMode, Pageable pageable);
 
-	Page<LeaderboardRecord> findByGameModeAndGameLevelAndLeaderboardDateOrderByRankingScoreDescFinishedAtAsc(
+	Page<LeaderboardRecord> findByGameModeAndLeaderboardDateOrderByRankingScoreDescFinishedAtAsc(
 		LeaderboardGameMode gameMode,
-		LeaderboardGameLevel gameLevel,
 		LocalDate leaderboardDate,
 		Pageable pageable
 	);

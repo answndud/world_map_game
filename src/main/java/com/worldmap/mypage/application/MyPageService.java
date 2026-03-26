@@ -129,11 +129,7 @@ public class MyPageService {
 	}
 
 	private MyPageBestRunView toBestRunView(Long memberId, LeaderboardRecord record) {
-		long completedRunCount = leaderboardRecordRepository.countByMemberIdAndGameModeAndGameLevel(
-			memberId,
-			record.getGameMode(),
-			record.getGameLevel()
-		);
+		long completedRunCount = leaderboardRecordRepository.countByMemberIdAndGameMode(memberId, record.getGameMode());
 		return new MyPageBestRunView(
 			gameModeLabel(record.getGameMode()),
 			completedRunCount,
@@ -157,10 +153,7 @@ public class MyPageService {
 
 	private Integer rankFor(LeaderboardRecord targetRecord) {
 		List<LeaderboardRecord> orderedRecords = leaderboardRecordRepository
-			.findAllByGameModeAndGameLevelOrderByRankingScoreDescFinishedAtAsc(
-				targetRecord.getGameMode(),
-				targetRecord.getGameLevel()
-			);
+			.findAllByGameModeOrderByRankingScoreDescFinishedAtAsc(targetRecord.getGameMode());
 
 		for (int index = 0; index < orderedRecords.size(); index++) {
 			if (orderedRecords.get(index).getId().equals(targetRecord.getId())) {

@@ -50,7 +50,6 @@ class PopulationGameFlowIntegrationTest {
 		for (int stageNumber = 1; stageNumber <= 7; stageNumber++) {
 			mockMvc.perform(get("/api/games/population/sessions/{sessionId}/state", sessionId))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.gameLevel").value("LEVEL_1"))
 				.andExpect(jsonPath("$.stageNumber").value(stageNumber))
 				.andExpect(jsonPath("$.options", hasSize(4)))
 				.andExpect(jsonPath("$.livesRemaining").value(3))
@@ -97,7 +96,6 @@ class PopulationGameFlowIntegrationTest {
 				.content(answerPayload(1, wrongOptionNumber))
 		)
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.gameLevel").value("LEVEL_1"))
 			.andExpect(jsonPath("$.outcome").value("WRONG"))
 			.andExpect(jsonPath("$.gameStatus").value("IN_PROGRESS"))
 			.andExpect(jsonPath("$.livesRemaining").value(2))
@@ -150,16 +148,6 @@ class PopulationGameFlowIntegrationTest {
 	}
 
 	@Test
-	void levelTwoStartRequestFallsBackToLevelOne() throws Exception {
-		UUID sessionId = UUID.fromString(startGame("population-l2", "LEVEL_2"));
-
-		mockMvc.perform(get("/api/games/population/sessions/{sessionId}/state", sessionId))
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.gameLevel").value("LEVEL_1"))
-			.andExpect(jsonPath("$.options", hasSize(4)));
-	}
-
-	@Test
 	void restartReusesSameSessionAndResetsProgress() throws Exception {
 		UUID sessionId = UUID.fromString(startGame("population-restart"));
 		PopulationGameStage firstStage = populationGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
@@ -197,14 +185,10 @@ class PopulationGameFlowIntegrationTest {
 	}
 
 	private String startGame(String nickname) throws Exception {
-		return startGame(nickname, "LEVEL_1");
-	}
-
-	private String startGame(String nickname, String gameLevel) throws Exception {
 		MvcResult result = mockMvc.perform(
 			post("/api/games/population/sessions")
 				.contentType("application/json")
-				.content("{\"nickname\":\"" + nickname + "\",\"gameLevel\":\"" + gameLevel + "\"}")
+				.content("{\"nickname\":\"" + nickname + "\"}")
 		)
 			.andExpect(status().isCreated())
 			.andReturn();

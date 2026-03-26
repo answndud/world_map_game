@@ -13,7 +13,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 import com.worldmap.auth.application.MemberSessionManager;
-import com.worldmap.ranking.domain.LeaderboardGameLevel;
 import com.worldmap.auth.domain.MemberRole;
 import com.worldmap.ranking.application.LeaderboardEntryView;
 import com.worldmap.ranking.application.LeaderboardService;
@@ -55,7 +54,6 @@ class StatsPageControllerTest {
 		given(leaderboardService.getLeaderboard(LeaderboardGameMode.LOCATION, LeaderboardScope.DAILY, 3)).willReturn(
 			new LeaderboardView(
 				LeaderboardGameMode.LOCATION,
-				LeaderboardGameLevel.LEVEL_1,
 				LeaderboardScope.DAILY,
 				LocalDate.now(),
 				List.of(new LeaderboardEntryView(1, "orbit_runner", 420, 3, 6, LocalDateTime.now()))
@@ -64,7 +62,6 @@ class StatsPageControllerTest {
 		given(leaderboardService.getLeaderboard(LeaderboardGameMode.POPULATION, LeaderboardScope.DAILY, 3)).willReturn(
 			new LeaderboardView(
 				LeaderboardGameMode.POPULATION,
-				LeaderboardGameLevel.LEVEL_1,
 				LeaderboardScope.DAILY,
 				LocalDate.now(),
 				List.of(new LeaderboardEntryView(1, "guest_live", 390, 3, 5, LocalDateTime.now()))
@@ -88,10 +85,10 @@ class StatsPageControllerTest {
 			new ServiceActivityView(12, 3, 4, 9, 5, 3, 2)
 		);
 		given(leaderboardService.getLeaderboard(LeaderboardGameMode.LOCATION, LeaderboardScope.DAILY, 3)).willReturn(
-			new LeaderboardView(LeaderboardGameMode.LOCATION, LeaderboardGameLevel.LEVEL_1, LeaderboardScope.DAILY, LocalDate.now(), List.of())
+			new LeaderboardView(LeaderboardGameMode.LOCATION, LeaderboardScope.DAILY, LocalDate.now(), List.of())
 		);
 		given(leaderboardService.getLeaderboard(LeaderboardGameMode.POPULATION, LeaderboardScope.DAILY, 3)).willReturn(
-			new LeaderboardView(LeaderboardGameMode.POPULATION, LeaderboardGameLevel.LEVEL_1, LeaderboardScope.DAILY, LocalDate.now(), List.of())
+			new LeaderboardView(LeaderboardGameMode.POPULATION, LeaderboardScope.DAILY, LocalDate.now(), List.of())
 		);
 		MockHttpSession session = new MockHttpSession();
 		session.setAttribute(MEMBER_ID_ATTRIBUTE, 1L);

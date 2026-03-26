@@ -4,8 +4,6 @@ import com.worldmap.game.common.domain.BaseGameSession;
 import com.worldmap.game.common.domain.GameSessionStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -19,10 +17,6 @@ public class PopulationGameSession extends BaseGameSession {
 	@Column(name = "lives_remaining")
 	private Integer livesRemaining;
 
-	@Enumerated(EnumType.STRING)
-	@Column(name = "game_level", length = 20)
-	private PopulationGameLevel gameLevel;
-
 	protected PopulationGameSession() {
 	}
 
@@ -31,26 +25,23 @@ public class PopulationGameSession extends BaseGameSession {
 		String playerNickname,
 		Long memberId,
 		String guestSessionKey,
-		PopulationGameLevel gameLevel,
 		Integer totalRounds
 	) {
 		super(id, playerNickname, memberId, guestSessionKey, totalRounds);
 		this.livesRemaining = DEFAULT_LIVES;
-		this.gameLevel = gameLevel;
 	}
 
-	public static PopulationGameSession ready(String playerNickname, PopulationGameLevel gameLevel, Integer totalRounds) {
-		return new PopulationGameSession(UUID.randomUUID(), playerNickname, null, null, gameLevel, totalRounds);
+	public static PopulationGameSession ready(String playerNickname, Integer totalRounds) {
+		return new PopulationGameSession(UUID.randomUUID(), playerNickname, null, null, totalRounds);
 	}
 
 	public static PopulationGameSession ready(
 		String playerNickname,
 		Long memberId,
 		String guestSessionKey,
-		PopulationGameLevel gameLevel,
 		Integer totalRounds
 	) {
-		return new PopulationGameSession(UUID.randomUUID(), playerNickname, memberId, guestSessionKey, gameLevel, totalRounds);
+		return new PopulationGameSession(UUID.randomUUID(), playerNickname, memberId, guestSessionKey, totalRounds);
 	}
 
 	public void planNextStage(Integer nextStageNumber) {
@@ -79,10 +70,6 @@ public class PopulationGameSession extends BaseGameSession {
 
 	public Integer getLivesRemaining() {
 		return livesRemaining == null ? DEFAULT_LIVES : livesRemaining;
-	}
-
-	public PopulationGameLevel getGameLevel() {
-		return gameLevel == null ? PopulationGameLevel.LEVEL_1 : gameLevel;
 	}
 
 	public Integer getCurrentStageNumber() {

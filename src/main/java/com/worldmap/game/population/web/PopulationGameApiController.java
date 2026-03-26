@@ -75,8 +75,7 @@ public class PopulationGameApiController {
 		return populationGameService.submitAnswer(
 			sessionId,
 			request.stageNumber(),
-			request.selectedOptionNumber(),
-			request.submittedPopulation()
+			request.selectedOptionNumber()
 		);
 	}
 

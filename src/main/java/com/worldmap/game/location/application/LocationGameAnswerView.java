@@ -1,20 +1,15 @@
 package com.worldmap.game.location.application;
 
 import com.worldmap.game.common.domain.GameSessionStatus;
-import com.worldmap.game.location.domain.LocationGameLevel;
 import java.util.UUID;
 
 public record LocationGameAnswerView(
 	UUID sessionId,
-	LocationGameLevel gameLevel,
 	Integer stageNumber,
 	String targetCountryName,
 	String selectedCountryName,
 	String selectedCountryIso3Code,
-	Integer distanceKm,
-	String directionHint,
 	Boolean correct,
-	Integer hintPenalty,
 	Integer awardedScore,
 	Integer totalScore,
 	Integer clearedStageCount,

@@ -17,8 +17,8 @@ import java.util.UUID;
 @Table(
 	name = "leaderboard_record",
 	indexes = {
-		@Index(name = "idx_leaderboard_mode_level", columnList = "game_mode, game_level"),
-		@Index(name = "idx_leaderboard_mode_level_date", columnList = "game_mode, game_level, leaderboard_date")
+		@Index(name = "idx_leaderboard_mode", columnList = "game_mode"),
+		@Index(name = "idx_leaderboard_mode_date", columnList = "game_mode, leaderboard_date")
 	}
 )
 public class LeaderboardRecord {
@@ -36,10 +36,6 @@ public class LeaderboardRecord {
 	@Enumerated(EnumType.STRING)
 	@Column(name = "game_mode", nullable = false, length = 20)
 	private LeaderboardGameMode gameMode;
-
-	@Enumerated(EnumType.STRING)
-	@Column(name = "game_level", nullable = false, length = 20)
-	private LeaderboardGameLevel gameLevel;
 
 	@Column(name = "player_nickname", nullable = false, length = 20)
 	private String playerNickname;
@@ -75,7 +71,6 @@ public class LeaderboardRecord {
 		String runSignature,
 		UUID sessionId,
 		LeaderboardGameMode gameMode,
-		LeaderboardGameLevel gameLevel,
 		String playerNickname,
 		Long memberId,
 		String guestSessionKey,
@@ -89,7 +84,6 @@ public class LeaderboardRecord {
 		this.runSignature = runSignature;
 		this.sessionId = sessionId;
 		this.gameMode = gameMode;
-		this.gameLevel = gameLevel;
 		this.playerNickname = playerNickname;
 		this.memberId = memberId;
 		this.guestSessionKey = guestSessionKey;
@@ -105,7 +99,6 @@ public class LeaderboardRecord {
 		String runSignature,
 		UUID sessionId,
 		LeaderboardGameMode gameMode,
-		LeaderboardGameLevel gameLevel,
 		String playerNickname,
 		Long memberId,
 		String guestSessionKey,
@@ -119,7 +112,6 @@ public class LeaderboardRecord {
 			runSignature,
 			sessionId,
 			gameMode,
-			gameLevel,
 			playerNickname,
 			memberId,
 			guestSessionKey,
@@ -154,10 +146,6 @@ public class LeaderboardRecord {
 
 	public LeaderboardGameMode getGameMode() {
 		return gameMode;
-	}
-
-	public LeaderboardGameLevel getGameLevel() {
-		return gameLevel;
 	}
 
 	public String getPlayerNickname() {
