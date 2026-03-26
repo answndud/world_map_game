@@ -62,7 +62,7 @@
 - 비회원은 지금처럼 세션 기반으로 바로 플레이
 - 로그인하면 내 계정에 기록과 랭킹 이력이 누적
 - 계정 정보는 `닉네임 + 비밀번호` 수준으로 단순하게 유지
-- 현재는 9단계 rollback 기준으로 `member`, `guestSessionKey`, 게임 세션 / 랭킹 레코드 ownership 필드, 닉네임 + 비밀번호 기반 회원가입 / 로그인 / 로그아웃, 로그인 직후 현재 브라우저의 guest 기록 귀속, `/mypage` 기록 허브, raw stage 기반 플레이 성향 요약, `/dashboard/**` 접근 제어, 환경변수 기반 bootstrap admin provisioning, Dashboard 운영 수치 카드, 공개 `/stats` 화면, local demo 계정 / 샘플 run bootstrap, 현재 survey/engine 버전 추천 피드백 샘플 bootstrap, 홈 첫 화면 계정 진입 CTA까지 연결했다. 위치/인구수 Level 2 실험은 현재 product scope에서 제거했고, startup `GameLevelRollbackInitializer`가 기존 `LEVEL_2` 세션 / Stage / Attempt / 랭킹 row와 Redis `l2` 키를 정리한다.
+- 현재는 9단계 rollback 기준으로 `member`, `guestSessionKey`, 게임 세션 / 랭킹 레코드 ownership 필드, 닉네임 + 비밀번호 기반 회원가입 / 로그인 / 로그아웃, 로그인 직후 현재 브라우저의 guest 기록 귀속, `/mypage` 기록 허브, raw stage 기반 플레이 성향 요약, `/dashboard/**` 접근 제어, 환경변수 기반 bootstrap admin provisioning, Dashboard 운영 수치 카드, 공개 `/stats` 화면, local demo 계정 / 샘플 run bootstrap, 현재 survey/engine 버전 추천 피드백 샘플 bootstrap, 홈 첫 화면 계정 진입 CTA까지 연결했다. 위치/인구수 Level 2 실험은 현재 product scope에서 제거했고, internal Level 2 enum/정책/read model도 함께 걷어냈다. startup `GameLevelRollbackInitializer`는 legacy DB에 `game_level` 컬럼이 실제로 남아 있을 때만 예전 `LEVEL_2` 세션 / Stage / Attempt / 랭킹 row와 Redis `l2` 키를 정리한다.
 
 ### 이후 확장
 
@@ -94,7 +94,7 @@
 - 현재 Level 1의 지구본 자산은 `Natural Earth 110m` 기반으로 다시 생성해 초기 로딩과 폴리곤 흔들림을 줄였다.
 - 현재 Level 1의 국가 선택은 `Globe.gl polygon click`에만 의존하지 않고, 지구본 클릭 좌표를 기준으로 GeoJSON 내부 포함 판정을 한 번 더 수행한다.
 - 현재 public 서비스는 위치 게임 Level 1만 운영한다.
-- 이전 Level 2 거리/방향 힌트 실험으로 남아 있던 `game_level=LEVEL_2` 세션 / 시도 / 랭킹 레코드와 Redis `l2` 키는 startup `GameLevelRollbackInitializer`가 정리한다.
+- 이전 거리/방향 힌트 실험으로 남아 있던 legacy `LEVEL_2` 세션 / 시도 / 랭킹 레코드와 Redis `l2` 키는 startup `GameLevelRollbackInitializer`가 정리한다.
 - 이후 고도화 후보는 `소국/영토`, `타이머`, `streak` 같은 난도 실험을 다시 설계하는 일이다.
 
 #### 서버 책임
@@ -122,7 +122,7 @@
 - 남은 고도화 방향은 `구간 경계 / 난이도 세분화`다.
 - 예: `1천만 미만`, `1천만~5천만`, `5천만~1억`, `1억 이상`
 - 현재 public 서비스는 인구수 게임 Level 1만 운영한다.
-- 이전 직접 입력형 Level 2 실험으로 남아 있던 `game_level=LEVEL_2` 세션 / 시도 / 랭킹 레코드와 Redis `l2` 키도 startup `GameLevelRollbackInitializer`가 정리한다.
+- 이전 직접 입력형 실험으로 남아 있던 legacy `LEVEL_2` 세션 / 시도 / 랭킹 레코드와 Redis `l2` 키도 startup `GameLevelRollbackInitializer`가 정리한다.
 
 #### 서버 책임
 
@@ -228,7 +228,7 @@
 - 8단계 9차 구현으로 `/dashboard` 첫 화면에 운영 수치 카드를 추가했다. `총 회원 수`는 `member_account`, `오늘 활성 회원 / 게스트`와 `오늘 시작된 세션 수`는 각 게임 세션의 `startedAt`, `오늘 완료된 게임 수`와 `모드별 완료 수`는 `leaderboard_record.finishedAt` 기준으로 계산한다.
 - 8단계 10차 구현으로 dashboard 활동 지표를 `ServiceActivityService`로 분리해 `/dashboard`와 공개 `/stats`가 같은 read model을 재사용하게 했다. `Stats`는 전체 사용자에게 공개 가능한 운영 수치와 일간 Top 3만 보여 주고, 추천 품질/버전 정보는 계속 Dashboard에만 남긴다.
 - 8단계 10차 구현으로 local profile 시작 시 admin 계정 `worldmap_admin`, 일반 계정 `orbit_runner`, 샘플 leaderboard run 2개, 진행 중 guest 세션 1개를 자동 생성하는 demo bootstrap을 추가했다. DB 데이터를 비워도 local profile로 서버를 다시 띄우면 country seed -> admin bootstrap -> demo bootstrap 순서로 같은 확인용 상태를 다시 만들 수 있다.
-- 9단계 rollback 구현으로 위치/인구수 Level 2 실험은 product scope에서 제거했고, `GameLevelRollbackInitializer`가 앱 시작 시 기존 `LEVEL_2` 세션 / 시도 / 랭킹 row와 Redis `l2` 키를 정리한다. 그래서 public `/ranking`, `/stats`, `/mypage`, 게임 시작 화면은 다시 Level 1-only 기준으로 단순해졌다.
+- 9단계 rollback 구현으로 위치/인구수 Level 2 실험은 product scope에서 제거했고, internal Level 2 호환 코드도 정리됐다. `GameLevelRollbackInitializer`는 앱 시작 시 legacy `game_level` 컬럼이 남아 있는 DB에서만 기존 `LEVEL_2` 세션 / 시도 / 랭킹 row와 Redis `l2` 키를 정리한다. 그래서 public `/ranking`, `/stats`, `/mypage`, 게임 시작 화면은 다시 Level 1-only 기준으로 단순해졌다.
 - 8단계 11차 구현으로 홈 첫 화면에서 guest는 `로그인 / 회원가입`, 로그인 사용자는 `My Page / 로그아웃`을 바로 볼 수 있게 정리했다. 계정 기능은 그대로 두고, 홈에서 기록 유지 진입점을 더 짧게 만든 조각이다.
 - 8단계 12차 구현으로 홈 첫 화면은 hero에서 개별 게임 CTA를 반복하지 않고, 실제 모드 선택은 `지금 플레이할 모드` 카드 영역 한 곳에서만 하도록 다시 정리했다. hero는 서비스 소개, 계정 연결, 공개 `Stats` 진입만 맡고, 모드 설명 중복을 줄여 첫 진입 구조를 단순화했다.
 - 현재 8단계 핵심 범위는 닫혔고, 이후 고도화 포인트는 `/mypage` 기간별 누적 통계, season/기간 필터, 더 세밀한 운영 도구 확장이다.

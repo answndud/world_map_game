@@ -203,7 +203,7 @@ set +a
 
 이 구간은 현재 코드와 비교적 직접 대응된다.
 
-Level 2 실험 이력 자체를 이해하고 싶다면 `62`부터 `71`까지 읽은 뒤, 마지막에 [72-roll-back-game-level-2-and-purge-legacy-data.md](./72-roll-back-game-level-2-and-purge-legacy-data.md)로 현재 public 기준이 왜 다시 Level 1-only가 됐는지 확인하는 편이 안전하다.
+Level 2 실험은 현재 public 제품 범위에서 완전히 제거됐고, internal 호환 코드도 정리됐다. 그래서 현재 코드를 재현할 때는 실험 이력 글을 따라갈 필요 없이, [72-roll-back-game-level-2-and-purge-legacy-data.md](./72-roll-back-game-level-2-and-purge-legacy-data.md)와 [73-remove-internal-level-2-compatibility-code.md](./73-remove-internal-level-2-compatibility-code.md)만 보고 “왜 Level 1-only로 정리됐는가”를 이해하는 편이 안전하다.
 
 ### 3. 추천 엔진 현재 상태
 

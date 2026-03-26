@@ -3475,3 +3475,45 @@
 - 배운 점: 실험 기능을 product에서 내릴 때는 템플릿만 숨기는 것으로 끝나면 안 된다. 시작 API, read model, DB row, Redis key, local demo 문서까지 같이 정리해야 “현재 서비스가 무엇인지”를 한 문장으로 설명할 수 있다.
 - 아직 약한 부분: 내부 enum과 일부 Level 2 코드 경로는 old DB 호환성을 위해 아직 남겨 뒀다. 지금은 startup purge로 안전하게 막고 있지만, 나중에는 정식 migration이나 enum 정리 시점을 다시 잡아야 한다.
 - 면접용 30초 요약: Level 2를 실험적으로 열어 봤지만 현재 제품 기준에서는 복잡도에 비해 가치가 낮다고 판단했습니다. 그래서 UI만 숨기지 않고 시작 API를 다시 Level 1-only로 수렴시키고, `/ranking`, `/stats`, `/mypage` read model도 같이 정리했습니다. 동시에 startup initializer를 둬서 old DB와 Redis에 남아 있던 `LEVEL_2` 흔적도 부팅 시 자동으로 지우게 만들어, 기능 삭제가 아니라 호환성을 깨지 않는 롤백으로 설명할 수 있게 했습니다.
+
+## 2026-03-26 - 9단계 rollback 마감: internal Level 2 호환 코드 완전 제거
+
+- 단계: 9. 고도화 실험 롤백과 실시간성 개선
+- 목적: public 표면만 Level 1-only로 정리한 상태에서는 여전히 internal enum, 점수 정책, 랭킹 level 축, 결과 read model이 남아 있어 현재 제품 범위를 설명하기 어려웠다. 이번 조각은 runtime 코드도 정말 Level 1-only로 닫고, legacy DB 정리는 startup initializer만 맡도록 정리하는 데 집중한다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/common/config/GameLevelRollbackInitializer.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameScoringPolicy.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameService.java`
+  - `src/main/java/com/worldmap/game/location/domain/LocationGameSession.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationGameScoringPolicy.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationGameService.java`
+  - `src/main/java/com/worldmap/game/population/domain/PopulationGameSession.java`
+  - `src/main/java/com/worldmap/ranking/application/LeaderboardService.java`
+  - `src/main/java/com/worldmap/ranking/domain/LeaderboardRecord.java`
+  - `src/main/java/com/worldmap/ranking/domain/LeaderboardRecordRepository.java`
+  - `src/test/java/com/worldmap/common/config/GameLevelRollbackInitializerIntegrationTest.java`
+  - `src/test/java/com/worldmap/ranking/LeaderboardIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/LOCAL_DEMO_BOOTSTRAP.md`
+  - `docs/POPULATION_GAME_ARCADE_REBOOT.md`
+  - `docs/WORKLOG.md`
+  - `blog/00_series_plan.md`
+  - `blog/README.md`
+  - `blog/50-current-state-rebuild-map.md`
+  - `blog/72-roll-back-game-level-2-and-purge-legacy-data.md`
+  - `blog/73-remove-internal-level-2-compatibility-code.md`
+- 요청 흐름 / 데이터 흐름: 게임 시작 요청은 이제 `POST /api/games/location/sessions`, `POST /api/games/population/sessions` 모두 닉네임만 받아 항상 Level 1 세션을 만든다. 위치/인구수 서비스는 더 이상 level 분기, 힌트, exact-input, precision band, hint debt를 계산하지 않는다. 랭킹 조회도 `gameMode + scope`만 읽고, `gameLevel` 축은 완전히 제거됐다. 대신 startup `GameLevelRollbackInitializer`는 `information_schema.columns`를 확인해 legacy `game_level` 컬럼이 실제로 있을 때만 old `LEVEL_2` row와 Redis `l2` 키를 비운다.
+- 데이터 / 상태 변화: current JPA 스키마에는 `game_level` 필드가 더 이상 없고, 엔티티/DTO/read model도 level-aware 구조가 아니다. 다만 예전 local DB에 컬럼이 남아 있을 수 있으므로, initializer가 컬럼 존재 여부를 보고만 purge를 수행한다. rollback 통합 테스트는 H2에 legacy 컬럼을 직접 추가해 old DB 상태를 재현하도록 바뀌었다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “현재 제품 범위는 runtime 코드에서도 Level 1-only여야 한다”는 점이다. legacy 정리는 HTTP 요청 중에 할 일이 아니라 boot 시점 운영 규칙이므로 initializer가 맡고, 현재 게임 규칙과 read model 단순화는 각각 서비스와 정책 클래스가 맡는다.
+- 예외 상황 또는 엣지 케이스: fresh schema처럼 `game_level` 컬럼이 아예 없는 환경에서는 initializer가 아무 일도 하지 않아야 한다. 반대로 오래된 local PostgreSQL처럼 legacy 컬럼이 남아 있는 환경에서는 `LEVEL_2` row와 Redis `l2` 키가 다시 정리돼야 한다. blog는 현재 재현성 관점에서 62~71번 Level 2 연재 글을 제거하고, rollback 1차(72)와 internal cleanup(73) 두 글만 남겼다.
+- 테스트 내용:
+  - `./gradlew test --tests com.worldmap.common.config.GameLevelRollbackInitializerIntegrationTest --tests com.worldmap.ranking.LeaderboardIntegrationTest`
+  - `./gradlew test`
+  - `node --check src/main/resources/static/js/location-game.js`
+  - `node --check src/main/resources/static/js/population-game.js`
+  - `node --check src/main/resources/static/js/ranking.js`
+  - `git diff --check`
+- 배운 점: rollback은 UI를 숨기는 조치로 끝나지 않는다. current code의 규칙, DTO, read model, Redis key 축까지 다 같이 닫아야 “현재 제품이 무엇인가”를 짧게 설명할 수 있다. 반대로 legacy DB 호환성은 startup initializer만 남기는 편이 코드와 책임 경계를 동시에 단순하게 만든다.
+- 아직 약한 부분: 지금은 startup initializer가 legacy `game_level` 컬럼 존재 여부를 보고 purge를 수행한다. 나중에 실제 운영 DB migration을 적용하게 되면, 이 initializer를 언제까지 유지할지 한 번 더 판단해야 한다.
+- 면접용 30초 요약: public에서 Level 2를 숨긴 뒤에도 internal enum, 점수 정책, 랭킹 level 축이 남아 있으면 현재 제품 범위를 설명하기 어려웠습니다. 그래서 이번에는 게임 서비스, scoring policy, leaderboard read model에서 Level 2 축을 완전히 제거하고, startup initializer만 legacy DB 정리 책임으로 남겼습니다. 덕분에 현재 코드는 정말 Level 1-only로 단순해졌고, 오래된 local DB도 계속 안전하게 복구할 수 있게 됐습니다.

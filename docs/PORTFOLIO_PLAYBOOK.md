@@ -700,24 +700,23 @@
 현재까지 완료된 항목:
 
 - 위치/인구수 게임 모두 public 시작 흐름을 다시 Level 1 전용으로 고정
-- 시작 API는 들어온 `gameLevel=LEVEL_2` 요청도 Level 1 세션으로 수렴
 - 공개 `/ranking`에서 게임 레벨 필터와 모든 Level 2 보드를 제거
 - `/stats`, `/mypage`에서 위치/인구수 Level 2 하이라이트를 제거
 - `GameLevelRollbackInitializer`를 추가해 앱 시작 시 기존 `LEVEL_2` 위치/인구수 세션, Stage, Attempt, `leaderboard_record`, Redis `l2` 키를 정리
 - `GameLevelRollbackInitializerIntegrationTest`로 기존 DB/Redis에 남은 Level 2 흔적이 실제로 제거되는지 통합 테스트로 고정
 - public 템플릿, JS, current-state 문서, local demo 문서가 모두 Level 1-only 기준으로 다시 동기화
-- Level 2 관련 enum과 내부 실험 코드는 즉시 제거하지 않고, 기존 DB enum 호환성을 깨지 않도록 startup rollback + public surface 정리부터 먼저 적용
+- 남아 있던 internal Level 2 enum, 점수 정책, read model, public ranking level 축까지 모두 제거
+- startup rollback initializer는 이제 legacy `game_level` 컬럼이 실제로 남아 있는 DB에서만 purge를 수행하도록 완화
 
 다음에 이어서 할 일:
 
 - polling 유지와 SSE/WebSocket 전환 기준을 다시 정리
 - Level 1 기준으로 홈 / stats / ranking / mypage 노출 정보 밀도를 더 다듬을지 결정
-- 남겨 둔 internal Level 2 코드를 완전히 제거할지, DB enum 정리 시점까지 호환 코드로 유지할지 판단
 
 반드시 이해할 것:
 
 - 왜 public 제품에서 기능을 제거할 때 UI만 숨기면 안 되고 기존 데이터와 Redis key까지 같이 정리해야 하는가
-- 왜 enum을 바로 지우기보다 startup rollback으로 먼저 수습하는 것이 현재 DB 호환성에 더 안전한가
+- 왜 current JPA 스키마에서 `game_level`을 제거한 뒤에도 startup rollback initializer는 남겨 두는가
 - SSE와 WebSocket 중 무엇을 선택했는가
 - 왜 `/ranking`, `/stats`, `/mypage`, 시작 화면을 같이 롤백해야 “현재 서비스 범위”를 일관되게 설명할 수 있는가
 - 왜 startup initializer 순서가 `legacy schema 완화 -> Level 2 purge -> demo bootstrap` 이어야 하는가

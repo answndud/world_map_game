@@ -1,5 +1,8 @@
 # 공개 Level 2 실험을 롤백하고 legacy 데이터를 정리하기
 
+> 현재 기준 안내:
+> public Level 2 롤백 이후, 남아 있던 internal Level 2 호환 코드까지 제거한 최신 상태는 [73-remove-internal-level-2-compatibility-code.md](./73-remove-internal-level-2-compatibility-code.md)를 먼저 보는 것이 안전하다.
+
 ## 왜 이 조각이 필요했는가
 
 위치 찾기와 인구수 맞추기 모두 Level 2 실험을 한 번 열어 봤지만, 현재 제품 기준에서는 얻는 가치보다 설명 비용이 더 컸다.
@@ -44,7 +47,7 @@
 
 둘 다 현재는 서비스의 기본 `start...Game(...)` 오버로드만 호출해서 Level 1 세션으로 시작한다.
 
-즉, 예전 클라이언트가 `gameLevel=LEVEL_2`를 보내더라도 현재 product 기준에서는 `LEVEL_1`로 수렴한다.
+즉, 이 1차 롤백 시점에는 start API가 public 기준을 다시 Level 1-only로 수렴시키는 방향으로 닫혔다.
 
 ### 2. public read model에서 Level 2를 제거했다
 
@@ -83,7 +86,7 @@
 
 즉, “앞으로 안 쓰겠다”가 아니라 “기존 흔적도 boot 시 정리한다”로 닫았다.
 
-## 왜 enum까지 바로 지우지 않았는가
+## 왜 당시에는 enum까지 바로 지우지 않았는가
 
 이 부분이 설계적으로 중요하다.
 
@@ -95,7 +98,7 @@
 2. startup purge
 
 먼저 product 기준을 Level 1-only로 되돌리고, boot 시 기존 Level 2 row를 지우는 initializer를 넣었다.
-그 뒤에야 정말 필요하면 enum과 internal 실험 코드를 완전히 제거할 수 있다.
+그 뒤 internal enum과 실험 코드는 후속 조각에서 실제로 제거했다.
 
 즉, 이번 조각은 “기능 삭제”보다 `호환성을 깨지 않는 롤백`에 가깝다.
 
@@ -126,4 +129,4 @@
 
 이 조각은 이렇게 설명하면 된다.
 
-> Level 2를 실험적으로 열어 봤지만, 현재 제품 기준에서는 복잡도에 비해 가치가 낮다고 판단했습니다. 그래서 UI만 숨기지 않고, 시작 API를 다시 Level 1-only로 수렴시키고, `/ranking`, `/stats`, `/mypage` read model도 같이 정리했습니다. 동시에 startup initializer를 둬서 old DB와 Redis에 남아 있던 `LEVEL_2` 흔적도 부팅 시 자동으로 지우게 만들었습니다. 핵심은 기능 삭제가 아니라, 호환성을 깨지 않는 롤백을 설계했다는 점입니다.
+> Level 2를 실험적으로 열어 봤지만, 현재 제품 기준에서는 복잡도에 비해 가치가 낮다고 판단했습니다. 그래서 UI만 숨기지 않고, start 흐름과 `/ranking`, `/stats`, `/mypage` read model을 먼저 Level 1-only로 되돌렸습니다. 동시에 startup initializer를 둬서 old DB와 Redis에 남아 있던 `LEVEL_2` 흔적도 부팅 시 자동으로 지우게 만들었습니다. 핵심은 기능 삭제가 아니라, 호환성을 깨지 않는 롤백 순서를 설계했다는 점입니다.

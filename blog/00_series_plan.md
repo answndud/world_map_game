@@ -91,23 +91,14 @@
 64. [온화한 가족형 정착 시나리오의 1위 drift 줄이기](./59-reduce-p11-anchor-drift-with-temperate-family-bridge-bonus.md)
 65. [탐색형 자연 정착 시나리오의 1위 drift 줄이기](./60-reduce-p15-anchor-drift-with-exploratory-nature-runway-bonus.md)
 66. [warm megacity 시나리오의 baseline anchor를 다시 정의하기](./61-recalibrate-p07-baseline-anchor-for-warm-megacity-scenario.md)
-67. [인구수 게임 Level 2를 직접 수치 입력형으로 시작하기](./62-start-population-level-2-exact-input-mode.md)
-68. [인구수 게임 Level 2 결과를 공개 랭킹에 노출하기](./63-expose-population-level-2-on-public-ranking.md)
-69. [인구수 게임 Level 2 결과 화면에 오차율과 점수 band를 설명하기](./64-explain-population-level-2-result-bands.md)
-70. [위치 찾기 Level 2 첫 조각을 어떻게 열지 설계하기](./65-design-location-level-2-first-slice.md)
-71. [위치 찾기 Level 2를 거리 힌트 모드로 시작하기](./66-start-location-level-2-with-distance-hints.md)
-72. [위치 찾기 Level 2 결과 화면에 거리/방향 힌트 로그 남기기](./67-add-location-level-2-hint-log-to-result-read-model.md)
-73. [위치 찾기 Level 2를 공개 랭킹에 노출하기](./68-expose-location-level-2-on-public-ranking.md)
-74. [위치 찾기 Level 2 힌트를 점수 감점으로 연결하기](./69-apply-hint-debt-to-location-level-2-score.md)
-75. [My Page에 Level 2 최고 기록 하이라이트 추가하기](./70-add-level-2-highlights-to-mypage.md)
-76. [공개 Stats에 Level 2 최고 기록 하이라이트 노출하기](./71-expose-level-2-highlights-on-public-stats.md)
-77. [공개 Level 2 실험을 롤백하고 legacy 데이터를 정리하기](./72-roll-back-game-level-2-and-purge-legacy-data.md)
+67. [공개 Level 2 실험을 롤백하고 legacy 데이터를 정리하기](./72-roll-back-game-level-2-and-purge-legacy-data.md)
+68. [남아 있던 internal Level 2 호환 코드를 완전히 제거하기](./73-remove-internal-level-2-compatibility-code.md)
 
 ### Part E. 테스트, 확장, 취업 패키징
 
 48. 왜 핵심 게임 로직을 테스트해야 하는가
 49. 인증, 전적, 마이페이지 붙이기
-50. Level 2 난이도와 실시간성 고도화
+50. 실시간 전달 방식 고도화
 51. README, 아키텍처, 면접 답변 패키지 만들기
 
 ## 실제 집필 우선순위
