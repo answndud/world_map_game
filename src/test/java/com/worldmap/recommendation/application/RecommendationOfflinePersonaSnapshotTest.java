@@ -45,7 +45,7 @@ class RecommendationOfflinePersonaSnapshotTest {
 		snapshot.put("P03", List.of("노르웨이", "핀란드", "덴마크"));
 		snapshot.put("P04", List.of("우루과이", "스페인", "아일랜드"));
 		snapshot.put("P05", List.of("싱가포르", "아랍에미리트", "미국"));
-		snapshot.put("P06", List.of("스페인", "우루과이", "포르투갈"));
+		snapshot.put("P06", List.of("우루과이", "스페인", "포르투갈"));
 		snapshot.put("P07", List.of("싱가포르", "브라질", "아랍에미리트"));
 		snapshot.put("P08", List.of("핀란드", "뉴질랜드", "노르웨이"));
 		snapshot.put("P09", List.of("싱가포르", "아랍에미리트", "덴마크"));

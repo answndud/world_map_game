@@ -27,7 +27,7 @@ class AdminPersonaBaselineServiceIntegrationTest {
 		assertThat(baseline.matchedScenarioCount()).isEqualTo(18);
 		assertThat(baseline.weakScenarioCount()).isZero();
 		assertThat(baseline.activeSignalScenarioCount()).isEqualTo(4);
-		assertThat(baseline.anchorDriftScenarioCount()).isEqualTo(9);
+		assertThat(baseline.anchorDriftScenarioCount()).isEqualTo(8);
 
 		for (AdminPersonaBaselineScenarioView weakScenario : baseline.weakScenarios()) {
 			assertThat(weakScenario.currentTopCandidates())
@@ -40,7 +40,6 @@ class AdminPersonaBaselineServiceIntegrationTest {
 			.collect(Collectors.toSet());
 
 		assertThat(anchorDriftScenarioIds).containsExactlyInAnyOrder(
-			"P06",
 			"P07",
 			"P08",
 			"P09",
