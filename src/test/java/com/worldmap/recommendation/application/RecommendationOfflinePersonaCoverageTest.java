@@ -48,6 +48,7 @@ class RecommendationOfflinePersonaCoverageTest {
 		assertThat(topCountryNames("P06")).contains("우루과이", "포르투갈").doesNotContain("이탈리아");
 		assertThat(topCountryNames("P09")).first().isEqualTo("아랍에미리트");
 		assertThat(topCountryNames("P08")).first().isEqualTo("뉴질랜드");
+		assertThat(topCountryNames("P14")).first().isEqualTo("말레이시아");
 		assertThat(topCountryNames("P14")).contains("스페인", "태국");
 		assertThat(topCountryNames("P15")).contains("뉴질랜드", "말레이시아").doesNotContain("캐나다", "남아프리카 공화국");
 		assertThat(topCountryNames("P16")).contains("포르투갈", "뉴질랜드").doesNotContain("말레이시아");
