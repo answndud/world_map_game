@@ -3321,3 +3321,33 @@
 - 배운 점: Level 2 기능이 저장과 결과 화면까지 구현돼 있어도, public read model이 그 레벨을 열지 않으면 사용자는 기능이 완성됐다고 느끼기 어렵다. 기능을 닫으려면 write model과 read model 표면을 함께 닫아야 한다.
 - 아직 내가 이해가 부족한 부분: 지금은 위치 Level 2를 public 랭킹에만 노출했다. 다음에는 `hint debt`를 점수에 반영할지, `/mypage`나 `/stats`에 Level 2 하이라이트를 추가할지 판단이 남아 있다.
 - 면접에서 30초 안에 설명하는 요약: 위치 게임 Level 2는 이미 저장되고 있었지만, public 랭킹에서는 Level 1만 보여 줬습니다. 그래서 이번에는 `/ranking`과 랭킹 polling을 `location + LEVEL_2`까지 이해하도록 확장해, 거리/방향 힌트형 run을 별도 보드로 조회할 수 있게 만들었습니다. 핵심은 템플릿만 바꾼 게 아니라 `gameMode + gameLevel + scope` 기준 read model을 SSR과 polling에 일관되게 적용한 점입니다.
+
+## 2026-03-26 - 9단계 8차: 위치 찾기 Level 2 hint debt 점수 반영
+
+- 단계: 9. Level 2와 실시간성 고도화
+- 목적: 위치 게임 Level 2는 이미 거리/방향 힌트와 결과 로그까지 갖췄지만, 힌트를 봐도 최종 점수는 Level 1과 같은 방식으로 계산되고 있었다. 이번 조각은 힌트가 단순 안내문이 아니라 실제 score trade-off가 되도록, 정답 전까지 본 힌트 수만큼 점수를 감점하는 작은 정책을 추가하는 데 집중한다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/game/location/application/LocationAnswerJudgement.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameScoringPolicy.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameAnswerView.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameStageResultView.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameService.java`
+  - `src/main/resources/static/js/location-game.js`
+  - `src/main/resources/templates/location-game/result.html`
+  - `src/test/java/com/worldmap/game/location/application/LocationGameScoringPolicyTest.java`
+  - `src/test/java/com/worldmap/game/location/LocationGameFlowIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/50-current-state-rebuild-map.md`
+  - `blog/69-apply-hint-debt-to-location-level-2-score.md`
+- 요청 흐름 / 데이터 흐름: 제출 흐름은 그대로 `POST /api/games/location/sessions/{id}/answer -> LocationGameService.submitAnswer() -> LocationGameScoringPolicy.judge()`다. 달라진 것은 scoring policy가 이제 `gameLevel`과 `attemptNumber`를 함께 보고, Level 2 정답일 때 `attemptNumber - 1`만큼 hint debt를 계산해 `awardedScore`에서 감점한다는 점이다. 결과 조회는 `GET /api/games/location/sessions/{id}/result -> LocationGameService.getSessionResult()`에서 stage의 wrong attempt 수를 다시 읽어 stage별 `hintPenalty`를 계산해 내려준다.
+- 데이터 / 상태 변화: DB 스키마는 바뀌지 않았다. 힌트 감점도 별도 컬럼으로 저장하지 않고, `attemptNumber`와 wrong attempt 수만으로 다시 계산한다. answer payload는 이제 `hintPenalty`를 포함하고, 결과 read model도 stage별 `hintPenalty`를 가진다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “힌트는 도움말이지만 무료가 아니다”라는 규칙을 서버 정책으로 올리는 것이다. 프론트는 단지 `힌트 감점 -15`를 보여 줄 뿐이고, 실제 점수 계산은 `LocationGameScoringPolicy`가 맡는다. 같은 규칙이 answer와 result에서 동시에 설명돼야 하기 때문이다.
+- 예외 상황 또는 엣지 케이스: Level 1은 힌트를 쓰지 않으므로 감점이 항상 0이다. Level 2라도 첫 시도 정답이면 hint debt는 없다. 실패 Stage는 최종 점수가 0이므로 stage-level hintPenalty도 0으로 둔다. 현재 구조에서는 하트 3개이기 때문에 Level 2에서 실제 감점 최대치는 `2번 힌트 = 30점`이다.
+- 테스트 내용: `LocationGameScoringPolicyTest`에 `LEVEL_2` 두 번째 시도 정답 시 `hintPenalty=15`, `awardedScore=115`를 고정했다. `LocationGameFlowIntegrationTest`에는 `levelTwoCorrectAnswerAfterHintAppliesHintDebt()`를 추가해 wrong 한 번 후 correct 했을 때 answer payload의 `hintPenalty`, `awardedScore`, result JSON의 `stages[0].hintPenalty`, 결과 HTML의 `힌트 감점 -15`까지 같이 검증했다. `node --check src/main/resources/static/js/location-game.js`, targeted suite, `git diff --check`도 통과했다.
+- 배운 점: Level 2 규칙을 “힌트를 준다”에서 끝내면 Level 1과 점수 구조가 너무 비슷하게 남는다. 같은 힌트라도 점수 trade-off와 함께 설명해야 Level 2가 실제로 다른 모드처럼 느껴진다.
+- 아직 내가 이해가 부족한 부분: 지금은 힌트 감점을 고정 15점으로 두었다. 이후 `distanceKm` 규모나 difficulty label에 따라 가변 감점이 더 맞는지, 혹은 현재처럼 단순 규칙이 설명 가능성 측면에서 더 좋은지 한 번 더 비교할 필요가 있다.
+- 면접에서 30초 안에 설명하는 요약: 위치 게임 Level 2는 오답 때 거리와 방향 힌트를 주는데, 이전에는 힌트를 봐도 점수는 Level 1과 같은 방식으로 계산됐습니다. 그래서 이번에는 정답 전까지 본 힌트 수만큼 점수를 깎는 `hint debt`를 `LocationGameScoringPolicy`에 넣고, answer response와 결과 화면이 그 감점을 같이 보여 주도록 바꿨습니다. 그 결과 Level 2를 “힌트가 있지만 점수 trade-off가 있는 모드”로 설명할 수 있게 됐습니다.

@@ -143,6 +143,7 @@ set +a
   - Level 2로 시작하면 오답 시 거리(km)와 방향 힌트가 feedback에 보이는가
 - `/games/location/result/{sessionId}`
   - Level 2에서 오답이 있었다면 attempt 로그에 `거리 힌트 약 ...km ...쪽`이 남는가
+  - Level 2에서 힌트를 보고 정답을 맞혔다면 점수 영역에 `힌트 감점 -15` 같은 로그가 보이는가
 
 ### 3. local demo 계정으로 로그인 확인
 
@@ -201,6 +202,7 @@ set +a
 8. [63-expose-population-level-2-on-public-ranking.md](./63-expose-population-level-2-on-public-ranking.md)
 9. [67-add-location-level-2-hint-log-to-result-read-model.md](./67-add-location-level-2-hint-log-to-result-read-model.md)
 10. [68-expose-location-level-2-on-public-ranking.md](./68-expose-location-level-2-on-public-ranking.md)
+11. [69-apply-hint-debt-to-location-level-2-score.md](./69-apply-hint-debt-to-location-level-2-score.md)
 
 이 구간은 현재 코드와 비교적 직접 대응된다.
 

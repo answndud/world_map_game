@@ -98,6 +98,7 @@
 71. [위치 찾기 Level 2를 거리 힌트 모드로 시작하기](./66-start-location-level-2-with-distance-hints.md)
 72. [위치 찾기 Level 2 결과 화면에 거리/방향 힌트 로그 남기기](./67-add-location-level-2-hint-log-to-result-read-model.md)
 73. [위치 찾기 Level 2를 공개 랭킹에 노출하기](./68-expose-location-level-2-on-public-ranking.md)
+74. [위치 찾기 Level 2 힌트를 점수 감점으로 연결하기](./69-apply-hint-debt-to-location-level-2-score.md)
 
 ### Part E. 테스트, 확장, 취업 패키징
 

@@ -63,7 +63,7 @@
 - 비회원은 지금처럼 세션 기반으로 바로 플레이
 - 로그인하면 내 계정에 기록과 랭킹 이력이 누적
 - 계정 정보는 `닉네임 + 비밀번호` 수준으로 단순하게 유지
-- 현재는 9단계 7차 기준으로 `member`, `guestSessionKey`, 게임 세션 / 랭킹 레코드 ownership 필드, 닉네임 + 비밀번호 기반 회원가입 / 로그인 / 로그아웃, 로그인 직후 현재 브라우저의 guest 기록 귀속, `/mypage` 기록 허브, raw stage 기반 플레이 성향 요약, `/dashboard/**` 접근 제어, 환경변수 기반 bootstrap admin provisioning, Dashboard 1차 운영 수치 카드, 공개 `/stats` 화면, local demo 계정 / 샘플 run bootstrap, 현재 survey/engine 버전 추천 피드백 샘플 bootstrap, 홈 첫 화면 계정 진입 CTA, 인구수 게임 Level 2 정확 수치 입력형, 공개 `/ranking`의 인구수 / 위치 게임 Level 2 필터, 위치 찾기 게임 Level 2 거리/방향 힌트 첫 조각과 결과 로그 read model까지 연결했다.
+- 현재는 9단계 8차 기준으로 `member`, `guestSessionKey`, 게임 세션 / 랭킹 레코드 ownership 필드, 닉네임 + 비밀번호 기반 회원가입 / 로그인 / 로그아웃, 로그인 직후 현재 브라우저의 guest 기록 귀속, `/mypage` 기록 허브, raw stage 기반 플레이 성향 요약, `/dashboard/**` 접근 제어, 환경변수 기반 bootstrap admin provisioning, Dashboard 1차 운영 수치 카드, 공개 `/stats` 화면, local demo 계정 / 샘플 run bootstrap, 현재 survey/engine 버전 추천 피드백 샘플 bootstrap, 홈 첫 화면 계정 진입 CTA, 인구수 게임 Level 2 정확 수치 입력형, 공개 `/ranking`의 인구수 / 위치 게임 Level 2 필터, 위치 찾기 게임 Level 2 거리/방향 힌트 첫 조각과 결과 로그 read model, 힌트 감점 점수 정책까지 연결했다.
 
 ### 이후 확장
 
@@ -103,8 +103,9 @@
 - 오답이면 서버가 `distanceKm + directionHint`를 계산해 내려준다.
 - 현재 1차 구현에서는 `LocationGameSession.gameLevel`을 저장하고, 결과 / 랭킹 레코드도 `LEVEL_1 / LEVEL_2`를 구분한다.
 - 현재 2차 구현에서는 결과 read model도 attempt별 거리/방향 힌트를 다시 계산해 내려줘, answer payload를 놓쳐도 결과 화면과 `/api/games/location/sessions/{id}/result`만으로 Level 2 추적 과정을 설명할 수 있다.
+- 현재 3차 구현에서는 정답을 맞히기 전까지 본 힌트 수만큼 점수를 감점하는 `hint debt`를 `LocationGameScoringPolicy`가 계산하고, play feedback과 결과 화면이 그 감점을 함께 보여 준다.
 - Level 2 difficulty label은 `Vector` 계열로 분리해, 주요 국가 감잡기보다 더 넓은 후보 풀에서 출제한다.
-- 다음 고도화 후보는 `hint debt 점수 반영`, `소국/영토`, `타이머`다.
+- 다음 고도화 후보는 `소국/영토`, `타이머`, `Level 2 하이라이트 공개 요약`이다.
 
 #### 서버 책임
 
@@ -115,6 +116,7 @@
 - 선택 국가 코드 검증
 - 정답 국가 코드 비교
 - Level 2 오답 힌트(distance / direction) 계산
+- Level 2 힌트 사용에 따른 점수 감점 계산
 - 라운드별 점수 계산
 - 총점과 게임오버 상태 관리
 
