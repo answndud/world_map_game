@@ -3351,3 +3351,31 @@
 - 배운 점: Level 2 규칙을 “힌트를 준다”에서 끝내면 Level 1과 점수 구조가 너무 비슷하게 남는다. 같은 힌트라도 점수 trade-off와 함께 설명해야 Level 2가 실제로 다른 모드처럼 느껴진다.
 - 아직 내가 이해가 부족한 부분: 지금은 힌트 감점을 고정 15점으로 두었다. 이후 `distanceKm` 규모나 difficulty label에 따라 가변 감점이 더 맞는지, 혹은 현재처럼 단순 규칙이 설명 가능성 측면에서 더 좋은지 한 번 더 비교할 필요가 있다.
 - 면접에서 30초 안에 설명하는 요약: 위치 게임 Level 2는 오답 때 거리와 방향 힌트를 주는데, 이전에는 힌트를 봐도 점수는 Level 1과 같은 방식으로 계산됐습니다. 그래서 이번에는 정답 전까지 본 힌트 수만큼 점수를 깎는 `hint debt`를 `LocationGameScoringPolicy`에 넣고, answer response와 결과 화면이 그 감점을 같이 보여 주도록 바꿨습니다. 그 결과 Level 2를 “힌트가 있지만 점수 trade-off가 있는 모드”로 설명할 수 있게 됐습니다.
+
+## 2026-03-26 - 9단계 9차: `/mypage` Level 2 하이라이트 추가
+
+- 단계: 9. Level 2와 실시간성 고도화
+- 목적: 위치 게임 Level 2는 힌트·랭킹·점수 감점까지 갖췄고, 인구수 게임 Level 2도 정확 수치 입력과 오차율 band가 이미 돌아가고 있었다. 그런데 계정 기반 기록 허브 `/mypage`에서는 여전히 전체 최고 기록과 최근 플레이만 보여 줘, “고급 모드에서 어디까지 갔는가”를 한눈에 설명하기 어려웠다. 이번 조각은 write model을 더 키우지 않고, `leaderboard_record`를 다시 읽는 read model 확장만으로 Level 2 최고 기록을 따로 보여 주는 데 집중한다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/mypage/application/MyPageBestRunView.java`
+  - `src/main/java/com/worldmap/mypage/application/MyPageDashboardView.java`
+  - `src/main/java/com/worldmap/mypage/application/MyPageService.java`
+  - `src/main/java/com/worldmap/ranking/domain/LeaderboardRecordRepository.java`
+  - `src/main/resources/templates/mypage.html`
+  - `src/test/java/com/worldmap/mypage/MyPageServiceIntegrationTest.java`
+  - `src/test/java/com/worldmap/web/MyPageControllerTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/50-current-state-rebuild-map.md`
+  - `blog/70-add-level-2-highlights-to-mypage.md`
+- 요청 흐름 / 데이터 흐름: 요청은 그대로 `GET /mypage -> MyPageController -> MyPageService.loadDashboard(memberId)` 에서 시작한다. 이번 조각에서 `MyPageService`는 기존 전체 최고 기록과 최근 플레이 read model에 더해, `LeaderboardRecordRepository.findFirstByMemberIdAndGameModeAndGameLevelOrderByRankingScoreDescFinishedAtAsc(...)` 와 `countByMemberIdAndGameModeAndGameLevel(...)` 를 이용해 위치/인구수 `LEVEL_2` 최고 기록을 따로 읽어 `MyPageDashboardView` 에 채운다. 템플릿은 그 값을 `Level 2 하이라이트` 카드로만 표현한다.
+- 데이터 / 상태 변화: DB 스키마는 바뀌지 않았다. 새로운 테이블이나 컬럼 없이, 이미 저장된 `leaderboard_record.game_level` 을 읽는 read model만 확장했다. 따라서 이번 조각은 “어떻게 저장하는가”가 아니라 “이미 저장된 Level 2 run을 계정 화면에서 어떻게 다시 설명할 것인가”에 집중한 변경이다.
+- 핵심 도메인 개념: `/mypage`는 raw session 전체를 바로 보여 주는 화면이 아니라, `완료된 run 요약(leaderboard_record)` 과 `플레이 방식(stage 집계)` 를 분리해 보여 주는 기록 허브다. Level 2 하이라이트도 이 원칙을 그대로 따라, write model을 건드리지 않고 `leaderboard_record` 기반 최고 기록 카드로 추가하는 편이 더 설명 가능하다. 어떤 Level 2 run이 최고 기록인지, 몇 번의 완료 run 중에서 나온 기록인지, 현재 공개 랭킹에서 몇 위인지 판단하는 책임은 템플릿이 아니라 `MyPageService` read model 규칙에 가깝다.
+- 예외 상황 또는 엣지 케이스: 아직 Level 2를 한 번도 끝내지 않은 계정은 `Level 2 하이라이트` 패널에 빈 카드 대신 안내 문구만 보여 준다. 전체 최고 기록은 여전히 Level 1 / Level 2를 통합해 가장 높은 점수를 먼저 보여 주기 때문에, Level 2 최고 기록이 있어도 overall best 카드와 중복될 수 있다. 이번 조각은 그 중복을 없애기보다, “고급 모드만 따로 보여 주는 카드가 필요하다”는 관점으로 해결했다.
+- 테스트 내용: `MyPageServiceIntegrationTest` 에 `loadDashboardIncludesLevelTwoBestHighlights()` 를 추가해, 회원 계정으로 위치/인구수 Level 2 run을 각각 하나씩 완료한 뒤 `locationLevel2Best`, `populationLevel2Best`, 완료 run 수, 최고 랭킹, 점수를 검증했다. `MyPageControllerTest` 에서는 로그인 상태 `/mypage` HTML 에 `Level 2 하이라이트`, `115점`, `150점` 이 렌더링되는지 고정했다. 이어서 `./gradlew test --tests com.worldmap.mypage.MyPageServiceIntegrationTest --tests com.worldmap.web.MyPageControllerTest`, `./gradlew test`, `git diff --check` 를 통과했다.
+- 배운 점: Level 2 기능이 실제로 구현돼 있어도, 계정 화면에서 다시 읽어 오지 않으면 사용자는 그 모드를 “내 기록”으로 체감하기 어렵다. 공개 `/ranking` 과 개인 `/mypage` 는 같은 `leaderboard_record` 를 읽지만, 전자는 경쟁을 보여 주고 후자는 누적 성과와 모드별 하이라이트를 보여 준다는 목적 차이가 있다는 점을 더 분명히 이해하게 됐다.
+- 아직 내가 이해가 부족한 부분: 지금은 `/mypage` 에서만 Level 2 하이라이트를 보여 준다. 다음에는 이 신호를 `/stats` 나 홈 hero까지 올릴지, 혹은 Level 2 하이라이트는 개인 기록 화면까지만 두는 편이 더 깔끔한지 판단이 남아 있다.
+- 면접에서 30초 안에 설명하는 요약: Level 2 기능이 늘어나면서 `/mypage` 도 고급 모드 기준 기록을 따로 보여 줄 필요가 생겼습니다. 이번에는 새로운 저장 구조를 만들지 않고, 이미 `gameLevel` 이 들어 있는 `leaderboard_record` 를 다시 읽어 위치/인구수 Level 2 최고 기록, 최고 랭킹, 완료 run 수를 별도 카드로 보여 주도록 확장했습니다. 그래서 write model은 그대로 두고도, 계정 화면이 “일반 기록”과 “고급 모드 기록”을 분리해서 설명할 수 있게 됐습니다.

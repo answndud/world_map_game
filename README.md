@@ -63,7 +63,7 @@
 - 비회원은 지금처럼 세션 기반으로 바로 플레이
 - 로그인하면 내 계정에 기록과 랭킹 이력이 누적
 - 계정 정보는 `닉네임 + 비밀번호` 수준으로 단순하게 유지
-- 현재는 9단계 8차 기준으로 `member`, `guestSessionKey`, 게임 세션 / 랭킹 레코드 ownership 필드, 닉네임 + 비밀번호 기반 회원가입 / 로그인 / 로그아웃, 로그인 직후 현재 브라우저의 guest 기록 귀속, `/mypage` 기록 허브, raw stage 기반 플레이 성향 요약, `/dashboard/**` 접근 제어, 환경변수 기반 bootstrap admin provisioning, Dashboard 1차 운영 수치 카드, 공개 `/stats` 화면, local demo 계정 / 샘플 run bootstrap, 현재 survey/engine 버전 추천 피드백 샘플 bootstrap, 홈 첫 화면 계정 진입 CTA, 인구수 게임 Level 2 정확 수치 입력형, 공개 `/ranking`의 인구수 / 위치 게임 Level 2 필터, 위치 찾기 게임 Level 2 거리/방향 힌트 첫 조각과 결과 로그 read model, 힌트 감점 점수 정책까지 연결했다.
+- 현재는 9단계 9차 기준으로 `member`, `guestSessionKey`, 게임 세션 / 랭킹 레코드 ownership 필드, 닉네임 + 비밀번호 기반 회원가입 / 로그인 / 로그아웃, 로그인 직후 현재 브라우저의 guest 기록 귀속, `/mypage` 기록 허브, raw stage 기반 플레이 성향 요약, `/dashboard/**` 접근 제어, 환경변수 기반 bootstrap admin provisioning, Dashboard 1차 운영 수치 카드, 공개 `/stats` 화면, local demo 계정 / 샘플 run bootstrap, 현재 survey/engine 버전 추천 피드백 샘플 bootstrap, 홈 첫 화면 계정 진입 CTA, 인구수 게임 Level 2 정확 수치 입력형, 공개 `/ranking`의 인구수 / 위치 게임 Level 2 필터, 위치 찾기 게임 Level 2 거리/방향 힌트 첫 조각과 결과 로그 read model, 힌트 감점 점수 정책, `/mypage` Level 2 하이라이트까지 연결했다.
 
 ### 이후 확장
 
@@ -104,8 +104,9 @@
 - 현재 1차 구현에서는 `LocationGameSession.gameLevel`을 저장하고, 결과 / 랭킹 레코드도 `LEVEL_1 / LEVEL_2`를 구분한다.
 - 현재 2차 구현에서는 결과 read model도 attempt별 거리/방향 힌트를 다시 계산해 내려줘, answer payload를 놓쳐도 결과 화면과 `/api/games/location/sessions/{id}/result`만으로 Level 2 추적 과정을 설명할 수 있다.
 - 현재 3차 구현에서는 정답을 맞히기 전까지 본 힌트 수만큼 점수를 감점하는 `hint debt`를 `LocationGameScoringPolicy`가 계산하고, play feedback과 결과 화면이 그 감점을 함께 보여 준다.
+- 현재 4차 구현에서는 `/mypage`가 `leaderboard_record`를 다시 읽어 위치 게임 `Level 2` 최고 점수, 최고 랭킹, 완료 run 수를 하이라이트 카드로 따로 보여 준다.
 - Level 2 difficulty label은 `Vector` 계열로 분리해, 주요 국가 감잡기보다 더 넓은 후보 풀에서 출제한다.
-- 다음 고도화 후보는 `소국/영토`, `타이머`, `Level 2 하이라이트 공개 요약`이다.
+- 다음 고도화 후보는 `소국/영토`, `타이머`, `Level 2 하이라이트 공개 요약(/stats 또는 홈)`이다.
 
 #### 서버 책임
 
@@ -244,6 +245,7 @@
 - 운영 화면 접근 제어는 컨트롤러마다 복붙하지 않고 인터셉터로 묶었다. dashboard 진입 정책은 도메인 상태 변경보다 라우트 입구의 공통 규칙에 가깝기 때문이다.
 - 8단계 6차 구현으로 `/mypage`는 finished session에 속한 stage를 다시 읽어 모드별 `클리어 Stage 수`, `1트 클리어율`, `평균 시도 수`까지 보여주기 시작했다.
 - `/mypage`는 이제 `leaderboard_record` 기반 완료 run 요약과, raw stage 기반 플레이 성향 요약을 함께 가진다. 즉, “무슨 결과를 냈는가”와 “어떤 방식으로 플레이하는가”를 분리해서 보여준다.
+- 9단계 9차 구현으로 `/mypage`는 `leaderboard_record`를 다시 읽어 위치/인구수 `Level 2` 최고 기록도 별도 하이라이트로 보여 준다. 즉, 계정 기반 기록 허브가 이제 `전체 최고 기록`, `플레이 성향`, `고급 모드(Level 2) 하이라이트`를 나눠 설명한다.
 - 8단계 7차 구현으로 `AdminBootstrapProperties`, `AdminBootstrapService`, `AdminBootstrapInitializer`를 추가해 서버 시작 시 `WORLDMAP_ADMIN_BOOTSTRAP_ENABLED`, `WORLDMAP_ADMIN_BOOTSTRAP_NICKNAME`, `WORLDMAP_ADMIN_BOOTSTRAP_PASSWORD` 기준으로 운영용 admin 계정을 자동 생성하거나 기존 계정을 `ADMIN`으로 승격하게 했다.
 - bootstrap admin 생성은 signup UI가 아니라 startup runner에서 처리한다. 운영자 계정은 공개 회원가입 흐름이 아니라 배포 환경 설정으로 여는 편이 더 단순하고, 일반 사용자에게 admin 경로를 노출하지 않아도 되기 때문이다.
 - 8단계 8차 구현으로 운영 화면 진입 주소를 `/admin`에서 `/dashboard`로 바꿨다. `ADMIN` 로그인 사용자에게만 public 헤더에 `Dashboard` 버튼을 노출하고, 기존 `/admin/**`는 임시 redirect로만 남겨 북마크 호환성을 유지한다.

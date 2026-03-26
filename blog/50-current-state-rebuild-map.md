@@ -149,7 +149,7 @@ set +a
 
 - USER
   - `orbit_runner / secret123`
-  - 로그인 후 `/mypage`에서 최고 점수, 최근 플레이, 성향 지표가 보이는가
+  - 로그인 후 `/mypage`에서 최고 점수, 최근 플레이, 성향 지표, `Level 2 하이라이트`가 보이는가
 - ADMIN
   - `worldmap_admin / secret123`
   - 로그인 후 헤더에 `Dashboard` 버튼이 생기는가

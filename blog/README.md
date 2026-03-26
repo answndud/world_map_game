@@ -133,6 +133,7 @@
 70. [위치 찾기 Level 2 결과 화면에 거리/방향 힌트 로그 남기기](./67-add-location-level-2-hint-log-to-result-read-model.md)
 71. [위치 찾기 Level 2를 공개 랭킹에 노출하기](./68-expose-location-level-2-on-public-ranking.md)
 72. [위치 찾기 Level 2 힌트를 점수 감점으로 연결하기](./69-apply-hint-debt-to-location-level-2-score.md)
+73. [My Page에 Level 2 최고 기록 하이라이트 추가하기](./70-add-level-2-highlights-to-mypage.md)
 
 ### Part E. 확장과 포트폴리오 정리
 
