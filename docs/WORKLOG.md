@@ -2927,3 +2927,34 @@
 - 테스트 내용: 먼저 임시 디버그 테스트로 `P08`의 실제 점수를 확인해 `핀란드 248 / 뉴질랜드 239 / 노르웨이 233` gap을 본 뒤, `softNatureBaseBonus()`를 추가해 `뉴질랜드 251 / 핀란드 248 / 노르웨이 233`로 바뀐 것을 확인했다. 그 다음 임시 디버그 테스트는 제거하고, `RecommendationOfflinePersonaSnapshotTest`와 `RecommendationOfflinePersonaCoverageTest`를 `engine-v15` 기준으로 다시 고정했다. `AdminPersonaBaselineServiceIntegrationTest`에서는 anchor drift가 `6`으로 줄었는지, `AdminRecommendationOpsReviewServiceIntegrationTest`에서는 우선 시나리오가 `P07, P10, P11`로 바뀌는지 확인했다. `RecommendationPageIntegrationTest`, `RecommendationFeedbackIntegrationTest`, `AdminPageIntegrationTest`까지 포함한 targeted suite와 `./gradlew test` 전체도 다시 통과시켰다.
 - 면접에서 30초 안에 설명하는 요약: baseline 18 / 18을 맞춘 뒤에는 weak scenario보다 1위 순위 drift를 줄이는 일이 더 중요해졌습니다. 이번에는 `P08`처럼 자연과 여유를 중시하지만 너무 극단적인 한랭 환경은 원하지 않는 시나리오에만 좁게 작동하는 `softNatureBaseBonus`를 추가해서, 기대 1위였던 `뉴질랜드`가 `핀란드`보다 앞서도록 보정했습니다. 그 결과 baseline은 유지하면서 anchor drift를 `7 -> 6`으로 줄였습니다.
 - 아직 내가 이해가 부족한 부분: `P08`은 해결됐지만 이제 운영 우선순위는 `P07`, `P10`, `P11`로 이동했다. 다음에는 이 셋 중 실제 만족도 저점과 가장 겹치는 시나리오를 먼저 골라, broad bonus가 아니라 한 시나리오만 좁게 보는 편이 맞다.
+
+## 2026-03-26 - 추천 엔진 anchor drift 튜닝 7차: P10에 cosmopolitan pulse bonus 추가
+
+- 단계: 6. 설문 기반 추천 엔진 / 7. AI-assisted 설문 개선 체계
+- 목적: `engine-v15`에서는 baseline `18 / 18`은 유지됐지만, `P10` 같은 `온화한 기후 + 빠른 도시 + 문화 다양성 최우선 + 영어 의존 낮음` 시나리오에서 기대 1위였던 `미국`이 여전히 `대한민국` 뒤에 있었다. 이번 조각은 broad city bonus를 다시 넓히지 않고, `영어가 꼭 필요하지 않아도 다문화 자극과 활기를 강하게 느끼는 도시형 후보`만 좁게 밀어 주는 신호를 넣어 `P10`의 anchor drift를 줄이는 데 집중한다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationSurveyService.java`
+  - `src/test/java/com/worldmap/recommendation/application/RecommendationSurveyServiceTest.java`
+  - `src/test/java/com/worldmap/recommendation/application/RecommendationOfflinePersonaSnapshotTest.java`
+  - `src/test/java/com/worldmap/admin/AdminPersonaBaselineServiceIntegrationTest.java`
+  - `src/test/java/com/worldmap/admin/AdminRecommendationOpsReviewServiceIntegrationTest.java`
+  - `src/test/java/com/worldmap/admin/AdminPageIntegrationTest.java`
+  - `src/test/java/com/worldmap/recommendation/RecommendationPageIntegrationTest.java`
+  - `src/test/java/com/worldmap/recommendation/RecommendationFeedbackIntegrationTest.java`
+  - `src/main/resources/templates/admin/index.html`
+  - `src/main/resources/templates/admin/recommendation-feedback.html`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/LOCAL_DEMO_BOOTSTRAP.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/50-current-state-rebuild-map.md`
+  - `blog/56-reduce-p10-anchor-drift-with-cosmopolitan-pulse-bonus.md`
+- 요청 흐름 / 데이터 흐름: 런타임 추천 흐름은 그대로 `GET /recommendation/survey -> POST /recommendation/survey -> RecommendationSurveyService.recommend() -> recommendation/result -> POST /api/recommendation/feedback`이다. 이번에는 `RecommendationSurveyService` 안에 `cosmopolitanPulseBonus()`를 추가했다. 사용자가 `MILD + FAST + CITY + BALANCED + English LOW + diversity HIGH + culture HIGH`로 답하면, 서비스가 후보 국가의 `climateValue`, `paceValue`, `urbanityValue`, `diversity`, `cultureScene`, `food`, `housingSpace`, `digitalConvenience`를 함께 읽어 “영어 의존이 낮아도 다문화 도시 자극을 충분히 느낄 수 있는가”를 별도 bonus로 반영한다.
+- 데이터 / 상태 변화: 추천 결과 top 3는 여전히 저장하지 않는다. 익명 피드백에는 이제 `engineVersion=engine-v16`이 저장되고, `/dashboard`, `/dashboard/recommendation/feedback`, `/dashboard/recommendation/persona-baseline` 운영 화면도 현재 엔진 버전을 `engine-v16`으로 보여준다. dynamic baseline 기준으로는 `18 / 18`을 유지하면서 anchor drift 수가 `6 -> 5`로 줄었고, ops review의 우선 시나리오는 `P07, P11, P13`으로 이동했다.
+- 핵심 도메인 개념: `P10`은 단순히 “빠른 도시”를 고르는 시나리오가 아니라, “영어가 꼭 필요하진 않지만 다양성과 문화 밀도가 높은 도시에서 활기 있게 살고 싶은 시나리오”다. 그래서 broad digital bonus를 더 키우지 않고, 이 설문 조합에만 작동하는 `cosmopolitanPulseBonus()`를 따로 추가했다. 이 계산은 컨트롤러가 아니라 `RecommendationSurveyService`가 맡아야 한다. 어떤 설문 조합에서 어떤 프로필 속성을 함께 읽어 rank drift를 줄일지는 추천 도메인 규칙이기 때문이다.
+- 예외 상황 또는 엣지 케이스: bonus를 넓게 켜면 `P07`, `P13`, `P17` 같은 다른 도시형 시나리오나 `영국`, `싱가포르` 같은 이미 강한 후보도 함께 너무 올라갈 수 있다. 그래서 `MILD`, `FAST`, `CITY`, `BALANCED`, `English LOW`, `newcomer MEDIUM`, `digital HIGH`, `diversity HIGH`, `culture HIGH`, `DRIVE_FIRST`, `BALANCED settlement`까지 모두 묶고, 후보도 `climate 3~4`, `pace >= 4`, `urbanity >= 5`, `diversity >= 5`, `culture >= 5`, `food >= 4`, `housing >= 4`, `digital >= 5`일 때만 strong bonus를 받게 제한했다.
+- 테스트 내용: 먼저 임시 디버그 테스트로 `P10`의 실제 점수를 확인해 `대한민국 284 / 미국 272 / 영국 264` gap을 본 뒤, `cosmopolitanPulseBonus()`를 추가해 `미국`이 1위로 올라오는지 확인했다. 그 다음 임시 디버그 테스트는 제거하고, `RecommendationSurveyServiceTest`에 `미국` 1위 unit test를 추가했다. `RecommendationOfflinePersonaSnapshotTest`는 `engine-v16` 기준으로 `P10 -> 미국, 대한민국, 영국`을 다시 고정했고, `AdminPersonaBaselineServiceIntegrationTest`에서는 anchor drift가 `5`로 줄었는지, `AdminRecommendationOpsReviewServiceIntegrationTest`에서는 우선 시나리오가 `P07, P11, P13`으로 바뀌는지 확인했다. 마지막으로 추천/admin targeted suite와 `./gradlew test` 전체 통과를 확인했다.
+- 면접에서 30초 안에 설명하는 요약: baseline 18 / 18을 맞춘 뒤에는 weak scenario보다 1위 순위 drift를 줄이는 일이 더 중요해졌습니다. 이번에는 `P10`처럼 영어는 꼭 필요 없지만 빠른 도시의 다양성과 활기가 중요한 시나리오에만 좁게 작동하는 `cosmopolitanPulseBonus`를 추가해서, 기대 1위였던 `미국`이 `대한민국`보다 앞서도록 보정했습니다. 그 결과 baseline은 유지하면서 anchor drift를 `6 -> 5`로 줄였습니다.
+- 아직 내가 이해가 부족한 부분: `P10`은 해결됐지만 이제 운영 우선순위는 `P07`, `P11`, `P13`으로 이동했다. 다음에는 이 셋 중 실제 만족도 저점과 가장 겹치는 시나리오를 먼저 골라, broad bonus가 아니라 한 시나리오만 좁게 보는 편이 맞다.
