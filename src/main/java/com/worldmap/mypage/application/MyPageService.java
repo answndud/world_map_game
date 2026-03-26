@@ -11,6 +11,7 @@ import com.worldmap.game.population.domain.PopulationGameSessionRepository;
 import com.worldmap.game.population.domain.PopulationGameStage;
 import com.worldmap.game.population.domain.PopulationGameStageRepository;
 import com.worldmap.game.population.domain.PopulationGameStageStatus;
+import com.worldmap.ranking.domain.LeaderboardGameLevel;
 import com.worldmap.ranking.domain.LeaderboardGameMode;
 import com.worldmap.ranking.domain.LeaderboardRecord;
 import com.worldmap.ranking.domain.LeaderboardRecordRepository;
@@ -65,6 +66,8 @@ public class MyPageService {
 			totalCompletedRuns,
 			bestRunView(memberId, LeaderboardGameMode.LOCATION),
 			bestRunView(memberId, LeaderboardGameMode.POPULATION),
+			bestRunView(memberId, LeaderboardGameMode.LOCATION, LeaderboardGameLevel.LEVEL_2),
+			bestRunView(memberId, LeaderboardGameMode.POPULATION, LeaderboardGameLevel.LEVEL_2),
 			locationPerformanceView(memberId),
 			populationPerformanceView(memberId),
 			recentPlays
@@ -125,9 +128,33 @@ public class MyPageService {
 			return null;
 		}
 
-		LeaderboardRecord record = bestRecord.get();
+		return toBestRunView(memberId, bestRecord.get());
+	}
+
+	private MyPageBestRunView bestRunView(
+		Long memberId,
+		LeaderboardGameMode gameMode,
+		LeaderboardGameLevel gameLevel
+	) {
+		Optional<LeaderboardRecord> bestRecord = leaderboardRecordRepository
+			.findFirstByMemberIdAndGameModeAndGameLevelOrderByRankingScoreDescFinishedAtAsc(memberId, gameMode, gameLevel);
+
+		if (bestRecord.isEmpty()) {
+			return null;
+		}
+
+		return toBestRunView(memberId, bestRecord.get());
+	}
+
+	private MyPageBestRunView toBestRunView(Long memberId, LeaderboardRecord record) {
+		long completedRunCount = leaderboardRecordRepository.countByMemberIdAndGameModeAndGameLevel(
+			memberId,
+			record.getGameMode(),
+			record.getGameLevel()
+		);
 		return new MyPageBestRunView(
-			gameModeLabel(gameMode, record),
+			gameModeLabel(record.getGameMode(), record),
+			completedRunCount,
 			record.getTotalScore(),
 			rankFor(record),
 			record.getClearedStageCount()

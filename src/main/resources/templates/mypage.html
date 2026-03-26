@@ -115,6 +115,65 @@
 
             <section class="panel nested-panel">
                 <div class="panel-head">
+                    <h2>Level 2 하이라이트</h2>
+                    <p>Level 2 최고 기록만 따로 모아, 힌트·정밀 입력 같은 고급 규칙에서 어디까지 올라갔는지 보여줍니다.</p>
+                </div>
+
+                <div class="card-grid"
+                     th:if="${dashboard.locationLevel2Best != null or dashboard.populationLevel2Best != null}">
+                    <article class="mode-card" th:if="${dashboard.locationLevel2Best != null}">
+                        <div class="card-top">
+                            <span class="status">Location L2</span>
+                            <span class="subtitle" th:text="'완료 run ' + ${dashboard.locationLevel2Best.completedRunCount}">완료 run 0</span>
+                        </div>
+                        <h3 th:text="${dashboard.locationLevel2Best.gameModeLabel}">국가 위치 찾기 · Level 2</h3>
+                        <ul class="signal-list">
+                            <li>
+                                <span>최고 점수</span>
+                                <strong th:text="${dashboard.locationLevel2Best.totalScore} + '점'">0점</strong>
+                            </li>
+                            <li>
+                                <span>최고 랭킹</span>
+                                <strong th:text="'#' + ${dashboard.locationLevel2Best.bestRank}">#0</strong>
+                            </li>
+                            <li>
+                                <span>최대 Stage</span>
+                                <strong th:text="${dashboard.locationLevel2Best.clearedStageCount} + '단계'">0단계</strong>
+                            </li>
+                        </ul>
+                    </article>
+
+                    <article class="mode-card" th:if="${dashboard.populationLevel2Best != null}">
+                        <div class="card-top">
+                            <span class="status">Population L2</span>
+                            <span class="subtitle" th:text="'완료 run ' + ${dashboard.populationLevel2Best.completedRunCount}">완료 run 0</span>
+                        </div>
+                        <h3 th:text="${dashboard.populationLevel2Best.gameModeLabel}">국가 인구수 맞추기 · Level 2</h3>
+                        <ul class="signal-list">
+                            <li>
+                                <span>최고 점수</span>
+                                <strong th:text="${dashboard.populationLevel2Best.totalScore} + '점'">0점</strong>
+                            </li>
+                            <li>
+                                <span>최고 랭킹</span>
+                                <strong th:text="'#' + ${dashboard.populationLevel2Best.bestRank}">#0</strong>
+                            </li>
+                            <li>
+                                <span>최대 Stage</span>
+                                <strong th:text="${dashboard.populationLevel2Best.clearedStageCount} + '단계'">0단계</strong>
+                            </li>
+                        </ul>
+                    </article>
+                </div>
+
+                <p class="message-box"
+                   th:if="${dashboard.locationLevel2Best == null and dashboard.populationLevel2Best == null}">
+                    아직 Level 2 완료 기록이 없습니다. Level 2로 게임을 끝까지 진행하면 이 영역에 최고 기록이 쌓입니다.
+                </p>
+            </section>
+
+            <section class="panel nested-panel">
+                <div class="panel-head">
                     <h2>최근 플레이</h2>
                     <p>계정에 귀속된 최근 완료 run 10개를 최신순으로 보여줍니다.</p>
                 </div>

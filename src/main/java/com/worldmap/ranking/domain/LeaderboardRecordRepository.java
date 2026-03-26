@@ -16,6 +16,12 @@ public interface LeaderboardRecordRepository extends JpaRepository<LeaderboardRe
 
 	long countByMemberId(Long memberId);
 
+	long countByMemberIdAndGameModeAndGameLevel(
+		Long memberId,
+		LeaderboardGameMode gameMode,
+		LeaderboardGameLevel gameLevel
+	);
+
 	Page<LeaderboardRecord> findByMemberIdOrderByFinishedAtDesc(Long memberId, Pageable pageable);
 
 	long countByFinishedAtGreaterThanEqualAndFinishedAtLessThan(LocalDateTime startInclusive, LocalDateTime endExclusive);

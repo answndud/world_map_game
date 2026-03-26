@@ -7,6 +7,8 @@ public record MyPageDashboardView(
 	long totalCompletedRuns,
 	MyPageBestRunView locationBest,
 	MyPageBestRunView populationBest,
+	MyPageBestRunView locationLevel2Best,
+	MyPageBestRunView populationLevel2Best,
 	MyPageModePerformanceView locationPerformance,
 	MyPageModePerformanceView populationPerformance,
 	List<MyPageRecentPlayView> recentPlays
