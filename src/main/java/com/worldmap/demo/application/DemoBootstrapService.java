@@ -9,6 +9,7 @@ import com.worldmap.country.domain.Country;
 import com.worldmap.country.domain.CountryRepository;
 import com.worldmap.game.location.domain.LocationGameAttempt;
 import com.worldmap.game.location.domain.LocationGameAttemptRepository;
+import com.worldmap.game.location.domain.LocationGameLevel;
 import com.worldmap.game.location.domain.LocationGameSession;
 import com.worldmap.game.location.domain.LocationGameSessionRepository;
 import com.worldmap.game.location.domain.LocationGameStage;
@@ -136,7 +137,13 @@ public class DemoBootstrapService {
 		Country canada = country("CAN");
 
 		LocalDateTime startedAt = LocalDateTime.now().minusHours(3);
-		LocationGameSession session = LocationGameSession.ready(demoMember.getNickname(), demoMember.getId(), null, 4);
+		LocationGameSession session = LocationGameSession.ready(
+			demoMember.getNickname(),
+			demoMember.getId(),
+			null,
+			LocationGameLevel.LEVEL_1,
+			4
+		);
 		session.startGame(startedAt);
 		locationGameSessionRepository.save(session);
 
@@ -299,7 +306,13 @@ public class DemoBootstrapService {
 		}
 
 		Country mexico = country("MEX");
-		LocationGameSession liveGuestSession = LocationGameSession.ready("guest_live", null, DEMO_GUEST_SESSION_KEY, 5);
+		LocationGameSession liveGuestSession = LocationGameSession.ready(
+			"guest_live",
+			null,
+			DEMO_GUEST_SESSION_KEY,
+			LocationGameLevel.LEVEL_1,
+			5
+		);
 		liveGuestSession.startGame(LocalDateTime.now().minusMinutes(20));
 		locationGameSessionRepository.save(liveGuestSession);
 

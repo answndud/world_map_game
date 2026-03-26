@@ -1,6 +1,7 @@
 package com.worldmap.ranking.application;
 
 import com.worldmap.game.location.domain.LocationGameSession;
+import com.worldmap.game.location.domain.LocationGameLevel;
 import com.worldmap.game.population.domain.PopulationGameLevel;
 import com.worldmap.game.population.domain.PopulationGameSession;
 import com.worldmap.ranking.domain.LeaderboardGameLevel;
@@ -53,9 +54,14 @@ public class LeaderboardService {
 
 	@Transactional
 	public void recordLocationLevelOneResult(LocationGameSession session, Integer totalAttemptCount) {
+		recordLocationResult(session, totalAttemptCount);
+	}
+
+	@Transactional
+	public void recordLocationResult(LocationGameSession session, Integer totalAttemptCount) {
 		recordResult(
 			LeaderboardGameMode.LOCATION,
-			LEVEL_1,
+			resolveLocationLeaderboardLevel(session.getGameLevel()),
 			session.getId(),
 			session.getPlayerNickname(),
 			session.getMemberId(),
@@ -349,6 +355,12 @@ public class LeaderboardService {
 
 	private LeaderboardGameLevel resolvePopulationLeaderboardLevel(PopulationGameLevel gameLevel) {
 		return gameLevel == PopulationGameLevel.LEVEL_2
+			? LeaderboardGameLevel.LEVEL_2
+			: LEVEL_1;
+	}
+
+	private LeaderboardGameLevel resolveLocationLeaderboardLevel(LocationGameLevel gameLevel) {
+		return gameLevel == LocationGameLevel.LEVEL_2
 			? LeaderboardGameLevel.LEVEL_2
 			: LEVEL_1;
 	}

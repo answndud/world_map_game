@@ -63,7 +63,7 @@
 - 비회원은 지금처럼 세션 기반으로 바로 플레이
 - 로그인하면 내 계정에 기록과 랭킹 이력이 누적
 - 계정 정보는 `닉네임 + 비밀번호` 수준으로 단순하게 유지
-- 현재는 9단계 2차 기준으로 `member`, `guestSessionKey`, 게임 세션 / 랭킹 레코드 ownership 필드, 닉네임 + 비밀번호 기반 회원가입 / 로그인 / 로그아웃, 로그인 직후 현재 브라우저의 guest 기록 귀속, `/mypage` 기록 허브, raw stage 기반 플레이 성향 요약, `/dashboard/**` 접근 제어, 환경변수 기반 bootstrap admin provisioning, Dashboard 1차 운영 수치 카드, 공개 `/stats` 화면, local demo 계정 / 샘플 run bootstrap, 현재 survey/engine 버전 추천 피드백 샘플 bootstrap, 홈 첫 화면 계정 진입 CTA, 인구수 게임 Level 2 정확 수치 입력형, 공개 `/ranking`의 인구수 Level 2 필터까지 연결했다.
+- 현재는 9단계 4차 기준으로 `member`, `guestSessionKey`, 게임 세션 / 랭킹 레코드 ownership 필드, 닉네임 + 비밀번호 기반 회원가입 / 로그인 / 로그아웃, 로그인 직후 현재 브라우저의 guest 기록 귀속, `/mypage` 기록 허브, raw stage 기반 플레이 성향 요약, `/dashboard/**` 접근 제어, 환경변수 기반 bootstrap admin provisioning, Dashboard 1차 운영 수치 카드, 공개 `/stats` 화면, local demo 계정 / 샘플 run bootstrap, 현재 survey/engine 버전 추천 피드백 샘플 bootstrap, 홈 첫 화면 계정 진입 CTA, 인구수 게임 Level 2 정확 수치 입력형, 공개 `/ranking`의 인구수 Level 2 필터, 위치 찾기 게임 Level 2 거리/방향 힌트 첫 조각까지 연결했다.
 
 ### 이후 확장
 
@@ -98,9 +98,12 @@
 
 #### Level 2
 
-- 힌트 없이 출제한다.
-- 제한 시간, 연속 정답 보너스, 카메라 보조 축소 같은 규칙으로 탐색 난도를 올린다.
-- 영토, 소국, endless mode 같은 확장 규칙을 추가할 수 있다.
+- 시작 화면에서 `Level 1 / Level 2`를 고를 수 있다.
+- Level 2도 입력 방식은 그대로 `지구본 국가 선택`을 유지한다.
+- 오답이면 서버가 `distanceKm + directionHint`를 계산해 내려준다.
+- 현재 1차 구현에서는 `LocationGameSession.gameLevel`을 저장하고, 결과 / 랭킹 레코드도 `LEVEL_1 / LEVEL_2`를 구분한다.
+- Level 2 difficulty label은 `Vector` 계열로 분리해, 주요 국가 감잡기보다 더 넓은 후보 풀에서 출제한다.
+- 다음 고도화 후보는 `hint debt 점수 반영`, `소국/영토`, `타이머`다.
 
 #### 서버 책임
 
@@ -110,6 +113,7 @@
 - 시도 이력 저장
 - 선택 국가 코드 검증
 - 정답 국가 코드 비교
+- Level 2 오답 힌트(distance / direction) 계산
 - 라운드별 점수 계산
 - 총점과 게임오버 상태 관리
 

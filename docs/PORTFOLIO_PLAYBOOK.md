@@ -710,11 +710,18 @@
 - `PopulationGamePrecisionBand`를 추가해 Level 2 결과와 feedback가 `오차율 + band`를 같이 설명하도록 보강
 - Level 2 결과 화면 상단에 판정 기준 패널과 attempt별 오차율 / band 로그 추가
 - Level 2 state/answer/result 통합 테스트와 precision scoring 단위 테스트 통과
+- `LocationGameLevel`을 추가해 위치 게임 세션이 `LEVEL_1 / LEVEL_2`를 저장하도록 확장
+- 위치 게임 시작 화면에서 `Level 1 / Level 2`를 고를 수 있게 구성
+- Level 2는 입력 방식을 바꾸지 않고, 오답 시 `distanceKm + directionHint`를 서버가 계산해 answer payload에 포함
+- `LocationGameDistanceHintPolicy`를 추가해 거리/방향 계산을 프론트가 아니라 서버 정책으로 분리
+- 위치 게임 결과 / 랭킹 레코드도 `gameLevel`을 이해하도록 맞춤
+- 위치 게임 Level 2 state/answer 통합 테스트와 distance hint 단위 테스트 통과
 
 다음에 이어서 할 일:
 
-- 위치 찾기 Level 2 첫 조각 설계 완료
-- `LocationGameLevel + Level 2 hint payload(distance / direction)` 구현 시작
+- 위치 찾기 Level 2 결과 화면에 attempt별 거리/방향 힌트를 read model로도 보여 줄지 결정
+- 위치 찾기 Level 2 run을 공개 `/ranking`까지 분리 노출할지 결정
+- 위치 게임 Level 2에서 `hint debt`를 점수에 실제 반영할지 결정
 - 공개 `/stats` 또는 `/mypage`에서 Level 2 하이라이트를 더 보여 줄지 결정
 - 인구수 Level 2 결과를 `/stats`나 홈 하이라이트에도 노출할지 결정
 
@@ -727,6 +734,7 @@
 - 왜 공개 랭킹 확장도 컨트롤러가 아니라 `LeaderboardService`의 level-aware 조회 규칙으로 풀어야 하는가
 - 왜 precision band는 프론트 if문이 아니라 서버 policy가 기준이 되어야 하는가
 - 왜 위치 찾기 Level 2 첫 조각을 `타이머`보다 `거리/방향 힌트` 중심으로 여는 것이 더 설명 가능한가
+- 왜 위치 찾기 Level 2의 거리/방향 계산도 프론트가 아니라 서버 policy가 맡아야 하는가
 
 면접 포인트:
 

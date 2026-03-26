@@ -15,6 +15,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.worldmap.auth.domain.Member;
 import com.worldmap.auth.domain.MemberRepository;
+import com.worldmap.game.location.domain.LocationGameLevel;
 import com.worldmap.game.location.domain.LocationGameSession;
 import com.worldmap.game.location.domain.LocationGameSessionRepository;
 import com.worldmap.game.population.domain.PopulationGameLevel;
@@ -75,7 +76,13 @@ class AdminPageIntegrationTest {
 		memberRepository.save(Member.create("member_one", "hash", USER));
 		memberRepository.save(Member.create("member_two", "hash", USER));
 
-		LocationGameSession activeMemberLocation = LocationGameSession.ready("member_one", 1L, null, 5);
+		LocationGameSession activeMemberLocation = LocationGameSession.ready(
+			"member_one",
+			1L,
+			null,
+			LocationGameLevel.LEVEL_1,
+			5
+		);
 		activeMemberLocation.startGame(LocalDateTime.now().minusHours(2));
 		locationGameSessionRepository.save(activeMemberLocation);
 

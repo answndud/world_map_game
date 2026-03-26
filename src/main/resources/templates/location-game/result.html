@@ -32,6 +32,10 @@
                     <strong th:text="${result.playerNickname}">Guest</strong>
                 </article>
                 <article class="stat-card">
+                    <span class="subtitle">게임 레벨</span>
+                    <strong th:text="${result.gameLevel.displayLabel() + ' · ' + result.gameLevel.hintModeLabel()}">Level 1 · 기본 탐색</strong>
+                </article>
+                <article class="stat-card">
                     <span class="subtitle">상태</span>
                     <strong th:text="${result.status}">FINISHED</strong>
                 </article>
@@ -63,7 +67,11 @@
 
             <div class="panel-head">
                 <h2>Stage별 기록</h2>
-                <p>각 Stage 안에 여러 번의 Attempt가 쌓이고, 하트가 0이 되면 해당 Stage에서 게임이 종료됩니다.</p>
+                <p th:text="${result.gameLevel.name() == 'LEVEL_2'
+                    ? 'Level 2에서는 오답 시 거리와 방향 힌트를 받은 뒤 같은 Stage를 다시 시도합니다.'
+                    : '각 Stage 안에 여러 번의 Attempt가 쌓이고, 하트가 0이 되면 해당 Stage에서 게임이 종료됩니다.'}">
+                    각 Stage 안에 여러 번의 Attempt가 쌓이고, 하트가 0이 되면 해당 Stage에서 게임이 종료됩니다.
+                </p>
             </div>
 
             <div class="table-shell">

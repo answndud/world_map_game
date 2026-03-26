@@ -6,6 +6,7 @@ import com.worldmap.country.domain.CountryRepository;
 import com.worldmap.game.common.domain.GameSessionStatus;
 import com.worldmap.game.location.domain.LocationGameAttempt;
 import com.worldmap.game.location.domain.LocationGameAttemptRepository;
+import com.worldmap.game.location.domain.LocationGameLevel;
 import com.worldmap.game.location.domain.LocationGameStage;
 import com.worldmap.game.location.domain.LocationGameStageRepository;
 import com.worldmap.game.location.domain.LocationGameSession;
@@ -38,6 +39,7 @@ public class LocationGameService {
 	private final LocationGameAttemptRepository locationGameAttemptRepository;
 	private final LocationGameDifficultyPolicy locationGameDifficultyPolicy;
 	private final LocationGameScoringPolicy locationGameScoringPolicy;
+	private final LocationGameDistanceHintPolicy locationGameDistanceHintPolicy;
 	private final LeaderboardService leaderboardService;
 
 	public LocationGameService(
@@ -47,6 +49,7 @@ public class LocationGameService {
 		LocationGameAttemptRepository locationGameAttemptRepository,
 		LocationGameDifficultyPolicy locationGameDifficultyPolicy,
 		LocationGameScoringPolicy locationGameScoringPolicy,
+		LocationGameDistanceHintPolicy locationGameDistanceHintPolicy,
 		LeaderboardService leaderboardService
 	) {
 		this.countryRepository = countryRepository;
@@ -55,27 +58,43 @@ public class LocationGameService {
 		this.locationGameAttemptRepository = locationGameAttemptRepository;
 		this.locationGameDifficultyPolicy = locationGameDifficultyPolicy;
 		this.locationGameScoringPolicy = locationGameScoringPolicy;
+		this.locationGameDistanceHintPolicy = locationGameDistanceHintPolicy;
 		this.leaderboardService = leaderboardService;
 	}
 
 	@Transactional
 	public LocationGameStartView startGuestGame(String nickname, String guestSessionKey) {
-		return startGame(normalizeNickname(nickname), null, guestSessionKey);
+		return startGuestGame(nickname, guestSessionKey, LocationGameLevel.LEVEL_1);
+	}
+
+	@Transactional
+	public LocationGameStartView startGuestGame(String nickname, String guestSessionKey, LocationGameLevel gameLevel) {
+		return startGame(normalizeNickname(nickname), null, guestSessionKey, gameLevel);
 	}
 
 	@Transactional
 	public LocationGameStartView startMemberGame(Long memberId, String memberNickname) {
-		return startGame(memberNickname, memberId, null);
+		return startMemberGame(memberId, memberNickname, LocationGameLevel.LEVEL_1);
 	}
 
-	private LocationGameStartView startGame(String playerNickname, Long memberId, String guestSessionKey) {
-		List<Country> countries = getCountriesSortedByPopulation();
+	@Transactional
+	public LocationGameStartView startMemberGame(Long memberId, String memberNickname, LocationGameLevel gameLevel) {
+		return startGame(memberNickname, memberId, null, gameLevel);
+	}
+
+	private LocationGameStartView startGame(
+		String playerNickname,
+		Long memberId,
+		String guestSessionKey,
+		LocationGameLevel gameLevel
+	) {
+		List<Country> countries = getCountriesSortedByPopulation(gameLevel);
 
 		if (countries.size() < MINIMUM_COUNTRY_COUNT) {
 			throw new IllegalStateException("위치 찾기 게임을 시작하기 위한 국가 데이터가 충분하지 않습니다.");
 		}
 
-		LocationGameSession session = LocationGameSession.ready(playerNickname, memberId, guestSessionKey, 1);
+		LocationGameSession session = LocationGameSession.ready(playerNickname, memberId, guestSessionKey, gameLevel, 1);
 		session = locationGameSessionRepository.save(session);
 		createNextStage(session, 1, countries, List.of());
 		session.startGame(LocalDateTime.now());
@@ -84,6 +103,7 @@ public class LocationGameService {
 			session.getId(),
 			session.getPlayerNickname(),
 			session.getStatus(),
+			session.getGameLevel(),
 			session.getTotalRounds(),
 			session.getLivesRemaining(),
 			"/games/location/play/" + session.getId()
@@ -98,10 +118,12 @@ public class LocationGameService {
 		}
 
 		LocationGameStage stage = getStage(sessionId, session.getCurrentStageNumber());
-		LocationGameDifficultyPlan difficultyPlan = resolveDifficulty(stage.getStageNumber());
+		LocationGameLevel gameLevel = session.getGameLevel();
+		LocationGameDifficultyPlan difficultyPlan = resolveDifficulty(gameLevel, stage.getStageNumber());
 
 		return new LocationGameStateView(
 			session.getId(),
+			gameLevel,
 			stage.getStageNumber(),
 			difficultyPlan.label(),
 			session.getClearedStageCount(),
@@ -120,7 +142,7 @@ public class LocationGameService {
 			throw new IllegalStateException("종료된 게임만 다시 시작할 수 있습니다.");
 		}
 
-		List<Country> countries = getCountriesSortedByPopulation();
+		List<Country> countries = getCountriesSortedByPopulation(session.getGameLevel());
 		if (countries.size() < MINIMUM_COUNTRY_COUNT) {
 			throw new IllegalStateException("위치 찾기 게임을 시작하기 위한 국가 데이터가 충분하지 않습니다.");
 		}
@@ -138,6 +160,7 @@ public class LocationGameService {
 			session.getId(),
 			session.getPlayerNickname(),
 			session.getStatus(),
+			session.getGameLevel(),
 			session.getTotalRounds(),
 			session.getLivesRemaining(),
 			"/games/location/play/" + session.getId()
@@ -161,8 +184,13 @@ public class LocationGameService {
 		}
 
 		LocationGameStage stage = getStage(sessionId, stageNumber);
+		LocationGameLevel gameLevel = session.getGameLevel();
 		Country selectedCountry = countryRepository.findByIso3CodeIgnoreCase(normalizeCountryCode(selectedCountryIso3Code))
 			.orElseThrow(() -> new IllegalArgumentException("지원하지 않는 국가입니다: " + selectedCountryIso3Code));
+		Country targetCountry = gameLevel.usesDistanceHint()
+			? countryRepository.findById(stage.getCountryId())
+				.orElseThrow(() -> new ResourceNotFoundException("정답 국가를 찾을 수 없습니다."))
+			: null;
 		int attemptNumber = stage.nextAttemptNumber();
 		LocalDateTime attemptedAt = LocalDateTime.now();
 		LocationAnswerJudgement judgement = locationGameScoringPolicy.judge(
@@ -172,6 +200,9 @@ public class LocationGameService {
 			attemptNumber,
 			session.getLivesRemaining()
 		);
+		LocationGameDistanceHint distanceHint = gameLevel.usesDistanceHint() && !judgement.correct()
+			? locationGameDistanceHintPolicy.buildHint(selectedCountry, targetCountry)
+			: null;
 
 		stage.recordAttempt(
 			judgement.correct(),
@@ -180,7 +211,7 @@ public class LocationGameService {
 		);
 
 		if (judgement.correct()) {
-			List<Country> countries = getCountriesSortedByPopulation();
+			List<Country> countries = getCountriesSortedByPopulation(gameLevel);
 			List<LocationGameStage> existingStages = locationGameStageRepository.findAllBySessionIdOrderByStageNumber(sessionId);
 			createNextStage(session, stageNumber + 1, countries, existingStages);
 			session.clearCurrentStage(stageNumber, judgement.awardedScore(), attemptedAt);
@@ -204,7 +235,7 @@ public class LocationGameService {
 		);
 
 		if (session.getStatus() != GameSessionStatus.IN_PROGRESS) {
-			leaderboardService.recordLocationLevelOneResult(
+			leaderboardService.recordLocationResult(
 				session,
 				Math.toIntExact(locationGameAttemptRepository.countByStageSessionId(sessionId))
 			);
@@ -212,15 +243,18 @@ public class LocationGameService {
 
 		LocationGameAnswerOutcome outcome = determineOutcome(judgement.correct(), session.getStatus());
 		LocationGameDifficultyPlan nextDifficultyPlan = session.getStatus() == GameSessionStatus.IN_PROGRESS
-			? resolveDifficulty(session.getCurrentStageNumber())
+			? resolveDifficulty(gameLevel, session.getCurrentStageNumber())
 			: null;
 
 		return new LocationGameAnswerView(
 			session.getId(),
+			gameLevel,
 			stage.getStageNumber(),
 			stage.getTargetCountryName(),
 			selectedCountry.getNameKr(),
 			selectedCountry.getIso3Code(),
+			distanceHint != null ? distanceHint.distanceKm() : null,
+			distanceHint != null ? distanceHint.directionHint() : null,
 			judgement.correct(),
 			judgement.awardedScore(),
 			session.getTotalScore(),
@@ -275,6 +309,7 @@ public class LocationGameService {
 			session.getId(),
 			session.getPlayerNickname(),
 			session.getStatus(),
+			session.getGameLevel(),
 			session.getTotalRounds(),
 			session.getClearedStageCount(),
 			totalAttemptCount,
@@ -310,19 +345,33 @@ public class LocationGameService {
 		return countryCode.trim().toUpperCase(Locale.ROOT);
 	}
 
-	private List<Country> getCountriesSortedByPopulation() {
-		return countryRepository.findAll()
+	private List<Country> getCountriesSortedByPopulation(LocationGameLevel gameLevel) {
+		List<Country> countries = countryRepository.findAll()
 			.stream()
 			.sorted(
 				Comparator.comparing(Country::getPopulation, Comparator.reverseOrder())
 					.thenComparing(Country::getNameKr)
 			)
-			.limit(LEVEL_ONE_COUNTRY_LIMIT)
 			.toList();
+
+		if (gameLevel == LocationGameLevel.LEVEL_1) {
+			return countries.stream()
+				.limit(LEVEL_ONE_COUNTRY_LIMIT)
+				.toList();
+		}
+
+		return countries;
 	}
 
 	private LocationGameDifficultyPlan resolveDifficulty(Integer stageNumber) {
-		return locationGameDifficultyPolicy.resolve(stageNumber, (int) countryRepository.count());
+		return resolveDifficulty(LocationGameLevel.LEVEL_1, stageNumber);
+	}
+
+	private LocationGameDifficultyPlan resolveDifficulty(LocationGameLevel gameLevel, Integer stageNumber) {
+		int totalCountryCount = gameLevel == LocationGameLevel.LEVEL_1
+			? LEVEL_ONE_COUNTRY_LIMIT
+			: (int) countryRepository.count();
+		return locationGameDifficultyPolicy.resolve(gameLevel, stageNumber, totalCountryCount);
 	}
 
 	private void createNextStage(
@@ -335,7 +384,11 @@ public class LocationGameService {
 			return;
 		}
 
-		LocationGameDifficultyPlan difficultyPlan = locationGameDifficultyPolicy.resolve(stageNumber, sortedCountries.size());
+		LocationGameDifficultyPlan difficultyPlan = locationGameDifficultyPolicy.resolve(
+			session.getGameLevel(),
+			stageNumber,
+			sortedCountries.size()
+		);
 		Country nextCountry = selectCountryForStage(sortedCountries, existingStages, difficultyPlan);
 		locationGameStageRepository.save(LocationGameStage.create(session, stageNumber, nextCountry));
 		session.planNextStage(stageNumber);

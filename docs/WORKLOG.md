@@ -3230,3 +3230,44 @@
 - 테스트 내용: 이번 조각은 설계 문서 작업이라 애플리케이션 테스트는 다시 돌리지 않았다. 대신 이후 구현 순서를 `LocationGameLevel enum -> 세션 level 저장 -> Level 2 hint payload -> play overlay -> 랭킹 분리`로 고정해 다음 코드 조각의 검증 단위를 명확히 했다.
 - 면접에서 30초 안에 설명하는 요약: 위치 게임 Level 2는 Level 1을 다시 만드는 게 아니라, 이미 있는 `세션 / Stage / Attempt / 하트` 구조 위에 난도 정책과 힌트 정책만 추가하는 방향으로 설계했습니다. 첫 조각은 타이머보다 `오답 시 거리/방향 힌트`를 서버가 계산해 내려주는 방식으로 시작해서, 프론트 리스크를 키우지 않으면서도 Level 1과 분명히 다른 규칙을 만들 계획입니다.
 - 아직 내가 이해가 부족한 부분: Level 2 첫 구현에서 출제 국가 풀을 현재 상위 72개 안에서만 강화할지, 아니면 일부 194개까지 같이 열지 아직 판단이 남아 있다. 또 힌트 사용을 score penalty에 바로 반영할지, 1차에서는 시각 피드백만 줄지도 구현 전에 한 번 더 정해야 한다.
+
+## 2026-03-26 - 9단계 5차: 위치 찾기 Level 2 거리 힌트 첫 구현
+
+- 단계: 9. Level 2와 실시간성 고도화
+- 목적: 설계 문서로만 고정해 둔 위치 게임 Level 2를 실제 코드로 열어, 시작 화면에서 레벨을 고르고 오답 시 서버가 거리/방향 힌트를 내려주는 첫 구현 단위를 만든다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/game/location/domain/LocationGameLevel.java`
+  - `src/main/java/com/worldmap/game/location/domain/LocationGameSession.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameDistanceHint.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameDistanceHintPolicy.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameDifficultyPolicy.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameStartView.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameStateView.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameAnswerView.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameSessionResultView.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameService.java`
+  - `src/main/java/com/worldmap/game/location/web/StartLocationGameRequest.java`
+  - `src/main/java/com/worldmap/game/location/web/LocationGameApiController.java`
+  - `src/main/java/com/worldmap/ranking/application/LeaderboardService.java`
+  - `src/main/java/com/worldmap/demo/application/DemoBootstrapService.java`
+  - `src/main/resources/templates/location-game/start.html`
+  - `src/main/resources/templates/location-game/play.html`
+  - `src/main/resources/templates/location-game/result.html`
+  - `src/main/resources/static/js/location-game.js`
+  - `src/test/java/com/worldmap/game/location/application/LocationGameDistanceHintPolicyTest.java`
+  - `src/test/java/com/worldmap/game/location/LocationGameFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/admin/AdminPageIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/50-current-state-rebuild-map.md`
+  - `blog/66-start-location-level-2-with-distance-hints.md`
+- 요청 흐름 / 데이터 흐름: 시작은 `POST /api/games/location/sessions`에서 `gameLevel`을 함께 받는다. `LocationGameApiController`는 현재 로그인/guest 분기만 하고, 실제 레벨 저장과 Stage 생성은 `LocationGameService.startGuestGame/startMemberGame(..., gameLevel)`이 맡는다. 진행 중에는 `GET /api/games/location/sessions/{id}/state`가 현재 `gameLevel`과 난이도 라벨을 내려주고, `POST /api/games/location/sessions/{id}/answer`는 오답일 때 `LocationGameDistanceHintPolicy`를 호출해 `distanceKm + directionHint`를 answer payload에 포함한다.
+- 데이터 / 상태 변화: `location_game_session`에 `game_level`이 추가돼 세션이 `LEVEL_1 / LEVEL_2`를 저장한다. Stage와 Attempt 엔티티는 그대로 재사용하고, 힌트는 아직 DB 컬럼으로 올리지 않고 answer payload에서만 먼저 노출한다. 랭킹도 `LeaderboardService.recordLocationResult()`로 바꿔 `leaderboard_record.game_level`에 위치 게임 Level 2를 구분 저장하도록 맞췄다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “입력 방식은 그대로 두고, 난도와 피드백 정책만 분리한다”는 점이다. Level 2는 새 게임이 아니라 기존 `세션 / Stage / Attempt / 하트 / endless run` 구조 위에 `gameLevel`과 `distance hint policy`를 얹은 형태다. 거리/방향 계산을 프론트가 아니라 서버 정책으로 둔 이유는, 힌트도 결국 정답 판정과 같은 게임 규칙이기 때문이다.
+- 예외 상황 또는 엣지 케이스: 첫 구현에서는 힌트를 오답 payload에만 넣고, Stage별 영구 이력으로는 아직 저장하지 않는다. 즉 결과 화면에서 attempt별 거리 힌트 로그까지 보여 주지는 않는다. 또 Level 2 candidate pool은 더 넓게 열었지만, 타이머·소국·영토까지 동시에 넣지는 않았다. 프론트는 동일한 globe 선택 구조를 유지해 조작 리스크를 늘리지 않았다.
+- 테스트 내용: `LocationGameDistanceHintPolicyTest`에서 대표 좌표 기반 거리/방향 계산을 단위 테스트로 고정했다. `LocationGameFlowIntegrationTest`에서는 `LEVEL_2` 시작, state의 `gameLevel`, 오답 answer의 `distanceKm / directionHint`를 통합 테스트로 확인했다. `node --check src/main/resources/static/js/location-game.js`, targeted suite, `./gradlew test`, `git diff --check`까지 통과했다.
+- 면접에서 30초 안에 설명하는 요약: 위치 게임 Level 2는 지구본 입력 방식을 다시 만들지 않고, 세션에 `gameLevel`을 저장한 뒤 오답일 때만 서버가 거리와 방향 힌트를 계산해 내려주는 방식으로 열었습니다. 그래서 기존 Level 1의 `세션 / Stage / Attempt / 하트` 구조를 유지하면서도, 난도와 피드백 규칙은 분명히 다르게 설명할 수 있습니다.
+- 아직 내가 이해가 부족한 부분: 지금은 힌트를 payload로만 보여 주고 점수에는 직접 반영하지 않는다. 다음에는 `hint debt`를 점수에 넣을지, 결과 화면 attempt 로그에도 거리/방향을 계산해 다시 보여 줄지 판단이 필요하다.

@@ -136,6 +136,10 @@ set +a
   - Level 1 / Level 2 선택이 보이는가
 - `/games/population/play/{sessionId}`
   - Level 2로 시작하면 보기 4개 대신 직접 수치 입력칸이 보이는가
+- `/games/location/start`
+  - Level 1 / Level 2 선택이 보이는가
+- `/games/location/play/{sessionId}`
+  - Level 2로 시작하면 오답 시 거리(km)와 방향 힌트가 feedback에 보이는가
 
 ### 3. local demo 계정으로 로그인 확인
 
