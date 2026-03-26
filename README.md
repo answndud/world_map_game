@@ -194,7 +194,7 @@
 - `/dashboard/recommendation/feedback`와 `/api/recommendation/feedback/summary`에서 `surveyVersion + engineVersion` 기준 평균 점수, 응답 수, 1~5점 분포를 읽어 설문 개선 기준으로 사용한다.
 - `/dashboard/recommendation/feedback`는 현재 버전 만족도와 baseline anchor drift를 함께 읽어, 지금은 `피드백을 더 모을지`, `문구를 손볼지`, `rank drift를 줄일지`를 운영 메모로 바로 보여 준다.
 - `/dashboard/recommendation/persona-baseline`에서 18개 페르소나 baseline을 현재 엔진 결과로 다시 계산해 weak scenario, 1위 anchor drift, active-signal 비교 시나리오를 운영 화면으로 확인한다.
-- 오프라인 baseline과 snapshot은 현재 `survey-v4 / engine-v13` 기준으로 다시 고정했다.
+- 오프라인 baseline과 snapshot은 현재 `survey-v4 / engine-v14` 기준으로 다시 고정했다.
 - `engine-v7`에서는 `MIXED + BALANCED` 생활을 원하면서 `안전 / 공공서비스`를 중시하는 경우, `safety + welfare + housing + newcomer`를 함께 보는 작은 보정을 추가해 `P04`, `P06` 같은 균형형 시나리오의 남유럽 쏠림을 한 단계 더 줄였다.
 - `engine-v8`에서는 `VALUE_FIRST + SAFETY + MIXED + BALANCED + 영어 적응 MEDIUM` 조합에서만 작동하는 `soft landing bonus`를 추가해, `P06`의 3위 후보를 `이탈리아`에서 `포르투갈`로 교체했다.
 - `engine-v9`에서는 `QUALITY_FIRST + SAFETY HIGH + English HIGH + MIXED + BALANCED + LOW tolerance` 조합에서만 작동하는 `family base bonus`를 추가해, `P11`에 `캐나다`를 다시 올리고 baseline을 `18 / 18`까지 끌어올렸다.
@@ -202,8 +202,9 @@
 - `engine-v11`에서는 `WARM + BALANCED + VALUE_FIRST + MIXED + English MEDIUM + FOOD HIGH + DIVERSITY MEDIUM+` 조합에만 작동하는 `foodie starter bonus`를 추가해, `P02`에서 `말레이시아`가 `태국`보다 먼저 오도록 좁게 보정했다.
 - `engine-v12`에서는 `MILD + BALANCED + MIXED + English MEDIUM + HIGH publicService` 조합에만 작동하는 `temperate public base bonus`를 추가해, `P04`에서 `우루과이`가 `스페인`보다 먼저 오도록 좁게 보정했다.
 - `engine-v13`에서는 `MILD + VALUE_FIRST + SAFETY HIGH + publicService MEDIUM + newcomer LOW` 조합에만 작동하는 `practical public value bonus`를 추가해, `P06`에서 `우루과이`가 `스페인`보다 먼저 오도록 좁게 보정했다.
+- `engine-v14`에서는 `WARM + QUALITY_FIRST + CITY + English HIGH + publicService HIGH` 조합에만 작동하는 `premium warm hub bonus`를 추가해, `P09`에서 `아랍에미리트`가 `싱가포르`보다 먼저 오도록 좁게 보정했다.
 - 현재는 weak scenario가 `0개`까지 줄었기 때문에, 다음 추천 품질 판단은 `기대 후보가 top 3에 들어오는가`뿐 아니라 `기대 1위 anchor가 실제 top 1인지`까지 함께 본다.
-- 현재 dynamic baseline은 `18 / 18`을 유지하면서 anchor drift를 `8개`까지 줄인 상태이고, 운영 우선 시나리오는 `P07`, `P08`, `P09`이다.
+- 현재 dynamic baseline은 `18 / 18`을 유지하면서 anchor drift를 `7개`까지 줄인 상태이고, 운영 우선 시나리오는 `P07`, `P08`, `P10`이다.
 - 공통 shell은 다크/라이트 테마 토글을 제공하고, 사용자가 고른 테마는 `localStorage`의 `worldmap-theme`로 유지한다.
 - 홈, 추천, 랭킹 public 화면은 내부 구현 용어보다 플레이어가 바로 이해할 수 있는 제품 언어로 다시 정리했고, 버전/집계/로드맵 같은 내부 정보는 `/dashboard` 운영 화면으로 분리하는 방향으로 간다.
 - 공통 shell과 홈, 추천, 랭킹, Stats, My Page는 최근 디자인 패스에서 다크/라이트 공통 톤과 각진 패널 레이아웃 기준으로 다시 정리했고, public 화면 테스트도 새 카피 기준으로 다시 고정했다.
@@ -211,7 +212,7 @@
 - public 헤더는 기본 `Home`, `My Page`를 유지하고, `ADMIN` 로그인일 때만 `Dashboard` 버튼을 추가로 노출한다.
 - Dashboard 첫 화면은 `총 회원 수`, `오늘 활성 회원 수`, `오늘 활성 게스트 수`, `오늘 시작된 세션 수`, `오늘 완료된 게임 수`, `오늘 모드별 완료 수`를 바로 보여준다.
 - 이 지표는 모두 같은 테이블에서 읽지 않는다. 회원 수는 `member_account`, 오늘 활성은 각 게임 세션의 `startedAt`, 오늘 완료 수는 `leaderboard_record.finishedAt`를 source of truth로 사용한다.
-- local demo bootstrap은 현재 `survey-v4 / engine-v13` 기준 추천 만족도 샘플도 함께 만들어, fresh local 환경에서도 `/dashboard/recommendation/feedback`이 바로 `rank drift 줄이기` 메모까지 보여 주도록 한다.
+- local demo bootstrap은 현재 `survey-v4 / engine-v14` 기준 추천 만족도 샘플도 함께 만들어, fresh local 환경에서도 `/dashboard/recommendation/feedback`이 바로 `rank drift 줄이기` 메모까지 보여 주도록 한다.
 - public 헤더는 게임별 직접 이동을 제거하고 `Home`, `My Page`만 남겨 이동 구조를 단순화했다.
 - `/mypage`는 비회원에게는 로그인 유도 화면, 로그인 사용자에게는 계정별 기록 허브로 동작한다.
 - 8단계 계정 구조는 `게스트 세션 유지 + 로그인 시 현재 브라우저 세션 기록 귀속`을 기본 원칙으로 설계한다.

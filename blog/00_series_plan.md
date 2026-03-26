@@ -83,6 +83,7 @@
 56. [저비용 음식·다문화 시나리오의 1위 drift 줄이기](./51-reduce-p02-anchor-drift-with-foodie-starter-bonus.md)
 57. [온화한 공공서비스형 시나리오의 1위 drift 줄이기](./52-reduce-p04-anchor-drift-with-temperate-public-base-bonus.md)
 58. [현실형 온화 기후 시나리오의 1위 drift 줄이기](./53-reduce-p06-anchor-drift-with-practical-public-value-bonus.md)
+59. [따뜻한 프리미엄 허브 시나리오의 1위 drift 줄이기](./54-reduce-p09-anchor-drift-with-premium-warm-hub-bonus.md)
 
 ### Part E. 테스트, 확장, 취업 패키징
 

@@ -2861,3 +2861,36 @@
 - 테스트 내용: 먼저 임시 디버그 테스트로 `P06`의 실제 점수를 확인해 `스페인 314 / 우루과이 298 / 포르투갈 295` gap을 본 뒤, `practicalPublicValueBonus()`를 추가해 `우루과이 316 / 스페인 314 / 포르투갈 295`로 바뀐 것을 확인했다. 그 다음 임시 디버그 테스트는 제거하고, `RecommendationOfflinePersonaSnapshotTest`와 `RecommendationOfflinePersonaCoverageTest`를 `engine-v13` 기준으로 다시 고정했다. `AdminPersonaBaselineServiceIntegrationTest`에서는 anchor drift가 `8`로 줄었는지, `AdminRecommendationOpsReviewServiceIntegrationTest`에서는 우선 시나리오가 `P07, P08, P09`로 바뀌는지 확인했다. `RecommendationPageIntegrationTest`, `RecommendationFeedbackIntegrationTest`, `AdminPageIntegrationTest`까지 포함한 targeted suite와 `./gradlew test` 전체도 다시 통과시켰다.
 - 면접에서 30초 안에 설명하는 요약: baseline 18 / 18을 맞춘 뒤에는 weak scenario보다 1위 순위 drift를 줄이는 일이 더 중요해졌습니다. 이번에는 `P06`처럼 온화한 기후와 현실적인 생활비, 치안·복지·주거 안정성을 같이 보는 시나리오에만 좁게 작동하는 `practicalPublicValueBonus`를 추가해서, 기대 1위였던 `우루과이`가 `스페인`보다 앞서도록 보정했습니다. 그 결과 baseline은 유지하면서 anchor drift를 `9 -> 8`로 줄였습니다.
 - 아직 내가 이해가 부족한 부분: `P06`은 해결됐지만 이제 운영 우선순위는 `P07`, `P08`, `P09`로 이동했다. 다음에는 이 셋 중 어떤 시나리오가 실제 만족도 저점과 더 가깝게 겹치는지 먼저 보고, broad bonus가 아니라 한 시나리오만 좁게 보는 편이 맞다.
+
+## 2026-03-26 - 추천 엔진 anchor drift 튜닝 5차: P09에 premium warm hub bonus 추가
+
+- 단계: 6. 설문 기반 추천 엔진 / 7. AI-assisted 설문 개선 체계
+- 목적: `engine-v13`에서는 baseline `18 / 18`은 유지됐지만, `P09` 같은 따뜻한 고비용 도시 허브 시나리오에서 기대 1위였던 `아랍에미리트`가 여전히 `싱가포르` 한 점 뒤에 있었다. 이번 조각은 broad global city bonus를 더 넓히지 않고, `따뜻한 기후 + 고비용 감수 + 영어 지원 + 공공서비스` 조합에만 작동하는 좁은 신호를 넣어 `P09`의 anchor drift를 줄이는 데 집중한다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationSurveyService.java`
+  - `src/main/resources/templates/admin/index.html`
+  - `src/main/resources/templates/admin/recommendation-feedback.html`
+  - `src/test/java/com/worldmap/admin/AdminPageIntegrationTest.java`
+  - `src/test/java/com/worldmap/admin/AdminPersonaBaselineServiceIntegrationTest.java`
+  - `src/test/java/com/worldmap/admin/AdminRecommendationOpsReviewServiceIntegrationTest.java`
+  - `src/test/java/com/worldmap/recommendation/RecommendationFeedbackIntegrationTest.java`
+  - `src/test/java/com/worldmap/recommendation/RecommendationPageIntegrationTest.java`
+  - `src/test/java/com/worldmap/recommendation/application/RecommendationOfflinePersonaCoverageTest.java`
+  - `src/test/java/com/worldmap/recommendation/application/RecommendationOfflinePersonaSnapshotTest.java`
+  - `README.md`
+  - `docs/LOCAL_DEMO_BOOTSTRAP.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/33-bootstrap-local-demo-accounts-and-sample-runs.md`
+  - `blog/48-seed-current-recommendation-feedback-in-local-demo.md`
+  - `blog/50-current-state-rebuild-map.md`
+  - `blog/54-reduce-p09-anchor-drift-with-premium-warm-hub-bonus.md`
+- 요청 흐름 / 데이터 흐름: 런타임 추천 흐름은 그대로 `GET /recommendation/survey -> POST /recommendation/survey -> RecommendationSurveyService.recommend() -> recommendation/result -> POST /api/recommendation/feedback`이다. 이번에는 `RecommendationSurveyService` 안에 `premiumWarmHubBonus()`를 추가했다. 사용자가 `WARM + QUALITY_FIRST + CITY + English HIGH + publicService HIGH`로 답하면, 서비스가 후보 국가의 `climateValue`, `priceLevel`, `urbanityValue`, `englishSupport`, `digitalConvenience`, `newcomerFriendliness`, `housingSpace`를 함께 읽어 “비용은 높아도 영어와 정착 허들이 낮은 따뜻한 프리미엄 허브”인가를 별도 bonus로 반영한다.
+- 데이터 / 상태 변화: 추천 결과 top 3는 여전히 저장하지 않는다. 익명 피드백에는 이제 `engineVersion=engine-v14`가 저장되고, `/dashboard`, `/dashboard/recommendation/feedback`, `/dashboard/recommendation/persona-baseline` 운영 화면도 현재 엔진 버전을 `engine-v14`로 보여준다. dynamic baseline 기준으로는 `18 / 18`을 유지하면서 anchor drift 수가 `8 -> 7`로 줄었고, ops review의 우선 시나리오는 `P07, P08, P10`으로 이동했다.
+- 핵심 도메인 개념: `P09`는 단순히 “비싸지만 좋은 나라”를 고르는 시나리오가 아니라, “따뜻한 도시 허브 중에서도 영어·정착 허들이 낮고 중심 생활 인프라가 강한 프리미엄 허브”를 고르는 시나리오다. 그래서 broad city/global bonus를 더 키우기보다, 이 설문 조합에만 작동하는 `premiumWarmHubBonus()`를 따로 추가했다. 이 계산은 컨트롤러가 아니라 `RecommendationSurveyService`가 맡아야 한다. 어떤 설문 조합에서 어떤 프로필 속성을 함께 읽어 rank drift를 줄일지는 추천 도메인 규칙이기 때문이다.
+- 예외 상황 또는 엣지 케이스: bonus를 넓게 켜면 `P05`, `P17` 같은 다른 warm city 시나리오나 `싱가포르`가 계속 더 강해지는 부작용이 생길 수 있다. 그래서 `QUALITY_FIRST`, `pace BALANCED`, `publicService HIGH`, `food/diversity LOW`, `newcomer HIGH`까지 모두 묶고, 후보도 `climate >= 5`, `price >= 5`, `urbanity >= 5`, `english >= 5`, `digital >= 5`, `newcomer >= 4`, `housingSpace >= 2`일 때만 strong bonus를 받게 제한했다.
+- 테스트 내용: 먼저 임시 디버그 테스트로 `P09`의 실제 점수를 확인해 `싱가포르 322 / 아랍에미리트 321 / 덴마크 293` gap을 본 뒤, `premiumWarmHubBonus()`를 추가해 `아랍에미리트 329 / 싱가포르 326 / 덴마크 293`로 바뀐 것을 확인했다. 그 다음 임시 디버그 테스트는 제거하고, `RecommendationOfflinePersonaSnapshotTest`와 `RecommendationOfflinePersonaCoverageTest`를 `engine-v14` 기준으로 다시 고정했다. `AdminPersonaBaselineServiceIntegrationTest`에서는 anchor drift가 `7`로 줄었는지, `AdminRecommendationOpsReviewServiceIntegrationTest`에서는 우선 시나리오가 `P07, P08, P10`으로 바뀌는지 확인했다. `RecommendationPageIntegrationTest`, `RecommendationFeedbackIntegrationTest`, `AdminPageIntegrationTest`까지 포함한 targeted suite와 `./gradlew test` 전체도 다시 통과시켰다.
+- 면접에서 30초 안에 설명하는 요약: baseline 18 / 18을 맞춘 뒤에는 weak scenario보다 1위 순위 drift를 줄이는 일이 더 중요해졌습니다. 이번에는 `P09`처럼 따뜻한 고비용 도시 허브 시나리오에만 좁게 작동하는 `premiumWarmHubBonus`를 추가해서, 기대 1위였던 `아랍에미리트`가 `싱가포르`보다 앞서도록 보정했습니다. 그 결과 baseline은 유지하면서 anchor drift를 `8 -> 7`로 줄였습니다.
+- 아직 내가 이해가 부족한 부분: `P09`는 해결됐지만 이제 운영 우선순위는 `P07`, `P08`, `P10`으로 이동했다. 다음에는 이 셋 중 실제 만족도 저점과 가장 겹치는 시나리오를 먼저 골라, broad bonus가 아니라 한 시나리오만 좁게 보는 편이 맞다.
