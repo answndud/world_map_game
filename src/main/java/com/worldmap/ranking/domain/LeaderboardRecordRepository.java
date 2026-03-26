@@ -32,6 +32,11 @@ public interface LeaderboardRecordRepository extends JpaRepository<LeaderboardRe
 		LeaderboardGameLevel gameLevel
 	);
 
+	Optional<LeaderboardRecord> findFirstByMemberIdAndGameModeOrderByRankingScoreDescFinishedAtAsc(
+		Long memberId,
+		LeaderboardGameMode gameMode
+	);
+
 	List<LeaderboardRecord> findAllByGameModeAndGameLevelOrderByRankingScoreDescFinishedAtAsc(
 		LeaderboardGameMode gameMode,
 		LeaderboardGameLevel gameLevel

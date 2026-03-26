@@ -15,6 +15,7 @@ import com.worldmap.game.location.domain.LocationGameStage;
 import com.worldmap.game.location.domain.LocationGameStageRepository;
 import com.worldmap.game.population.domain.PopulationGameAttempt;
 import com.worldmap.game.population.domain.PopulationGameAttemptRepository;
+import com.worldmap.game.population.domain.PopulationGameLevel;
 import com.worldmap.game.population.domain.PopulationGameSession;
 import com.worldmap.game.population.domain.PopulationGameSessionRepository;
 import com.worldmap.game.population.domain.PopulationGameStage;
@@ -204,7 +205,13 @@ public class DemoBootstrapService {
 		Country mexico = country("MEX");
 
 		LocalDateTime startedAt = LocalDateTime.now().minusHours(2);
-		PopulationGameSession session = PopulationGameSession.ready(demoMember.getNickname(), demoMember.getId(), null, 4);
+		PopulationGameSession session = PopulationGameSession.ready(
+			demoMember.getNickname(),
+			demoMember.getId(),
+			null,
+			PopulationGameLevel.LEVEL_1,
+			4
+		);
 		session.startGame(startedAt);
 		populationGameSessionRepository.save(session);
 

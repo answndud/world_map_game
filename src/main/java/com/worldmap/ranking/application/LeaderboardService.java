@@ -1,6 +1,7 @@
 package com.worldmap.ranking.application;
 
 import com.worldmap.game.location.domain.LocationGameSession;
+import com.worldmap.game.population.domain.PopulationGameLevel;
 import com.worldmap.game.population.domain.PopulationGameSession;
 import com.worldmap.ranking.domain.LeaderboardGameLevel;
 import com.worldmap.ranking.domain.LeaderboardGameMode;
@@ -54,6 +55,7 @@ public class LeaderboardService {
 	public void recordLocationLevelOneResult(LocationGameSession session, Integer totalAttemptCount) {
 		recordResult(
 			LeaderboardGameMode.LOCATION,
+			LEVEL_1,
 			session.getId(),
 			session.getPlayerNickname(),
 			session.getMemberId(),
@@ -67,8 +69,14 @@ public class LeaderboardService {
 
 	@Transactional
 	public void recordPopulationLevelOneResult(PopulationGameSession session, Integer totalAttemptCount) {
+		recordPopulationResult(session, totalAttemptCount);
+	}
+
+	@Transactional
+	public void recordPopulationResult(PopulationGameSession session, Integer totalAttemptCount) {
 		recordResult(
 			LeaderboardGameMode.POPULATION,
+			resolvePopulationLeaderboardLevel(session.getGameLevel()),
 			session.getId(),
 			session.getPlayerNickname(),
 			session.getMemberId(),
@@ -84,27 +92,57 @@ public class LeaderboardService {
 	public LeaderboardView getLeaderboard(String rawGameMode, String rawScope, Integer limit) {
 		return getLeaderboard(
 			LeaderboardGameMode.from(rawGameMode),
+			LEVEL_1,
 			LeaderboardScope.from(rawScope),
 			limit
 		);
 	}
 
 	@Transactional(readOnly = true)
-	public LeaderboardView getLeaderboard(LeaderboardGameMode gameMode, LeaderboardScope scope, Integer limit) {
+	public LeaderboardView getLeaderboard(
+		String rawGameMode,
+		String rawLevel,
+		String rawScope,
+		Integer limit
+	) {
+		return getLeaderboard(
+			LeaderboardGameMode.from(rawGameMode),
+			LeaderboardGameLevel.from(rawLevel),
+			LeaderboardScope.from(rawScope),
+			limit
+		);
+	}
+
+	@Transactional(readOnly = true)
+	public LeaderboardView getLeaderboard(
+		LeaderboardGameMode gameMode,
+		LeaderboardScope scope,
+		Integer limit
+	) {
+		return getLeaderboard(gameMode, LEVEL_1, scope, limit);
+	}
+
+	@Transactional(readOnly = true)
+	public LeaderboardView getLeaderboard(
+		LeaderboardGameMode gameMode,
+		LeaderboardGameLevel gameLevel,
+		LeaderboardScope scope,
+		Integer limit
+	) {
 		int sanitizedLimit = sanitizeLimit(limit);
 		LocalDate targetDate = scope == LeaderboardScope.DAILY ? LocalDate.now() : null;
-		List<Long> recordIds = topRecordIdsFromRedis(gameMode, scope, targetDate, sanitizedLimit);
+		List<Long> recordIds = topRecordIdsFromRedis(gameMode, gameLevel, scope, targetDate, sanitizedLimit);
 		List<LeaderboardRecord> orderedRecords;
 
 		if (recordIds.isEmpty()) {
-			orderedRecords = topRecordsFromDatabase(gameMode, scope, targetDate, sanitizedLimit);
-			syncRecordsToRedis(orderedRecords, scope, targetDate);
+			orderedRecords = topRecordsFromDatabase(gameMode, gameLevel, scope, targetDate, sanitizedLimit);
+			syncRecordsToRedis(orderedRecords, gameLevel, scope, targetDate);
 		} else {
 			orderedRecords = orderedRecordsById(recordIds);
 
 			if (orderedRecords.size() != recordIds.size()) {
-				orderedRecords = topRecordsFromDatabase(gameMode, scope, targetDate, sanitizedLimit);
-				rebuildRedisKey(gameMode, scope, targetDate, orderedRecords);
+				orderedRecords = topRecordsFromDatabase(gameMode, gameLevel, scope, targetDate, sanitizedLimit);
+				rebuildRedisKey(gameMode, gameLevel, scope, targetDate, orderedRecords);
 			}
 		}
 
@@ -121,11 +159,12 @@ public class LeaderboardService {
 			));
 		}
 
-		return new LeaderboardView(gameMode, LEVEL_1, scope, targetDate, List.copyOf(entries));
+		return new LeaderboardView(gameMode, gameLevel, scope, targetDate, List.copyOf(entries));
 	}
 
 	private void recordResult(
 		LeaderboardGameMode gameMode,
+		LeaderboardGameLevel gameLevel,
 		UUID sessionId,
 		String playerNickname,
 		Long memberId,
@@ -150,7 +189,7 @@ public class LeaderboardService {
 				runSignature,
 				sessionId,
 				gameMode,
-				LEVEL_1,
+				gameLevel,
 				playerNickname,
 				memberId,
 				guestSessionKey,
@@ -173,12 +212,13 @@ public class LeaderboardService {
 
 	private List<Long> topRecordIdsFromRedis(
 		LeaderboardGameMode gameMode,
+		LeaderboardGameLevel gameLevel,
 		LeaderboardScope scope,
 		LocalDate targetDate,
 		Integer limit
 	) {
 		Collection<TypedTuple<String>> tuples = stringRedisTemplate.opsForZSet()
-			.reverseRangeWithScores(redisKey(gameMode, scope, targetDate), 0, limit - 1);
+			.reverseRangeWithScores(redisKey(gameMode, gameLevel, scope, targetDate), 0, limit - 1);
 
 		if (tuples == null || tuples.isEmpty()) {
 			return List.of();
@@ -204,6 +244,7 @@ public class LeaderboardService {
 
 	private List<LeaderboardRecord> topRecordsFromDatabase(
 		LeaderboardGameMode gameMode,
+		LeaderboardGameLevel gameLevel,
 		LeaderboardScope scope,
 		LocalDate targetDate,
 		Integer limit
@@ -214,7 +255,7 @@ public class LeaderboardService {
 			return leaderboardRecordRepository
 				.findByGameModeAndGameLevelAndLeaderboardDateOrderByRankingScoreDescFinishedAtAsc(
 					gameMode,
-					LEVEL_1,
+					gameLevel,
 					targetDate,
 					pageRequest
 				)
@@ -224,7 +265,7 @@ public class LeaderboardService {
 		return leaderboardRecordRepository
 			.findByGameModeAndGameLevelOrderByRankingScoreDescFinishedAtAsc(
 				gameMode,
-				LEVEL_1,
+				gameLevel,
 				pageRequest
 			)
 			.getContent();
@@ -232,29 +273,38 @@ public class LeaderboardService {
 
 	private void rebuildRedisKey(
 		LeaderboardGameMode gameMode,
+		LeaderboardGameLevel gameLevel,
 		LeaderboardScope scope,
 		LocalDate targetDate,
 		List<LeaderboardRecord> records
 	) {
-		String redisKey = redisKey(gameMode, scope, targetDate);
+		String redisKey = redisKey(gameMode, gameLevel, scope, targetDate);
 		stringRedisTemplate.delete(redisKey);
-		syncRecordsToRedis(records, scope, targetDate);
+		syncRecordsToRedis(records, gameLevel, scope, targetDate);
 	}
 
-	private void syncRecordsToRedis(List<LeaderboardRecord> records, LeaderboardScope scope, LocalDate targetDate) {
+	private void syncRecordsToRedis(
+		List<LeaderboardRecord> records,
+		LeaderboardGameLevel gameLevel,
+		LeaderboardScope scope,
+		LocalDate targetDate
+	) {
 		for (LeaderboardRecord record : records) {
 			if (scope == LeaderboardScope.DAILY) {
-				addToRedis(redisKey(record.getGameMode(), LeaderboardScope.DAILY, targetDate), record);
+				addToRedis(redisKey(record.getGameMode(), gameLevel, LeaderboardScope.DAILY, targetDate), record);
 				continue;
 			}
 
-			addToRedis(redisKey(record.getGameMode(), LeaderboardScope.ALL, null), record);
+			addToRedis(redisKey(record.getGameMode(), gameLevel, LeaderboardScope.ALL, null), record);
 		}
 	}
 
 	private void syncRecordToRedis(LeaderboardRecord record) {
-		addToRedis(redisKey(record.getGameMode(), LeaderboardScope.ALL, null), record);
-		addToRedis(redisKey(record.getGameMode(), LeaderboardScope.DAILY, record.getLeaderboardDate()), record);
+		addToRedis(redisKey(record.getGameMode(), record.getGameLevel(), LeaderboardScope.ALL, null), record);
+		addToRedis(
+			redisKey(record.getGameMode(), record.getGameLevel(), LeaderboardScope.DAILY, record.getLeaderboardDate()),
+			record
+		);
 	}
 
 	private void addToRedis(String redisKey, LeaderboardRecord record) {
@@ -279,17 +329,28 @@ public class LeaderboardService {
 		});
 	}
 
-	private String redisKey(LeaderboardGameMode gameMode, LeaderboardScope scope, LocalDate targetDate) {
+	private String redisKey(
+		LeaderboardGameMode gameMode,
+		LeaderboardGameLevel gameLevel,
+		LeaderboardScope scope,
+		LocalDate targetDate
+	) {
 		if (scope == LeaderboardScope.DAILY) {
 			return "%s:daily:%s:%s:%s".formatted(
 				keyPrefix,
 				gameMode.getPathValue(),
-				LEVEL_1.getRedisToken(),
+				gameLevel.getRedisToken(),
 				targetDate
 			);
 		}
 
-		return "%s:all:%s:%s".formatted(keyPrefix, gameMode.getPathValue(), LEVEL_1.getRedisToken());
+		return "%s:all:%s:%s".formatted(keyPrefix, gameMode.getPathValue(), gameLevel.getRedisToken());
+	}
+
+	private LeaderboardGameLevel resolvePopulationLeaderboardLevel(PopulationGameLevel gameLevel) {
+		return gameLevel == PopulationGameLevel.LEVEL_2
+			? LeaderboardGameLevel.LEVEL_2
+			: LEVEL_1;
 	}
 
 	private String runSignature(LeaderboardGameMode gameMode, UUID sessionId, LocalDateTime finishedAt) {

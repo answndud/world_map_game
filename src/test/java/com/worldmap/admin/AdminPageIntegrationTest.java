@@ -17,6 +17,7 @@ import com.worldmap.auth.domain.Member;
 import com.worldmap.auth.domain.MemberRepository;
 import com.worldmap.game.location.domain.LocationGameSession;
 import com.worldmap.game.location.domain.LocationGameSessionRepository;
+import com.worldmap.game.population.domain.PopulationGameLevel;
 import com.worldmap.game.population.domain.PopulationGameSession;
 import com.worldmap.game.population.domain.PopulationGameSessionRepository;
 import com.worldmap.ranking.domain.LeaderboardGameLevel;
@@ -78,7 +79,13 @@ class AdminPageIntegrationTest {
 		activeMemberLocation.startGame(LocalDateTime.now().minusHours(2));
 		locationGameSessionRepository.save(activeMemberLocation);
 
-		PopulationGameSession activeGuestPopulation = PopulationGameSession.ready("guest_one", null, "guest-key-1", 5);
+		PopulationGameSession activeGuestPopulation = PopulationGameSession.ready(
+			"guest_one",
+			null,
+			"guest-key-1",
+			PopulationGameLevel.LEVEL_1,
+			5
+		);
 		activeGuestPopulation.startGame(LocalDateTime.now().minusHours(1));
 		populationGameSessionRepository.save(activeGuestPopulation);
 

@@ -11,7 +11,6 @@ import com.worldmap.game.population.domain.PopulationGameSessionRepository;
 import com.worldmap.game.population.domain.PopulationGameStage;
 import com.worldmap.game.population.domain.PopulationGameStageRepository;
 import com.worldmap.game.population.domain.PopulationGameStageStatus;
-import com.worldmap.ranking.domain.LeaderboardGameLevel;
 import com.worldmap.ranking.domain.LeaderboardGameMode;
 import com.worldmap.ranking.domain.LeaderboardRecord;
 import com.worldmap.ranking.domain.LeaderboardRecordRepository;
@@ -24,8 +23,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class MyPageService {
-
-	private static final LeaderboardGameLevel LEVEL_1 = LeaderboardGameLevel.LEVEL_1;
 
 	private final MemberRepository memberRepository;
 	private final LeaderboardRecordRepository leaderboardRecordRepository;
@@ -122,11 +119,7 @@ public class MyPageService {
 
 	private MyPageBestRunView bestRunView(Long memberId, LeaderboardGameMode gameMode) {
 		Optional<LeaderboardRecord> bestRecord = leaderboardRecordRepository
-			.findFirstByMemberIdAndGameModeAndGameLevelOrderByRankingScoreDescFinishedAtAsc(
-				memberId,
-				gameMode,
-				LEVEL_1
-			);
+			.findFirstByMemberIdAndGameModeOrderByRankingScoreDescFinishedAtAsc(memberId, gameMode);
 
 		if (bestRecord.isEmpty()) {
 			return null;
@@ -134,7 +127,7 @@ public class MyPageService {
 
 		LeaderboardRecord record = bestRecord.get();
 		return new MyPageBestRunView(
-			gameModeLabel(gameMode),
+			gameModeLabel(gameMode, record),
 			record.getTotalScore(),
 			rankFor(record),
 			record.getClearedStageCount()
@@ -143,7 +136,7 @@ public class MyPageService {
 
 	private MyPageRecentPlayView toRecentPlayView(LeaderboardRecord record) {
 		return new MyPageRecentPlayView(
-			gameModeLabel(record.getGameMode()),
+			gameModeLabel(record.getGameMode(), record),
 			record.getTotalScore(),
 			record.getClearedStageCount(),
 			record.getTotalAttemptCount(),
@@ -169,11 +162,15 @@ public class MyPageService {
 		return null;
 	}
 
-	private String gameModeLabel(LeaderboardGameMode gameMode) {
-		return switch (gameMode) {
+	private String gameModeLabel(LeaderboardGameMode gameMode, LeaderboardRecord record) {
+		String modeLabel = switch (gameMode) {
 			case LOCATION -> "국가 위치 찾기";
 			case POPULATION -> "국가 인구수 맞추기";
 		};
+		return "%s · %s".formatted(modeLabel, switch (record.getGameLevel()) {
+			case LEVEL_1 -> "Level 1";
+			case LEVEL_2 -> "Level 2";
+		});
 	}
 
 	private String formatNumber(double value, String suffix) {

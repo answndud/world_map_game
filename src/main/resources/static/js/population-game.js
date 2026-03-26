@@ -15,20 +15,32 @@ function initStartPage() {
     const nicknameInput = document.getElementById("population-nickname");
     const messageBox = document.getElementById("population-start-message");
     const submitButton = document.getElementById("population-start-submit");
+    const levelInputs = Array.from(document.querySelectorAll("input[name='population-game-level']"));
     const defaultButtonText = submitButton.textContent;
+
+    levelInputs.forEach((input) => {
+        input.addEventListener("change", () => {
+            levelInputs.forEach((candidate) => {
+                candidate.closest(".option-card")?.classList.toggle("is-selected", candidate.checked);
+            });
+        });
+    });
 
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
         hidePopulationMessage(messageBox);
         submitButton.disabled = true;
         submitButton.textContent = "게임 준비 중...";
-        showPopulationMessage(messageBox, "첫 번째 Stage와 보기 데이터를 준비하는 중입니다. 잠시만 기다려주세요.", "info");
+        showPopulationMessage(messageBox, "첫 번째 Stage와 입력 모드를 준비하는 중입니다. 잠시만 기다려주세요.", "info");
 
         try {
             const response = await fetch("/api/games/population/sessions", {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({nickname: nicknameInput.value})
+                body: JSON.stringify({
+                    nickname: nicknameInput.value,
+                    gameLevel: levelInputs.find((input) => input.checked)?.value || "LEVEL_1"
+                })
             });
             const payload = await response.json();
 
@@ -52,6 +64,8 @@ function initPlayPage() {
     const countryName = document.getElementById("population-target-country-name");
     const yearLabel = document.getElementById("population-year");
     const optionsBox = document.getElementById("population-options");
+    const exactInputCard = document.getElementById("population-exact-input-card");
+    const exactInput = document.getElementById("population-exact-input");
     const feedback = document.getElementById("population-answer-feedback");
     const overlay = document.getElementById("population-stage-overlay");
     const messageBox = document.getElementById("population-play-message");
@@ -78,6 +92,20 @@ function initPlayPage() {
             });
     });
 
+    exactInput?.addEventListener("input", () => {
+        const normalizedValue = normalizePopulationInput(exactInput.value);
+        exactInput.value = normalizedValue ? Number(normalizedValue).toLocaleString() : "";
+
+        if (normalizedValue) {
+            setSelectionState(`입력 중: ${Number(normalizedValue).toLocaleString()}명`);
+            setStageHint("입력한 추정치로 제출하면 서버가 오차율과 점수를 판정합니다.");
+        } else {
+            setSelectionState("아직 입력하지 않았습니다.");
+        }
+
+        submitButton.disabled = interactionLocked || !canSubmitCurrentAnswer();
+    });
+
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
         hidePopulationMessage(messageBox);
@@ -91,9 +119,8 @@ function initPlayPage() {
             return;
         }
 
-        const selectedOption = form.querySelector("input[name='population-option']:checked");
-        if (!selectedOption) {
-            showPopulationMessage(messageBox, "보기 하나를 먼저 선택해주세요.", "error");
+        const answerPayload = createAnswerPayload();
+        if (!answerPayload) {
             return;
         }
 
@@ -102,10 +129,7 @@ function initPlayPage() {
             const response = await fetch(`/api/games/population/sessions/${sessionId}/answer`, {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({
-                    stageNumber: currentState.stageNumber,
-                    selectedOptionNumber: Number(selectedOption.value)
-                })
+                body: JSON.stringify(answerPayload)
             });
             const payload = await response.json();
 
@@ -115,6 +139,7 @@ function initPlayPage() {
             }
 
             renderStatus(statusBox, {
+                gameLevel: payload.gameLevel,
                 stageNumber: payload.nextStageNumber || currentState.stageNumber,
                 difficultyLabel: payload.nextDifficultyLabel || currentState.difficultyLabel,
                 clearedStageCount: payload.clearedStageCount,
@@ -125,8 +150,12 @@ function initPlayPage() {
             if (payload.correct) {
                 renderFeedback(feedback, payload);
                 renderStageOverlay(overlay, "정답", `+${payload.awardedScore}`, "success");
-                setSelectionState(`선택 완료: ${payload.selectedOptionLabel}`);
-                setStageHint("정답입니다. 결과를 확인한 뒤 다음 Stage 버튼으로 직접 넘어가세요.");
+                setSelectionState(correctSelectionSummary(payload));
+                setStageHint(
+                    payload.gameLevel === "LEVEL_2"
+                        ? "정답입니다. 오차율을 확인한 뒤 다음 Stage로 넘어가세요."
+                        : "정답입니다. 결과를 확인한 뒤 다음 Stage 버튼으로 직접 넘어가세요."
+                );
 
                 if (payload.outcome === "FINISHED") {
                     setTimeout(() => {
@@ -146,11 +175,11 @@ function initPlayPage() {
                 payload.outcome === "GAME_OVER" ? "하트를 모두 잃었습니다" : `하트 ${payload.livesRemaining}개 남음`,
                 "danger"
             );
-            setSelectionState(`직전 선택: ${payload.selectedOptionLabel}`);
+            setSelectionState(wrongSelectionSummary(payload));
             setStageHint(
                 payload.outcome === "GAME_OVER"
                     ? "하트를 모두 잃었습니다. 다음 행동을 선택하세요."
-                    : "오답입니다. 같은 Stage에서 다시 고르세요."
+                    : "오답입니다. 같은 Stage에서 다시 추정해보세요."
             );
 
             if (payload.outcome === "GAME_OVER") {
@@ -168,8 +197,8 @@ function initPlayPage() {
 
             setTimeout(() => {
                 overlay.hidden = true;
-                clearOptionSelection();
-                setSelectionState("새 구간을 다시 골라보세요.");
+                clearAnswerInput();
+                resetHudGuidance(currentState);
                 lockInteraction(false);
             }, 950);
         } catch (error) {
@@ -178,7 +207,7 @@ function initPlayPage() {
         }
     });
 
-    showPopulationMessage(messageBox, "Stage와 보기 데이터를 불러오는 중입니다.", "info");
+    showPopulationMessage(messageBox, "Stage와 입력 모드를 불러오는 중입니다.", "info");
     hideGameOverModal();
     loadState()
         .then(() => hidePopulationMessage(messageBox))
@@ -197,11 +226,13 @@ function initPlayPage() {
         currentState = payload;
         renderQuestion(payload);
         renderStatus(statusBox, payload);
-        renderOptions(optionsBox, payload.options);
-        feedback.hidden = true;
+        configureAnswerMode(payload);
+        renderOptions(optionsBox, payload.options || []);
+        hidePopulationFeedback(feedback);
         overlay.hidden = true;
         hideNextStageAction();
         hideGameOverModal();
+        clearAnswerInput();
         lockInteraction(false);
         submitButton.disabled = true;
         resetHudGuidance(payload);
@@ -220,7 +251,7 @@ function initPlayPage() {
             }
 
             hideGameOverModal();
-            feedback.hidden = true;
+            hidePopulationFeedback(feedback);
             overlay.hidden = true;
             hideNextStageAction();
             showPopulationMessage(messageBox, "같은 세션을 Stage 1부터 다시 시작했습니다.", "success");
@@ -232,13 +263,51 @@ function initPlayPage() {
         }
     }
 
+    function createAnswerPayload() {
+        if (currentState.gameLevel === "LEVEL_2") {
+            const submittedPopulation = normalizePopulationInput(exactInput.value);
+            if (!submittedPopulation) {
+                showPopulationMessage(messageBox, "Level 2에서는 추정 인구수를 숫자로 입력해주세요.", "error");
+                return null;
+            }
+
+            return {
+                stageNumber: currentState.stageNumber,
+                submittedPopulation: Number(submittedPopulation)
+            };
+        }
+
+        const selectedOption = form.querySelector("input[name='population-option']:checked");
+        if (!selectedOption) {
+            showPopulationMessage(messageBox, "보기 하나를 먼저 선택해주세요.", "error");
+            return null;
+        }
+
+        return {
+            stageNumber: currentState.stageNumber,
+            selectedOptionNumber: Number(selectedOption.value)
+        };
+    }
+
+    function configureAnswerMode(payload) {
+        const exactInputMode = payload.gameLevel === "LEVEL_2";
+        exactInputCard.hidden = !exactInputMode;
+        optionsBox.hidden = exactInputMode;
+    }
+
     function renderQuestion(payload) {
         countryName.textContent = payload.targetCountryName;
-        yearLabel.textContent = `기준 연도: ${payload.populationYear}`;
+        yearLabel.textContent = payload.gameLevel === "LEVEL_2"
+            ? `기준 연도: ${payload.populationYear} · 실제 인구를 숫자로 직접 입력하세요.`
+            : `기준 연도: ${payload.populationYear} · 가장 가까운 인구 규모 구간을 고르세요.`;
     }
 
     function renderStatus(target, payload) {
         target.innerHTML = `
+            <article class="stat-card">
+                <span class="subtitle">게임 레벨</span>
+                <strong>${gameLevelLabel(payload.gameLevel)}</strong>
+            </article>
             <article class="stat-card">
                 <span class="subtitle">현재 Stage</span>
                 <strong>${payload.stageNumber}</strong>
@@ -263,6 +332,11 @@ function initPlayPage() {
     }
 
     function renderOptions(target, options) {
+        if (currentState.gameLevel === "LEVEL_2") {
+            target.innerHTML = "";
+            return;
+        }
+
         target.innerHTML = options.map((option) => `
             <label class="option-card" data-option-number="${option.optionNumber}" data-option-label="${option.label}">
                 <input type="radio" name="population-option" value="${option.optionNumber}" data-option-label="${option.label}">
@@ -278,13 +352,26 @@ function initPlayPage() {
                 });
                 setSelectionState(`선택 중: ${input.dataset.optionLabel}`);
                 setStageHint("선택 제출을 누르면 서버가 정답 여부와 점수를 판정합니다.");
-                submitButton.disabled = false;
+                submitButton.disabled = interactionLocked || !canSubmitCurrentAnswer();
             });
         });
     }
 
     function renderFeedback(target, payload) {
         target.hidden = false;
+
+        if (payload.gameLevel === "LEVEL_2") {
+            target.innerHTML = `
+                <h3>${payload.targetCountryName} 결과</h3>
+                <p>내 입력 값: ${payload.selectedOptionLabel}</p>
+                <p>실제 인구: ${formatPopulation(payload.correctPopulation)}</p>
+                <p>오차율: ${formatErrorRate(payload.errorRatePercent)}</p>
+                <p>획득 점수: ${payload.awardedScore}</p>
+                <p>현재 총점: ${payload.totalScore}</p>
+            `;
+            return;
+        }
+
         target.innerHTML = `
             <h3>${payload.targetCountryName} 결과</h3>
             <p>내 선택 구간: ${payload.selectedOptionLabel}</p>
@@ -307,6 +394,9 @@ function initPlayPage() {
         optionsBox.querySelectorAll("input[name='population-option']").forEach((input) => {
             input.disabled = true;
         });
+        if (exactInput) {
+            exactInput.disabled = true;
+        }
     }
 
     function hideNextStageAction() {
@@ -314,7 +404,7 @@ function initPlayPage() {
         nextStageButton.disabled = true;
     }
 
-    function clearOptionSelection() {
+    function clearAnswerInput() {
         optionsBox.querySelectorAll("input[name='population-option']").forEach((input) => {
             input.checked = false;
             input.disabled = false;
@@ -324,12 +414,47 @@ function initPlayPage() {
             card.classList.remove("is-selected");
         });
 
+        if (exactInput) {
+            exactInput.value = "";
+            exactInput.disabled = false;
+        }
+
         submitButton.disabled = true;
     }
 
     function resetHudGuidance(payload) {
+        if (payload.gameLevel === "LEVEL_2") {
+            setSelectionState("아직 입력하지 않았습니다.");
+            setStageHint(`${payload.difficultyLabel} 정밀 입력입니다. 실제 인구를 숫자로 추정해 제출하세요.`);
+            return;
+        }
+
         setSelectionState("아직 선택하지 않았습니다.");
         setStageHint(`${payload.difficultyLabel} 구간입니다. 가장 가까운 인구 규모대를 고른 뒤 제출하세요.`);
+    }
+
+    function correctSelectionSummary(payload) {
+        if (payload.gameLevel === "LEVEL_2") {
+            return `입력 완료: ${payload.selectedOptionLabel} (오차율 ${formatErrorRate(payload.errorRatePercent)})`;
+        }
+        return `선택 완료: ${payload.selectedOptionLabel}`;
+    }
+
+    function wrongSelectionSummary(payload) {
+        if (payload.gameLevel === "LEVEL_2") {
+            return `직전 입력: ${payload.selectedOptionLabel} (오차율 ${formatErrorRate(payload.errorRatePercent)})`;
+        }
+        return `직전 선택: ${payload.selectedOptionLabel}`;
+    }
+
+    function canSubmitCurrentAnswer() {
+        if (!currentState) {
+            return false;
+        }
+        if (currentState.gameLevel === "LEVEL_2") {
+            return Boolean(normalizePopulationInput(exactInput.value));
+        }
+        return Boolean(form.querySelector("input[name='population-option']:checked"));
     }
 
     function setSelectionState(text) {
@@ -368,16 +493,38 @@ function initPlayPage() {
 
     function lockInteraction(locked) {
         interactionLocked = locked;
-        submitButton.disabled = locked || !form.querySelector("input[name='population-option']:checked");
+        submitButton.disabled = locked || !canSubmitCurrentAnswer();
         nextStageButton.disabled = locked || nextStageButton.hidden;
         optionsBox.querySelectorAll("input[name='population-option']").forEach((input) => {
             input.disabled = locked;
         });
+        if (exactInput) {
+            exactInput.disabled = locked || !exactInputCard.hidden && nextStageButton.hidden === false;
+        }
     }
+}
+
+function normalizePopulationInput(rawValue) {
+    const digitsOnly = String(rawValue || "").replace(/[^\d]/g, "");
+    if (!digitsOnly) {
+        return null;
+    }
+    return digitsOnly;
+}
+
+function gameLevelLabel(gameLevel) {
+    return gameLevel === "LEVEL_2" ? "Level 2 · 직접 입력" : "Level 1 · 구간 선택";
 }
 
 function formatPopulation(population) {
     return `${Number(population).toLocaleString()}명`;
+}
+
+function formatErrorRate(errorRatePercent) {
+    if (errorRatePercent == null) {
+        return "-";
+    }
+    return `${Number(errorRatePercent).toFixed(1)}%`;
 }
 
 function showPopulationMessage(target, message, tone = "info") {

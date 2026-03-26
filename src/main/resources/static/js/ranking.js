@@ -9,13 +9,16 @@
     const messageBox = document.getElementById("ranking-refresh-message");
     const activeTitleBox = document.getElementById("ranking-active-title");
     const activeCopyBox = document.getElementById("ranking-active-copy");
-    const tableBodies = Array.from(document.querySelectorAll("tbody[data-game-mode][data-scope]"));
+    const levelHintBox = document.getElementById("ranking-level-hint");
+    const tableBodies = Array.from(document.querySelectorAll("tbody[data-game-mode][data-level][data-scope]"));
     const rankingPanels = Array.from(document.querySelectorAll("[data-ranking-panel]"));
     const modeButtons = Array.from(document.querySelectorAll("[data-ranking-mode]"));
     const scopeButtons = Array.from(document.querySelectorAll("[data-ranking-scope]"));
+    const levelButtons = Array.from(document.querySelectorAll("[data-ranking-level]"));
     const refreshIntervalMs = 15000;
     let activeMode = modeButtons.find((button) => button.classList.contains("is-active"))?.dataset.rankingMode ?? "location";
     let activeScope = scopeButtons.find((button) => button.classList.contains("is-active"))?.dataset.rankingScope ?? "ALL";
+    let activeLevel = levelButtons.find((button) => button.classList.contains("is-active"))?.dataset.rankingLevel ?? "LEVEL_1";
     let refreshTimer = null;
     let refreshInFlight = false;
 
@@ -23,6 +26,7 @@
     window.addEventListener("visibilitychange", handleVisibilityChange);
     modeButtons.forEach((button) => button.addEventListener("click", () => switchMode(button.dataset.rankingMode)));
     scopeButtons.forEach((button) => button.addEventListener("click", () => switchScope(button.dataset.rankingScope)));
+    levelButtons.forEach((button) => button.addEventListener("click", () => switchLevel(button.dataset.rankingLevel)));
 
     syncActiveBoardUi();
     setLastUpdated(new Date(), "SSR 초기 로드");
@@ -56,8 +60,9 @@
         try {
             const responses = await Promise.all(tableBodies.map(async (tbody) => {
                 const gameMode = tbody.dataset.gameMode;
+                const gameLevel = tbody.dataset.level;
                 const scope = tbody.dataset.scope;
-                const response = await fetch(`/api/rankings/${gameMode}?scope=${scope}&limit=10`, {
+                const response = await fetch(`/api/rankings/${gameMode}?level=${gameLevel}&scope=${scope}&limit=10`, {
                     cache: "no-store"
                 });
                 const payload = await response.json();
@@ -86,6 +91,9 @@
         }
 
         activeMode = nextMode;
+        if (activeMode === "location") {
+            activeLevel = "LEVEL_1";
+        }
         syncActiveBoardUi();
     }
 
@@ -95,6 +103,19 @@
         }
 
         activeScope = nextScope;
+        syncActiveBoardUi();
+    }
+
+    function switchLevel(nextLevel) {
+        if (!nextLevel || nextLevel === activeLevel) {
+            return;
+        }
+
+        if (activeMode === "location" && nextLevel === "LEVEL_2") {
+            return;
+        }
+
+        activeLevel = nextLevel;
         syncActiveBoardUi();
     }
 
@@ -112,6 +133,20 @@
             button.classList.toggle("is-active", isActive);
             button.setAttribute("aria-pressed", String(isActive));
         });
+
+        levelButtons.forEach((button) => {
+            const isLocationLevelTwo = activeMode === "location" && button.dataset.rankingLevel === "LEVEL_2";
+            const isActive = button.dataset.rankingLevel === activeLevel && !isLocationLevelTwo;
+            button.classList.toggle("is-active", isActive);
+            button.setAttribute("aria-pressed", String(isActive));
+            button.disabled = isLocationLevelTwo;
+        });
+
+        if (levelHintBox) {
+            levelHintBox.textContent = activeMode === "population"
+                ? "인구수 맞추기는 Level 1 구간형과 Level 2 직접 입력형을 각각 볼 수 있습니다."
+                : "위치 찾기 랭킹은 현재 Level 1만 제공합니다.";
+        }
 
         rankingPanels.forEach((panel) => {
             const isActive = panel.dataset.rankingPanel === activeKey;
@@ -190,7 +225,7 @@
     }
 
     function currentBoardKey() {
-        return `${activeMode}:${activeScope}`;
+        return `${activeMode}:${activeLevel}:${activeScope}`;
     }
 
     function escapeHtml(value) {

@@ -1,10 +1,12 @@
 package com.worldmap.game.population.application;
 
 import com.worldmap.game.common.domain.GameSessionStatus;
+import com.worldmap.game.population.domain.PopulationGameLevel;
 import java.util.UUID;
 
 public record PopulationGameAnswerView(
 	UUID sessionId,
+	PopulationGameLevel gameLevel,
 	Integer stageNumber,
 	String targetCountryName,
 	Integer populationYear,
@@ -21,6 +23,7 @@ public record PopulationGameAnswerView(
 	Integer livesRemaining,
 	Integer nextStageNumber,
 	String nextDifficultyLabel,
+	Double errorRatePercent,
 	GameSessionStatus gameStatus,
 	PopulationGameAnswerOutcome outcome,
 	String resultPageUrl

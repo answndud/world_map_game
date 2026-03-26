@@ -32,6 +32,10 @@
                     <strong th:text="${result.playerNickname}">Guest</strong>
                 </article>
                 <article class="stat-card">
+                    <span class="subtitle">게임 레벨</span>
+                    <strong th:text="${result.gameLevel.displayLabel() + ' · ' + result.gameLevel.answerModeLabel()}">Level 1 · 구간 선택</strong>
+                </article>
+                <article class="stat-card">
                     <span class="subtitle">상태</span>
                     <strong th:text="${result.status}">FINISHED</strong>
                 </article>
@@ -72,7 +76,7 @@
                     <tr>
                         <th>Stage</th>
                         <th>국가</th>
-                        <th>정답 구간</th>
+                        <th th:text="${result.gameLevel.name() == 'LEVEL_2' ? '정답 값' : '정답 구간'}">정답 구간</th>
                         <th>상태</th>
                         <th>시도 기록</th>
                         <th>점수</th>

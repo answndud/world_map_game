@@ -21,9 +21,10 @@ public class LeaderboardApiController {
 	@GetMapping("/{gameMode}")
 	public LeaderboardView leaderboard(
 		@PathVariable String gameMode,
+		@RequestParam(defaultValue = "LEVEL_1") String level,
 		@RequestParam(defaultValue = "ALL") String scope,
 		@RequestParam(defaultValue = "10") Integer limit
 	) {
-		return leaderboardService.getLeaderboard(gameMode, scope, limit);
+		return leaderboardService.getLeaderboard(gameMode, level, scope, limit);
 	}
 }

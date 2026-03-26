@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.worldmap.country.domain.CountryRepository;
 import com.worldmap.game.location.domain.LocationGameStage;
 import com.worldmap.game.location.domain.LocationGameStageRepository;
+import com.worldmap.game.population.domain.PopulationGameLevel;
 import com.worldmap.game.population.domain.PopulationGameStage;
 import com.worldmap.game.population.domain.PopulationGameStageRepository;
 import com.worldmap.ranking.domain.LeaderboardRecordRepository;
@@ -119,19 +120,22 @@ class LeaderboardIntegrationTest {
 				.andExpect(view().name("ranking/index"))
 				.andExpect(content().string(containsString("지금 새로고침")))
 				.andExpect(content().string(containsString("게임 종류")))
+				.andExpect(content().string(containsString("게임 레벨")))
 				.andExpect(content().string(containsString("동점 처리")))
+				.andExpect(content().string(containsString("Level 2")))
 				.andExpect(content().string(containsString("15초마다 갱신")))
 				.andExpect(content().string(not(containsString("Redis Leaderboard"))))
 			.andExpect(model().attributeExists("locationAll"))
-			.andExpect(model().attributeExists("populationAll"));
+			.andExpect(model().attributeExists("populationAll"))
+			.andExpect(model().attributeExists("populationLevel2All"));
 
 		assertThat(leaderboardRecordRepository.count()).isEqualTo(1);
 		assertThat(stringRedisTemplate.opsForZSet().zCard(TEST_PREFIX + ":all:location:l1")).isEqualTo(1L);
 	}
 
 	@Test
-	void leaderboardFallsBackToDatabaseWhenRedisKeyIsMissing() throws Exception {
-		UUID sessionId = UUID.fromString(startPopulationGame("rank-population"));
+	void populationLevelTwoLeaderboardFallsBackToDatabaseWhenRedisKeyIsMissing() throws Exception {
+		UUID sessionId = UUID.fromString(startPopulationGame("rank-population-l2", PopulationGameLevel.LEVEL_2));
 
 		PopulationGameStage firstStage = populationGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
 			.orElseThrow();
@@ -139,34 +143,34 @@ class LeaderboardIntegrationTest {
 		mockMvc.perform(
 			post("/api/games/population/sessions/{sessionId}/answer", sessionId)
 				.contentType("application/json")
-				.content(populationAnswerPayload(1, firstStage.getCorrectOptionNumber()))
+				.content(populationExactAnswerPayload(1, firstStage.getTargetPopulation()))
 		)
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.correct").value(true));
 
 		PopulationGameStage secondStage = populationGameStageRepository.findBySessionIdAndStageNumber(sessionId, 2)
 			.orElseThrow();
-		int wrongOptionNumber = secondStage.getCorrectOptionNumber() == 1 ? 2 : 1;
 
 		for (int attempt = 1; attempt <= 3; attempt++) {
 			mockMvc.perform(
 				post("/api/games/population/sessions/{sessionId}/answer", sessionId)
 					.contentType("application/json")
-					.content(populationAnswerPayload(2, wrongOptionNumber))
+					.content(populationExactAnswerPayload(2, 1L))
 			)
 				.andExpect(status().isOk());
 		}
 
-		stringRedisTemplate.delete(TEST_PREFIX + ":all:population:l1");
+		stringRedisTemplate.delete(TEST_PREFIX + ":all:population:l2");
 
-		mockMvc.perform(get("/api/rankings/population").param("scope", "ALL").param("limit", "5"))
+		mockMvc.perform(get("/api/rankings/population").param("scope", "ALL").param("level", "LEVEL_2").param("limit", "5"))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.gameMode").value("POPULATION"))
-			.andExpect(jsonPath("$.entries[0].playerNickname").value("rank-population"))
+			.andExpect(jsonPath("$.gameLevel").value("LEVEL_2"))
+			.andExpect(jsonPath("$.entries[0].playerNickname").value("rank-population-l2"))
 			.andExpect(jsonPath("$.entries[0].clearedStageCount").value(1))
 			.andExpect(jsonPath("$.entries[0].totalAttemptCount").value(4));
 
-		assertThat(stringRedisTemplate.opsForZSet().zCard(TEST_PREFIX + ":all:population:l1")).isEqualTo(1L);
+		assertThat(stringRedisTemplate.opsForZSet().zCard(TEST_PREFIX + ":all:population:l2")).isEqualTo(1L);
 	}
 
 	private String startLocationGame(String nickname) throws Exception {
@@ -183,10 +187,14 @@ class LeaderboardIntegrationTest {
 	}
 
 	private String startPopulationGame(String nickname) throws Exception {
+		return startPopulationGame(nickname, PopulationGameLevel.LEVEL_1);
+	}
+
+	private String startPopulationGame(String nickname, PopulationGameLevel gameLevel) throws Exception {
 		MvcResult result = mockMvc.perform(
 			post("/api/games/population/sessions")
 				.contentType("application/json")
-				.content("{\"nickname\":\"" + nickname + "\"}")
+				.content("{\"nickname\":\"" + nickname + "\",\"gameLevel\":\"" + gameLevel.name() + "\"}")
 		)
 			.andExpect(status().isCreated())
 			.andReturn();
@@ -211,6 +219,15 @@ class LeaderboardIntegrationTest {
 			  "selectedOptionNumber": %d
 			}
 			""".formatted(stageNumber, selectedOptionNumber);
+	}
+
+	private String populationExactAnswerPayload(Integer stageNumber, Long submittedPopulation) {
+		return """
+			{
+			  "stageNumber": %d,
+			  "submittedPopulation": %d
+			}
+			""".formatted(stageNumber, submittedPopulation);
 	}
 
 	private String wrongCountryIso3Code(String targetCountryIso3Code) {

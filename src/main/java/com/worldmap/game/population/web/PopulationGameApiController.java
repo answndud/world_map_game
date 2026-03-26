@@ -8,6 +8,7 @@ import com.worldmap.game.population.application.PopulationGameService;
 import com.worldmap.game.population.application.PopulationGameSessionResultView;
 import com.worldmap.game.population.application.PopulationGameStartView;
 import com.worldmap.game.population.application.PopulationGameStateView;
+import com.worldmap.game.population.domain.PopulationGameLevel;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import java.util.UUID;
@@ -41,14 +42,16 @@ public class PopulationGameApiController {
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	public PopulationGameStartView start(@Valid @RequestBody StartPopulationGameRequest request, HttpSession httpSession) {
+		PopulationGameLevel gameLevel = PopulationGameLevel.from(request.gameLevel());
 		AuthenticatedMemberSession currentMember = memberSessionManager.currentMember(httpSession).orElse(null);
 		if (currentMember != null) {
-			return populationGameService.startMemberGame(currentMember.memberId(), currentMember.nickname());
+			return populationGameService.startMemberGame(currentMember.memberId(), currentMember.nickname(), gameLevel);
 		}
 
 		return populationGameService.startGuestGame(
 			request.nickname(),
-			guestSessionKeyManager.ensureGuestSessionKey(httpSession)
+			guestSessionKeyManager.ensureGuestSessionKey(httpSession),
+			gameLevel
 		);
 	}
 
@@ -75,7 +78,8 @@ public class PopulationGameApiController {
 		return populationGameService.submitAnswer(
 			sessionId,
 			request.stageNumber(),
-			request.selectedOptionNumber()
+			request.selectedOptionNumber(),
+			request.submittedPopulation()
 		);
 	}
 

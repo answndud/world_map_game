@@ -79,6 +79,26 @@
                             </button>
                         </div>
                     </div>
+                    <div class="ranking-filter-group">
+                        <span class="subtitle">게임 레벨</span>
+                        <div class="ranking-filter-buttons" role="group" aria-label="랭킹 레벨 필터">
+                            <button class="secondary-button ranking-filter-button is-active"
+                                    id="ranking-level-1"
+                                    type="button"
+                                    data-ranking-level="LEVEL_1"
+                                    aria-pressed="true">
+                                Level 1
+                            </button>
+                            <button class="secondary-button ranking-filter-button"
+                                    id="ranking-level-2"
+                                    type="button"
+                                    data-ranking-level="LEVEL_2"
+                                    aria-pressed="false">
+                                Level 2
+                            </button>
+                        </div>
+                        <p id="ranking-level-hint" class="panel-copy">위치 찾기 랭킹은 현재 Level 1만 제공합니다.</p>
+                    </div>
                 </section>
 
                 <aside class="panel ranking-rule-card">
@@ -98,7 +118,7 @@
             </div>
             <div class="ranking-panel-stack">
                 <article class="panel ranking-board-panel"
-                         data-ranking-panel="location:ALL"
+                         data-ranking-panel="location:LEVEL_1:ALL"
                          data-title="위치 찾기 · 전체 Top 10"
                          data-copy="Level 1 기준 위치 찾기 전체 누적 랭킹입니다.">
                     <div class="table-shell">
@@ -112,7 +132,7 @@
                                 <th>시도 수</th>
                             </tr>
                             </thead>
-                            <tbody id="ranking-location-all-body" data-game-mode="location" data-scope="ALL">
+                            <tbody id="ranking-location-all-body" data-game-mode="location" data-level="LEVEL_1" data-scope="ALL">
                             <tr th:each="entry : ${locationAll.entries}">
                                 <td th:text="${entry.rank}">1</td>
                                 <td th:text="${entry.playerNickname}">Guest</td>
@@ -129,7 +149,7 @@
                 </article>
 
                 <article class="panel ranking-board-panel"
-                         data-ranking-panel="population:ALL"
+                         data-ranking-panel="population:LEVEL_1:ALL"
                          data-title="인구수 맞추기 · 전체 Top 10"
                          data-copy="Level 1 기준 인구수 맞추기 전체 누적 랭킹입니다."
                          hidden>
@@ -144,7 +164,7 @@
                                 <th>시도 수</th>
                             </tr>
                             </thead>
-                            <tbody id="ranking-population-all-body" data-game-mode="population" data-scope="ALL">
+                            <tbody id="ranking-population-all-body" data-game-mode="population" data-level="LEVEL_1" data-scope="ALL">
                             <tr th:each="entry : ${populationAll.entries}">
                                 <td th:text="${entry.rank}">1</td>
                                 <td th:text="${entry.playerNickname}">Guest</td>
@@ -161,7 +181,7 @@
                 </article>
 
                 <article class="panel ranking-board-panel"
-                         data-ranking-panel="location:DAILY"
+                         data-ranking-panel="location:LEVEL_1:DAILY"
                          data-title="위치 찾기 · 오늘 Top 10"
                          th:data-copy="${'오늘 기준 위치 찾기 랭킹입니다. 기준 날짜: ' + locationDaily.targetDate}"
                          hidden>
@@ -176,7 +196,7 @@
                                 <th>시도 수</th>
                             </tr>
                             </thead>
-                            <tbody id="ranking-location-daily-body" data-game-mode="location" data-scope="DAILY">
+                            <tbody id="ranking-location-daily-body" data-game-mode="location" data-level="LEVEL_1" data-scope="DAILY">
                             <tr th:each="entry : ${locationDaily.entries}">
                                 <td th:text="${entry.rank}">1</td>
                                 <td th:text="${entry.playerNickname}">Guest</td>
@@ -193,9 +213,9 @@
                 </article>
 
                 <article class="panel ranking-board-panel"
-                         data-ranking-panel="population:DAILY"
+                         data-ranking-panel="population:LEVEL_1:DAILY"
                          data-title="인구수 맞추기 · 오늘 Top 10"
-                         th:data-copy="${'오늘 기준 인구수 맞추기 랭킹입니다. 기준 날짜: ' + populationDaily.targetDate}"
+                         th:data-copy="${'Level 1 기준 오늘 인구수 맞추기 랭킹입니다. 기준 날짜: ' + populationDaily.targetDate}"
                          hidden>
                     <div class="table-shell">
                         <table class="result-table">
@@ -208,7 +228,7 @@
                                 <th>시도 수</th>
                             </tr>
                             </thead>
-                            <tbody id="ranking-population-daily-body" data-game-mode="population" data-scope="DAILY">
+                            <tbody id="ranking-population-daily-body" data-game-mode="population" data-level="LEVEL_1" data-scope="DAILY">
                             <tr th:each="entry : ${populationDaily.entries}">
                                 <td th:text="${entry.rank}">1</td>
                                 <td th:text="${entry.playerNickname}">Guest</td>
@@ -217,6 +237,70 @@
                                 <td th:text="${entry.totalAttemptCount}">7</td>
                             </tr>
                             <tr th:if="${#lists.isEmpty(populationDaily.entries)}">
+                                <td colspan="5">아직 기록이 없습니다.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </article>
+
+                <article class="panel ranking-board-panel"
+                         data-ranking-panel="population:LEVEL_2:ALL"
+                         data-title="인구수 맞추기 · Level 2 전체 Top 10"
+                         data-copy="직접 수치 입력형 Level 2 전체 누적 랭킹입니다."
+                         hidden>
+                    <div class="table-shell">
+                        <table class="result-table">
+                            <thead>
+                            <tr>
+                                <th>순위</th>
+                                <th>플레이어</th>
+                                <th>점수</th>
+                                <th>클리어</th>
+                                <th>시도 수</th>
+                            </tr>
+                            </thead>
+                            <tbody id="ranking-population-level2-all-body" data-game-mode="population" data-level="LEVEL_2" data-scope="ALL">
+                            <tr th:each="entry : ${populationLevel2All.entries}">
+                                <td th:text="${entry.rank}">1</td>
+                                <td th:text="${entry.playerNickname}">Guest</td>
+                                <td th:text="${entry.totalScore}">420</td>
+                                <td th:text="${entry.clearedStageCount}">5</td>
+                                <td th:text="${entry.totalAttemptCount}">7</td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(populationLevel2All.entries)}">
+                                <td colspan="5">아직 기록이 없습니다.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </article>
+
+                <article class="panel ranking-board-panel"
+                         data-ranking-panel="population:LEVEL_2:DAILY"
+                         data-title="인구수 맞추기 · Level 2 오늘 Top 10"
+                         th:data-copy="${'Level 2 기준 오늘 인구수 맞추기 랭킹입니다. 기준 날짜: ' + populationLevel2Daily.targetDate}"
+                         hidden>
+                    <div class="table-shell">
+                        <table class="result-table">
+                            <thead>
+                            <tr>
+                                <th>순위</th>
+                                <th>플레이어</th>
+                                <th>점수</th>
+                                <th>클리어</th>
+                                <th>시도 수</th>
+                            </tr>
+                            </thead>
+                            <tbody id="ranking-population-level2-daily-body" data-game-mode="population" data-level="LEVEL_2" data-scope="DAILY">
+                            <tr th:each="entry : ${populationLevel2Daily.entries}">
+                                <td th:text="${entry.rank}">1</td>
+                                <td th:text="${entry.playerNickname}">Guest</td>
+                                <td th:text="${entry.totalScore}">420</td>
+                                <td th:text="${entry.clearedStageCount}">5</td>
+                                <td th:text="${entry.totalAttemptCount}">7</td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(populationLevel2Daily.entries)}">
                                 <td colspan="5">아직 기록이 없습니다.</td>
                             </tr>
                             </tbody>

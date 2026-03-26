@@ -11,10 +11,11 @@
 <div class="page-shell">
     <th:block th:replace="~{fragments/site-header :: siteHeader('population')}"></th:block>
     <header class="hero compact-hero">
-        <p class="eyebrow">Population Scan Level 1</p>
+        <p class="eyebrow">Population Scan</p>
         <h1>국가 인구수 맞추기</h1>
         <p class="hero-copy">
-            서버가 Stage, 하트, 인구 규모 구간 4개, 점수 계산을 모두 관리하는 아케이드형 인구수 게임입니다.
+            Level 1은 구간 보기형, Level 2는 직접 수치 입력형입니다.
+            Stage 생성, 오차율 판정, 점수 계산, 하트 관리까지 모두 서버가 담당합니다.
         </p>
     </header>
 
@@ -37,6 +38,18 @@
                     <span>닉네임</span>
                     <input id="population-nickname" type="text" maxlength="20" placeholder="예: data_quizzer">
                 </label>
+                <div class="options-grid">
+                    <label class="option-card is-selected">
+                        <input type="radio" name="population-game-level" value="LEVEL_1" checked>
+                        <span class="subtitle">Level 1</span>
+                        <strong>구간 선택</strong>
+                    </label>
+                    <label class="option-card">
+                        <input type="radio" name="population-game-level" value="LEVEL_2">
+                        <span class="subtitle">Level 2</span>
+                        <strong>직접 수치 입력</strong>
+                    </label>
+                </div>
                 <button id="population-start-submit" class="primary-button" type="submit">게임 시작하기</button>
             </form>
 
@@ -47,7 +60,7 @@
                 </article>
                 <article class="rule-card">
                     <span class="subtitle">Format</span>
-                    <strong>Scale Bands</strong>
+                    <strong>Band or Exact</strong>
                 </article>
                 <article class="rule-card">
                     <span class="subtitle">Server</span>
