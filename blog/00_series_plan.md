@@ -101,6 +101,7 @@
 74. [위치 찾기 Level 2 힌트를 점수 감점으로 연결하기](./69-apply-hint-debt-to-location-level-2-score.md)
 75. [My Page에 Level 2 최고 기록 하이라이트 추가하기](./70-add-level-2-highlights-to-mypage.md)
 76. [공개 Stats에 Level 2 최고 기록 하이라이트 노출하기](./71-expose-level-2-highlights-on-public-stats.md)
+77. [공개 Level 2 실험을 롤백하고 legacy 데이터를 정리하기](./72-roll-back-game-level-2-and-purge-legacy-data.md)
 
 ### Part E. 테스트, 확장, 취업 패키징
 

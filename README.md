@@ -52,18 +52,17 @@
 
 ### MVP 2차
 
-- 위치 찾기 Level 2
-- 인구수 맞추기 Level 2
 - 닉네임 기반 회원가입 / 로그인
 - 내 전적 조회
 - 일간 / 전체 랭킹 분리
+- 공개 `/stats`와 운영 `/dashboard`
 
 회원 기능은 커뮤니티가 아니라 `기록 유지`가 목적이다.
 
 - 비회원은 지금처럼 세션 기반으로 바로 플레이
 - 로그인하면 내 계정에 기록과 랭킹 이력이 누적
 - 계정 정보는 `닉네임 + 비밀번호` 수준으로 단순하게 유지
-- 현재는 9단계 10차 기준으로 `member`, `guestSessionKey`, 게임 세션 / 랭킹 레코드 ownership 필드, 닉네임 + 비밀번호 기반 회원가입 / 로그인 / 로그아웃, 로그인 직후 현재 브라우저의 guest 기록 귀속, `/mypage` 기록 허브, raw stage 기반 플레이 성향 요약, `/dashboard/**` 접근 제어, 환경변수 기반 bootstrap admin provisioning, Dashboard 1차 운영 수치 카드, 공개 `/stats` 화면, local demo 계정 / 샘플 run bootstrap, 현재 survey/engine 버전 추천 피드백 샘플 bootstrap, 홈 첫 화면 계정 진입 CTA, 인구수 게임 Level 2 정확 수치 입력형, 공개 `/ranking`의 인구수 / 위치 게임 Level 2 필터, 위치 찾기 게임 Level 2 거리/방향 힌트 첫 조각과 결과 로그 read model, 힌트 감점 점수 정책, `/mypage` Level 2 하이라이트, 공개 `/stats` Level 2 하이라이트까지 연결했다.
+- 현재는 9단계 rollback 기준으로 `member`, `guestSessionKey`, 게임 세션 / 랭킹 레코드 ownership 필드, 닉네임 + 비밀번호 기반 회원가입 / 로그인 / 로그아웃, 로그인 직후 현재 브라우저의 guest 기록 귀속, `/mypage` 기록 허브, raw stage 기반 플레이 성향 요약, `/dashboard/**` 접근 제어, 환경변수 기반 bootstrap admin provisioning, Dashboard 운영 수치 카드, 공개 `/stats` 화면, local demo 계정 / 샘플 run bootstrap, 현재 survey/engine 버전 추천 피드백 샘플 bootstrap, 홈 첫 화면 계정 진입 CTA까지 연결했다. 위치/인구수 Level 2 실험은 현재 product scope에서 제거했고, startup `GameLevelRollbackInitializer`가 기존 `LEVEL_2` 세션 / Stage / Attempt / 랭킹 row와 Redis `l2` 키를 정리한다.
 
 ### 이후 확장
 
@@ -94,20 +93,9 @@
 - 현재 Level 1은 성능과 클릭 안정성을 위해 인구 기준 상위 72개 주요 국가로 먼저 운영한다.
 - 현재 Level 1의 지구본 자산은 `Natural Earth 110m` 기반으로 다시 생성해 초기 로딩과 폴리곤 흔들림을 줄였다.
 - 현재 Level 1의 국가 선택은 `Globe.gl polygon click`에만 의존하지 않고, 지구본 클릭 좌표를 기준으로 GeoJSON 내부 포함 판정을 한 번 더 수행한다.
-- 이후 Level 2 또는 고도화 단계에서 독립국 194개 전체로 확장한다.
-
-#### Level 2
-
-- 시작 화면에서 `Level 1 / Level 2`를 고를 수 있다.
-- Level 2도 입력 방식은 그대로 `지구본 국가 선택`을 유지한다.
-- 오답이면 서버가 `distanceKm + directionHint`를 계산해 내려준다.
-- 현재 1차 구현에서는 `LocationGameSession.gameLevel`을 저장하고, 결과 / 랭킹 레코드도 `LEVEL_1 / LEVEL_2`를 구분한다.
-- 현재 2차 구현에서는 결과 read model도 attempt별 거리/방향 힌트를 다시 계산해 내려줘, answer payload를 놓쳐도 결과 화면과 `/api/games/location/sessions/{id}/result`만으로 Level 2 추적 과정을 설명할 수 있다.
-- 현재 3차 구현에서는 정답을 맞히기 전까지 본 힌트 수만큼 점수를 감점하는 `hint debt`를 `LocationGameScoringPolicy`가 계산하고, play feedback과 결과 화면이 그 감점을 함께 보여 준다.
-- 현재 4차 구현에서는 `/mypage`가 `leaderboard_record`를 다시 읽어 위치 게임 `Level 2` 최고 점수, 최고 랭킹, 완료 run 수를 하이라이트 카드로 따로 보여 준다.
-- 현재 5차 구현에서는 공개 `/stats`도 `leaderboard_record`를 다시 읽어 위치/인구수 `Level 2` 최고 기록을 모드별 한 장짜리 하이라이트 카드로 보여 준다.
-- Level 2 difficulty label은 `Vector` 계열로 분리해, 주요 국가 감잡기보다 더 넓은 후보 풀에서 출제한다.
-- 다음 고도화 후보는 `소국/영토`, `타이머`, `Level 2 하이라이트 홈 요약`이다.
+- 현재 public 서비스는 위치 게임 Level 1만 운영한다.
+- 이전 Level 2 거리/방향 힌트 실험으로 남아 있던 `game_level=LEVEL_2` 세션 / 시도 / 랭킹 레코드와 Redis `l2` 키는 startup `GameLevelRollbackInitializer`가 정리한다.
+- 이후 고도화 후보는 `소국/영토`, `타이머`, `streak` 같은 난도 실험을 다시 설계하는 일이다.
 
 #### 서버 책임
 
@@ -117,8 +105,6 @@
 - 시도 이력 저장
 - 선택 국가 코드 검증
 - 정답 국가 코드 비교
-- Level 2 오답 힌트(distance / direction) 계산
-- Level 2 힌트 사용에 따른 점수 감점 계산
 - 라운드별 점수 계산
 - 총점과 게임오버 상태 관리
 
@@ -133,25 +119,15 @@
 - 하트가 모두 사라지면 `GAME OVER`로 종료하고, 현재 세션을 같은 `sessionId`로 다시 시작하거나 홈으로 복귀할 수 있다.
 - 정답이면 점수를 부여하고, 사용자가 `다음 Stage` 버튼을 눌러 이어서 진행한다.
 - 현재 구현은 `인구 규모 구간 4개 보기형` 위에서 아케이드 루프를 붙인 상태다.
-- 남은 고도화 방향은 `구간 경계 / 난이도 세분화`, `오차율 입력형 Level 2`다.
+- 남은 고도화 방향은 `구간 경계 / 난이도 세분화`다.
 - 예: `1천만 미만`, `1천만~5천만`, `5천만~1억`, `1억 이상`
-
-#### Level 2
-
-- 사용자가 숫자를 직접 입력한다.
-- 서버는 실제 인구수 대비 오차율을 계산한다.
-- 오차율이 낮을수록 높은 점수를 준다.
-- 현재 9단계 1차 구현으로 `Level 1 / Level 2`를 시작 화면에서 고를 수 있고, Level 2는 `직접 수치 입력 -> 오차율 기반 정답 판정 -> 부분 점수` 흐름까지 먼저 동작한다.
-- 첫 구현에서는 Level 2 결과를 `leaderboard_record`에 `LEVEL_2`로 저장하고, `/mypage` 최근 플레이와 최고 기록에서 Level 2 라벨을 함께 보여 줬다.
-- 현재 9단계 2차 구현에서는 공개 `/ranking`도 `gameLevel`을 이해하도록 확장해서, 인구수 게임은 `Level 1 / Level 2`를 따로 조회할 수 있다.
-- 현재 9단계 3차 구현에서는 Level 2 결과 화면과 플레이 feedback도 `오차율 + precision band`를 함께 보여 줘, 사용자가 왜 그 점수를 받았는지 결과 화면만으로 다시 설명할 수 있다.
-- 현재 9단계 7차 구현에서는 공개 `/ranking`도 위치 게임 `LEVEL_2`를 SSR과 polling 양쪽에서 조회할 수 있게 확장해, 거리/방향 힌트형 run을 별도 보드로 확인할 수 있다.
+- 현재 public 서비스는 인구수 게임 Level 1만 운영한다.
+- 이전 직접 입력형 Level 2 실험으로 남아 있던 `game_level=LEVEL_2` 세션 / 시도 / 랭킹 레코드와 Redis `l2` 키도 startup `GameLevelRollbackInitializer`가 정리한다.
 
 #### 서버 책임
 
 - 국가별 인구 데이터 제공
-- 보기 생성 또는 정답 수치 비교
-- 오차율 계산
+- 보기 생성과 정답 구간 비교
 - 난이도별 점수 차등
 
 ## 6. AI 추천 기능 설계
@@ -246,14 +222,13 @@
 - 운영 화면 접근 제어는 컨트롤러마다 복붙하지 않고 인터셉터로 묶었다. dashboard 진입 정책은 도메인 상태 변경보다 라우트 입구의 공통 규칙에 가깝기 때문이다.
 - 8단계 6차 구현으로 `/mypage`는 finished session에 속한 stage를 다시 읽어 모드별 `클리어 Stage 수`, `1트 클리어율`, `평균 시도 수`까지 보여주기 시작했다.
 - `/mypage`는 이제 `leaderboard_record` 기반 완료 run 요약과, raw stage 기반 플레이 성향 요약을 함께 가진다. 즉, “무슨 결과를 냈는가”와 “어떤 방식으로 플레이하는가”를 분리해서 보여준다.
-- 9단계 9차 구현으로 `/mypage`는 `leaderboard_record`를 다시 읽어 위치/인구수 `Level 2` 최고 기록도 별도 하이라이트로 보여 준다. 즉, 계정 기반 기록 허브가 이제 `전체 최고 기록`, `플레이 성향`, `고급 모드(Level 2) 하이라이트`를 나눠 설명한다.
 - 8단계 7차 구현으로 `AdminBootstrapProperties`, `AdminBootstrapService`, `AdminBootstrapInitializer`를 추가해 서버 시작 시 `WORLDMAP_ADMIN_BOOTSTRAP_ENABLED`, `WORLDMAP_ADMIN_BOOTSTRAP_NICKNAME`, `WORLDMAP_ADMIN_BOOTSTRAP_PASSWORD` 기준으로 운영용 admin 계정을 자동 생성하거나 기존 계정을 `ADMIN`으로 승격하게 했다.
 - bootstrap admin 생성은 signup UI가 아니라 startup runner에서 처리한다. 운영자 계정은 공개 회원가입 흐름이 아니라 배포 환경 설정으로 여는 편이 더 단순하고, 일반 사용자에게 admin 경로를 노출하지 않아도 되기 때문이다.
 - 8단계 8차 구현으로 운영 화면 진입 주소를 `/admin`에서 `/dashboard`로 바꿨다. `ADMIN` 로그인 사용자에게만 public 헤더에 `Dashboard` 버튼을 노출하고, 기존 `/admin/**`는 임시 redirect로만 남겨 북마크 호환성을 유지한다.
 - 8단계 9차 구현으로 `/dashboard` 첫 화면에 운영 수치 카드를 추가했다. `총 회원 수`는 `member_account`, `오늘 활성 회원 / 게스트`와 `오늘 시작된 세션 수`는 각 게임 세션의 `startedAt`, `오늘 완료된 게임 수`와 `모드별 완료 수`는 `leaderboard_record.finishedAt` 기준으로 계산한다.
 - 8단계 10차 구현으로 dashboard 활동 지표를 `ServiceActivityService`로 분리해 `/dashboard`와 공개 `/stats`가 같은 read model을 재사용하게 했다. `Stats`는 전체 사용자에게 공개 가능한 운영 수치와 일간 Top 3만 보여 주고, 추천 품질/버전 정보는 계속 Dashboard에만 남긴다.
-- 9단계 10차 구현으로 공개 `/stats`는 위치/인구수 `Level 2` 최고 기록도 별도 하이라이트 카드로 보여 준다. 공개 화면에서는 상세 운영 판단 대신 “고급 모드도 실제로 플레이되고 있다”는 신호만 제한적으로 노출한다.
 - 8단계 10차 구현으로 local profile 시작 시 admin 계정 `worldmap_admin`, 일반 계정 `orbit_runner`, 샘플 leaderboard run 2개, 진행 중 guest 세션 1개를 자동 생성하는 demo bootstrap을 추가했다. DB 데이터를 비워도 local profile로 서버를 다시 띄우면 country seed -> admin bootstrap -> demo bootstrap 순서로 같은 확인용 상태를 다시 만들 수 있다.
+- 9단계 rollback 구현으로 위치/인구수 Level 2 실험은 product scope에서 제거했고, `GameLevelRollbackInitializer`가 앱 시작 시 기존 `LEVEL_2` 세션 / 시도 / 랭킹 row와 Redis `l2` 키를 정리한다. 그래서 public `/ranking`, `/stats`, `/mypage`, 게임 시작 화면은 다시 Level 1-only 기준으로 단순해졌다.
 - 8단계 11차 구현으로 홈 첫 화면에서 guest는 `로그인 / 회원가입`, 로그인 사용자는 `My Page / 로그아웃`을 바로 볼 수 있게 정리했다. 계정 기능은 그대로 두고, 홈에서 기록 유지 진입점을 더 짧게 만든 조각이다.
 - 8단계 12차 구현으로 홈 첫 화면은 hero에서 개별 게임 CTA를 반복하지 않고, 실제 모드 선택은 `지금 플레이할 모드` 카드 영역 한 곳에서만 하도록 다시 정리했다. hero는 서비스 소개, 계정 연결, 공개 `Stats` 진입만 맡고, 모드 설명 중복을 줄여 첫 진입 구조를 단순화했다.
 - 현재 8단계 핵심 범위는 닫혔고, 이후 고도화 포인트는 `/mypage` 기간별 누적 통계, season/기간 필터, 더 세밀한 운영 도구 확장이다.
@@ -283,7 +258,7 @@
 
 - `leaderboard:all:location:l1`
 - `leaderboard:all:population:l1`
-- `leaderboard:daily:location:l2:2026-03-22`
+- `leaderboard:daily:location:l1:2026-03-22`
 
 ### 랭킹 반영 흐름
 

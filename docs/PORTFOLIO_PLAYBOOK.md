@@ -32,7 +32,7 @@
 | 6 | 설문 기반 추천 엔진 | In Progress |
 | 7 | AI-assisted 설문 개선 체계 | In Progress |
 | 8 | 인증, 전적, 마이페이지 | Done |
-| 9 | Level 2와 실시간성 고도화 | In Progress |
+| 9 | 고도화 실험 롤백과 실시간성 개선 | In Progress |
 | 10 | 포트폴리오 정리와 발표 준비 | Not Started |
 
 ## 공통 체크리스트
@@ -550,7 +550,7 @@
 
 이 단계에서 남은 일:
 
-- baseline은 18 / 18, anchor drift 0개까지 맞췄으니, 다음엔 6단계를 닫고 Level 2나 실시간성 고도화로 넘어갈지 판단
+- baseline은 18 / 18, anchor drift 0개까지 맞췄으니, 다음엔 6단계를 닫고 실시간성 고도화나 Level 1 polish로 넘어갈지 판단
 - 블로그는 연대기 성격이 강하므로, 현재 코드 재현이 목적일 때는 `blog/50-current-state-rebuild-map.md` 기준으로 최신 글과 구버전 글을 구분해 읽는 흐름을 유지
 - local demo / blog 재현성은 `blog/50-current-state-rebuild-map.md`의 실행 체크리스트와 `docs/LOCAL_DEMO_BOOTSTRAP.md`를 함께 기준으로 본다
 - 현재는 `/dashboard/recommendation/feedback`이 그 판단을 운영 메모로 내려주므로, 다음 실험은 메모가 가리키는 우선순위 하나만 좁게 집행
@@ -681,76 +681,57 @@
 - 운영자가 실제로 로그인 가능한 admin 계정을 배포 설정으로 만들 수 있다.
 - 일반 사용자도 공개 가능한 서비스 활동 수치를 `/stats`에서 볼 수 있다.
 
-### 9. Level 2와 실시간성 고도화
+### 9. 고도화 실험 롤백과 실시간성 개선
 
 상태: In Progress
 
 목표:
 
-- 1차 기능을 고도화해 완성도를 높인다.
+- public 제품 범위를 다시 단순하게 정리한다.
+- 실험으로 열어 둔 고도화 기능을 정리하고, 실시간성 개선의 다음 기준을 다시 고정한다.
 
 구현 항목:
 
-- 위치 찾기 Level 2
-- 인구수 맞추기 Level 2
+- public 게임 모드 범위 재정리
+- legacy 실험 데이터 정리
+- 공개 read model 단순화
 - SSE 또는 WebSocket 기반 실시간 랭킹 반영
-- 힌트, 부분 점수, 오차 거리 표시
 
 현재까지 완료된 항목:
 
-- 인구수 게임 시작 화면에서 `Level 1 / Level 2`를 선택할 수 있게 구성
-- `PopulationGameSession`이 `gameLevel`을 저장하도록 확장
-- Level 2는 보기형 대신 `직접 수치 입력`을 받도록 플레이 화면 분기
-- `PopulationGamePrecisionScoringPolicy`를 추가해 오차율 기반 정답 판정과 부분 점수 계산 분리
-- Level 2 run은 `leaderboard_record.game_level=LEVEL_2`로 저장
-- `/mypage` 최근 플레이와 최고 기록 라벨에서 `Level 1 / Level 2`를 구분 표시
-- `LeaderboardService`가 `gameMode + gameLevel + scope` 기준으로 Level 2 조회를 지원하도록 확장
-- 공개 `/ranking` 화면에 인구수 게임 `Level 1 / Level 2` 필터와 Level 2 보드 추가
-- Level 2 랭킹 Redis key와 DB fallback 조회를 통합 테스트로 고정
-- `PopulationGamePrecisionBand`를 추가해 Level 2 결과와 feedback가 `오차율 + band`를 같이 설명하도록 보강
-- Level 2 결과 화면 상단에 판정 기준 패널과 attempt별 오차율 / band 로그 추가
-- Level 2 state/answer/result 통합 테스트와 precision scoring 단위 테스트 통과
-- `LocationGameLevel`을 추가해 위치 게임 세션이 `LEVEL_1 / LEVEL_2`를 저장하도록 확장
-- 위치 게임 시작 화면에서 `Level 1 / Level 2`를 고를 수 있게 구성
-- Level 2는 입력 방식을 바꾸지 않고, 오답 시 `distanceKm + directionHint`를 서버가 계산해 answer payload에 포함
-- `LocationGameDistanceHintPolicy`를 추가해 거리/방향 계산을 프론트가 아니라 서버 정책으로 분리
-- 위치 게임 결과 / 랭킹 레코드도 `gameLevel`을 이해하도록 맞춤
-- 위치 게임 Level 2 결과 read model이 attempt별 `distanceKm + directionHint`를 다시 계산해 결과 API와 결과 화면 로그에 함께 노출
-- 공개 `/ranking` 화면도 위치 게임 `Level 1 / Level 2`를 각각 조회할 수 있게 확장
-- 위치 게임 Level 2 랭킹 Redis key와 DB fallback 조회를 통합 테스트로 고정
-- 위치 게임 Level 2는 정답 전까지 본 힌트 수만큼 `hint debt`를 점수에서 감점하고, answer/result view가 그 감점을 함께 설명
-- 위치 게임 Level 2 state/answer 통합 테스트와 distance hint 단위 테스트 통과
-- `/mypage`가 `leaderboard_record`를 다시 읽어 위치/인구수 `Level 2` 최고 기록, 최고 랭킹, 완료 run 수를 별도 하이라이트로 보여 줌
-- `MyPageService`가 Level 2 하이라이트를 write model이 아니라 read model 확장으로 처리하도록 유지
-- 공개 `/stats`도 `leaderboard_record`를 다시 읽어 위치/인구수 `Level 2` 최고 기록을 모드별 한 장짜리 하이라이트 카드로 노출
-- public `Stats`는 운영 판단용 dashboard와 달리, 고급 모드가 실제로 돌아가고 있다는 사회적 신호만 제한적으로 보여 줌
+- 위치/인구수 게임 모두 public 시작 흐름을 다시 Level 1 전용으로 고정
+- 시작 API는 들어온 `gameLevel=LEVEL_2` 요청도 Level 1 세션으로 수렴
+- 공개 `/ranking`에서 게임 레벨 필터와 모든 Level 2 보드를 제거
+- `/stats`, `/mypage`에서 위치/인구수 Level 2 하이라이트를 제거
+- `GameLevelRollbackInitializer`를 추가해 앱 시작 시 기존 `LEVEL_2` 위치/인구수 세션, Stage, Attempt, `leaderboard_record`, Redis `l2` 키를 정리
+- `GameLevelRollbackInitializerIntegrationTest`로 기존 DB/Redis에 남은 Level 2 흔적이 실제로 제거되는지 통합 테스트로 고정
+- public 템플릿, JS, current-state 문서, local demo 문서가 모두 Level 1-only 기준으로 다시 동기화
+- Level 2 관련 enum과 내부 실험 코드는 즉시 제거하지 않고, 기존 DB enum 호환성을 깨지 않도록 startup rollback + public surface 정리부터 먼저 적용
 
 다음에 이어서 할 일:
 
-- Level 2 하이라이트를 홈 hero까지 올릴지 결정
-- 위치 찾기 Level 2에서 `소국/영토`, `타이머`, `streak` 중 무엇을 다음 규칙으로 열지 결정
+- polling 유지와 SSE/WebSocket 전환 기준을 다시 정리
+- Level 1 기준으로 홈 / stats / ranking / mypage 노출 정보 밀도를 더 다듬을지 결정
+- 남겨 둔 internal Level 2 코드를 완전히 제거할지, DB enum 정리 시점까지 호환 코드로 유지할지 판단
 
 반드시 이해할 것:
 
-- 1차 구조가 왜 확장 가능했는가
+- 왜 public 제품에서 기능을 제거할 때 UI만 숨기면 안 되고 기존 데이터와 Redis key까지 같이 정리해야 하는가
+- 왜 enum을 바로 지우기보다 startup rollback으로 먼저 수습하는 것이 현재 DB 호환성에 더 안전한가
 - SSE와 WebSocket 중 무엇을 선택했는가
-- 왜 인구수 Level 2는 `세션 / Stage / Attempt` 구조를 유지한 채 입력 방식만 바꿀 수 있었는가
-- 왜 Level 2 점수식은 서비스가 아니라 별도 precision policy로 분리했는가
-- 왜 공개 랭킹 확장도 컨트롤러가 아니라 `LeaderboardService`의 level-aware 조회 규칙으로 풀어야 하는가
-- 왜 precision band는 프론트 if문이 아니라 서버 policy가 기준이 되어야 하는가
-- 왜 위치 찾기 Level 2 첫 조각을 `타이머`보다 `거리/방향 힌트` 중심으로 여는 것이 더 설명 가능한가
-- 왜 위치 찾기 Level 2의 거리/방향 계산도 프론트가 아니라 서버 policy가 맡아야 하는가
-- 왜 Level 2 힌트 감점도 템플릿 계산이 아니라 `LocationGameScoringPolicy`가 맡아야 하는가
-- 왜 `/mypage` Level 2 하이라이트는 raw 세션 전체가 아니라 `leaderboard_record`를 먼저 읽는 편이 더 설명 가능하고 안정적인가
-- 왜 공개 `/stats`의 Level 2 하이라이트도 별도 집계가 아니라 `LeaderboardService`의 level-aware 조회 규칙을 재사용하는 편이 맞는가
+- 왜 `/ranking`, `/stats`, `/mypage`, 시작 화면을 같이 롤백해야 “현재 서비스 범위”를 일관되게 설명할 수 있는가
+- 왜 startup initializer 순서가 `legacy schema 완화 -> Level 2 purge -> demo bootstrap` 이어야 하는가
 
 면접 포인트:
 
-- 난이도 상승에 따라 어떤 정책 클래스가 추가되었는가
+- 왜 Level 2 실험을 product scope에서 제거했는가
+- 기존 DB와 Redis에 남은 실험 데이터를 어떻게 안전하게 정리했는가
+- 왜 public surface rollback과 startup data purge를 함께 했는가
 
 완료 기준:
 
-- Level 1 구조를 크게 깨지 않고 확장했다.
+- public 게임 흐름이 Level 1-only로 다시 단순해졌다.
+- 기존 DB와 Redis에 남아 있던 Level 2 데이터가 startup에서 정리된다.
 - 실시간 전달 방식의 선택 이유를 설명할 수 있다.
 
 ### 10. 포트폴리오 정리와 발표 준비

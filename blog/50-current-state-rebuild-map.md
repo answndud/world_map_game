@@ -94,6 +94,7 @@
 - admin 계정: `worldmap_admin / secret123`
 - user 계정: `orbit_runner / secret123`
 - local에서 샘플 run, guest live session, current recommendation feedback sample까지 bootstrap
+- 위치/인구수 게임은 현재 Level 1만 public으로 운영되고, 예전 `LEVEL_2` 세션 / 랭킹 row와 Redis `l2` 키는 startup rollback initializer가 먼저 정리
 
 근거:
 
@@ -127,30 +128,27 @@ set +a
   - `Home`, `Stats`, `Ranking`, `My Page` 헤더가 보이는가
 - `/stats`
   - public 활동 지표가 보이는가
-  - 위치/인구수 `Level 2 하이라이트` 카드 또는 빈 안내 문구가 보이는가
+  - 위치/인구수 기본 활동 지표와 공개 Top 보드만 보이고, `Level 2 하이라이트`는 더 이상 보이지 않는가
 - `/ranking`
-  - 위치/인구수 게임 모두 `Level 1 / Level 2` 필터가 보이는가
-  - 인구수 게임 `Level 2`를 선택하면 직접 수치 입력형 랭킹 보드가 보이는가
-  - 위치 게임 `Level 2`를 선택하면 거리/방향 힌트형 랭킹 보드가 보이는가
+  - 위치/인구수 게임 전환과 전체/일간 필터만 보이고, `게임 레벨` 필터는 더 이상 보이지 않는가
 - `/recommendation/survey`
   - 20문항 설문이 보이는가
 - `/games/population/start`
-  - Level 1 / Level 2 선택이 보이는가
+  - 닉네임 입력과 게임 시작하기만 보이고, Level 선택 UI는 더 이상 보이지 않는가
 - `/games/population/play/{sessionId}`
-  - Level 2로 시작하면 보기 4개 대신 직접 수치 입력칸이 보이는가
+  - 보기 4개 구간 선택형 Stage만 보이는가
 - `/games/location/start`
-  - Level 1 / Level 2 선택이 보이는가
+  - 닉네임 입력과 게임 시작하기만 보이고, Level 선택 UI는 더 이상 보이지 않는가
 - `/games/location/play/{sessionId}`
-  - Level 2로 시작하면 오답 시 거리(km)와 방향 힌트가 feedback에 보이는가
+  - 제출 버튼 하나만 있는 Level 1 흐름으로 시작하는가
 - `/games/location/result/{sessionId}`
-  - Level 2에서 오답이 있었다면 attempt 로그에 `거리 힌트 약 ...km ...쪽`이 남는가
-  - Level 2에서 힌트를 보고 정답을 맞혔다면 점수 영역에 `힌트 감점 -15` 같은 로그가 보이는가
+  - Level 1 attempt 로그와 점수 요약만 보이고, 거리/방향 힌트 로그나 `힌트 감점` 문구는 더 이상 보이지 않는가
 
 ### 3. local demo 계정으로 로그인 확인
 
 - USER
   - `orbit_runner / secret123`
-  - 로그인 후 `/mypage`에서 최고 점수, 최근 플레이, 성향 지표, `Level 2 하이라이트`가 보이는가
+  - 로그인 후 `/mypage`에서 최고 점수, 최근 플레이, 성향 지표가 보이고, `Level 2 하이라이트`는 더 이상 보이지 않는가
 - ADMIN
   - `worldmap_admin / secret123`
   - 로그인 후 헤더에 `Dashboard` 버튼이 생기는가
@@ -173,6 +171,7 @@ set +a
 - `orbit_runner` 완료 run 2개
 - `demo-guest-live` 진행 중 guest 세션 1개
 - current recommendation feedback sample 5개 이상
+- `game_level = LEVEL_2`인 위치/인구수 세션과 `leaderboard_record`, Redis `l2` 키는 남아 있지 않은가
 
 여기까지 확인되면 현재 저장소 기준 핵심 흐름은 대체로 재현된 것이다.
 
@@ -200,12 +199,11 @@ set +a
 5. [06-redis-leaderboard-vertical-slice.md](./06-redis-leaderboard-vertical-slice.md)
 6. [07-leaderboard-polling-refresh.md](./07-leaderboard-polling-refresh.md)
 7. [08-ranking-filter-and-tie-rule.md](./08-ranking-filter-and-tie-rule.md)
-8. [63-expose-population-level-2-on-public-ranking.md](./63-expose-population-level-2-on-public-ranking.md)
-9. [67-add-location-level-2-hint-log-to-result-read-model.md](./67-add-location-level-2-hint-log-to-result-read-model.md)
-10. [68-expose-location-level-2-on-public-ranking.md](./68-expose-location-level-2-on-public-ranking.md)
-11. [69-apply-hint-debt-to-location-level-2-score.md](./69-apply-hint-debt-to-location-level-2-score.md)
+8. [72-roll-back-game-level-2-and-purge-legacy-data.md](./72-roll-back-game-level-2-and-purge-legacy-data.md)
 
 이 구간은 현재 코드와 비교적 직접 대응된다.
+
+Level 2 실험 이력 자체를 이해하고 싶다면 `62`부터 `71`까지 읽은 뒤, 마지막에 [72-roll-back-game-level-2-and-purge-legacy-data.md](./72-roll-back-game-level-2-and-purge-legacy-data.md)로 현재 public 기준이 왜 다시 Level 1-only가 됐는지 확인하는 편이 안전하다.
 
 ### 3. 추천 엔진 현재 상태
 

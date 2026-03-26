@@ -3403,3 +3403,75 @@
 - 배운 점: Level 2 기능을 public 화면에 노출한다고 해서 바로 상세 랭킹이나 내부 지표를 모두 열 필요는 없다. public `Stats`는 “서비스가 실제로 움직인다”는 사회적 신호를 주는 곳이고, `Dashboard`는 운영 판단을 하는 곳이라는 역할 차이를 더 분명히 유지할 수 있었다.
 - 아직 내가 이해가 부족한 부분: 지금은 `ALL TIME BEST` 한 장만 public `/stats`에 노출한다. 이후 홈 hero까지 Level 2 하이라이트를 올릴지, 혹은 public surface는 `Stats`까지만 두는 편이 더 명확한지 판단이 남아 있다.
 - 면접에서 30초 안에 설명하는 요약: `/stats`는 원래 공개 활동 지표와 일간 Top 3만 보여 주는 화면이었습니다. Level 2 모드가 늘어나면서 public surface에서도 고급 모드가 실제로 플레이되고 있다는 신호가 필요해졌고, 그래서 이번에는 새 집계를 만들지 않고 `LeaderboardService`의 level-aware 조회를 그대로 재사용해 위치/인구수 `Level 2` 최고 기록 카드만 추가했습니다. 내부 운영 판단 정보는 계속 dashboard에만 남기고, 공개 화면은 제한된 정보만 보여 주도록 역할을 분리한 것이 핵심입니다.
+
+## 2026-03-26 - 로컬 demo 부팅 호환성: legacy recommendation feedback 컬럼 완화
+
+- 단계: 9. Level 2와 실시간성 고도화
+- 목적: local profile로 서버를 다시 띄우려 했을 때, 예전 로컬 PostgreSQL에 남아 있던 `recommendation_feedback.budget_preference`, `english_importance`, `priority_focus` legacy 컬럼이 여전히 `NOT NULL`인 경우 current demo bootstrap이 실패했다. 이번 조각은 운영 기능을 늘리는 대신, fresh DB가 아니어도 `.env.local + local profile`로 바로 확인 가능한 상태를 다시 보장하는 데 집중한다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/common/config/RecommendationFeedbackLegacyColumnInitializer.java`
+  - `src/test/java/com/worldmap/common/config/RecommendationFeedbackLegacyColumnInitializerIntegrationTest.java`
+  - `docs/LOCAL_DEMO_BOOTSTRAP.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름: HTTP 요청보다 앱 시작 흐름의 수정이다. `CountrySeedInitializer -> AdminBootstrapInitializer -> RecommendationFeedbackLegacyColumnInitializer -> DemoBootstrapInitializer` 순서로 동작하고, 새 initializer가 먼저 legacy 컬럼의 `NOT NULL` 제약을 풀어 current `RecommendationFeedback` insert가 실패하지 않게 만든다.
+- 데이터 / 상태 변화: 새 테이블이나 컬럼은 추가하지 않는다. `recommendation_feedback`에 legacy 컬럼이 존재하는 경우에만 `ALTER TABLE ... DROP NOT NULL`을 실행하고, 컬럼이 없으면 아무 일도 하지 않는다. 덕분에 현재 엔티티가 더 이상 쓰지 않는 예전 컬럼이 남아 있어도 local demo seed가 계속 동작한다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “current code가 old local schema에도 다시 올라와야 한다”는 개발 환경 호환성이다. 이 책임은 demo bootstrap 안쪽에 숨기기보다 startup initializer로 분리하는 편이 더 명확하다. 왜냐하면 이 문제는 추천 피드백 생성 규칙이 아니라, boot 전에 legacy schema를 완화하는 인프라 호환성 규칙이기 때문이다.
+- 예외 / 엣지 케이스: 컬럼이 아예 없는 fresh DB는 그대로 통과한다. H2 test DB도 `information_schema.columns`를 통해 같은 initializer를 태우도록 구현해서, local PostgreSQL 전용 편법으로 남기지 않았다. 현재 완화 대상은 확인된 세 컬럼만 포함하고, 다른 legacy drift는 이번 범위에 넣지 않았다.
+- 테스트:
+  - `./gradlew test --tests com.worldmap.common.config.RecommendationFeedbackLegacyColumnInitializerIntegrationTest --tests com.worldmap.demo.DemoBootstrapIntegrationTest`
+  - `./gradlew test`
+- 배운 점: local demo bootstrap은 “새 환경에서 되는가”보다 “예전 local DB가 남아 있어도 다시 살아나는가”가 더 중요할 수 있다. bootstrap 실패 원인이 도메인 로직이 아니라 schema drift인 경우, HTTP controller가 아니라 startup initializer 쪽을 먼저 봐야 한다.
+- 아직 약한 부분: 이번 조각은 세 개의 legacy recommendation feedback 컬럼만 다룬다. 앞으로도 local DB drift가 더 쌓이면, 개별 initializer가 늘어나는 방식이 좋은지 아니면 정식 migration 도구 도입이 나은지 한 번 더 판단해야 한다.
+- 면접용 30초 요약: local demo 서버가 안 뜬 원인은 current 추천 피드백 엔티티가 더 이상 쓰지 않는 예전 로컬 컬럼들이 `NOT NULL`로 남아 있었기 때문입니다. 그래서 startup 초기에 legacy 컬럼이 있으면 `NOT NULL`만 완화하는 initializer를 넣고, demo bootstrap이 그 다음에 current 버전 피드백을 넣도록 순서를 잡았습니다. 덕분에 fresh DB가 아니어도 `.env.local` 기반 local demo를 다시 재현할 수 있게 됐습니다.
+
+## 2026-03-26 - 9단계 rollback: public Level 2 제거와 legacy 데이터 정리
+
+- 단계: 9. 고도화 실험 롤백과 실시간성 개선
+- 목적: 위치 찾기와 인구수 맞추기 Level 2 실험을 현재 제품 범위에서 제거하고, 기존 DB/Redis에 남아 있던 `LEVEL_2` 흔적까지 같이 정리해 현재 서비스를 다시 `Level 1-only`로 설명 가능하게 만든다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/common/config/GameLevelRollbackInitializer.java`
+  - `src/main/java/com/worldmap/game/location/web/LocationGameApiController.java`
+  - `src/main/java/com/worldmap/game/population/web/PopulationGameApiController.java`
+  - `src/main/java/com/worldmap/mypage/application/MyPageDashboardView.java`
+  - `src/main/java/com/worldmap/mypage/application/MyPageService.java`
+  - `src/main/java/com/worldmap/ranking/web/LeaderboardPageController.java`
+  - `src/main/java/com/worldmap/stats/web/StatsPageController.java`
+  - `src/main/resources/static/js/location-game.js`
+  - `src/main/resources/static/js/population-game.js`
+  - `src/main/resources/static/js/ranking.js`
+  - `src/main/resources/templates/location-game/start.html`
+  - `src/main/resources/templates/location-game/result.html`
+  - `src/main/resources/templates/population-game/start.html`
+  - `src/main/resources/templates/population-game/result.html`
+  - `src/main/resources/templates/ranking/index.html`
+  - `src/main/resources/templates/stats/index.html`
+  - `src/main/resources/templates/mypage.html`
+  - `src/test/java/com/worldmap/common/config/GameLevelRollbackInitializerIntegrationTest.java`
+  - `src/test/java/com/worldmap/game/location/LocationGameFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/game/population/PopulationGameFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/ranking/LeaderboardIntegrationTest.java`
+  - `src/test/java/com/worldmap/stats/StatsPageControllerTest.java`
+  - `src/test/java/com/worldmap/web/MyPageControllerTest.java`
+  - `src/test/java/com/worldmap/mypage/MyPageServiceIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/LOCAL_DEMO_BOOTSTRAP.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/50-current-state-rebuild-map.md`
+  - `blog/72-roll-back-game-level-2-and-purge-legacy-data.md`
+- 요청 흐름: public 요청 흐름은 다시 단순해졌다. `POST /api/games/location/sessions`, `POST /api/games/population/sessions`는 이제 Level 선택을 무시하고 Level 1 세션만 시작한다. `GET /ranking`, `GET /stats`, `GET /mypage`도 더 이상 Level 2 read model을 만들지 않고, 게임 결과 / 플레이 JS도 Level 1-only copy만 보여 준다.
+- 데이터 / 상태 변화: 앱 시작 시 `CountrySeedInitializer -> AdminBootstrapInitializer -> RecommendationFeedbackLegacyColumnInitializer -> GameLevelRollbackInitializer -> DemoBootstrapInitializer` 순서가 된다. 새 rollback initializer가 `game_level = LEVEL_2`인 위치/인구수 세션, Stage, Attempt, `leaderboard_record`와 Redis `l2` 키를 먼저 삭제해 기존 DB에도 Level 2 흔적이 남지 않게 만든다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “기능을 숨기는 것”이 아니라 “호환성을 깨지 않는 롤백”이다. enum을 바로 지우면 old DB row 때문에 JPA가 깨질 수 있어서, 먼저 public surface를 Level 1-only로 되돌리고 startup에서 legacy Level 2 데이터를 비우는 방식으로 정리했다.
+- 예외 / 엣지 케이스: 예전 클라이언트나 테스트가 `gameLevel=LEVEL_2`를 보내더라도 현재 컨트롤러는 Level 1으로 수렴시킨다. fresh DB에서는 purge할 데이터가 없어도 그대로 통과해야 한다. Redis에 `l2` 키가 비어 있어도 예외 없이 지나가야 한다.
+- 테스트:
+  - `node --check src/main/resources/static/js/location-game.js`
+  - `node --check src/main/resources/static/js/population-game.js`
+  - `node --check src/main/resources/static/js/ranking.js`
+  - `./gradlew test --tests com.worldmap.common.config.GameLevelRollbackInitializerIntegrationTest --tests com.worldmap.stats.StatsPageControllerTest --tests com.worldmap.web.MyPageControllerTest --tests com.worldmap.mypage.MyPageServiceIntegrationTest --tests com.worldmap.ranking.LeaderboardIntegrationTest --tests com.worldmap.game.location.LocationGameFlowIntegrationTest --tests com.worldmap.game.population.PopulationGameFlowIntegrationTest`
+  - `./gradlew test`
+  - `git diff --check`
+- 배운 점: 실험 기능을 product에서 내릴 때는 템플릿만 숨기는 것으로 끝나면 안 된다. 시작 API, read model, DB row, Redis key, local demo 문서까지 같이 정리해야 “현재 서비스가 무엇인지”를 한 문장으로 설명할 수 있다.
+- 아직 약한 부분: 내부 enum과 일부 Level 2 코드 경로는 old DB 호환성을 위해 아직 남겨 뒀다. 지금은 startup purge로 안전하게 막고 있지만, 나중에는 정식 migration이나 enum 정리 시점을 다시 잡아야 한다.
+- 면접용 30초 요약: Level 2를 실험적으로 열어 봤지만 현재 제품 기준에서는 복잡도에 비해 가치가 낮다고 판단했습니다. 그래서 UI만 숨기지 않고 시작 API를 다시 Level 1-only로 수렴시키고, `/ranking`, `/stats`, `/mypage` read model도 같이 정리했습니다. 동시에 startup initializer를 둬서 old DB와 Redis에 남아 있던 `LEVEL_2` 흔적도 부팅 시 자동으로 지우게 만들어, 기능 삭제가 아니라 호환성을 깨지 않는 롤백으로 설명할 수 있게 했습니다.
