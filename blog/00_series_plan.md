@@ -82,6 +82,7 @@
 55. [현재 코드 재현용 블로그 허브](./50-current-state-rebuild-map.md)
 56. [저비용 음식·다문화 시나리오의 1위 drift 줄이기](./51-reduce-p02-anchor-drift-with-foodie-starter-bonus.md)
 57. [온화한 공공서비스형 시나리오의 1위 drift 줄이기](./52-reduce-p04-anchor-drift-with-temperate-public-base-bonus.md)
+58. [현실형 온화 기후 시나리오의 1위 drift 줄이기](./53-reduce-p06-anchor-drift-with-practical-public-value-bonus.md)
 
 ### Part E. 테스트, 확장, 취업 패키징
 
