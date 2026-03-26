@@ -3211,3 +3211,22 @@
 - 테스트 내용: `PopulationGamePrecisionScoringPolicyTest`에 `5% 이내 -> PRECISE_HIT`, `20% 초과 -> MISS`를 추가했다. `PopulationGameFlowIntegrationTest`에서는 Level 2 answer 응답에 `precisionBand`가 들어가는지, 그리고 실제 Level 2 game over 뒤 결과 페이지 HTML에 `Level 2 판정 기준`, `정밀 적중`, `오차율`, `허용 범위 정답`이 렌더링되는지까지 고정했다. `node --check src/main/resources/static/js/population-game.js`와 targeted suite도 통과했다.
 - 면접에서 30초 안에 설명하는 요약: Level 2는 오차율로 정답과 점수를 판정하지만, 이전에는 그 기준이 코드 안에만 있었습니다. 그래서 이번에는 `PopulationGamePrecisionBand`를 도입해 오차율 기준을 도메인 개념으로 올리고, answer/result view가 그 band를 같이 내려주도록 바꿨습니다. 그 결과 사용자가 결과 화면만 봐도 왜 그 점수를 받았는지 다시 설명할 수 있게 됐습니다.
 - 아직 내가 이해가 부족한 부분: 지금은 Level 2 band 설명을 결과 화면과 play feedback에만 붙였다. 다음에는 이 정보를 `/stats`나 홈 하이라이트 같은 공개 요약 화면으로도 끌어올릴지, 아니면 Level 2 내부 결과 설명에만 남길지 판단이 필요하다.
+
+## 2026-03-26 - 9단계 4차: 위치 찾기 Level 2 첫 조각 설계 고정
+
+- 단계: 9. Level 2와 실시간성 고도화
+- 목적: 인구수 게임 Level 2는 입력, 랭킹, 결과 설명까지 한 사이클이 닫혔다. 다음은 위치 찾기 Level 2지만, 여기서 타이머·194개 전체 자산·소국 모드까지 한 번에 열면 설명 가능성이 급격히 떨어진다. 그래서 이번 조각은 “첫 번째 작은 구현 단위로 무엇을 만들 것인가”를 먼저 문서와 블로그 기준으로 고정하는 데 집중한다.
+- 변경 파일:
+  - `docs/LOCATION_GAME_LEVEL_2_FIRST_SLICE_PLAN.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/65-design-location-level-2-first-slice.md`
+- 요청 흐름 / 데이터 흐름: 이번 조각은 코드 구현이 아니라 설계 확정이다. 기준 흐름은 `POST /api/games/location/sessions (gameLevel=LEVEL_2) -> GET /state -> POST /answer -> LocationGameService -> Level 2 hint policy(distanceKm, directionHint)`로 잡았다. 즉 첫 구현은 입력 방식을 다시 바꾸지 않고, 기존 선택형 흐름 위에 서버 힌트 payload를 얹는 방식으로 간다.
+- 데이터 / 상태 변화: 실제 DB 스키마는 아직 바꾸지 않았다. 다만 다음 구현에서 `LocationGameSession.gameLevel`을 추가하고, `LocationGameStage`, `LocationGameAttempt`는 그대로 재사용한다는 원칙을 먼저 정했다. 힌트 사용 이력은 첫 조각에서 컬럼으로 바로 올리지 않고, answer payload와 read model 계산으로 시작하는 것이 맞다고 판단했다.
+- 핵심 도메인 개념: 위치 찾기 Level 2를 곧바로 “새 게임”으로 만들지 않는다. Level 1이 이미 가진 `세션 / Stage / Attempt / 하트 / endless run` 구조를 그대로 두고, Level 2는 출제 정책과 오답 피드백 정책만 분리한다. 첫 조각의 차별점은 `거리 + 방향 힌트`이며, 이 계산은 프론트가 아니라 서버 policy가 맡아야 한다. 힌트도 결국 점수와 랭킹 설명에 연결되는 게임 규칙이기 때문이다.
+- 예외 상황 또는 엣지 케이스: 첫 조각에서 194개 전체 자산, 타이머, 소국/영토, streak bonus까지 동시에 넣지 않는다. 현재 globe 안정성 이슈를 생각하면 “조작은 그대로, 정책만 강화”가 더 안전하다. 위치 게임 Level 2를 타이머 중심으로 열지 않는 이유도 같다. 지금 단계에서는 시간 압박보다 거리/방향 힌트가 더 서버 주도 구조를 설명하기 쉽다.
+- 테스트 내용: 이번 조각은 설계 문서 작업이라 애플리케이션 테스트는 다시 돌리지 않았다. 대신 이후 구현 순서를 `LocationGameLevel enum -> 세션 level 저장 -> Level 2 hint payload -> play overlay -> 랭킹 분리`로 고정해 다음 코드 조각의 검증 단위를 명확히 했다.
+- 면접에서 30초 안에 설명하는 요약: 위치 게임 Level 2는 Level 1을 다시 만드는 게 아니라, 이미 있는 `세션 / Stage / Attempt / 하트` 구조 위에 난도 정책과 힌트 정책만 추가하는 방향으로 설계했습니다. 첫 조각은 타이머보다 `오답 시 거리/방향 힌트`를 서버가 계산해 내려주는 방식으로 시작해서, 프론트 리스크를 키우지 않으면서도 Level 1과 분명히 다른 규칙을 만들 계획입니다.
+- 아직 내가 이해가 부족한 부분: Level 2 첫 구현에서 출제 국가 풀을 현재 상위 72개 안에서만 강화할지, 아니면 일부 194개까지 같이 열지 아직 판단이 남아 있다. 또 힌트 사용을 score penalty에 바로 반영할지, 1차에서는 시각 피드백만 줄지도 구현 전에 한 번 더 정해야 한다.

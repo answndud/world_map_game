@@ -713,7 +713,8 @@
 
 다음에 이어서 할 일:
 
-- 위치 찾기 Level 2 첫 조각 설계와 구현 시작
+- 위치 찾기 Level 2 첫 조각 설계 완료
+- `LocationGameLevel + Level 2 hint payload(distance / direction)` 구현 시작
 - 공개 `/stats` 또는 `/mypage`에서 Level 2 하이라이트를 더 보여 줄지 결정
 - 인구수 Level 2 결과를 `/stats`나 홈 하이라이트에도 노출할지 결정
 
@@ -725,6 +726,7 @@
 - 왜 Level 2 점수식은 서비스가 아니라 별도 precision policy로 분리했는가
 - 왜 공개 랭킹 확장도 컨트롤러가 아니라 `LeaderboardService`의 level-aware 조회 규칙으로 풀어야 하는가
 - 왜 precision band는 프론트 if문이 아니라 서버 policy가 기준이 되어야 하는가
+- 왜 위치 찾기 Level 2 첫 조각을 `타이머`보다 `거리/방향 힌트` 중심으로 여는 것이 더 설명 가능한가
 
 면접 포인트:
 

@@ -94,6 +94,7 @@
 67. [인구수 게임 Level 2를 직접 수치 입력형으로 시작하기](./62-start-population-level-2-exact-input-mode.md)
 68. [인구수 게임 Level 2 결과를 공개 랭킹에 노출하기](./63-expose-population-level-2-on-public-ranking.md)
 69. [인구수 게임 Level 2 결과 화면에 오차율과 점수 band를 설명하기](./64-explain-population-level-2-result-bands.md)
+70. [위치 찾기 Level 2 첫 조각을 어떻게 열지 설계하기](./65-design-location-level-2-first-slice.md)
 
 ### Part E. 테스트, 확장, 취업 패키징
 
