@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
+import com.worldmap.recommendation.application.RecommendationSurveyService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -68,7 +69,7 @@ class RecommendationPageIntegrationTest {
 			.andExpect(content().string(containsString("싱가포르")))
 			.andExpect(content().string(containsString("추천 만족도")))
 			.andExpect(content().string(containsString("survey-v4")))
-			.andExpect(content().string(containsString("engine-v19")))
+			.andExpect(content().string(containsString(RecommendationSurveyService.ENGINE_VERSION)))
 			.andExpect(content().string(not(containsString("deterministic"))))
 			.andExpect(content().string(not(containsString("만족도 집계 보기"))));
 	}

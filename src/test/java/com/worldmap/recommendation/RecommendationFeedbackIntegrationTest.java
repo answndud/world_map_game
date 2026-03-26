@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.worldmap.recommendation.application.RecommendationSurveyService;
 import com.worldmap.recommendation.domain.RecommendationFeedback;
 import com.worldmap.recommendation.domain.RecommendationFeedbackRepository;
 import com.worldmap.recommendation.domain.RecommendationSurveyAnswers;
@@ -44,7 +45,7 @@ class RecommendationFeedbackIntegrationTest {
 				.content("""
 					{
 					  "surveyVersion": "survey-v4",
-					  "engineVersion": "engine-v19",
+					  "engineVersion": "%s",
 					  "satisfactionScore": 4,
 					  "climatePreference": "WARM",
 					  "seasonStylePreference": "STABLE",
@@ -67,17 +68,17 @@ class RecommendationFeedbackIntegrationTest {
 					  "settlementPreference": "BALANCED",
 					  "futureBasePreference": "BALANCED"
 					}
-					"""))
+					""".formatted(RecommendationSurveyService.ENGINE_VERSION)))
 			.andExpect(status().isCreated())
 			.andExpect(jsonPath("$.satisfactionScore").value(4))
 			.andExpect(jsonPath("$.surveyVersion").value("survey-v4"))
-			.andExpect(jsonPath("$.engineVersion").value("engine-v19"));
+			.andExpect(jsonPath("$.engineVersion").value(RecommendationSurveyService.ENGINE_VERSION));
 
 		assertThat(recommendationFeedbackRepository.findAll()).hasSize(1);
 		RecommendationFeedback feedback = recommendationFeedbackRepository.findAll().getFirst();
 		assertThat(feedback.getSatisfactionScore()).isEqualTo(4);
 		assertThat(feedback.getSurveyVersion()).isEqualTo("survey-v4");
-		assertThat(feedback.getEngineVersion()).isEqualTo("engine-v19");
+		assertThat(feedback.getEngineVersion()).isEqualTo(RecommendationSurveyService.ENGINE_VERSION);
 		assertThat(feedback.getClimatePreference().name()).isEqualTo("WARM");
 		assertThat(feedback.getSeasonStylePreference().name()).isEqualTo("STABLE");
 		assertThat(feedback.getSeasonTolerance().name()).isEqualTo("MEDIUM");
@@ -94,7 +95,7 @@ class RecommendationFeedbackIntegrationTest {
 				.content("""
 					{
 					  "surveyVersion": "survey-v4",
-					  "engineVersion": "engine-v19",
+					  "engineVersion": "%s",
 					  "satisfactionScore": 6,
 					  "climatePreference": "WARM",
 					  "seasonStylePreference": "STABLE",
@@ -117,7 +118,7 @@ class RecommendationFeedbackIntegrationTest {
 					  "settlementPreference": "BALANCED",
 					  "futureBasePreference": "BALANCED"
 					}
-					"""))
+					""".formatted(RecommendationSurveyService.ENGINE_VERSION)))
 			.andExpect(status().isBadRequest())
 			.andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("만족도 점수는 5점 이하여야 합니다.")));
 
@@ -129,8 +130,8 @@ class RecommendationFeedbackIntegrationTest {
 		saveFeedback("survey-v1", "engine-v1", 5);
 		saveFeedback("survey-v1", "engine-v1", 4);
 		saveFeedback("survey-v1", "engine-v1", 2);
-		saveFeedback("survey-v4", "engine-v19", 3);
-		saveFeedback("survey-v4", "engine-v19", 3);
+		saveFeedback("survey-v4", RecommendationSurveyService.ENGINE_VERSION, 3);
+		saveFeedback("survey-v4", RecommendationSurveyService.ENGINE_VERSION, 3);
 
 		mockMvc.perform(get("/api/recommendation/feedback/summary"))
 			.andExpect(status().isOk())
@@ -142,7 +143,7 @@ class RecommendationFeedbackIntegrationTest {
 			.andExpect(jsonPath("$.versionSummaries[?(@.surveyVersion=='survey-v1' && @.engineVersion=='engine-v1')].score5Count").value(hasItem(1)))
 			.andExpect(jsonPath("$.versionSummaries[?(@.surveyVersion=='survey-v1' && @.engineVersion=='engine-v1')].score4Count").value(hasItem(1)))
 			.andExpect(jsonPath("$.versionSummaries[?(@.surveyVersion=='survey-v1' && @.engineVersion=='engine-v1')].score2Count").value(hasItem(1)))
-			.andExpect(jsonPath("$.versionSummaries[?(@.surveyVersion=='survey-v4' && @.engineVersion=='engine-v19')].responseCount").value(hasItem(2)));
+			.andExpect(jsonPath("$.versionSummaries[?(@.surveyVersion=='survey-v4' && @.engineVersion=='%s')].responseCount".formatted(RecommendationSurveyService.ENGINE_VERSION)).value(hasItem(2)));
 	}
 
 	@Test

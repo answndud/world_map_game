@@ -23,6 +23,7 @@ import com.worldmap.ranking.domain.LeaderboardGameLevel;
 import com.worldmap.ranking.domain.LeaderboardGameMode;
 import com.worldmap.ranking.domain.LeaderboardRecord;
 import com.worldmap.ranking.domain.LeaderboardRecordRepository;
+import com.worldmap.recommendation.application.RecommendationSurveyService;
 import com.worldmap.recommendation.domain.RecommendationFeedback;
 import com.worldmap.recommendation.domain.RecommendationFeedbackRepository;
 import com.worldmap.recommendation.domain.RecommendationSurveyAnswers;
@@ -126,7 +127,7 @@ class AdminPageIntegrationTest {
 			.andExpect(content().string(containsString("L 1 / P 1")))
 			.andExpect(content().string(containsString("추천 운영 상태")))
 			.andExpect(content().string(containsString("survey-v4")))
-			.andExpect(content().string(containsString("engine-v19")))
+			.andExpect(content().string(containsString(RecommendationSurveyService.ENGINE_VERSION)))
 			.andExpect(content().string(containsString("Dashboard 화면은 `ADMIN` role 세션으로만 접근 가능하게 보호한다.")));
 	}
 

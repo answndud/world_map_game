@@ -17,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class RecommendationSurveyService {
 
 	public static final String SURVEY_VERSION = "survey-v4";
-	public static final String ENGINE_VERSION = "engine-v19";
+	public static final String ENGINE_VERSION = "engine-v20";
 	private static final int CLIMATE_WEIGHT = 4;
 	private static final int SEASON_STYLE_WEIGHT = 3;
 	private static final int WEATHER_ADAPTATION_WEIGHT = 4;
@@ -56,6 +56,7 @@ public class RecommendationSurveyService {
 	private static final int TEMPERATE_GLOBAL_CITY_BONUS = 10;
 	private static final int ACCESSIBLE_WARM_VALUE_HUB_BONUS = 18;
 	private static final int TEMPERATE_FAMILY_BRIDGE_BONUS = 16;
+	private static final int EXPLORATORY_NATURE_RUNWAY_BONUS = 20;
 	private static final int VALUE_FIRST_COST_OVERSHOOT_PENALTY = 11;
 	private static final int BALANCED_COST_OVERSHOOT_PENALTY = 7;
 	private static final int QUALITY_FIRST_COST_OVERSHOOT_PENALTY = 4;
@@ -295,6 +296,11 @@ public class RecommendationSurveyService {
 		signals.add(new MatchSignal(
 			temperateFamilyBridgeBonus(profile, answers),
 			"온화한 기후권에서도 영어 적응과 복지, 주거 안정성이 함께 받쳐주는 가족형 기반인지 반영했습니다."
+		));
+
+		signals.add(new MatchSignal(
+			exploratoryNatureRunwayBonus(profile, answers),
+			"가볍게 살아보는 탐색 단계에서도 자연, 영어 적응, 생활 여유가 함께 확보되는지 반영했습니다."
 		));
 
 		signals.add(new MatchSignal(
@@ -742,6 +748,61 @@ public class RecommendationSurveyService {
 			&& profile.housingSpace() >= 4;
 		if (acceptableFamilyBridge) {
 			return TEMPERATE_FAMILY_BRIDGE_BONUS / 2;
+		}
+
+		return 0;
+	}
+
+	private int exploratoryNatureRunwayBonus(
+		RecommendationCountryProfile profile,
+		RecommendationSurveyAnswers answers
+	) {
+		boolean natureRunwayFit = answers.climatePreference() == RecommendationSurveyAnswers.ClimatePreference.MILD
+			&& answers.seasonStylePreference() == RecommendationSurveyAnswers.SeasonStylePreference.BALANCED
+			&& answers.seasonTolerance() == RecommendationSurveyAnswers.SeasonTolerance.MEDIUM
+			&& answers.pacePreference() == RecommendationSurveyAnswers.PacePreference.RELAXED
+			&& answers.crowdPreference() == RecommendationSurveyAnswers.CrowdPreference.CALM
+			&& answers.costQualityPreference() == RecommendationSurveyAnswers.CostQualityPreference.VALUE_FIRST
+			&& answers.housingPreference() == RecommendationSurveyAnswers.HousingPreference.SPACE_FIRST
+			&& answers.environmentPreference() == RecommendationSurveyAnswers.EnvironmentPreference.NATURE
+			&& answers.mobilityPreference() == RecommendationSurveyAnswers.MobilityPreference.TRANSIT_FIRST
+			&& answers.englishSupportNeed() == RecommendationSurveyAnswers.EnglishSupportNeed.MEDIUM
+			&& answers.newcomerSupportNeed() == RecommendationSurveyAnswers.NewcomerSupportNeed.LOW
+			&& answers.safetyPriority() == RecommendationSurveyAnswers.ImportanceLevel.HIGH
+			&& answers.publicServicePriority() == RecommendationSurveyAnswers.ImportanceLevel.MEDIUM
+			&& answers.digitalConveniencePriority() == RecommendationSurveyAnswers.ImportanceLevel.LOW
+			&& answers.foodImportance() == RecommendationSurveyAnswers.ImportanceLevel.LOW
+			&& answers.diversityImportance() == RecommendationSurveyAnswers.ImportanceLevel.LOW
+			&& answers.cultureLeisureImportance() == RecommendationSurveyAnswers.ImportanceLevel.LOW
+			&& answers.workLifePreference() == RecommendationSurveyAnswers.WorkLifePreference.LIFE_FIRST
+			&& answers.settlementPreference() == RecommendationSurveyAnswers.SettlementPreference.EXPERIENCE
+			&& answers.futureBasePreference() == RecommendationSurveyAnswers.FutureBasePreference.LIGHT_START;
+		if (!natureRunwayFit) {
+			return 0;
+		}
+
+		boolean strongNatureRunway = profile.climateValue() >= 2
+			&& profile.climateValue() <= 3
+			&& profile.seasonality() >= 4
+			&& profile.paceValue() <= 1
+			&& profile.urbanityValue() <= 3
+			&& profile.englishSupport() >= 5
+			&& profile.safety() >= 5
+			&& profile.housingSpace() >= 5
+			&& profile.newcomerFriendliness() >= 4
+			&& profile.priceLevel() <= 4;
+		if (strongNatureRunway) {
+			return EXPLORATORY_NATURE_RUNWAY_BONUS;
+		}
+
+		boolean acceptableNatureRunway = profile.climateValue() >= 2
+			&& profile.climateValue() <= 3
+			&& profile.urbanityValue() <= 3
+			&& profile.englishSupport() >= 4
+			&& profile.safety() >= 4
+			&& profile.housingSpace() >= 4;
+		if (acceptableNatureRunway) {
+			return EXPLORATORY_NATURE_RUNWAY_BONUS / 2;
 		}
 
 		return 0;

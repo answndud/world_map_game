@@ -325,6 +325,48 @@ class RecommendationSurveyServiceTest {
 		assertThat(result.recommendations().getFirst().countryNameKr()).isEqualTo("캐나다");
 	}
 
+	@Test
+	void recommendCanPreferNewZealandForExploratoryNatureRunwayScenario() {
+		CountryRepository countryRepository = mockCountryRepository(List.of(
+			country("NZL", "뉴질랜드", "New Zealand", Continent.OCEANIA, "웰링턴", 5_000_000L),
+			country("PRT", "포르투갈", "Portugal", Continent.EUROPE, "리스본", 10_000_000L),
+			country("MYS", "말레이시아", "Malaysia", Continent.ASIA, "쿠알라룸푸르", 35_000_000L),
+			country("URY", "우루과이", "Uruguay", Continent.SOUTH_AMERICA, "몬테비데오", 3_000_000L)
+		));
+
+		RecommendationSurveyService service = new RecommendationSurveyService(
+			new RecommendationCountryProfileCatalog(),
+			new RecommendationQuestionCatalog(),
+			countryRepository
+		);
+
+		RecommendationSurveyResultView result = service.recommend(new RecommendationSurveyAnswers(
+			RecommendationSurveyAnswers.ClimatePreference.MILD,
+			RecommendationSurveyAnswers.SeasonStylePreference.BALANCED,
+			RecommendationSurveyAnswers.SeasonTolerance.MEDIUM,
+			RecommendationSurveyAnswers.PacePreference.RELAXED,
+			RecommendationSurveyAnswers.CrowdPreference.CALM,
+			RecommendationSurveyAnswers.CostQualityPreference.VALUE_FIRST,
+			RecommendationSurveyAnswers.HousingPreference.SPACE_FIRST,
+			RecommendationSurveyAnswers.EnvironmentPreference.NATURE,
+			RecommendationSurveyAnswers.MobilityPreference.TRANSIT_FIRST,
+			RecommendationSurveyAnswers.EnglishSupportNeed.MEDIUM,
+			RecommendationSurveyAnswers.NewcomerSupportNeed.LOW,
+			RecommendationSurveyAnswers.ImportanceLevel.HIGH,
+			RecommendationSurveyAnswers.ImportanceLevel.MEDIUM,
+			RecommendationSurveyAnswers.ImportanceLevel.LOW,
+			RecommendationSurveyAnswers.ImportanceLevel.LOW,
+			RecommendationSurveyAnswers.ImportanceLevel.LOW,
+			RecommendationSurveyAnswers.ImportanceLevel.LOW,
+			RecommendationSurveyAnswers.WorkLifePreference.LIFE_FIRST,
+			RecommendationSurveyAnswers.SettlementPreference.EXPERIENCE,
+			RecommendationSurveyAnswers.FutureBasePreference.LIGHT_START
+		));
+
+		assertThat(result.recommendations()).hasSize(3);
+		assertThat(result.recommendations().getFirst().countryNameKr()).isEqualTo("뉴질랜드");
+	}
+
 	private CountryRepository mockCountryRepository(List<Country> countries) {
 		CountryRepository countryRepository = mock(CountryRepository.class);
 		when(countryRepository.findAllByOrderByNameKrAsc()).thenReturn(countries);
