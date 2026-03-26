@@ -3296,3 +3296,28 @@
 - 배운 점: answer payload에만 있는 값은 결과 설명에서 쉽게 사라진다. 게임 결과를 다시 보여 주는 read model이 같은 규칙을 재사용하도록 만들어야 “플레이 중 상태”와 “끝난 뒤 설명”이 어긋나지 않는다.
 - 아직 내가 이해가 부족한 부분: 지금은 힌트를 결과 화면에만 다시 붙였다. 다음에는 이 힌트 사용 사실을 점수 감점으로 반영할지, 공개 `/ranking`이나 `/mypage` 하이라이트에도 끌어올릴지 판단이 필요하다.
 - 면접에서 30초 안에 설명하는 요약: 위치 게임 Level 2는 오답 때 거리와 방향 힌트를 줍니다. 이전에는 이 값이 answer payload에만 있어서 결과 화면만 보면 추적 과정을 다시 설명하기 어려웠습니다. 그래서 이번에는 write model을 더 키우지 않고, 결과 read model이 `stage.countryId + selectedCountryIso3Code`를 이용해 힌트를 다시 계산하도록 바꿨고, 결과 API와 SSR 화면 모두 같은 attempt 로그를 보여 주도록 맞췄습니다.
+
+## 2026-03-26 - 9단계 7차: 위치 찾기 Level 2를 공개 랭킹으로 연결
+
+- 단계: 9. Level 2와 실시간성 고도화
+- 목적: 위치 게임 Level 2는 이미 `gameLevel`, 거리/방향 힌트, 결과 로그 read model까지 갖췄지만, public `/ranking`에서는 여전히 Level 1만 볼 수 있었다. 이번 조각은 “저장되는 Level 2 run”과 “공개 조회되는 Level 2 보드” 사이의 간극을 닫아서, 사용자가 위치 게임 Level 2 결과도 public 랭킹에서 바로 확인할 수 있게 만드는 데 집중한다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/ranking/web/LeaderboardPageController.java`
+  - `src/main/resources/templates/ranking/index.html`
+  - `src/main/resources/static/js/ranking.js`
+  - `src/test/java/com/worldmap/ranking/LeaderboardIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/50-current-state-rebuild-map.md`
+  - `blog/68-expose-location-level-2-on-public-ranking.md`
+- 요청 흐름 / 데이터 흐름: 공개 랭킹은 그대로 `GET /ranking -> LeaderboardPageController -> LeaderboardService.getLeaderboard(mode, level, scope, limit)` 흐름으로 첫 SSR을 만들고, 이후 `ranking.js`가 `GET /api/rankings/{gameMode}?level={gameLevel}&scope={scope}`를 주기적으로 호출해 같은 보드를 갱신한다. 이번 조각으로 위치 게임도 `LEVEL_1 / LEVEL_2` 보드를 SSR 모델과 polling 둘 다에서 가지게 됐다.
+- 데이터 / 상태 변화: 저장 구조는 바뀌지 않는다. `leaderboard_record.game_level`과 Redis key는 직전 조각들에서 이미 `location:l1`, `location:l2`를 지원하고 있었고, 이번에는 public 조회 표면이 그 구조를 실제로 사용하게 됐다. 결과적으로 `/ranking`은 이제 위치/인구수 두 게임 모두 `Level 1 / Level 2` 보드를 각각 갖는다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “필터만 열면 끝”이 아니라, 공개 조회도 `gameMode + gameLevel + scope`를 일관되게 따라가야 한다는 점이다. 어떤 보드를 SSR에서 미리 보여 주고, 이후 polling이 어떤 API 조합을 다시 칠지 결정하는 책임은 템플릿 if문이 아니라 `LeaderboardService`와 그 위의 page controller가 가져야 한다. 조회 기준 자체가 read model 규칙이기 때문이다.
+- 예외 상황 또는 엣지 케이스: fresh 환경에서는 `location + LEVEL_2` 키가 비어 있으므로 보드가 빈 상태로 보이는 것이 정상이다. polling도 같은 API를 쓰므로 빈 보드가 갑자기 깨지지 않는다. 기존 JS에는 `location + LEVEL_2` 버튼을 막는 분기가 있었는데, 이번에는 그 제한을 제거하고 위치 Level 2 힌트 문구를 새로 맞췄다.
+- 테스트 내용: `LeaderboardIntegrationTest`에 `locationLevelTwoLeaderboardAppearsOnPublicRanking()`를 추가해, `LEVEL_2` 위치 세션을 시작하고 game over까지 진행한 뒤 `/api/rankings/location?level=LEVEL_2` 응답과 `/ranking` SSR 모델의 `locationLevel2All`, `locationLevel2Daily` 존재를 같이 고정했다. 이어서 `./gradlew test` 전체와 `git diff --check`도 통과했다.
+- 배운 점: Level 2 기능이 저장과 결과 화면까지 구현돼 있어도, public read model이 그 레벨을 열지 않으면 사용자는 기능이 완성됐다고 느끼기 어렵다. 기능을 닫으려면 write model과 read model 표면을 함께 닫아야 한다.
+- 아직 내가 이해가 부족한 부분: 지금은 위치 Level 2를 public 랭킹에만 노출했다. 다음에는 `hint debt`를 점수에 반영할지, `/mypage`나 `/stats`에 Level 2 하이라이트를 추가할지 판단이 남아 있다.
+- 면접에서 30초 안에 설명하는 요약: 위치 게임 Level 2는 이미 저장되고 있었지만, public 랭킹에서는 Level 1만 보여 줬습니다. 그래서 이번에는 `/ranking`과 랭킹 polling을 `location + LEVEL_2`까지 이해하도록 확장해, 거리/방향 힌트형 run을 별도 보드로 조회할 수 있게 만들었습니다. 핵심은 템플릿만 바꾼 게 아니라 `gameMode + gameLevel + scope` 기준 read model을 SSR과 polling에 일관되게 적용한 점입니다.

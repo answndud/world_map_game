@@ -63,7 +63,7 @@
 - 비회원은 지금처럼 세션 기반으로 바로 플레이
 - 로그인하면 내 계정에 기록과 랭킹 이력이 누적
 - 계정 정보는 `닉네임 + 비밀번호` 수준으로 단순하게 유지
-- 현재는 9단계 6차 기준으로 `member`, `guestSessionKey`, 게임 세션 / 랭킹 레코드 ownership 필드, 닉네임 + 비밀번호 기반 회원가입 / 로그인 / 로그아웃, 로그인 직후 현재 브라우저의 guest 기록 귀속, `/mypage` 기록 허브, raw stage 기반 플레이 성향 요약, `/dashboard/**` 접근 제어, 환경변수 기반 bootstrap admin provisioning, Dashboard 1차 운영 수치 카드, 공개 `/stats` 화면, local demo 계정 / 샘플 run bootstrap, 현재 survey/engine 버전 추천 피드백 샘플 bootstrap, 홈 첫 화면 계정 진입 CTA, 인구수 게임 Level 2 정확 수치 입력형, 공개 `/ranking`의 인구수 Level 2 필터, 위치 찾기 게임 Level 2 거리/방향 힌트 첫 조각과 결과 로그 read model까지 연결했다.
+- 현재는 9단계 7차 기준으로 `member`, `guestSessionKey`, 게임 세션 / 랭킹 레코드 ownership 필드, 닉네임 + 비밀번호 기반 회원가입 / 로그인 / 로그아웃, 로그인 직후 현재 브라우저의 guest 기록 귀속, `/mypage` 기록 허브, raw stage 기반 플레이 성향 요약, `/dashboard/**` 접근 제어, 환경변수 기반 bootstrap admin provisioning, Dashboard 1차 운영 수치 카드, 공개 `/stats` 화면, local demo 계정 / 샘플 run bootstrap, 현재 survey/engine 버전 추천 피드백 샘플 bootstrap, 홈 첫 화면 계정 진입 CTA, 인구수 게임 Level 2 정확 수치 입력형, 공개 `/ranking`의 인구수 / 위치 게임 Level 2 필터, 위치 찾기 게임 Level 2 거리/방향 힌트 첫 조각과 결과 로그 read model까지 연결했다.
 
 ### 이후 확장
 
@@ -141,6 +141,7 @@
 - 첫 구현에서는 Level 2 결과를 `leaderboard_record`에 `LEVEL_2`로 저장하고, `/mypage` 최근 플레이와 최고 기록에서 Level 2 라벨을 함께 보여 줬다.
 - 현재 9단계 2차 구현에서는 공개 `/ranking`도 `gameLevel`을 이해하도록 확장해서, 인구수 게임은 `Level 1 / Level 2`를 따로 조회할 수 있다.
 - 현재 9단계 3차 구현에서는 Level 2 결과 화면과 플레이 feedback도 `오차율 + precision band`를 함께 보여 줘, 사용자가 왜 그 점수를 받았는지 결과 화면만으로 다시 설명할 수 있다.
+- 현재 9단계 7차 구현에서는 공개 `/ranking`도 위치 게임 `LEVEL_2`를 SSR과 polling 양쪽에서 조회할 수 있게 확장해, 거리/방향 힌트형 run을 별도 보드로 확인할 수 있다.
 
 #### 서버 책임
 

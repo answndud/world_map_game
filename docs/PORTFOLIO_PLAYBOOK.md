@@ -716,11 +716,12 @@
 - `LocationGameDistanceHintPolicy`를 추가해 거리/방향 계산을 프론트가 아니라 서버 정책으로 분리
 - 위치 게임 결과 / 랭킹 레코드도 `gameLevel`을 이해하도록 맞춤
 - 위치 게임 Level 2 결과 read model이 attempt별 `distanceKm + directionHint`를 다시 계산해 결과 API와 결과 화면 로그에 함께 노출
+- 공개 `/ranking` 화면도 위치 게임 `Level 1 / Level 2`를 각각 조회할 수 있게 확장
+- 위치 게임 Level 2 랭킹 Redis key와 DB fallback 조회를 통합 테스트로 고정
 - 위치 게임 Level 2 state/answer 통합 테스트와 distance hint 단위 테스트 통과
 
 다음에 이어서 할 일:
 
-- 위치 찾기 Level 2 run을 공개 `/ranking`까지 분리 노출할지 결정
 - 위치 게임 Level 2에서 `hint debt`를 점수에 실제 반영할지 결정
 - 공개 `/stats` 또는 `/mypage`에서 Level 2 하이라이트를 더 보여 줄지 결정
 - 인구수 Level 2 결과를 `/stats`나 홈 하이라이트에도 노출할지 결정

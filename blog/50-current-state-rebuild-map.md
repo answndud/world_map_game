@@ -128,8 +128,9 @@ set +a
 - `/stats`
   - public 활동 지표가 보이는가
 - `/ranking`
-  - 인구수 게임에서 `Level 1 / Level 2` 필터가 보이는가
-  - `Level 2`를 선택하면 직접 수치 입력형 랭킹 보드가 보이는가
+  - 위치/인구수 게임 모두 `Level 1 / Level 2` 필터가 보이는가
+  - 인구수 게임 `Level 2`를 선택하면 직접 수치 입력형 랭킹 보드가 보이는가
+  - 위치 게임 `Level 2`를 선택하면 거리/방향 힌트형 랭킹 보드가 보이는가
 - `/recommendation/survey`
   - 20문항 설문이 보이는가
 - `/games/population/start`
@@ -199,6 +200,7 @@ set +a
 7. [08-ranking-filter-and-tie-rule.md](./08-ranking-filter-and-tie-rule.md)
 8. [63-expose-population-level-2-on-public-ranking.md](./63-expose-population-level-2-on-public-ranking.md)
 9. [67-add-location-level-2-hint-log-to-result-read-model.md](./67-add-location-level-2-hint-log-to-result-read-model.md)
+10. [68-expose-location-level-2-on-public-ranking.md](./68-expose-location-level-2-on-public-ranking.md)
 
 이 구간은 현재 코드와 비교적 직접 대응된다.
 
