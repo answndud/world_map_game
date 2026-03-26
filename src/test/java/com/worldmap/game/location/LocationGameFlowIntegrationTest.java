@@ -1,9 +1,11 @@
 package com.worldmap.game.location;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -218,6 +220,32 @@ class LocationGameFlowIntegrationTest {
 			.andExpect(jsonPath("$.distanceKm").value(org.hamcrest.Matchers.greaterThan(0)))
 			.andExpect(jsonPath("$.directionHint").isString())
 			.andExpect(jsonPath("$.directionHint").isNotEmpty());
+	}
+
+	@Test
+	void levelTwoResultIncludesHintLogForWrongAttempt() throws Exception {
+		UUID sessionId = UUID.fromString(startGame("hint-log", "LEVEL_2"));
+		LocationGameStage firstStage = locationGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
+			.orElseThrow();
+		String wrongCountryIso3Code = findWrongCountryIso3Code(sessionId, firstStage.getTargetCountryIso3Code());
+
+		mockMvc.perform(
+			post("/api/games/location/sessions/{sessionId}/answer", sessionId)
+				.contentType("application/json")
+				.content(answerPayload(1, wrongCountryIso3Code))
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.gameLevel").value("LEVEL_2"));
+
+		mockMvc.perform(get("/api/games/location/sessions/{sessionId}/result", sessionId))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.gameLevel").value("LEVEL_2"))
+			.andExpect(jsonPath("$.stages[0].attempts[0].distanceKm").isNumber())
+			.andExpect(jsonPath("$.stages[0].attempts[0].directionHint").isString());
+
+		mockMvc.perform(get("/games/location/result/{sessionId}", sessionId))
+			.andExpect(status().isOk())
+			.andExpect(content().string(containsString("거리 힌트")));
 	}
 
 	private String startGame(String nickname, String gameLevel) throws Exception {

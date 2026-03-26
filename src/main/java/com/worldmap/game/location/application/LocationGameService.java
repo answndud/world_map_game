@@ -271,18 +271,17 @@ public class LocationGameService {
 	@Transactional(readOnly = true)
 	public LocationGameSessionResultView getSessionResult(UUID sessionId) {
 		LocationGameSession session = getSession(sessionId);
+		Map<Long, Country> countriesById = new LinkedHashMap<>();
+		Map<String, Country> countriesByIso3Code = new LinkedHashMap<>();
+		countryRepository.findAll().forEach(country -> {
+			countriesById.put(country.getId(), country);
+			countriesByIso3Code.put(country.getIso3Code(), country);
+		});
 		Map<Long, List<LocationGameAttemptResultView>> attemptsByStageId = new LinkedHashMap<>();
 
 		locationGameAttemptRepository.findAllByStageSessionIdOrderByStageStageNumberAscAttemptNumberAsc(sessionId)
 			.forEach(attempt -> attemptsByStageId.computeIfAbsent(attempt.getStage().getId(), ignored -> new ArrayList<>())
-				.add(new LocationGameAttemptResultView(
-					attempt.getAttemptNumber(),
-					attempt.getSelectedCountryName(),
-					attempt.getSelectedCountryIso3Code(),
-					attempt.getCorrect(),
-					attempt.getLivesRemainingAfter(),
-					attempt.getAttemptedAt()
-				)));
+				.add(toAttemptResultView(session, attempt, countriesById, countriesByIso3Code)));
 
 		List<LocationGameStageResultView> stages = locationGameStageRepository.findAllBySessionIdOrderByStageNumber(sessionId)
 			.stream()
@@ -343,6 +342,33 @@ public class LocationGameService {
 
 	private String normalizeCountryCode(String countryCode) {
 		return countryCode.trim().toUpperCase(Locale.ROOT);
+	}
+
+	private LocationGameAttemptResultView toAttemptResultView(
+		LocationGameSession session,
+		LocationGameAttempt attempt,
+		Map<Long, Country> countriesById,
+		Map<String, Country> countriesByIso3Code
+	) {
+		LocationGameDistanceHint distanceHint = null;
+		if (session.getGameLevel().usesDistanceHint() && !Boolean.TRUE.equals(attempt.getCorrect())) {
+			Country targetCountry = countriesById.get(attempt.getStage().getCountryId());
+			Country selectedCountry = countriesByIso3Code.get(attempt.getSelectedCountryIso3Code());
+			if (targetCountry != null && selectedCountry != null) {
+				distanceHint = locationGameDistanceHintPolicy.buildHint(selectedCountry, targetCountry);
+			}
+		}
+
+		return new LocationGameAttemptResultView(
+			attempt.getAttemptNumber(),
+			attempt.getSelectedCountryName(),
+			attempt.getSelectedCountryIso3Code(),
+			distanceHint != null ? distanceHint.distanceKm() : null,
+			distanceHint != null ? distanceHint.directionHint() : null,
+			attempt.getCorrect(),
+			attempt.getLivesRemainingAfter(),
+			attempt.getAttemptedAt()
+		);
 	}
 
 	private List<Country> getCountriesSortedByPopulation(LocationGameLevel gameLevel) {

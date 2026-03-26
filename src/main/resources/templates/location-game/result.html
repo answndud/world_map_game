@@ -93,7 +93,7 @@
                         <td>
                             <div class="attempt-log" th:if="${!#lists.isEmpty(stage.attempts)}">
                                 <p th:each="attempt : ${stage.attempts}"
-                                   th:text="${attempt.attemptNumber + '차: ' + attempt.selectedCountryName + ' / ' + (attempt.correct ? 'Correct' : 'Wrong') + ' / 하트 ' + attempt.livesRemainingAfter}">
+                                   th:text="${attempt.attemptNumber + '차: ' + attempt.selectedCountryName + ' / ' + (attempt.correct ? 'Correct' : 'Wrong') + ' / 하트 ' + attempt.livesRemainingAfter + (attempt.distanceKm != null ? ' / 거리 힌트 약 ' + attempt.distanceKm + 'km ' + attempt.directionHint : '')}">
                                     1차: 일본 / Wrong / 하트 2
                                 </p>
                             </div>
