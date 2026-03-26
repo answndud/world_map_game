@@ -127,6 +127,7 @@ set +a
   - `Home`, `Stats`, `Ranking`, `My Page` 헤더가 보이는가
 - `/stats`
   - public 활동 지표가 보이는가
+  - 위치/인구수 `Level 2 하이라이트` 카드 또는 빈 안내 문구가 보이는가
 - `/ranking`
   - 위치/인구수 게임 모두 `Level 1 / Level 2` 필터가 보이는가
   - 인구수 게임 `Level 2`를 선택하면 직접 수치 입력형 랭킹 보드가 보이는가

@@ -722,10 +722,12 @@
 - 위치 게임 Level 2 state/answer 통합 테스트와 distance hint 단위 테스트 통과
 - `/mypage`가 `leaderboard_record`를 다시 읽어 위치/인구수 `Level 2` 최고 기록, 최고 랭킹, 완료 run 수를 별도 하이라이트로 보여 줌
 - `MyPageService`가 Level 2 하이라이트를 write model이 아니라 read model 확장으로 처리하도록 유지
+- 공개 `/stats`도 `leaderboard_record`를 다시 읽어 위치/인구수 `Level 2` 최고 기록을 모드별 한 장짜리 하이라이트 카드로 노출
+- public `Stats`는 운영 판단용 dashboard와 달리, 고급 모드가 실제로 돌아가고 있다는 사회적 신호만 제한적으로 보여 줌
 
 다음에 이어서 할 일:
 
-- 인구수 / 위치 Level 2 하이라이트를 공개 `/stats`나 홈 hero에도 노출할지 결정
+- Level 2 하이라이트를 홈 hero까지 올릴지 결정
 - 위치 찾기 Level 2에서 `소국/영토`, `타이머`, `streak` 중 무엇을 다음 규칙으로 열지 결정
 
 반드시 이해할 것:
@@ -740,6 +742,7 @@
 - 왜 위치 찾기 Level 2의 거리/방향 계산도 프론트가 아니라 서버 policy가 맡아야 하는가
 - 왜 Level 2 힌트 감점도 템플릿 계산이 아니라 `LocationGameScoringPolicy`가 맡아야 하는가
 - 왜 `/mypage` Level 2 하이라이트는 raw 세션 전체가 아니라 `leaderboard_record`를 먼저 읽는 편이 더 설명 가능하고 안정적인가
+- 왜 공개 `/stats`의 Level 2 하이라이트도 별도 집계가 아니라 `LeaderboardService`의 level-aware 조회 규칙을 재사용하는 편이 맞는가
 
 면접 포인트:
 

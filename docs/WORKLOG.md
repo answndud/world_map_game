@@ -3379,3 +3379,27 @@
 - 배운 점: Level 2 기능이 실제로 구현돼 있어도, 계정 화면에서 다시 읽어 오지 않으면 사용자는 그 모드를 “내 기록”으로 체감하기 어렵다. 공개 `/ranking` 과 개인 `/mypage` 는 같은 `leaderboard_record` 를 읽지만, 전자는 경쟁을 보여 주고 후자는 누적 성과와 모드별 하이라이트를 보여 준다는 목적 차이가 있다는 점을 더 분명히 이해하게 됐다.
 - 아직 내가 이해가 부족한 부분: 지금은 `/mypage` 에서만 Level 2 하이라이트를 보여 준다. 다음에는 이 신호를 `/stats` 나 홈 hero까지 올릴지, 혹은 Level 2 하이라이트는 개인 기록 화면까지만 두는 편이 더 깔끔한지 판단이 남아 있다.
 - 면접에서 30초 안에 설명하는 요약: Level 2 기능이 늘어나면서 `/mypage` 도 고급 모드 기준 기록을 따로 보여 줄 필요가 생겼습니다. 이번에는 새로운 저장 구조를 만들지 않고, 이미 `gameLevel` 이 들어 있는 `leaderboard_record` 를 다시 읽어 위치/인구수 Level 2 최고 기록, 최고 랭킹, 완료 run 수를 별도 카드로 보여 주도록 확장했습니다. 그래서 write model은 그대로 두고도, 계정 화면이 “일반 기록”과 “고급 모드 기록”을 분리해서 설명할 수 있게 됐습니다.
+
+## 2026-03-26 - 9단계 10차: 공개 `/stats` Level 2 하이라이트 추가
+
+- 단계: 9. Level 2와 실시간성 고도화
+- 목적: 직전 조각에서 `/mypage`는 Level 2 최고 기록을 따로 보여 주기 시작했지만, 공개 화면에서는 여전히 활동 지표와 일간 Top 3만 보여 줬다. 이번 조각은 개인 화면이 아닌 public `/stats`에서도 “고급 모드가 실제로 플레이되고 있다”는 신호를 제한적으로 드러내기 위해, 위치/인구수 `Level 2` 최고 기록을 한 장짜리 공개 하이라이트 카드로 노출하는 데 집중한다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/stats/web/StatsPageController.java`
+  - `src/main/resources/templates/stats/index.html`
+  - `src/test/java/com/worldmap/stats/StatsPageControllerTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/50-current-state-rebuild-map.md`
+  - `blog/71-expose-level-2-highlights-on-public-stats.md`
+- 요청 흐름 / 데이터 흐름: 요청은 그대로 `GET /stats -> StatsPageController` 에서 시작한다. 컨트롤러는 기존처럼 `ServiceActivityService.loadTodayActivity()` 로 활동 지표를 읽고, `LeaderboardService.getLeaderboard(...)` 를 재사용해 일간 Top 3 외에 `LOCATION + LEVEL_2 + ALL + 1`, `POPULATION + LEVEL_2 + ALL + 1` 조합도 같이 읽어 `locationLevel2Highlight`, `populationLevel2Highlight` 모델을 채운다. 템플릿은 이 두 보드의 첫 entry만 골라 공개용 하이라이트 카드로 보여 준다.
+- 데이터 / 상태 변화: DB 스키마와 Redis key는 바뀌지 않았다. 이미 저장되던 `leaderboard_record.game_level`과 Redis `l2` 보드를 public `/stats`가 다시 읽기 시작한 것뿐이다. 즉 이번 조각은 새 저장 규칙이 아니라 공개 read model 확장이다.
+- 핵심 도메인 개념: `/stats`는 `Dashboard`의 축소판이 아니라, 공개 가능한 read model만 보여 주는 public 표면이다. 그래서 내부 추천 품질·버전 정보는 계속 숨기고, 게임 쪽도 상세 운영 판단 대신 “Level 2 최고 기록”이라는 제한된 신호만 노출한다. 어떤 Level 2 보드를 어떻게 읽을지는 템플릿 if문보다 `LeaderboardService`의 `gameMode + gameLevel + scope` 조회 규칙을 그대로 재사용하는 편이 더 일관되고 설명 가능하다.
+- 예외 상황 또는 엣지 케이스: `LEVEL_2` 완료 기록이 하나도 없으면 카드 대신 안내 문구만 보여 준다. 공개 화면이기 때문에 특정 계정의 상세 이력이나 여러 개의 Level 2 순위표를 모두 노출하지 않고, 모드별 최고 기록 한 장만 보여 준다. Dashboard와 달리 여기서는 추천 버전, baseline, drift 같은 내부 품질 정보는 계속 숨긴다.
+- 테스트 내용: `StatsPageControllerTest`에서 guest 기준 `/stats` 렌더링 시 `Level 2 하이라이트`, `위치 찾기 Level 2 최고 기록`, `인구수 Level 2 최고 기록`이 보이는지 검증했다. admin session 테스트도 `Dashboard` 버튼이 계속 보이면서 새 Level 2 highlight 조회 호출이 있어도 깨지지 않는지 확인했다. 이어서 `./gradlew test --tests com.worldmap.stats.StatsPageControllerTest`, `./gradlew test`, `git diff --check` 를 통과했다.
+- 배운 점: Level 2 기능을 public 화면에 노출한다고 해서 바로 상세 랭킹이나 내부 지표를 모두 열 필요는 없다. public `Stats`는 “서비스가 실제로 움직인다”는 사회적 신호를 주는 곳이고, `Dashboard`는 운영 판단을 하는 곳이라는 역할 차이를 더 분명히 유지할 수 있었다.
+- 아직 내가 이해가 부족한 부분: 지금은 `ALL TIME BEST` 한 장만 public `/stats`에 노출한다. 이후 홈 hero까지 Level 2 하이라이트를 올릴지, 혹은 public surface는 `Stats`까지만 두는 편이 더 명확한지 판단이 남아 있다.
+- 면접에서 30초 안에 설명하는 요약: `/stats`는 원래 공개 활동 지표와 일간 Top 3만 보여 주는 화면이었습니다. Level 2 모드가 늘어나면서 public surface에서도 고급 모드가 실제로 플레이되고 있다는 신호가 필요해졌고, 그래서 이번에는 새 집계를 만들지 않고 `LeaderboardService`의 level-aware 조회를 그대로 재사용해 위치/인구수 `Level 2` 최고 기록 카드만 추가했습니다. 내부 운영 판단 정보는 계속 dashboard에만 남기고, 공개 화면은 제한된 정보만 보여 주도록 역할을 분리한 것이 핵심입니다.
