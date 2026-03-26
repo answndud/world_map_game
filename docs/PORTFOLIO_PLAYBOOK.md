@@ -392,7 +392,7 @@
 
 ### 6. 설문 기반 추천 엔진
 
-상태: In Progress
+상태: Done
 
 목표:
 
@@ -707,11 +707,8 @@
 - public 템플릿, JS, current-state 문서, local demo 문서가 모두 Level 1-only 기준으로 다시 동기화
 - 남아 있던 internal Level 2 enum, 점수 정책, read model, public ranking level 축까지 모두 제거
 - startup rollback initializer는 이제 legacy `game_level` 컬럼이 실제로 남아 있는 DB에서만 purge를 수행하도록 완화
-
-다음에 이어서 할 일:
-
-- polling 유지와 SSE/WebSocket 전환 기준을 다시 정리
-- Level 1 기준으로 홈 / stats / ranking / mypage 노출 정보 밀도를 더 다듬을지 결정
+- 실시간 전달 방식은 현재 제품 범위에서 `15초 polling 유지`로 결정하고, SSE/WebSocket은 다음 확장 후보로만 남김
+- `docs/REALTIME_DELIVERY_DECISION.md`에 polling 유지 이유와 재검토 기준 정리
 
 반드시 이해할 것:
 
@@ -735,7 +732,7 @@
 
 ### 10. 포트폴리오 정리와 발표 준비
 
-상태: Not Started
+상태: In Progress
 
 목표:
 
@@ -749,6 +746,19 @@
 - 대표 화면 캡처
 - README 보강
 - 면접 예상 질문 정리
+
+현재까지 완료된 항목:
+
+- [docs/ARCHITECTURE_OVERVIEW.md](/Users/alex/project/worldmap/docs/ARCHITECTURE_OVERVIEW.md)로 시스템 구성과 책임 경계 정리
+- [docs/ERD.md](/Users/alex/project/worldmap/docs/ERD.md)로 핵심 테이블과 관계 고정
+- [docs/REQUEST_FLOW_GUIDE.md](/Users/alex/project/worldmap/docs/REQUEST_FLOW_GUIDE.md)로 대표 요청 흐름 3개를 시퀀스로 정리
+- [docs/PRESENTATION_PREP.md](/Users/alex/project/worldmap/docs/PRESENTATION_PREP.md)로 3분 소개, 10분 기술 설명, 예상 질문 정리
+- README에 실시간 전달 결정과 발표용 문서 세트 링크 반영
+
+다음에 이어서 할 일:
+
+- 대표 화면 캡처를 실제 발표 자료용으로 추려 정리
+- 발표 슬라이드 1차 구조와 데모 순서 확정
 
 반드시 이해할 것:
 

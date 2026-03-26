@@ -93,6 +93,8 @@
 66. [warm megacity 시나리오의 baseline anchor를 다시 정의하기](./61-recalibrate-p07-baseline-anchor-for-warm-megacity-scenario.md)
 67. [공개 Level 2 실험을 롤백하고 legacy 데이터를 정리하기](./72-roll-back-game-level-2-and-purge-legacy-data.md)
 68. [남아 있던 internal Level 2 호환 코드를 완전히 제거하기](./73-remove-internal-level-2-compatibility-code.md)
+69. [polling 유지로 9단계를 닫고 실시간 전달 기준 고정하기](./74-close-stage-9-with-polling-first.md)
+70. [아키텍처, ERD, 요청 흐름, 발표 자료를 한 번에 정리하기](./75-package-architecture-and-presentation-kit.md)
 
 ### Part E. 테스트, 확장, 취업 패키징
 

@@ -3517,3 +3517,30 @@
 - 배운 점: rollback은 UI를 숨기는 조치로 끝나지 않는다. current code의 규칙, DTO, read model, Redis key 축까지 다 같이 닫아야 “현재 제품이 무엇인가”를 짧게 설명할 수 있다. 반대로 legacy DB 호환성은 startup initializer만 남기는 편이 코드와 책임 경계를 동시에 단순하게 만든다.
 - 아직 약한 부분: 지금은 startup initializer가 legacy `game_level` 컬럼 존재 여부를 보고 purge를 수행한다. 나중에 실제 운영 DB migration을 적용하게 되면, 이 initializer를 언제까지 유지할지 한 번 더 판단해야 한다.
 - 면접용 30초 요약: public에서 Level 2를 숨긴 뒤에도 internal enum, 점수 정책, 랭킹 level 축이 남아 있으면 현재 제품 범위를 설명하기 어려웠습니다. 그래서 이번에는 게임 서비스, scoring policy, leaderboard read model에서 Level 2 축을 완전히 제거하고, startup initializer만 legacy DB 정리 책임으로 남겼습니다. 덕분에 현재 코드는 정말 Level 1-only로 단순해졌고, 오래된 local DB도 계속 안전하게 복구할 수 있게 됐습니다.
+
+## 2026-03-26 - 9단계 마감과 10단계 발표 자료 시작
+
+- 단계: 9. 고도화 실험 롤백과 실시간성 개선 / 10. 포트폴리오 정리와 발표 준비
+- 목적: Level 2 rollback이 끝난 뒤 남은 결정은 실시간 전달 방식을 어디서 닫을지였다. 이번 조각은 현재 랭킹 실시간성을 `15초 polling 유지`로 공식화해 9단계를 닫고, 이어서 아키텍처 / ERD / 요청 흐름 / 발표 스크립트를 문서 세트로 고정하는 데 집중했다.
+- 변경 파일:
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/REALTIME_DELIVERY_DECISION.md`
+  - `docs/ARCHITECTURE_OVERVIEW.md`
+  - `docs/ERD.md`
+  - `docs/REQUEST_FLOW_GUIDE.md`
+  - `docs/PRESENTATION_PREP.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/74-close-stage-9-with-polling-first.md`
+  - `blog/75-package-architecture-and-presentation-kit.md`
+- 요청 흐름 / 데이터 흐름: 이번 조각은 런타임 코드가 아니라 설명 문서를 정리한 작업이다. 다만 문서에 고정한 대표 흐름은 `GET /ranking -> polling`, `POST /api/games/location/sessions -> state -> answer -> leaderboard`, `POST /login -> guest progress claim`, `POST /recommendation/survey -> POST /api/recommendation/feedback -> /dashboard/recommendation/feedback` 이다.
+- 데이터 / 상태 변화: 코드나 스키마 변화는 없다. 대신 현재 기준에서 Redis는 `leaderboard read model`, PostgreSQL은 `truth storage`, `/dashboard`는 운영 read model, `/stats`는 공개 read model이라는 책임 분리를 문서로 명확히 고정했다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “기능을 더 추가하는 것”이 아니라 “현재 구조를 설명 가능한 형태로 패키징하는 것”이다. 그래서 실시간 전달 방식도 기술 욕심보다 현재 read model 설계와 설명 가능성 기준으로 결정했다.
+- 예외 / 엣지 케이스: polling 유지 결정은 영구 결정이 아니라 현재 제품 범위 기준이다. spectator, live ticker, 대회형 모드처럼 초저지연 전달이 필요해지면 SSE/WebSocket을 다시 검토해야 한다. 대표 화면 캡처는 아직 별도 패키지로 정리하지 않아 10단계가 완전히 닫힌 상태는 아니다.
+- 테스트 내용:
+  - `git diff --check`
+- 배운 점: 포트폴리오 프로젝트는 기능이 충분히 쌓인 뒤에야 오히려 설명 구조가 약해질 수 있다. 이때는 새 코드를 늘리기보다, 시스템 구성 / ERD / 요청 흐름 / 발표 스크립트를 분리한 문서 세트를 먼저 고정하는 편이 훨씬 도움이 된다.
+- 아직 약한 부분: 발표용 대표 화면 캡처와 실제 데모 순서는 아직 별도 문서나 슬라이드로 정리하지 않았다. 다음 조각에서 캡처, 데모 순서, 발표 슬라이드 초안을 묶어야 10단계를 닫을 수 있다.
+- 면접용 30초 요약: Level 2 rollback 이후에는 실시간 전달 방식을 어디서 닫을지 먼저 정해야 했습니다. 저는 현재 범위에서 15초 polling이면 충분하다고 보고 그 이유를 문서로 고정해 9단계를 닫았습니다. 이어서 아키텍처 개요, ERD, 대표 요청 흐름, 발표 스크립트를 따로 정리해 코드가 아니라 설명 자료 기준으로도 현재 프로젝트를 바로 소개할 수 있게 만들었습니다.
