@@ -71,7 +71,7 @@ class LeaderboardIntegrationTest {
 
 	@Test
 	void gameOverRecordsLocationLeaderboardAndRendersRankingPage() throws Exception {
-		UUID sessionId = UUID.fromString(startLocationGame("rank-location"));
+		UUID sessionId = UUID.fromString(startLocationGame("rank-location", "LEVEL_1"));
 
 		LocationGameStage firstStage = locationGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
 			.orElseThrow();
@@ -126,6 +126,7 @@ class LeaderboardIntegrationTest {
 				.andExpect(content().string(containsString("15초마다 갱신")))
 				.andExpect(content().string(not(containsString("Redis Leaderboard"))))
 			.andExpect(model().attributeExists("locationAll"))
+			.andExpect(model().attributeExists("locationLevel2All"))
 			.andExpect(model().attributeExists("populationAll"))
 			.andExpect(model().attributeExists("populationLevel2All"));
 
@@ -173,11 +174,50 @@ class LeaderboardIntegrationTest {
 		assertThat(stringRedisTemplate.opsForZSet().zCard(TEST_PREFIX + ":all:population:l2")).isEqualTo(1L);
 	}
 
+	@Test
+	void locationLevelTwoLeaderboardAppearsOnPublicRanking() throws Exception {
+		UUID sessionId = UUID.fromString(startLocationGame("rank-location-l2", "LEVEL_2"));
+
+		LocationGameStage firstStage = locationGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
+			.orElseThrow();
+		String wrongCountryIso3Code = wrongCountryIso3Code(firstStage.getTargetCountryIso3Code());
+
+		for (int attempt = 1; attempt <= 3; attempt++) {
+			mockMvc.perform(
+				post("/api/games/location/sessions/{sessionId}/answer", sessionId)
+					.contentType("application/json")
+					.content(locationAnswerPayload(1, wrongCountryIso3Code))
+			)
+				.andExpect(status().isOk());
+		}
+
+		mockMvc.perform(get("/api/rankings/location").param("scope", "ALL").param("level", "LEVEL_2").param("limit", "5"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.gameMode").value("LOCATION"))
+			.andExpect(jsonPath("$.gameLevel").value("LEVEL_2"))
+			.andExpect(jsonPath("$.entries[0].playerNickname").value("rank-location-l2"))
+			.andExpect(jsonPath("$.entries[0].clearedStageCount").value(0))
+			.andExpect(jsonPath("$.entries[0].totalAttemptCount").value(3));
+
+		mockMvc.perform(get("/ranking"))
+			.andExpect(status().isOk())
+			.andExpect(content().string(containsString("게임 레벨")))
+			.andExpect(content().string(containsString("Level 2")))
+			.andExpect(model().attributeExists("locationLevel2All"))
+			.andExpect(model().attributeExists("locationLevel2Daily"));
+
+		assertThat(stringRedisTemplate.opsForZSet().zCard(TEST_PREFIX + ":all:location:l2")).isEqualTo(1L);
+	}
+
 	private String startLocationGame(String nickname) throws Exception {
+		return startLocationGame(nickname, "LEVEL_1");
+	}
+
+	private String startLocationGame(String nickname, String gameLevel) throws Exception {
 		MvcResult result = mockMvc.perform(
 			post("/api/games/location/sessions")
 				.contentType("application/json")
-				.content("{\"nickname\":\"" + nickname + "\"}")
+				.content("{\"nickname\":\"" + nickname + "\",\"gameLevel\":\"" + gameLevel + "\"}")
 		)
 			.andExpect(status().isCreated())
 			.andReturn();

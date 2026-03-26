@@ -91,9 +91,6 @@
         }
 
         activeMode = nextMode;
-        if (activeMode === "location") {
-            activeLevel = "LEVEL_1";
-        }
         syncActiveBoardUi();
     }
 
@@ -108,10 +105,6 @@
 
     function switchLevel(nextLevel) {
         if (!nextLevel || nextLevel === activeLevel) {
-            return;
-        }
-
-        if (activeMode === "location" && nextLevel === "LEVEL_2") {
             return;
         }
 
@@ -135,17 +128,16 @@
         });
 
         levelButtons.forEach((button) => {
-            const isLocationLevelTwo = activeMode === "location" && button.dataset.rankingLevel === "LEVEL_2";
-            const isActive = button.dataset.rankingLevel === activeLevel && !isLocationLevelTwo;
+            const isActive = button.dataset.rankingLevel === activeLevel;
             button.classList.toggle("is-active", isActive);
             button.setAttribute("aria-pressed", String(isActive));
-            button.disabled = isLocationLevelTwo;
+            button.disabled = false;
         });
 
         if (levelHintBox) {
             levelHintBox.textContent = activeMode === "population"
-                ? "인구수 맞추기는 Level 1 구간형과 Level 2 직접 입력형을 각각 볼 수 있습니다."
-                : "위치 찾기 랭킹은 현재 Level 1만 제공합니다.";
+                ? "인구수 맞추기는 Level 1 구간형과 Level 2 직접 입력형 기록을 각각 볼 수 있습니다."
+                : "위치 찾기는 Level 1 기본 모드와 Level 2 거리 힌트 모드 기록을 각각 볼 수 있습니다.";
         }
 
         rankingPanels.forEach((panel) => {

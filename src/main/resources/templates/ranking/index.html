@@ -97,7 +97,7 @@
                                 Level 2
                             </button>
                         </div>
-                        <p id="ranking-level-hint" class="panel-copy">위치 찾기 랭킹은 현재 Level 1만 제공합니다.</p>
+                        <p id="ranking-level-hint" class="panel-copy">두 게임 모두 Level 1 / Level 2 기록을 각각 볼 수 있습니다.</p>
                     </div>
                 </section>
 
@@ -205,6 +205,70 @@
                                 <td th:text="${entry.totalAttemptCount}">7</td>
                             </tr>
                             <tr th:if="${#lists.isEmpty(locationDaily.entries)}">
+                                <td colspan="5">아직 기록이 없습니다.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </article>
+
+                <article class="panel ranking-board-panel"
+                         data-ranking-panel="location:LEVEL_2:ALL"
+                         data-title="위치 찾기 · Level 2 전체 Top 10"
+                         data-copy="거리/방향 힌트형 Level 2 전체 누적 랭킹입니다."
+                         hidden>
+                    <div class="table-shell">
+                        <table class="result-table">
+                            <thead>
+                            <tr>
+                                <th>순위</th>
+                                <th>플레이어</th>
+                                <th>점수</th>
+                                <th>클리어</th>
+                                <th>시도 수</th>
+                            </tr>
+                            </thead>
+                            <tbody id="ranking-location-level2-all-body" data-game-mode="location" data-level="LEVEL_2" data-scope="ALL">
+                            <tr th:each="entry : ${locationLevel2All.entries}">
+                                <td th:text="${entry.rank}">1</td>
+                                <td th:text="${entry.playerNickname}">Guest</td>
+                                <td th:text="${entry.totalScore}">420</td>
+                                <td th:text="${entry.clearedStageCount}">5</td>
+                                <td th:text="${entry.totalAttemptCount}">7</td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(locationLevel2All.entries)}">
+                                <td colspan="5">아직 기록이 없습니다.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </article>
+
+                <article class="panel ranking-board-panel"
+                         data-ranking-panel="location:LEVEL_2:DAILY"
+                         data-title="위치 찾기 · Level 2 오늘 Top 10"
+                         th:data-copy="${'Level 2 기준 오늘 위치 찾기 랭킹입니다. 기준 날짜: ' + locationLevel2Daily.targetDate}"
+                         hidden>
+                    <div class="table-shell">
+                        <table class="result-table">
+                            <thead>
+                            <tr>
+                                <th>순위</th>
+                                <th>플레이어</th>
+                                <th>점수</th>
+                                <th>클리어</th>
+                                <th>시도 수</th>
+                            </tr>
+                            </thead>
+                            <tbody id="ranking-location-level2-daily-body" data-game-mode="location" data-level="LEVEL_2" data-scope="DAILY">
+                            <tr th:each="entry : ${locationLevel2Daily.entries}">
+                                <td th:text="${entry.rank}">1</td>
+                                <td th:text="${entry.playerNickname}">Guest</td>
+                                <td th:text="${entry.totalScore}">420</td>
+                                <td th:text="${entry.clearedStageCount}">5</td>
+                                <td th:text="${entry.totalAttemptCount}">7</td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(locationLevel2Daily.entries)}">
                                 <td colspan="5">아직 기록이 없습니다.</td>
                             </tr>
                             </tbody>
