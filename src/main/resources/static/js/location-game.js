@@ -15,16 +15,7 @@ function initStartPage() {
     const nicknameInput = document.getElementById("nickname");
     const messageBox = document.getElementById("location-start-message");
     const submitButton = document.getElementById("location-start-submit");
-    const levelInputs = Array.from(document.querySelectorAll("input[name='location-game-level']"));
     const defaultButtonText = submitButton.textContent;
-
-    levelInputs.forEach((input) => {
-        input.addEventListener("change", () => {
-            levelInputs.forEach((candidate) => {
-                candidate.closest(".option-card")?.classList.toggle("is-selected", candidate.checked);
-            });
-        });
-    });
 
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -38,8 +29,7 @@ function initStartPage() {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify({
-                    nickname: nicknameInput.value,
-                    gameLevel: levelInputs.find((input) => input.checked)?.value || "LEVEL_1"
+                    nickname: nicknameInput.value
                 })
             });
             const payload = await response.json();
@@ -719,39 +709,26 @@ function renderFeedback(target, payload) {
         <h3>${summary}</h3>
         <p>${followUp}</p>
         <p>획득 점수: ${payload.awardedScore}</p>
-        ${payload.hintPenalty > 0 ? `<p>힌트 감점: -${payload.hintPenalty}</p>` : ""}
         <p>현재 총점: ${payload.totalScore}</p>
     `;
 }
 
 function wrongFollowUp(payload) {
-    if (payload.gameLevel === "LEVEL_2" && payload.distanceKm != null && payload.directionHint) {
-        return `정답 국가는 선택한 나라에서 약 ${payload.distanceKm.toLocaleString()}km ${payload.directionHint}입니다. 같은 Stage를 다시 시도하세요.`;
-    }
-
     return "같은 Stage를 다시 시도하세요.";
 }
 
 function renderLevelCopy(gameLevel, heroCopyTarget, stageHintTarget) {
     if (heroCopyTarget) {
-        heroCopyTarget.textContent = gameLevel === "LEVEL_2"
-            ? "Level 2는 오답 시 선택한 국가와 정답 국가 사이의 거리와 방향을 서버가 계산해 힌트로 내려줍니다. 지구본 위 이름은 끝까지 숨기고, 선택 하이라이트와 힌트 payload만으로 다시 추적합니다."
-            : "플레이 중 지구본 위 나라 이름은 표시되지 않습니다. 국가를 클릭하면 지구본 위에서만 선택 하이라이트가 보이고, 실제 국가명은 제출 후 판정 단계에서만 공개됩니다. Level 1은 상위 72개 주요 국가를 대상으로 먼저 감을 익히는 모드입니다.";
+        heroCopyTarget.textContent = "플레이 중 지구본 위 나라 이름은 표시되지 않습니다. 국가를 클릭하면 지구본 위에서만 선택 하이라이트가 보이고, 실제 국가명은 제출 후 판정 단계에서만 공개됩니다. 현재는 상위 72개 주요 국가를 대상으로 먼저 감을 익히는 기본 모드만 운영합니다.";
     }
 
     if (stageHintTarget) {
-        stageHintTarget.textContent = gameLevel === "LEVEL_2"
-            ? "지구본을 회전해 해당 국가를 찾은 뒤 클릭하세요. 틀리면 서버가 거리(km)와 방향 힌트를 계산해 내려줍니다."
-            : "지구본을 회전해 해당 국가를 찾은 뒤 클릭하세요. Level 1은 상위 72개 주요 국가를 대상으로 먼저 안정성과 클릭 정확도를 맞추고 있습니다.";
+        stageHintTarget.textContent = "지구본을 회전해 해당 국가를 찾은 뒤 클릭하세요. 현재는 상위 72개 주요 국가를 대상으로 먼저 안정성과 클릭 정확도를 맞추고 있습니다.";
     }
 }
 
 function formatLocationGameLevel(gameLevel) {
-    if (gameLevel === "LEVEL_2") {
-        return "Level 2 · 거리 힌트";
-    }
-
-    return "Level 1 · 기본 탐색";
+    return "기본 탐색";
 }
 
 function renderStageOverlay(target, title, description, tone) {

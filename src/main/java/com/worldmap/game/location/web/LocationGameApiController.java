@@ -8,7 +8,6 @@ import com.worldmap.game.location.application.LocationGameService;
 import com.worldmap.game.location.application.LocationGameSessionResultView;
 import com.worldmap.game.location.application.LocationGameStartView;
 import com.worldmap.game.location.application.LocationGameStateView;
-import com.worldmap.game.location.domain.LocationGameLevel;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import java.util.UUID;
@@ -42,16 +41,14 @@ public class LocationGameApiController {
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	public LocationGameStartView start(@Valid @RequestBody StartLocationGameRequest request, HttpSession httpSession) {
-		LocationGameLevel gameLevel = LocationGameLevel.from(request.gameLevel());
 		AuthenticatedMemberSession currentMember = memberSessionManager.currentMember(httpSession).orElse(null);
 		if (currentMember != null) {
-			return locationGameService.startMemberGame(currentMember.memberId(), currentMember.nickname(), gameLevel);
+			return locationGameService.startMemberGame(currentMember.memberId(), currentMember.nickname());
 		}
 
 		return locationGameService.startGuestGame(
 			request.nickname(),
-			guestSessionKeyManager.ensureGuestSessionKey(httpSession),
-			gameLevel
+			guestSessionKeyManager.ensureGuestSessionKey(httpSession)
 		);
 	}
 

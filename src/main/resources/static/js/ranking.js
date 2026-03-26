@@ -9,16 +9,14 @@
     const messageBox = document.getElementById("ranking-refresh-message");
     const activeTitleBox = document.getElementById("ranking-active-title");
     const activeCopyBox = document.getElementById("ranking-active-copy");
-    const levelHintBox = document.getElementById("ranking-level-hint");
     const tableBodies = Array.from(document.querySelectorAll("tbody[data-game-mode][data-level][data-scope]"));
     const rankingPanels = Array.from(document.querySelectorAll("[data-ranking-panel]"));
     const modeButtons = Array.from(document.querySelectorAll("[data-ranking-mode]"));
     const scopeButtons = Array.from(document.querySelectorAll("[data-ranking-scope]"));
-    const levelButtons = Array.from(document.querySelectorAll("[data-ranking-level]"));
     const refreshIntervalMs = 15000;
     let activeMode = modeButtons.find((button) => button.classList.contains("is-active"))?.dataset.rankingMode ?? "location";
     let activeScope = scopeButtons.find((button) => button.classList.contains("is-active"))?.dataset.rankingScope ?? "ALL";
-    let activeLevel = levelButtons.find((button) => button.classList.contains("is-active"))?.dataset.rankingLevel ?? "LEVEL_1";
+    const activeLevel = "LEVEL_1";
     let refreshTimer = null;
     let refreshInFlight = false;
 
@@ -26,8 +24,6 @@
     window.addEventListener("visibilitychange", handleVisibilityChange);
     modeButtons.forEach((button) => button.addEventListener("click", () => switchMode(button.dataset.rankingMode)));
     scopeButtons.forEach((button) => button.addEventListener("click", () => switchScope(button.dataset.rankingScope)));
-    levelButtons.forEach((button) => button.addEventListener("click", () => switchLevel(button.dataset.rankingLevel)));
-
     syncActiveBoardUi();
     setLastUpdated(new Date(), "SSR 초기 로드");
     startAutoRefresh();
@@ -103,15 +99,6 @@
         syncActiveBoardUi();
     }
 
-    function switchLevel(nextLevel) {
-        if (!nextLevel || nextLevel === activeLevel) {
-            return;
-        }
-
-        activeLevel = nextLevel;
-        syncActiveBoardUi();
-    }
-
     function syncActiveBoardUi() {
         const activeKey = currentBoardKey();
 
@@ -126,19 +113,6 @@
             button.classList.toggle("is-active", isActive);
             button.setAttribute("aria-pressed", String(isActive));
         });
-
-        levelButtons.forEach((button) => {
-            const isActive = button.dataset.rankingLevel === activeLevel;
-            button.classList.toggle("is-active", isActive);
-            button.setAttribute("aria-pressed", String(isActive));
-            button.disabled = false;
-        });
-
-        if (levelHintBox) {
-            levelHintBox.textContent = activeMode === "population"
-                ? "인구수 맞추기는 Level 1 구간형과 Level 2 직접 입력형 기록을 각각 볼 수 있습니다."
-                : "위치 찾기는 Level 1 기본 모드와 Level 2 거리 힌트 모드 기록을 각각 볼 수 있습니다.";
-        }
 
         rankingPanels.forEach((panel) => {
             const isActive = panel.dataset.rankingPanel === activeKey;

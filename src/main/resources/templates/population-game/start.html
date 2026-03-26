@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>국가 인구수 맞추기 시작</title>
     <link rel="stylesheet" th:href="@{/css/site.css(v='20260325-light-depth-10')}">
-    <script th:src="@{/js/population-game.js(v='20260324-light-system-3')}" defer></script>
+    <script th:src="@{/js/population-game.js(v='20260326-population-l1-only-1')}" defer></script>
 </head>
 <body data-page="population-start">
 <div class="page-shell">
@@ -14,8 +14,8 @@
         <p class="eyebrow">Population Scan</p>
         <h1>국가 인구수 맞추기</h1>
         <p class="hero-copy">
-            Level 1은 구간 보기형, Level 2는 직접 수치 입력형입니다.
-            Stage 생성, 오차율 판정, 점수 계산, 하트 관리까지 모두 서버가 담당합니다.
+            국가별 인구 규모를 구간으로 추정하는 퀴즈 모드입니다.
+            Stage 생성, 정답 판정, 점수 계산, 하트 관리까지 모두 서버가 담당합니다.
         </p>
     </header>
 
@@ -38,18 +38,6 @@
                     <span>닉네임</span>
                     <input id="population-nickname" type="text" maxlength="20" placeholder="예: data_quizzer">
                 </label>
-                <div class="options-grid">
-                    <label class="option-card is-selected">
-                        <input type="radio" name="population-game-level" value="LEVEL_1" checked>
-                        <span class="subtitle">Level 1</span>
-                        <strong>구간 선택</strong>
-                    </label>
-                    <label class="option-card">
-                        <input type="radio" name="population-game-level" value="LEVEL_2">
-                        <span class="subtitle">Level 2</span>
-                        <strong>직접 수치 입력</strong>
-                    </label>
-                </div>
                 <button id="population-start-submit" class="primary-button" type="submit">게임 시작하기</button>
             </form>
 
@@ -60,7 +48,7 @@
                 </article>
                 <article class="rule-card">
                     <span class="subtitle">Format</span>
-                    <strong>Band or Exact</strong>
+                    <strong>4개 구간 보기</strong>
                 </article>
                 <article class="rule-card">
                     <span class="subtitle">Server</span>

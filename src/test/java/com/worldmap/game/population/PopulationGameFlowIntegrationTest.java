@@ -150,79 +150,13 @@ class PopulationGameFlowIntegrationTest {
 	}
 
 	@Test
-	void levelTwoUsesExactPopulationInputAndReturnsErrorRate() throws Exception {
+	void levelTwoStartRequestFallsBackToLevelOne() throws Exception {
 		UUID sessionId = UUID.fromString(startGame("population-l2", "LEVEL_2"));
-		PopulationGameStage firstStage = populationGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
-			.orElseThrow();
 
 		mockMvc.perform(get("/api/games/population/sessions/{sessionId}/state", sessionId))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.gameLevel").value("LEVEL_2"))
-			.andExpect(jsonPath("$.options", hasSize(0)));
-
-		mockMvc.perform(
-			post("/api/games/population/sessions/{sessionId}/answer", sessionId)
-				.contentType("application/json")
-				.content(exactAnswerPayload(1, firstStage.getTargetPopulation()))
-		)
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.gameLevel").value("LEVEL_2"))
-			.andExpect(jsonPath("$.correct").value(true))
-			.andExpect(jsonPath("$.errorRatePercent").value(0.0))
-			.andExpect(jsonPath("$.precisionBand").value("PRECISE_HIT"))
-			.andExpect(jsonPath("$.selectedOptionNumber").doesNotExist())
-			.andExpect(jsonPath("$.correctOptionNumber").doesNotExist())
-			.andExpect(jsonPath("$.selectedOptionLabel").exists())
-			.andExpect(jsonPath("$.nextStageNumber").value(2));
-	}
-
-	@Test
-	void levelTwoFarWrongInputConsumesLife() throws Exception {
-		UUID sessionId = UUID.fromString(startGame("population-l2-life", "LEVEL_2"));
-
-		mockMvc.perform(
-			post("/api/games/population/sessions/{sessionId}/answer", sessionId)
-				.contentType("application/json")
-				.content(exactAnswerPayload(1, 1L))
-		)
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.gameLevel").value("LEVEL_2"))
-			.andExpect(jsonPath("$.correct").value(false))
-			.andExpect(jsonPath("$.outcome").value("WRONG"))
-			.andExpect(jsonPath("$.livesRemaining").value(2))
-			.andExpect(jsonPath("$.errorRatePercent").isNumber())
-			.andExpect(jsonPath("$.precisionBand").value("MISS"));
-	}
-
-	@Test
-	void levelTwoResultPageShowsPrecisionGuideAndAttemptBands() throws Exception {
-		UUID sessionId = UUID.fromString(startGame("population-l2-result", "LEVEL_2"));
-		PopulationGameStage firstStage = populationGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
-			.orElseThrow();
-
-		mockMvc.perform(
-			post("/api/games/population/sessions/{sessionId}/answer", sessionId)
-				.contentType("application/json")
-				.content(exactAnswerPayload(1, firstStage.getTargetPopulation()))
-		)
-			.andExpect(status().isOk());
-
-		for (int attempt = 1; attempt <= 3; attempt++) {
-			mockMvc.perform(
-				post("/api/games/population/sessions/{sessionId}/answer", sessionId)
-					.contentType("application/json")
-					.content(exactAnswerPayload(2, 1L))
-			)
-				.andExpect(status().isOk());
-		}
-
-		mockMvc.perform(get("/games/population/result/{sessionId}", sessionId))
-			.andExpect(status().isOk())
-			.andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.view().name("population-game/result"))
-			.andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().string(containsString("Level 2 판정 기준")))
-			.andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().string(containsString("정밀 적중")))
-			.andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().string(containsString("오차율")))
-			.andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().string(containsString("허용 범위 정답")));
+			.andExpect(jsonPath("$.gameLevel").value("LEVEL_1"))
+			.andExpect(jsonPath("$.options", hasSize(4)));
 	}
 
 	@Test
@@ -286,15 +220,6 @@ class PopulationGameFlowIntegrationTest {
 			  "selectedOptionNumber": %d
 			}
 			""".formatted(stageNumber, selectedOptionNumber);
-	}
-
-	private String exactAnswerPayload(Integer stageNumber, Long submittedPopulation) {
-		return """
-			{
-			  "stageNumber": %d,
-			  "submittedPopulation": %d
-			}
-			""".formatted(stageNumber, submittedPopulation);
 	}
 
 	private int findWrongOptionNumber(int correctOptionNumber) {

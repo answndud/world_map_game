@@ -28,28 +28,12 @@ public class LeaderboardPageController {
 			leaderboardService.getLeaderboard(LeaderboardGameMode.LOCATION, LeaderboardGameLevel.LEVEL_1, LeaderboardScope.DAILY, 10)
 		);
 		model.addAttribute(
-			"locationLevel2All",
-			leaderboardService.getLeaderboard(LeaderboardGameMode.LOCATION, LeaderboardGameLevel.LEVEL_2, LeaderboardScope.ALL, 10)
-		);
-		model.addAttribute(
-			"locationLevel2Daily",
-			leaderboardService.getLeaderboard(LeaderboardGameMode.LOCATION, LeaderboardGameLevel.LEVEL_2, LeaderboardScope.DAILY, 10)
-		);
-		model.addAttribute(
 			"populationAll",
 			leaderboardService.getLeaderboard(LeaderboardGameMode.POPULATION, LeaderboardGameLevel.LEVEL_1, LeaderboardScope.ALL, 10)
 		);
 		model.addAttribute(
 			"populationDaily",
 			leaderboardService.getLeaderboard(LeaderboardGameMode.POPULATION, LeaderboardGameLevel.LEVEL_1, LeaderboardScope.DAILY, 10)
-		);
-		model.addAttribute(
-			"populationLevel2All",
-			leaderboardService.getLeaderboard(LeaderboardGameMode.POPULATION, LeaderboardGameLevel.LEVEL_2, LeaderboardScope.ALL, 10)
-		);
-		model.addAttribute(
-			"populationLevel2Daily",
-			leaderboardService.getLeaderboard(LeaderboardGameMode.POPULATION, LeaderboardGameLevel.LEVEL_2, LeaderboardScope.DAILY, 10)
 		);
 		return "ranking/index";
 	}

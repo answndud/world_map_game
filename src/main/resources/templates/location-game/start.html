@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>국가 위치 찾기 시작</title>
     <link rel="stylesheet" th:href="@{/css/site.css(v='20260325-light-depth-10')}">
-    <script th:src="@{/js/location-game.js(v='20260326-location-l2-3')}" defer></script>
+    <script th:src="@{/js/location-game.js(v='20260326-location-l1-only-1')}" defer></script>
 </head>
 <body data-page="location-start">
 <div class="page-shell">
@@ -14,8 +14,7 @@
         <p class="eyebrow">Orbital Mission</p>
         <h1>국가 위치 찾기</h1>
         <p class="hero-copy">
-            Level 1은 빠르게 감을 익히는 기본 탐색 모드이고,
-            Level 2는 오답 시 거리와 방향 힌트를 받는 확장 모드입니다.
+            지구본을 회전하며 목표 국가를 찾는 기본 탐색 모드입니다.
             하트, 점수, Stage, 난이도, 정답 판정은 모두 서버가 관리합니다.
         </p>
     </header>
@@ -37,18 +36,6 @@
                     <span>닉네임</span>
                     <input id="nickname" type="text" maxlength="20" placeholder="예: backend_learner">
                 </label>
-                <div class="options-grid">
-                    <label class="option-card is-selected">
-                        <input type="radio" name="location-game-level" value="LEVEL_1" checked>
-                        <span class="subtitle">Level 1</span>
-                        <strong>기본 탐색</strong>
-                    </label>
-                    <label class="option-card">
-                        <input type="radio" name="location-game-level" value="LEVEL_2">
-                        <span class="subtitle">Level 2</span>
-                        <strong>거리 + 방향 힌트</strong>
-                    </label>
-                </div>
                 <button id="location-start-submit" class="primary-button" type="submit">게임 시작하기</button>
             </form>
 
@@ -62,12 +49,12 @@
                     <strong>Endless Run</strong>
                 </article>
                 <article class="rule-card">
-                    <span class="subtitle">Level 1</span>
+                    <span class="subtitle">Map Pool</span>
                     <strong>상위 72개 주요 국가</strong>
                 </article>
                 <article class="rule-card">
-                    <span class="subtitle">Level 2</span>
-                    <strong>오답 시 거리 · 방향 힌트</strong>
+                    <span class="subtitle">Answer</span>
+                    <strong>국가 클릭 후 제출</strong>
                 </article>
             </div>
             <p id="location-start-message" class="message-box" data-tone="info" hidden></p>

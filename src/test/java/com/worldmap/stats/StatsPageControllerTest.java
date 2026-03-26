@@ -13,11 +13,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 import com.worldmap.auth.application.MemberSessionManager;
+import com.worldmap.ranking.domain.LeaderboardGameLevel;
 import com.worldmap.auth.domain.MemberRole;
 import com.worldmap.ranking.application.LeaderboardEntryView;
 import com.worldmap.ranking.application.LeaderboardService;
 import com.worldmap.ranking.application.LeaderboardView;
-import com.worldmap.ranking.domain.LeaderboardGameLevel;
 import com.worldmap.ranking.domain.LeaderboardGameMode;
 import com.worldmap.ranking.domain.LeaderboardScope;
 import com.worldmap.stats.application.ServiceActivityService;
@@ -70,25 +70,6 @@ class StatsPageControllerTest {
 				List.of(new LeaderboardEntryView(1, "guest_live", 390, 3, 5, LocalDateTime.now()))
 			)
 		);
-		given(leaderboardService.getLeaderboard(LeaderboardGameMode.LOCATION, LeaderboardGameLevel.LEVEL_2, LeaderboardScope.ALL, 1)).willReturn(
-			new LeaderboardView(
-				LeaderboardGameMode.LOCATION,
-				LeaderboardGameLevel.LEVEL_2,
-				LeaderboardScope.ALL,
-				null,
-				List.of(new LeaderboardEntryView(1, "orbit_runner", 280, 4, 7, LocalDateTime.now()))
-			)
-		);
-		given(leaderboardService.getLeaderboard(LeaderboardGameMode.POPULATION, LeaderboardGameLevel.LEVEL_2, LeaderboardScope.ALL, 1)).willReturn(
-			new LeaderboardView(
-				LeaderboardGameMode.POPULATION,
-				LeaderboardGameLevel.LEVEL_2,
-				LeaderboardScope.ALL,
-				null,
-				List.of(new LeaderboardEntryView(1, "guest_live", 240, 3, 6, LocalDateTime.now()))
-			)
-		);
-
 		mockMvc.perform(get("/stats"))
 			.andExpect(status().isOk())
 			.andExpect(view().name("stats/index"))
@@ -98,9 +79,7 @@ class StatsPageControllerTest {
 			.andExpect(content().string(not(containsString(">Dashboard<"))))
 			.andExpect(content().string(containsString("TODAY ACTIVE PLAYERS")))
 			.andExpect(content().string(containsString("orbit_runner")))
-			.andExpect(content().string(containsString("Level 2 하이라이트")))
-			.andExpect(content().string(containsString("위치 찾기 Level 2 최고 기록")))
-			.andExpect(content().string(containsString("인구수 Level 2 최고 기록")));
+			.andExpect(content().string(not(containsString("Level 2 하이라이트"))));
 	}
 
 	@Test
@@ -114,13 +93,6 @@ class StatsPageControllerTest {
 		given(leaderboardService.getLeaderboard(LeaderboardGameMode.POPULATION, LeaderboardScope.DAILY, 3)).willReturn(
 			new LeaderboardView(LeaderboardGameMode.POPULATION, LeaderboardGameLevel.LEVEL_1, LeaderboardScope.DAILY, LocalDate.now(), List.of())
 		);
-		given(leaderboardService.getLeaderboard(LeaderboardGameMode.LOCATION, LeaderboardGameLevel.LEVEL_2, LeaderboardScope.ALL, 1)).willReturn(
-			new LeaderboardView(LeaderboardGameMode.LOCATION, LeaderboardGameLevel.LEVEL_2, LeaderboardScope.ALL, null, List.of())
-		);
-		given(leaderboardService.getLeaderboard(LeaderboardGameMode.POPULATION, LeaderboardGameLevel.LEVEL_2, LeaderboardScope.ALL, 1)).willReturn(
-			new LeaderboardView(LeaderboardGameMode.POPULATION, LeaderboardGameLevel.LEVEL_2, LeaderboardScope.ALL, null, List.of())
-		);
-
 		MockHttpSession session = new MockHttpSession();
 		session.setAttribute(MEMBER_ID_ATTRIBUTE, 1L);
 		session.setAttribute(MEMBER_NICKNAME_ATTRIBUTE, "worldmap_admin");

@@ -11,7 +11,6 @@ import com.worldmap.game.population.domain.PopulationGameSessionRepository;
 import com.worldmap.game.population.domain.PopulationGameStage;
 import com.worldmap.game.population.domain.PopulationGameStageRepository;
 import com.worldmap.game.population.domain.PopulationGameStageStatus;
-import com.worldmap.ranking.domain.LeaderboardGameLevel;
 import com.worldmap.ranking.domain.LeaderboardGameMode;
 import com.worldmap.ranking.domain.LeaderboardRecord;
 import com.worldmap.ranking.domain.LeaderboardRecordRepository;
@@ -66,8 +65,6 @@ public class MyPageService {
 			totalCompletedRuns,
 			bestRunView(memberId, LeaderboardGameMode.LOCATION),
 			bestRunView(memberId, LeaderboardGameMode.POPULATION),
-			bestRunView(memberId, LeaderboardGameMode.LOCATION, LeaderboardGameLevel.LEVEL_2),
-			bestRunView(memberId, LeaderboardGameMode.POPULATION, LeaderboardGameLevel.LEVEL_2),
 			locationPerformanceView(memberId),
 			populationPerformanceView(memberId),
 			recentPlays
@@ -131,21 +128,6 @@ public class MyPageService {
 		return toBestRunView(memberId, bestRecord.get());
 	}
 
-	private MyPageBestRunView bestRunView(
-		Long memberId,
-		LeaderboardGameMode gameMode,
-		LeaderboardGameLevel gameLevel
-	) {
-		Optional<LeaderboardRecord> bestRecord = leaderboardRecordRepository
-			.findFirstByMemberIdAndGameModeAndGameLevelOrderByRankingScoreDescFinishedAtAsc(memberId, gameMode, gameLevel);
-
-		if (bestRecord.isEmpty()) {
-			return null;
-		}
-
-		return toBestRunView(memberId, bestRecord.get());
-	}
-
 	private MyPageBestRunView toBestRunView(Long memberId, LeaderboardRecord record) {
 		long completedRunCount = leaderboardRecordRepository.countByMemberIdAndGameModeAndGameLevel(
 			memberId,
@@ -153,7 +135,7 @@ public class MyPageService {
 			record.getGameLevel()
 		);
 		return new MyPageBestRunView(
-			gameModeLabel(record.getGameMode(), record),
+			gameModeLabel(record.getGameMode()),
 			completedRunCount,
 			record.getTotalScore(),
 			rankFor(record),
@@ -163,7 +145,7 @@ public class MyPageService {
 
 	private MyPageRecentPlayView toRecentPlayView(LeaderboardRecord record) {
 		return new MyPageRecentPlayView(
-			gameModeLabel(record.getGameMode(), record),
+			gameModeLabel(record.getGameMode()),
 			record.getTotalScore(),
 			record.getClearedStageCount(),
 			record.getTotalAttemptCount(),
@@ -189,15 +171,11 @@ public class MyPageService {
 		return null;
 	}
 
-	private String gameModeLabel(LeaderboardGameMode gameMode, LeaderboardRecord record) {
-		String modeLabel = switch (gameMode) {
+	private String gameModeLabel(LeaderboardGameMode gameMode) {
+		return switch (gameMode) {
 			case LOCATION -> "국가 위치 찾기";
 			case POPULATION -> "국가 인구수 맞추기";
 		};
-		return "%s · %s".formatted(modeLabel, switch (record.getGameLevel()) {
-			case LEVEL_1 -> "Level 1";
-			case LEVEL_2 -> "Level 2";
-		});
 	}
 
 	private String formatNumber(double value, String suffix) {

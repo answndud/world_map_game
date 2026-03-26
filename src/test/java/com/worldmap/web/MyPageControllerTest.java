@@ -61,10 +61,8 @@ class MyPageControllerTest {
 			new MyPageDashboardView(
 				"orbit_runner",
 				3,
-				new MyPageBestRunView("국가 위치 찾기 · Level 1", 2L, 440, 1, 4),
-				new MyPageBestRunView("국가 인구수 맞추기 · Level 1", 1L, 320, 2, 3),
-				new MyPageBestRunView("국가 위치 찾기 · Level 2", 1L, 115, 1, 1),
-				new MyPageBestRunView("국가 인구수 맞추기 · Level 2", 1L, 150, 1, 1),
+				new MyPageBestRunView("국가 위치 찾기", 2L, 440, 1, 4),
+				new MyPageBestRunView("국가 인구수 맞추기", 1L, 320, 2, 3),
 				new MyPageModePerformanceView("국가 위치 찾기", 2, 5, "60%", "1.4회"),
 				new MyPageModePerformanceView("국가 인구수 맞추기", 1, 3, "100%", "1회"),
 				List.of(
@@ -88,9 +86,7 @@ class MyPageControllerTest {
 			.andExpect(content().string(containsString("orbit_runner")))
 			.andExpect(content().string(containsString("440점 / #1")))
 			.andExpect(content().string(containsString("플레이 성향")))
-			.andExpect(content().string(containsString("Level 2 하이라이트")))
-			.andExpect(content().string(containsString("115점")))
-			.andExpect(content().string(containsString("150점")))
+			.andExpect(content().string(not(containsString("Level 2 하이라이트"))))
 			.andExpect(content().string(containsString("1트 클리어율")))
 			.andExpect(content().string(containsString("1.4회")))
 			.andExpect(content().string(containsString("최근 플레이")))
