@@ -117,6 +117,7 @@
 54. [따뜻한 초도시 허브 시나리오에 global hub bonus 추가하기](./49-add-global-hub-bonus-for-warm-city-hubs.md)
 55. [현재 코드 재현용 블로그 허브](./50-current-state-rebuild-map.md)
 56. [저비용 음식·다문화 시나리오의 1위 drift 줄이기](./51-reduce-p02-anchor-drift-with-foodie-starter-bonus.md)
+57. [온화한 공공서비스형 시나리오의 1위 drift 줄이기](./52-reduce-p04-anchor-drift-with-temperate-public-base-bonus.md)
 
 ### Part E. 확장과 포트폴리오 정리
 
