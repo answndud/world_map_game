@@ -1,0 +1,88 @@
+{
+  "assets": [
+    {
+      "iso3Code": "JPN",
+      "relativePath": "/images/flags/jpn.svg",
+      "format": "svg",
+      "source": "local-static",
+      "licenseNote": "sample-svg"
+    },
+    {
+      "iso3Code": "FRA",
+      "relativePath": "/images/flags/fra.svg",
+      "format": "svg",
+      "source": "local-static",
+      "licenseNote": "sample-svg"
+    },
+    {
+      "iso3Code": "DEU",
+      "relativePath": "/images/flags/deu.svg",
+      "format": "svg",
+      "source": "local-static",
+      "licenseNote": "sample-svg"
+    },
+    {
+      "iso3Code": "ITA",
+      "relativePath": "/images/flags/ita.svg",
+      "format": "svg",
+      "source": "local-static",
+      "licenseNote": "sample-svg"
+    },
+    {
+      "iso3Code": "IRL",
+      "relativePath": "/images/flags/irl.svg",
+      "format": "svg",
+      "source": "local-static",
+      "licenseNote": "sample-svg"
+    },
+    {
+      "iso3Code": "BEL",
+      "relativePath": "/images/flags/bel.svg",
+      "format": "svg",
+      "source": "local-static",
+      "licenseNote": "sample-svg"
+    },
+    {
+      "iso3Code": "POL",
+      "relativePath": "/images/flags/pol.svg",
+      "format": "svg",
+      "source": "local-static",
+      "licenseNote": "sample-svg"
+    },
+    {
+      "iso3Code": "UKR",
+      "relativePath": "/images/flags/ukr.svg",
+      "format": "svg",
+      "source": "local-static",
+      "licenseNote": "sample-svg"
+    },
+    {
+      "iso3Code": "AUT",
+      "relativePath": "/images/flags/aut.svg",
+      "format": "svg",
+      "source": "local-static",
+      "licenseNote": "sample-svg"
+    },
+    {
+      "iso3Code": "NLD",
+      "relativePath": "/images/flags/nld.svg",
+      "format": "svg",
+      "source": "local-static",
+      "licenseNote": "sample-svg"
+    },
+    {
+      "iso3Code": "EST",
+      "relativePath": "/images/flags/est.svg",
+      "format": "svg",
+      "source": "local-static",
+      "licenseNote": "sample-svg"
+    },
+    {
+      "iso3Code": "LTU",
+      "relativePath": "/images/flags/ltu.svg",
+      "format": "svg",
+      "source": "local-static",
+      "licenseNote": "sample-svg"
+    }
+  ]
+}
