@@ -51,15 +51,37 @@
         <section class="panel home-mode-panel" id="home-modes">
             <div class="panel-head">
                 <h2>지금 플레이할 게임</h2>
-                <p>실제 게임 선택은 이 카드 영역 하나에서만 하도록 줄였습니다. 서버가 문제 생성, 판정, 점수, 진행 상태를 직접 관리합니다.</p>
+                <p>다섯 게임과 추천을 `아케이드`, `퀵 퀴즈`, `추천` 세 그룹으로 나눠 한 번에 읽히도록 정리했습니다.</p>
+            </div>
+            <div class="panel-head home-subhead">
+                <h3>아케이드 러너</h3>
+                <p>오래 버틸수록 점수가 쌓이는 기본 플레이 루프입니다.</p>
             </div>
             <div class="card-grid home-mode-grid">
-                <article class="mode-card" th:each="card : ${modeCards}">
+                <article class="mode-card" th:each="card : ${modeCards}" th:if="${card.group == 'arcade'}">
                     <div class="card-top">
                         <span class="status" th:text="${card.status}">Planned</span>
                         <span class="subtitle" th:text="${card.subtitle}">Level 1~2</span>
                     </div>
                     <h3 th:text="${card.title}">국가 위치 찾기</h3>
+                    <p th:text="${card.description}">
+                        원하는 게임을 골라 바로 플레이를 시작할 수 있습니다.
+                    </p>
+                    <a class="ghost-link home-mode-link" th:href="${card.href}">게임 열기</a>
+                </article>
+            </div>
+
+            <div class="panel-head home-subhead">
+                <h3>퀵 퀴즈와 추천</h3>
+                <p>짧게 여러 판 돌리거나 설문형 추천으로 바로 넘어갈 수 있는 모드입니다.</p>
+            </div>
+            <div class="card-grid home-mode-grid">
+                <article class="mode-card" th:each="card : ${modeCards}" th:if="${card.group != 'arcade'}">
+                    <div class="card-top">
+                        <span class="status" th:text="${card.status}">Planned</span>
+                        <span class="subtitle" th:text="${card.subtitle}">Level 1~2</span>
+                    </div>
+                    <h3 th:text="${card.title}">수도 맞히기</h3>
                     <p th:text="${card.description}">
                         원하는 게임을 골라 바로 플레이를 시작할 수 있습니다.
                     </p>

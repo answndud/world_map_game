@@ -21,43 +21,56 @@
         <section class="panel game-panel">
             <div class="panel-head">
                 <h2>오늘의 활동</h2>
-                <p>공개 화면에서는 서비스가 실제로 돌아가고 있다는 감각을 보여 주는 숫자만 노출합니다.</p>
+                <p>공개 화면에서는 먼저 서비스 전체 흐름을, 그다음 게임별 완료 수를 보도록 두 층으로 나눴습니다.</p>
             </div>
             <div class="stats-grid">
                 <article class="stat-card">
                     <span class="subtitle">REGISTERED PLAYERS</span>
                     <strong th:text="${activity.totalMemberCount}">0</strong>
+                    <p class="stat-card-copy">현재 계정으로 기록을 이어가는 전체 회원 수입니다.</p>
                 </article>
                 <article class="stat-card">
                     <span class="subtitle">TODAY ACTIVE PLAYERS</span>
                     <strong th:text="${activity.todayActivePlayerCount}">0</strong>
+                    <p class="stat-card-copy">오늘 적어도 한 번 플레이한 사용자 수입니다.</p>
                 </article>
                 <article class="stat-card">
                     <span class="subtitle">TODAY STARTED SESSIONS</span>
                     <strong th:text="${activity.todayStartedSessionCount}">0</strong>
+                    <p class="stat-card-copy">오늘 시작된 전체 게임 세션 수입니다.</p>
                 </article>
                 <article class="stat-card">
                     <span class="subtitle">TODAY COMPLETED RUNS</span>
                     <strong th:text="${activity.todayCompletedRunCount}">0</strong>
+                    <p class="stat-card-copy">오늘 끝까지 완료된 run 수입니다.</p>
                 </article>
+            </div>
+        </section>
+
+        <section class="panel game-panel">
+            <div class="panel-head">
+                <h2>게임별 완료 수</h2>
+                <p>다섯 게임이 각각 오늘 얼마나 플레이됐는지 빠르게 확인할 수 있습니다.</p>
+            </div>
+            <div class="stats-grid">
                 <article class="stat-card">
-                    <span class="subtitle">TODAY LOCATION RUNS</span>
+                    <span class="subtitle">LOCATION</span>
                     <strong th:text="${activity.todayLocationCompletedRunCount}">0</strong>
                 </article>
                 <article class="stat-card">
-                    <span class="subtitle">TODAY CAPITAL RUNS</span>
+                    <span class="subtitle">CAPITAL</span>
                     <strong th:text="${activity.todayCapitalCompletedRunCount}">0</strong>
                 </article>
                 <article class="stat-card">
-                    <span class="subtitle">TODAY FLAG RUNS</span>
+                    <span class="subtitle">FLAG</span>
                     <strong th:text="${activity.todayFlagCompletedRunCount}">0</strong>
                 </article>
                 <article class="stat-card">
-                    <span class="subtitle">TODAY POPULATION BATTLE RUNS</span>
+                    <span class="subtitle">POPULATION BATTLE</span>
                     <strong th:text="${activity.todayPopulationBattleCompletedRunCount}">0</strong>
                 </article>
                 <article class="stat-card">
-                    <span class="subtitle">TODAY POPULATION RUNS</span>
+                    <span class="subtitle">POPULATION</span>
                     <strong th:text="${activity.todayPopulationCompletedRunCount}">0</strong>
                 </article>
             </div>
@@ -66,10 +79,11 @@
         <section class="split">
             <article class="panel">
                 <div class="panel-head">
-                    <h2>오늘의 위치 미션 Top 3</h2>
-                    <p>오늘 완료된 위치 미션 기준 상위 기록입니다.</p>
+                    <h2>아케이드 상위 기록</h2>
+                    <p>계속 이어지는 런 모드 두 게임의 오늘 기록을 먼저 묶어 보여줍니다.</p>
                 </div>
                 <div class="table-shell">
+                    <p class="subtitle">위치 찾기</p>
                     <table class="result-table">
                         <thead>
                         <tr>
@@ -90,42 +104,8 @@
                         </tbody>
                     </table>
                 </div>
-            </article>
-
-            <article class="panel">
-                <div class="panel-head">
-                    <h2>오늘의 수도 퀴즈 Top 3</h2>
-                    <p>오늘 완료된 수도 맞히기 기준 상위 기록입니다.</p>
-                </div>
                 <div class="table-shell">
-                    <table class="result-table">
-                        <thead>
-                        <tr>
-                            <th>순위</th>
-                            <th>플레이어</th>
-                            <th>점수</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <tr th:each="entry : ${capitalDailyTop.entries}">
-                            <td th:text="${entry.rank}">1</td>
-                            <td th:text="${entry.playerNickname}">Guest</td>
-                            <td th:text="${entry.totalScore} + '점'">420점</td>
-                        </tr>
-                        <tr th:if="${#lists.isEmpty(capitalDailyTop.entries)}">
-                            <td colspan="3">아직 오늘 완료된 수도 퀴즈 기록이 없습니다.</td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </article>
-
-            <article class="panel">
-                <div class="panel-head">
-                    <h2>오늘의 인구수 퀴즈 Top 3</h2>
-                    <p>오늘 완료된 인구수 퀴즈 기준 상위 기록입니다.</p>
-                </div>
-                <div class="table-shell">
+                    <p class="subtitle">인구수 맞추기</p>
                     <table class="result-table">
                         <thead>
                         <tr>
@@ -150,10 +130,33 @@
 
             <article class="panel">
                 <div class="panel-head">
-                    <h2>오늘의 국기 퀴즈 Top 3</h2>
-                    <p>오늘 완료된 국기 보고 나라 맞히기 기준 상위 기록입니다.</p>
+                    <h2>퀵 퀴즈 상위 기록</h2>
+                    <p>짧게 여러 판 돌리는 세 게임은 한 묶음으로 보여서 비교 부담을 줄였습니다.</p>
                 </div>
                 <div class="table-shell">
+                    <p class="subtitle">수도 맞히기</p>
+                    <table class="result-table">
+                        <thead>
+                        <tr>
+                            <th>순위</th>
+                            <th>플레이어</th>
+                            <th>점수</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="entry : ${capitalDailyTop.entries}">
+                            <td th:text="${entry.rank}">1</td>
+                            <td th:text="${entry.playerNickname}">Guest</td>
+                            <td th:text="${entry.totalScore} + '점'">420점</td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(capitalDailyTop.entries)}">
+                            <td colspan="3">아직 오늘 완료된 수도 퀴즈 기록이 없습니다.</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="table-shell">
+                    <p class="subtitle">국기 퀴즈</p>
                     <table class="result-table">
                         <thead>
                         <tr>
@@ -174,14 +177,8 @@
                         </tbody>
                     </table>
                 </div>
-            </article>
-
-            <article class="panel">
-                <div class="panel-head">
-                    <h2>오늘의 인구 비교 배틀 Top 3</h2>
-                    <p>오늘 완료된 인구 비교 퀵 배틀 기준 상위 기록입니다.</p>
-                </div>
                 <div class="table-shell">
+                    <p class="subtitle">인구 비교 배틀</p>
                     <table class="result-table">
                         <thead>
                         <tr>

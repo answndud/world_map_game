@@ -20,6 +20,7 @@ public class HomeController {
 	private List<ModeCardView> modeCards() {
 		return List.of(
 			new ModeCardView(
+				"arcade",
 				"국가 위치 찾기",
 				"3D Globe",
 				"지구본을 돌려가며 목표 국가를 찾아보는 탐색형 미션입니다.",
@@ -27,6 +28,7 @@ public class HomeController {
 				"/games/location/start"
 			),
 			new ModeCardView(
+				"quiz",
 				"수도 맞히기",
 				"Capital Quiz",
 				"국가 이름을 보고 4개 수도 보기 중 정답을 고르는 퀴즈입니다.",
@@ -34,6 +36,7 @@ public class HomeController {
 				"/games/capital/start"
 			),
 			new ModeCardView(
+				"quiz",
 				"국기 보고 나라 맞히기",
 				"Flag Quiz",
 				"국기 이미지를 보고 4개 국가 보기 중 정답을 고르는 퀴즈입니다.",
@@ -41,6 +44,7 @@ public class HomeController {
 				"/games/flag/start"
 			),
 			new ModeCardView(
+				"arcade",
 				"인구 비교 퀵 배틀",
 				"Population Battle",
 				"두 나라 중 더 큰 인구를 가진 나라를 고르는 빠른 좌우 선택 모드입니다.",
@@ -48,6 +52,7 @@ public class HomeController {
 				"/games/population-battle/start"
 			),
 			new ModeCardView(
+				"arcade",
 				"국가 인구수 맞추기",
 				"4 Choices",
 				"국가 이름을 보고 가장 가까운 인구 규모를 골라 맞히는 퀴즈입니다.",
@@ -55,6 +60,7 @@ public class HomeController {
 				"/games/population/start"
 			),
 			new ModeCardView(
+				"discover",
 				"나에게 어울리는 국가 찾기",
 				"20 Questions",
 				"생활 조건 사이의 우선순위를 고르면 지금 나와 잘 맞는 국가 3곳을 골라 보여줍니다.",

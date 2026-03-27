@@ -35,6 +35,8 @@ class HomeControllerTest {
 			.andExpect(model().attributeExists("entrySteps"))
 			.andExpect(model().attributeExists("accountNotes"))
 			.andExpect(content().string(containsString("지금 플레이할 게임")))
+			.andExpect(content().string(containsString("아케이드 러너")))
+			.andExpect(content().string(containsString("퀵 퀴즈와 추천")))
 			.andExpect(content().string(containsString("기록은 이렇게 이어집니다")))
 			.andExpect(content().string(containsString(">Stats<")))
 			.andExpect(content().string(containsString(">Ranking<")))

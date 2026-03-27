@@ -1,6 +1,7 @@
 package com.worldmap.web.view;
 
 public record ModeCardView(
+	String group,
 	String title,
 	String subtitle,
 	String description,

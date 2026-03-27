@@ -693,6 +693,10 @@ html[data-theme="light"] .home-hero-panel .signal-list li {
     grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.home-subhead {
+    margin-top: 28px;
+}
+
 .mode-card {
     position: relative;
     min-height: 0;
@@ -1145,7 +1149,7 @@ button:disabled {
 }
 
 .ranking-filter-button {
-    min-width: 132px;
+    min-width: 92px;
 }
 
 .ranking-filter-button.is-active {
