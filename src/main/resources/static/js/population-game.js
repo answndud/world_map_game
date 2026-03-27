@@ -123,7 +123,7 @@ function initPlayPage() {
             if (payload.correct) {
                 renderFeedback(feedback, payload);
                 renderStageOverlay(overlay, "정답", `+${payload.awardedScore}`, "success");
-                setSelectionState(correctSelectionSummary(payload));
+                setSelectionState("정답 처리 완료");
                 setStageHint("정답입니다. 결과를 확인한 뒤 다음 Stage 버튼으로 직접 넘어가세요.");
 
                 if (payload.outcome === "FINISHED") {
@@ -303,6 +303,14 @@ function initPlayPage() {
     function renderFeedback(target, payload) {
         target.hidden = false;
 
+        if (payload.correct) {
+            target.innerHTML = `
+                <h3>${payload.targetCountryName} 정답</h3>
+                <p>획득 점수: ${payload.awardedScore}</p>
+            `;
+            return;
+        }
+
         target.innerHTML = `
             <h3>${payload.targetCountryName} 결과</h3>
             <p>내 선택 구간: ${payload.selectedOptionLabel}</p>
@@ -348,10 +356,6 @@ function initPlayPage() {
     function resetHudGuidance(payload) {
         setSelectionState("아직 선택하지 않았습니다.");
         setStageHint(`${payload.difficultyLabel} 구간입니다. 가장 가까운 인구 규모대를 고른 뒤 제출하세요.`);
-    }
-
-    function correctSelectionSummary(payload) {
-        return `선택 완료: ${payload.selectedOptionLabel}`;
     }
 
     function wrongSelectionSummary(payload) {

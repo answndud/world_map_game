@@ -689,9 +689,16 @@ function renderHearts(livesRemaining) {
 
 function renderFeedback(target, payload) {
     target.hidden = false;
-    const summary = payload.correct
-        ? `${payload.selectedCountryName} 선택이 정답입니다.`
-        : `${payload.selectedCountryName} 선택은 오답입니다.`;
+
+    if (payload.correct) {
+        target.innerHTML = `
+            <h3>정답입니다.</h3>
+            <p>획득 점수: ${payload.awardedScore}</p>
+        `;
+        return;
+    }
+
+    const summary = `${payload.selectedCountryName} 선택은 오답입니다.`;
     const followUp = payload.outcome === "WRONG"
         ? wrongFollowUp(payload)
         : payload.outcome === "GAME_OVER"

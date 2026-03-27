@@ -123,7 +123,7 @@ function initPlayPage() {
             if (payload.correct) {
                 renderFeedback(feedback, payload);
                 renderStageOverlay(overlay, "정답", `+${payload.awardedScore}`, "success");
-                setSelectionState(`선택 완료: ${payload.selectedCapitalCity}`);
+                setSelectionState("정답 처리 완료");
                 setStageHint("정답입니다. 결과를 확인한 뒤 다음 Stage 버튼으로 직접 넘어가세요.");
 
                 if (payload.outcome === "FINISHED") {
@@ -297,6 +297,15 @@ function initPlayPage() {
 
     function renderFeedback(target, payload) {
         target.hidden = false;
+
+        if (payload.correct) {
+            target.innerHTML = `
+                <h3>${escapeHtml(payload.targetCountryName)} 정답</h3>
+                <p>획득 점수: ${payload.awardedScore}</p>
+            `;
+            return;
+        }
+
         target.innerHTML = `
             <h3>${escapeHtml(payload.targetCountryName)} 결과</h3>
             <p>내 선택 수도: ${escapeHtml(payload.selectedCapitalCity)}</p>
