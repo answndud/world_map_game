@@ -4074,3 +4074,36 @@
 - 배운 점: 자산 기반 게임은 “문제 수”와 “보기 품질”만으로 끝나지 않고, 그 변화가 플레이어가 체감하는 난이도 단계와 연결돼야 한다. 초반 라운드를 실제로 더 쉬운 대륙에서만 열어 주고, 그 사실을 state/result copy에서도 같은 정책으로 설명해야 vertical slice가 더 설득력 있어진다.
 - 아직 약한 부분: 현재 단계 구분은 `기본 / 확장 / 전체` 3단계로 충분하지만, 같은 대륙 distractor 비율을 stage마다 세밀하게 바꾸는 수준까지는 아직 아니다. 다음 후보는 국기 게임 세부 난이도와 새 게임 3종의 공개 화면 밀도 조정이다.
 - 면접용 30초 요약: 국기 게임은 pool을 36개로 늘린 뒤에도 초반이 실제로 쉬운지 플레이어 입장에서 잘 드러나지 않았습니다. 그래서 `FlagGameDifficultyPolicy`를 `기본 / 확장 / 전체 라운드`로 다시 정의하고, `FlagGameService`가 초반에는 same-continent distractor가 충분한 대륙만 먼저 출제하게 바꿨습니다. 그리고 이 규칙을 `difficultyGuide`와 결과 화면의 `구간` 표시까지 연결해서, 난이도도 서버 정책으로 설명할 수 있게 정리했습니다.
+
+## 2026-03-27 - 11단계 신규 게임 3종 이후 public surface 밀도 정리
+
+- 단계: 11. 신규 게임 확장
+- 목적: 수도 맞히기, 인구 비교 퀵 배틀, 국기 퀴즈까지 public 제품에 붙고 나니 홈, `/ranking`, `/stats`가 다시 길어지고 반복 설명이 많아졌다. 이번 조각의 목적은 기능을 더 늘리지 않고, 늘어난 게임 수를 플레이어가 한 번에 읽기 쉬운 묶음으로 다시 정리하는 것이다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/web/view/ModeCardView.java`
+  - `src/main/java/com/worldmap/web/HomeController.java`
+  - `src/main/resources/templates/home.html`
+  - `src/main/resources/templates/ranking/index.html`
+  - `src/main/resources/templates/stats/index.html`
+  - `src/main/resources/static/css/site.css`
+  - `src/test/java/com/worldmap/web/HomeControllerTest.java`
+  - `src/test/java/com/worldmap/stats/StatsPageControllerTest.java`
+  - `src/test/java/com/worldmap/ranking/LeaderboardIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/50-current-state-rebuild-map.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/88-group-public-surfaces-after-adding-three-new-games.md`
+- 요청 흐름 / 데이터 흐름: 요청 흐름은 바뀌지 않았다. 홈은 여전히 `GET / -> HomeController -> home.html`, 랭킹은 `GET /ranking -> LeaderboardPageController -> LeaderboardService`, Stats는 `GET /stats -> StatsPageController -> ServiceActivityService + LeaderboardService`로 간다. 이번 조각은 컨트롤러와 템플릿이 public read model을 어떻게 묶어 보여 주는지만 바꾼 것이고, 서버 상태를 바꾸는 write flow는 없다.
+- 데이터 / 상태 변화: DB나 Redis 변화는 없다. 대신 홈 `ModeCardView`에 `group` read model 필드를 추가해 `arcade / quiz / discover` 구분을 템플릿이 직접 해석하지 않게 했고, Stats는 기존 서비스 지표와 per-game 완료 수, Top 보드를 별도 구역으로 다시 배치했다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “게임 수가 늘었다고 바로 게임 선택 복잡도까지 같이 늘어나면 안 된다”는 것이다. 그래서 public grouping 규칙은 프론트 임시 배열이 아니라 `ModeCardView` 같은 read model에 올리고, `/ranking`, `/stats`는 기존 `LeaderboardService`와 `ServiceActivityService`를 유지한 채 표현 단위만 다시 묶었다. 정렬과 집계는 여전히 서버가 맡고, public surface는 어떤 종류의 플레이가 있는지를 먼저 읽히게 하는 역할만 한다.
+- 예외 / 엣지 케이스: `/ranking` 필터 버튼 라벨을 줄이면서 테스트가 HTML 공백/줄바꿈에 민감해졌다. 그래서 SSR 검증은 `>수도<` 같은 문자열 대신 `id=\"ranking-mode-capital\"` 같은 실제 식별자 기준으로 바꿔 안정성을 높였다. 기능 변화가 아니라 public 텍스트 밀도 조정 조각이므로 API payload 구조는 그대로 유지했다.
+- 테스트:
+  - `./gradlew test --tests com.worldmap.web.HomeControllerTest --tests com.worldmap.stats.StatsPageControllerTest --tests com.worldmap.ranking.LeaderboardIntegrationTest`
+  - `./gradlew test`
+  - `git diff --check`
+- 배운 점: 새 게임을 계속 붙일 때는 “더 많은 카드”보다 “지금 서비스가 어떤 종류의 플레이를 제공하는가”가 먼저 읽혀야 한다. 홈/랭킹/Stats를 같은 기준으로 묶어 두면 이후 게임이 더 늘어나도 public 설명 방식이 덜 흔들린다.
+- 아직 약한 부분: 현재 grouping은 `아케이드 / 퀵 퀴즈 / 추천` 3분류로 충분하지만, 사용자가 실제로 이 분류를 더 자연스럽게 느끼는지까지는 정량 데이터가 없다. 다음 후보는 국기 게임 세부 난이도를 더 볼지, 아니면 public copy를 여기서 멈출지 다시 판단하는 것이다.
+- 면접용 30초 요약: 신규 게임 3종을 붙인 뒤 public 홈, 랭킹, Stats가 다시 복잡해졌습니다. 그래서 기능은 더 건드리지 않고 홈 카드를 `아케이드 러너 / 퀵 퀴즈와 추천`으로 묶고, 랭킹은 짧은 버튼 전환으로, Stats는 서비스 지표와 게임별 완료 수, Top 보드를 분리해 재정리했습니다. 핵심은 정렬과 집계 규칙은 그대로 서버에 두고, public surface의 읽기 비용만 낮췄다는 점입니다.

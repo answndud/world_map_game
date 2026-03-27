@@ -838,11 +838,15 @@
 - `FlagGameOptionGeneratorTest`로 `EUROPE same-continent 유지`, `OCEANIA -> ASIA fallback`, `NORTH_AMERICA -> SOUTH_AMERICA fallback`을 고정
 - `FlagGameDifficultyPolicy`를 플레이어 관점의 `기본 / 확장 / 전체 라운드`로 다시 정의하고, `FlagGameService`가 초반 라운드에서는 same-continent distractor가 충분한 대륙만 우선 출제하도록 정리
 - `FlagGameDifficultyPolicyTest`, `FlagGameFlowIntegrationTest`로 `difficultyGuide`, 초반 라운드 target continent 안정화, 결과 화면의 구간 표시를 고정
+- 신규 게임 3종이 public 제품에 모두 붙은 뒤, 홈은 `아케이드 러너 / 퀵 퀴즈와 추천` 두 구역으로 모드 카드를 재그룹핑해 첫 진입 판단 비용을 줄임
+- 공개 `/ranking`은 다섯 게임 필터를 `위치 / 수도 / 국기 / 배틀 / 인구` 짧은 버튼으로 바꾸고, 정렬 규칙은 그대로 서버에 둔 채 전환 밀도만 줄임
+- 공개 `/stats`는 서비스 전체 지표와 게임별 완료 수를 분리하고, Top 보드를 `아케이드 상위 기록 / 퀵 퀴즈 상위 기록` 두 묶음으로 재정리해 다섯 게임 확장 이후의 읽기 부담을 낮춤
+- `HomeControllerTest`, `StatsPageControllerTest`, `LeaderboardIntegrationTest`로 새 grouped public surface를 고정
 
 다음 후속 개선 후보:
 
-- 새 게임 3종의 홈 카드 / 랭킹 / Stats 밀도를 한 번 더 점검
 - 국기 게임 세부 난이도(동일 대륙 고정 비율, 자산 36개 이후 확장 전략)를 더 넓힐지 결정
+- 신규 게임 3종이 모두 열린 상태에서 홈/랭킹/Stats 문구를 더 줄일지, 아니면 현재 그룹 구조로 유지할지 한 번 더 확인
 
 반드시 이해할 것:
 
