@@ -302,6 +302,7 @@
 - 8단계 9차 구현으로 `/dashboard` 첫 화면에 운영 수치 카드를 추가했다. `총 회원 수`는 `member_account`, `오늘 활성 회원 / 게스트`와 `오늘 시작된 세션 수`는 각 게임 세션의 `startedAt`, `오늘 완료된 게임 수`와 `모드별 완료 수`는 `leaderboard_record.finishedAt` 기준으로 계산한다.
 - 8단계 10차 구현으로 dashboard 활동 지표를 `ServiceActivityService`로 분리해 `/dashboard`와 공개 `/stats`가 같은 read model을 재사용하게 했다. `Stats`는 전체 사용자에게 공개 가능한 운영 수치와 일간 Top 3만 보여 주고, 추천 품질/버전 정보는 계속 Dashboard에만 남긴다.
 - 8단계 10차 구현으로 local profile 시작 시 admin 계정 `worldmap_admin`, 일반 계정 `orbit_runner`, 샘플 leaderboard run 5개, 진행 중 guest 세션 1개를 자동 생성하는 demo bootstrap을 추가했다. DB 데이터를 비워도 local profile로 서버를 다시 띄우면 country seed -> admin bootstrap -> demo bootstrap 순서로 같은 확인용 상태를 다시 만들 수 있다.
+- local boot 호환성 조각으로 `GameLevelRollbackInitializer`가 legacy `leaderboard_record`에 남아 있을 수 있는 `game_level NOT NULL` 제약과 예전 `game_mode` check constraint를 함께 정리하게 바꿨다. 그래서 예전 DB 스키마를 가진 local 환경에서도 현재 `LeaderboardRecord` 엔티티와 demo bootstrap insert가 그대로 동작한다.
 - 9단계 rollback 구현으로 위치/인구수 Level 2 실험은 product scope에서 제거했고, internal Level 2 호환 코드도 정리됐다. `GameLevelRollbackInitializer`는 앱 시작 시 legacy `game_level` 컬럼이 남아 있는 DB에서만 기존 `LEVEL_2` 세션 / 시도 / 랭킹 row와 Redis `l2` 키를 정리한다. 그래서 public `/ranking`, `/stats`, `/mypage`, 게임 시작 화면은 다시 Level 1-only 기준으로 단순해졌다.
 - 8단계 11차 구현으로 홈 첫 화면에서 guest는 `로그인 / 회원가입`, 로그인 사용자는 `My Page / 로그아웃`을 바로 볼 수 있게 정리했다. 계정 기능은 그대로 두고, 홈에서 기록 유지 진입점을 더 짧게 만든 조각이다.
 - 8단계 12차 구현으로 홈 첫 화면은 hero에서 개별 게임 CTA를 반복하지 않고, 실제 모드 선택은 `지금 플레이할 모드` 카드 영역 한 곳에서만 하도록 다시 정리했다. hero는 서비스 소개, 계정 연결, 공개 `Stats` 진입만 맡고, 모드 설명 중복을 줄여 첫 진입 구조를 단순화했다.

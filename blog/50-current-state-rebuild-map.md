@@ -95,6 +95,7 @@
 - admin 계정: `worldmap_admin / secret123`
 - user 계정: `orbit_runner / secret123`
 - local에서 샘플 run, guest live session, current recommendation feedback sample까지 bootstrap
+- legacy DB에 `leaderboard_record.game_level` 컬럼이나 예전 `game_mode` check constraint가 남아 있더라도 startup rollback initializer가 이를 먼저 정리해 current demo bootstrap이 그대로 동작한다.
 - 위치/수도/인구수/인구 비교 퀵 배틀 게임이 현재 public 기본 모드이고, 예전 `LEVEL_2` 세션 / 랭킹 row와 Redis `l2` 키는 startup rollback initializer가 먼저 정리
 - 국기 게임은 현재 public route `/games/flag/start`가 열려 있고, `FlagAssetCatalog + FlagQuestionCountryPoolService` 기준 36개 출제 가능 국가 pool로 운영한다.
 - 국기 distractor 생성은 `same continent -> 인접 대륙 -> 전체 pool` fallback 규칙으로 서버가 관리한다.

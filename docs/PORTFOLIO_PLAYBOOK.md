@@ -834,6 +834,7 @@
 - `DemoBootstrapIntegrationTest`로 admin/user 계정 + location/population/flag sample run + recommendation feedback sample bootstrap을 같이 고정
 - `DemoBootstrapService`에 capital / population-battle sample run도 추가해 local `/stats`, `/ranking`에서 신규 게임 5종 보드가 서버 재기동 직후 바로 보이게 함
 - `DemoBootstrapIntegrationTest`로 admin/user 계정 + location/population/capital/flag/population-battle sample run + recommendation feedback sample bootstrap을 같이 고정
+- `GameLevelRollbackInitializer`가 legacy local DB의 `leaderboard_record`에 남아 있을 수 있는 `game_level NOT NULL` 제약과 예전 `game_mode` check constraint를 함께 정리해, 현재 `LeaderboardRecord` insert와 demo bootstrap이 예전 스키마에서도 그대로 동작하게 함
 - `FlagGameOptionGenerator`를 same-continent random에서 `same continent -> 인접 대륙 -> 전체 pool` 순 fallback으로 바꿔, 북미/오세아니아처럼 후보가 적은 문제도 더 설명 가능하게 정리
 - `FlagGameOptionGeneratorTest`로 `EUROPE same-continent 유지`, `OCEANIA -> ASIA fallback`, `NORTH_AMERICA -> SOUTH_AMERICA fallback`을 고정
 - `FlagGameDifficultyPolicy`를 플레이어 관점의 `기본 / 확장 / 전체 라운드`로 다시 정의하고, `FlagGameService`가 초반 라운드에서는 same-continent distractor가 충분한 대륙만 우선 출제하도록 정리

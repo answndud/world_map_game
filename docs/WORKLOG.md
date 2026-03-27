@@ -4107,3 +4107,28 @@
 - 배운 점: 새 게임을 계속 붙일 때는 “더 많은 카드”보다 “지금 서비스가 어떤 종류의 플레이를 제공하는가”가 먼저 읽혀야 한다. 홈/랭킹/Stats를 같은 기준으로 묶어 두면 이후 게임이 더 늘어나도 public 설명 방식이 덜 흔들린다.
 - 아직 약한 부분: 현재 grouping은 `아케이드 / 퀵 퀴즈 / 추천` 3분류로 충분하지만, 사용자가 실제로 이 분류를 더 자연스럽게 느끼는지까지는 정량 데이터가 없다. 다음 후보는 국기 게임 세부 난이도를 더 볼지, 아니면 public copy를 여기서 멈출지 다시 판단하는 것이다.
 - 면접용 30초 요약: 신규 게임 3종을 붙인 뒤 public 홈, 랭킹, Stats가 다시 복잡해졌습니다. 그래서 기능은 더 건드리지 않고 홈 카드를 `아케이드 러너 / 퀵 퀴즈와 추천`으로 묶고, 랭킹은 짧은 버튼 전환으로, Stats는 서비스 지표와 게임별 완료 수, Top 보드를 분리해 재정리했습니다. 핵심은 정렬과 집계 규칙은 그대로 서버에 두고, public surface의 읽기 비용만 낮췄다는 점입니다.
+
+## 2026-03-27 - local boot에서 legacy leaderboard game_level 제약 완화
+
+- 단계: 11. 신규 게임 확장
+- 목적: 8080 local boot를 다시 확인하는 과정에서, 예전 DB에 남아 있던 `leaderboard_record.game_level NOT NULL` 제약과 오래된 `leaderboard_record.game_mode` check constraint 때문에 현재 `LeaderboardRecord` 엔티티와 demo bootstrap insert가 실패했다. 이번 조각의 목적은 Level 2 rollback 이후에도 남아 있을 수 있는 legacy 스키마 제약까지 startup에서 정리해, local demo가 예전 DB에서도 바로 올라오게 만드는 것이다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/common/config/GameLevelRollbackInitializer.java`
+  - `src/test/java/com/worldmap/common/config/GameLevelRollbackInitializerIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/50-current-state-rebuild-map.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/89-relax-legacy-leaderboard-game-level-constraint-for-local-boot.md`
+- 요청 흐름 / 데이터 흐름: public HTTP 요청은 없다. 흐름은 `CountrySeedInitializer -> AdminBootstrapInitializer -> RecommendationFeedbackLegacyColumnInitializer -> GameLevelRollbackInitializer -> DemoBootstrapInitializer`이다. 이번에는 `GameLevelRollbackInitializer`가 먼저 stale `leaderboard_record_game_mode_check` constraint를 제거하고, `leaderboard_record.game_level` 컬럼이 있으면 `ALTER COLUMN DROP NOT NULL`도 수행한 뒤, 예전 `LEVEL_2` row와 Redis `l2` 키를 정리한다. 이후 `DemoBootstrapService`가 current `LeaderboardRecord` 엔티티로 sample run을 저장한다.
+- 데이터 / 상태 변화: DB 스키마를 migration으로 영구 변경하지는 않는다. 대신 startup 시점에 legacy local DB의 `leaderboard_record.game_level` nullable 상태를 되돌리고, stale `leaderboard_record_game_mode_check` constraint를 제거한다. 이로 인해 current 엔티티가 `game_level`을 모르고 `CAPITAL / FLAG / POPULATION_BATTLE` 같은 새 `game_mode`를 저장해도 local boot와 sample run seed가 실패하지 않는다.
+- 핵심 도메인 개념: 이 로직은 demo bootstrap 자체보다 앞에 있어야 한다. 이유는 demo bootstrap이 `leaderboard_record` insert를 시작하기 전에 legacy 제약이 먼저 풀려야 하기 때문이다. 따라서 컨트롤러나 bootstrap service가 아니라 startup initializer가 책임지는 것이 맞다.
+- 예외 / 엣지 케이스: `leaderboard_record.game_level` 컬럼이나 stale check constraint가 없는 최신 DB에서는 아무것도 하지 않는다. 즉 최신 schema에는 영향이 없고, 예전 local DB에서만 호환성 방어막 역할을 한다.
+- 테스트:
+  - `./gradlew test --tests com.worldmap.common.config.GameLevelRollbackInitializerIntegrationTest --tests com.worldmap.demo.DemoBootstrapIntegrationTest`
+  - `git diff --check`
+- 배운 점: product scope에서 Level 2 코드를 지운 뒤에도 local DB에는 schema 제약이 남아 있을 수 있다. rollback initializer는 row 삭제만이 아니라 “현재 엔티티가 더 이상 모르는 legacy 제약을 어디까지 완화할 것인가”까지 같이 다뤄야 local 재현성이 안정된다.
+- 아직 약한 부분: 현재는 `leaderboard_record.game_level`만 local boot에서 실제 장애를 일으킨 것이 확인돼 그것만 완화했다. 다른 legacy 제약이 더 있는지는 이후 local smoke 중 추가로 발견되면 같은 방식으로 정리해야 한다.
+- 면접용 30초 요약: Level 2 코드를 지운 뒤에도 local DB에 `leaderboard_record.game_level NOT NULL` 제약과 예전 `game_mode` check constraint가 남아 있으면, 현재 엔티티가 새 게임 모드를 저장할 때 demo bootstrap insert가 실패할 수 있었습니다. 그래서 `GameLevelRollbackInitializer`가 예전 `LEVEL_2` row를 지우는 것에 더해, legacy `game_level` 제약과 stale `game_mode` check까지 같이 정리하게 바꿨습니다. 덕분에 현재 코드 기준 local demo가 예전 DB에서도 바로 올라오게 됐습니다.
