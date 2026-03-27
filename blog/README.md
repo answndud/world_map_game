@@ -137,6 +137,7 @@
 74. [국기 자산과 country seed를 합쳐 출제 가능 국가 pool 만들기](./81-build-flag-question-country-pool-from-seed-and-assets.md)
 75. [국기 보고 나라 맞히기 Level 1 vertical slice를 현재 구조에 붙이기](./82-add-flag-quiz-level-1-vertical-slice.md)
 76. [local demo bootstrap에 국기 퀴즈 sample run을 넣기](./83-seed-flag-sample-run-in-local-demo-bootstrap.md)
+77. [local demo bootstrap에 수도/인구 비교 sample run도 넣기](./84-seed-capital-and-population-battle-sample-runs-in-local-demo-bootstrap.md)
 
 ### Part E. 확장과 포트폴리오 정리
 

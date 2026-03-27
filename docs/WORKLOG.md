@@ -3952,3 +3952,30 @@
 - 배운 점: local demo의 설명 가능성은 기능을 여는 것만큼 중요하다. 특히 새 게임을 public 화면에 붙였으면, 최소한 하나의 sample run이 bootstrap에 있어야 `/stats`와 `/ranking`에서 그 모드를 즉시 보여 줄 수 있다.
 - 아직 약한 부분: capital과 population-battle 보드는 아직 demo seed에 넣지 않았고, flag 자산 pool도 12개 subset에 머무른다. 다음 후보는 `capital / population-battle sample run 추가` 또는 `flag asset pool 확대`다.
 - 면접용 30초 요약: 국기 게임을 열어도 local demo에서 보드가 비어 있으면 설명 흐름이 끊겼습니다. 그래서 startup `DemoBootstrapService`에 `FLAG` sample run 하나를 더 넣고, 그 데이터도 임의 문자열이 아니라 `FlagQuestionCountryPoolService`가 보장한 출제 가능 국가 subset을 기준으로 만들었습니다. 덕분에 서버를 local profile로 다시 띄우기만 해도 `/stats`와 `/ranking`에서 국기 게임이 실제로 돌고 있다는 걸 바로 보여 줄 수 있게 됐습니다.
+
+## 2026-03-27 - 11단계 local demo에 수도/인구 비교 sample run 추가
+
+- 단계: 11. 신규 게임 확장
+- 목적: 국기 sample run까지 넣은 뒤에도 `/stats`, `/ranking`에서 `capital`, `population-battle` 보드는 첫 플레이 전까지 비어 있었다. 이번 조각의 목적은 local demo를 “신규 게임 5종이 모두 바로 보이는 상태”로 맞춰, 서버 재기동 직후 시연 흐름이 끊기지 않게 하는 것이다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/demo/application/DemoBootstrapService.java`
+  - `src/test/java/com/worldmap/demo/DemoBootstrapIntegrationTest.java`
+  - `README.md`
+  - `docs/LOCAL_DEMO_BOOTSTRAP.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/50-current-state-rebuild-map.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/84-seed-capital-and-population-battle-sample-runs-in-local-demo-bootstrap.md`
+- 요청 흐름 / 데이터 흐름: 이번 조각은 public HTTP가 아니라 startup bootstrap 흐름이다. `CountrySeedInitializer -> AdminBootstrapInitializer -> RecommendationFeedbackLegacyColumnInitializer -> GameLevelRollbackInitializer -> DemoBootstrapInitializer` 순서를 유지한 채, `DemoBootstrapService.ensureLocalDemoData()`가 기존 위치 / 인구수 / 국기 sample run 뒤에 `capital`, `population-battle` sample run도 채운다. 두 run 모두 `*_game_session / stage / attempt`와 `leaderboard_record`를 같이 만들기 때문에 `/stats`, `/ranking`, `/mypage`가 같은 seed를 바로 읽을 수 있다.
+- 데이터 / 상태 변화: local profile 기준으로 `orbit_runner` 완료 run이 3개에서 5개로 늘어난다. 새로 추가되는 것은 `demo:capital:orbit_runner:1`, `demo:population-battle:orbit_runner:1` 시그니처를 가진 leaderboard run 2개와, 이에 대응하는 `capital_game_session / stage / attempt`, `population_battle_game_session / stage / attempt` sample 데이터다. 이로 인해 `/stats`와 `/ranking`의 `capital`, `population-battle` 보드도 서버 첫 기동 직후부터 값을 가진다.
+- 핵심 도메인 개념: demo bootstrap은 “SQL fixture 덤프”가 아니라 현재 제품의 설명 가능한 시작 상태를 재현하는 startup service다. 그래서 수도/인구 비교 sample run도 임의 점수 row만 넣지 않고, 실제 세션 / Stage / Attempt 패턴을 만든 뒤 leaderboard까지 반영했다. 즉 demo 데이터도 public 게임이 쓰는 도메인 구조와 같은 source of truth를 공유해야 한다.
+- 예외 / 엣지 케이스: bootstrap은 `run_signature` 기준으로 중복 생성을 피한다. 따라서 기존 local DB에 이미 `demo:capital:orbit_runner:1`, `demo:population-battle:orbit_runner:1`이 있으면 다시 만들지 않는다. 반대로 `recommendation_feedback` sample은 현재처럼 `surveyVersion + engineVersion` 응답 수가 5개 미만일 때만 부족한 만큼 채운다.
+- 테스트:
+  - `./gradlew test --tests com.worldmap.demo.DemoBootstrapIntegrationTest --tests com.worldmap.stats.StatsPageControllerTest`
+  - `./gradlew test`
+  - `git diff --check`
+- 배운 점: 새 게임을 public 제품에 붙인 뒤 local demo가 그 상태를 바로 보여 주지 못하면 설명력이 급격히 떨어진다. 특히 `/stats`, `/ranking`이 제품 존재감을 보여 주는 표면이라면, sample run seed도 그 read model을 함께 채우는 방향으로 정리하는 편이 더 낫다.
+- 아직 약한 부분: 현재 local demo는 다섯 게임 모두 보이지만, 국기 자산 pool은 여전히 sample 12개에 머문다. 다음 후보는 `flag asset pool 확대` 또는 신규 게임 3종의 난이도/카피 polish다.
+- 면접용 30초 요약: local demo에서 수도 맞히기와 인구 비교 퀵 배틀 보드가 비어 있으면, 신규 게임 5종이 다 살아 있다는 걸 한 번에 보여 주기 어려웠습니다. 그래서 startup `DemoBootstrapService`에 `CAPITAL`, `POPULATION_BATTLE` sample run도 추가하고, 세션 / Stage / Attempt와 leaderboard row를 실제 게임 규칙과 같은 패턴으로 같이 만들게 했습니다. 덕분에 local profile로 서버를 다시 띄우기만 해도 `/stats`, `/ranking`의 다섯 게임 보드를 바로 시연할 수 있게 됐습니다.

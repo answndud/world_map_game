@@ -97,7 +97,7 @@
 - local에서 샘플 run, guest live session, current recommendation feedback sample까지 bootstrap
 - 위치/수도/인구수/인구 비교 퀵 배틀 게임이 현재 public 기본 모드이고, 예전 `LEVEL_2` 세션 / 랭킹 row와 Redis `l2` 키는 startup rollback initializer가 먼저 정리
 - 국기 게임은 현재 public route `/games/flag/start`가 열려 있고, `FlagAssetCatalog + FlagQuestionCountryPoolService` 기준 12개 출제 가능 국가 pool로 운영한다.
-- local demo bootstrap에는 `orbit_runner`의 flag sample run 1개가 같이 들어가서 `/stats`와 `/ranking`의 flag 보드를 바로 확인할 수 있다.
+- local demo bootstrap에는 `orbit_runner`의 위치 / 인구수 / 수도 / 인구 비교 퀵 배틀 / 국기 sample run이 같이 들어가서 `/stats`와 `/ranking`의 5개 게임 보드를 바로 확인할 수 있다.
 
 근거:
 
@@ -132,7 +132,6 @@ set +a
 - `/stats`
   - public 활동 지표가 보이는가
   - 위치/수도/인구수/인구 비교 퀵 배틀/국기 퀴즈 활동 지표와 공개 Top 보드가 보이는가
-  - `capital`, `population-battle` 보드는 local demo 기본 seed에서 비어 있을 수 있지만, `flag` 보드는 seed로 바로 보이는가
 - `/ranking`
   - 위치/수도/인구수/인구 비교 퀵 배틀/국기 퀴즈 게임 전환과 전체/일간 필터만 보이고, `게임 레벨` 필터는 더 이상 보이지 않는가
 - `/games/capital/start`
@@ -190,7 +189,7 @@ set +a
 
 - `worldmap_admin` 계정 존재
 - `orbit_runner` 계정 존재
-- `orbit_runner` 완료 run 3개
+- `orbit_runner` 완료 run 5개
 - `demo-guest-live` 진행 중 guest 세션 1개
 - current recommendation feedback sample 5개 이상
 - `game_level = LEVEL_2`인 위치/인구수 세션과 `leaderboard_record`, Redis `l2` 키는 남아 있지 않은가
@@ -229,6 +228,7 @@ set +a
 13. [81-build-flag-question-country-pool-from-seed-and-assets.md](./81-build-flag-question-country-pool-from-seed-and-assets.md)
 14. [82-add-flag-quiz-level-1-vertical-slice.md](./82-add-flag-quiz-level-1-vertical-slice.md)
 15. [83-seed-flag-sample-run-in-local-demo-bootstrap.md](./83-seed-flag-sample-run-in-local-demo-bootstrap.md)
+16. [84-seed-capital-and-population-battle-sample-runs-in-local-demo-bootstrap.md](./84-seed-capital-and-population-battle-sample-runs-in-local-demo-bootstrap.md)
 
 이 구간은 현재 코드와 비교적 직접 대응된다.
 
@@ -283,6 +283,7 @@ Level 2 실험은 현재 public 제품 범위에서 완전히 제거됐고, inte
 6. [81-build-flag-question-country-pool-from-seed-and-assets.md](./81-build-flag-question-country-pool-from-seed-and-assets.md)
 7. [82-add-flag-quiz-level-1-vertical-slice.md](./82-add-flag-quiz-level-1-vertical-slice.md)
 8. [83-seed-flag-sample-run-in-local-demo-bootstrap.md](./83-seed-flag-sample-run-in-local-demo-bootstrap.md)
+9. [84-seed-capital-and-population-battle-sample-runs-in-local-demo-bootstrap.md](./84-seed-capital-and-population-battle-sample-runs-in-local-demo-bootstrap.md)
 
 이 구간에서 중요한 건 `/admin`보다 `/dashboard`를 기준으로 읽는 것이다.
 

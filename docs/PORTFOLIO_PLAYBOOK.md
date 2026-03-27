@@ -617,7 +617,7 @@
 - `ServiceActivityService`와 `ServiceActivityView`로 활동 지표 read model을 분리해 `/dashboard`와 공개 `/stats`가 같은 기준의 숫자를 재사용하도록 정리했다
 - `/stats` 공개 페이지를 추가해 일반 사용자도 `총 가입자 수`, `오늘 활성 플레이어 수`, `오늘 시작된 세션 수`, `오늘 완료된 게임 수`, `오늘 위치/인구수 Top 3`를 볼 수 있게 했다
 - 공개 `/stats`는 서비스 활성을 보여 주는 숫자만 노출하고, 추천 만족도 집계 / persona baseline / surveyVersion 같은 내부 운영 정보는 계속 `/dashboard`에만 남긴다
-- `DemoBootstrapProperties`, `DemoBootstrapService`, `DemoBootstrapInitializer`를 추가해 local profile 시작 시 `worldmap_admin(ADMIN)`, `orbit_runner(USER)`, 샘플 완료 run 2개, 진행 중 guest 세션 1개를 자동 생성하도록 연결했다
+- `DemoBootstrapProperties`, `DemoBootstrapService`, `DemoBootstrapInitializer`를 추가해 local profile 시작 시 `worldmap_admin(ADMIN)`, `orbit_runner(USER)`, 샘플 완료 run 5개, 진행 중 guest 세션 1개를 자동 생성하도록 연결했다
 - local demo bootstrap은 `country seed -> admin bootstrap -> demo bootstrap` 순서를 `@Order`로 고정해, DB를 비운 뒤 서버를 다시 띄워도 같은 확인용 상태를 재생성하게 했다
 - 저장소 루트의 gitignored `.env.local`에 local bootstrap 기본값을 같이 두고, source 후 `bootRun` 하면 같은 확인용 계정 / 샘플 데이터를 바로 불러오게 정리했다
 - 홈 첫 화면은 guest면 `로그인 / 회원가입`, 로그인 상태면 `My Page / 로그아웃`을 바로 보여 주도록 바꿔 계정 연결 진입점을 홈에서도 명확하게 만들었다
@@ -831,11 +831,12 @@
 - 세 신규 게임(수도 / 인구 비교 퀵 배틀 / 국기)이 모두 public start/state/answer/result, 랭킹, 공개 stats까지 연결된 상태로 닫힘
 - `DemoBootstrapService`에 flag sample run을 추가해 local `/stats`, `/ranking`에서 flag 보드가 서버 재기동 직후 바로 보이게 함
 - `DemoBootstrapIntegrationTest`로 admin/user 계정 + location/population/flag sample run + recommendation feedback sample bootstrap을 같이 고정
+- `DemoBootstrapService`에 capital / population-battle sample run도 추가해 local `/stats`, `/ranking`에서 신규 게임 5종 보드가 서버 재기동 직후 바로 보이게 함
+- `DemoBootstrapIntegrationTest`로 admin/user 계정 + location/population/capital/flag/population-battle sample run + recommendation feedback sample bootstrap을 같이 고정
 
 다음 후속 개선 후보:
 
 - 국기 자산 pool을 12개 sample에서 더 넓힐지 결정
-- 수도 / 인구 비교 퀵 배틀 local demo 샘플 run을 추가할지 판단
 - 새 게임 3종의 난이도 / 결과 카피 / 홈 카드 밀도를 한 번 더 점검
 
 반드시 이해할 것:
