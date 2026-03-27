@@ -3714,3 +3714,43 @@
 - 배운 점: 새 게임이 꼭 바로 코딩부터 들어가야 하는 것은 아니다. 특히 국기 게임처럼 에셋 품질과 재현성이 핵심인 경우에는, 도메인 모델보다 자산 관리 방식을 먼저 고정하는 편이 이후 코드가 훨씬 단순해진다.
 - 아직 약한 부분: 아직 실제 `flag-assets.json`과 SVG 파일이 없어서, source 후보와 라이선스 정리를 한 번 더 해야 한다. 다음 조각에서 `FlagAssetCatalog`를 넣기 전에 manifest 샘플 수와 검증 시점을 더 구체화해야 한다.
 - 면접용 30초 요약: 국기 게임은 규칙보다 에셋 관리가 먼저라고 판단했습니다. 그래서 바로 `flag` game mode를 열기보다, 국기 자산을 외부 URL이 아니라 저장소 내부 정적 파일과 manifest로 관리하기로 먼저 결정했습니다. 이렇게 하면 local/demo 환경에서도 네트워크 없이 같은 문제를 재현할 수 있고, 출제 가능 국가도 `country seed ∩ manifest ∩ 실제 파일 존재`로 명확하게 설명할 수 있습니다.
+
+## 2026-03-27 - 11단계 FlagAssetCatalog와 manifest loader 추가
+
+- 단계: 11. 신규 게임 확장
+- 목적: 국기 게임을 실제로 열기 전에, 서버가 국기 자산 manifest를 읽고 “지금 출제 가능한 국기 풀”을 설명 가능한 형태로 가져야 한다. 이번 조각은 `flag` game mode를 아직 만들지 않고, `flag-assets.json + static/images/flags/*.svg`를 source of truth로 읽는 catalog와 검증 테스트를 먼저 고정하는 데 집중했다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/game/flag/application/FlagAsset.java`
+  - `src/main/java/com/worldmap/game/flag/application/FlagAssetCatalog.java`
+  - `src/main/resources/data/flag-assets.json`
+  - `src/main/resources/static/images/flags/jpn.svg`
+  - `src/main/resources/static/images/flags/fra.svg`
+  - `src/main/resources/static/images/flags/deu.svg`
+  - `src/main/resources/static/images/flags/ita.svg`
+  - `src/main/resources/static/images/flags/irl.svg`
+  - `src/main/resources/static/images/flags/bel.svg`
+  - `src/main/resources/static/images/flags/pol.svg`
+  - `src/main/resources/static/images/flags/ukr.svg`
+  - `src/main/resources/static/images/flags/aut.svg`
+  - `src/main/resources/static/images/flags/nld.svg`
+  - `src/main/resources/static/images/flags/est.svg`
+  - `src/main/resources/static/images/flags/ltu.svg`
+  - `src/test/java/com/worldmap/game/flag/application/FlagAssetCatalogTest.java`
+  - `README.md`
+  - `docs/NEW_GAME_EXPANSION_PLAN.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/50-current-state-rebuild-map.md`
+  - `blog/79-add-flag-asset-catalog-before-opening-flag-game.md`
+- 요청 흐름 / 데이터 흐름: 이번 조각은 아직 HTTP 요청이 시작되지 않는다. 대신 앱이 `FlagAssetCatalog` bean을 만들 때 `classpath:data/flag-assets.json`을 읽고, 각 entry의 `iso3Code`, `relativePath`, `format`을 검증한 뒤 실제 `classpath:static/images/flags/*.svg` 파일 존재까지 확인한다. 이후 다른 서비스는 `supportedIso3Codes()`와 `findByIso3Code()`만 읽으면 “출제 가능한 국기 국가 집합”을 알 수 있다.
+- 데이터 / 상태 변화: DB 테이블과 엔티티는 바뀌지 않았다. 대신 저장소 안에 `flag-assets.json` manifest와 sample SVG 12개가 추가돼, 국기 자산의 source of truth가 코드베이스 안으로 들어왔다. 즉 지금은 `country`와 별도로 관리되는 정적 에셋 카탈로그가 새 read model로 생긴 상태다.
+- 핵심 도메인 개념: 국기 게임에서 중요한 건 국가 도메인과 에셋 도메인을 섞지 않는 것이다. `country`는 출제 대상의 공통 데이터고, 국기 이미지는 배포 가능한 정적 자산이다. 그래서 1차는 `country.flagPath` 같은 DB 컬럼을 추가하지 않고, manifest를 읽는 `FlagAssetCatalog`가 startup validation과 asset lookup을 동시에 맡는 구조로 시작했다.
+- 예외 / 엣지 케이스: manifest가 비어 있거나 ISO3가 중복되면 startup에서 바로 실패한다. `/images/flags/` 밖의 경로, non-SVG format, 실제 파일이 없는 entry도 허용하지 않는다. 또한 sample SVG는 12개만 넣었기 때문에, 지금 시점의 출제 가능 국가는 전체 194개가 아니라 manifest에 포함된 국가 subset이다.
+- 테스트:
+  - `./gradlew test --tests com.worldmap.game.flag.application.FlagAssetCatalogTest`
+  - `git diff --check`
+- 배운 점: 국기 게임은 “이미지 하나 보여주기”보다 `어떤 국기가 실제로 앱 안에 있고, 그걸 서버가 어떻게 검증하느냐`가 먼저다. 이걸 먼저 catalog와 테스트로 고정해 두면, 나중에 flag game mode를 열 때는 세션/Stage/Attempt와 option generator 쪽에만 집중할 수 있다.
+- 아직 약한 부분: sample SVG 12개는 파이프라인을 검증하기 위한 첫 묶음일 뿐이라, 실제 flag game vertical slice를 열기 전에는 자산 수를 더 늘리거나 “출제 가능 국가를 subset으로 먼저 운영한다”는 제품 결정을 확정해야 한다. 라이선스 노트도 지금은 placeholder 수준이라 출처와 정리 방식을 더 명확히 해야 한다.
+- 면접용 30초 요약: 국기 게임은 규칙보다 자산 검증이 먼저라고 판단해서, 바로 게임 모드를 열지 않고 `FlagAssetCatalog`를 먼저 만들었습니다. 이 catalog는 manifest를 읽고 ISO3, 경로, format, 실제 SVG 파일 존재를 startup에서 검증합니다. 그래서 지금은 서버가 “어떤 국기들이 현재 출제 가능하냐”를 설명 가능한 read model로 갖게 됐고, 다음 조각에서는 이 pool을 가지고 game mode를 열 수 있습니다.

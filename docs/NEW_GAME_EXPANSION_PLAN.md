@@ -193,8 +193,10 @@
 - 실제 파일은 `src/main/resources/static/images/flags/{iso3}.svg`
 - manifest는 `src/main/resources/data/flag-assets.json`
 - 출제 가능 국가는 `country seed ∩ manifest ∩ 실제 파일 존재` 교집합
+- `FlagAssetCatalog`가 manifest를 읽고, ISO3 / 경로 / format / 파일 존재를 startup 기준으로 검증하게 했다.
+- sample SVG 12개를 먼저 저장소에 포함해 local/demo에서도 같은 자산을 재현 가능하게 했다.
 
-다음 작은 코드 조각은 `flag` game mode가 아니라 `FlagAssetCatalog + manifest 검증`이다.
+다음 작은 코드 조각은 `flag` game mode vertical slice가 아니라 `출제 가능 flag country pool 계산 + game mode 첫 skeleton`이다.
 
 ## 이번 우선순위 변경 이유
 

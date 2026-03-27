@@ -264,6 +264,7 @@ Level 2 실험은 현재 public 제품 범위에서 완전히 제거됐고, inte
 1. [76-plan-next-country-game-expansion.md](./76-plan-next-country-game-expansion.md)
 2. [77-add-capital-quiz-level-1-vertical-slice.md](./77-add-capital-quiz-level-1-vertical-slice.md)
 3. [78-add-population-battle-level-1-vertical-slice.md](./78-add-population-battle-level-1-vertical-slice.md)
+4. [79-add-flag-asset-catalog-before-opening-flag-game.md](./79-add-flag-asset-catalog-before-opening-flag-game.md)
 
 이 구간에서 중요한 건 `/admin`보다 `/dashboard`를 기준으로 읽는 것이다.
 
