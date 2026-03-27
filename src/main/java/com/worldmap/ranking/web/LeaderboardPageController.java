@@ -27,6 +27,10 @@ public class LeaderboardPageController {
 			leaderboardService.getLeaderboard(LeaderboardGameMode.CAPITAL, LeaderboardScope.ALL, 10)
 		);
 		model.addAttribute(
+			"flagAll",
+			leaderboardService.getLeaderboard(LeaderboardGameMode.FLAG, LeaderboardScope.ALL, 10)
+		);
+		model.addAttribute(
 			"populationBattleAll",
 			leaderboardService.getLeaderboard(LeaderboardGameMode.POPULATION_BATTLE, LeaderboardScope.ALL, 10)
 		);
@@ -37,6 +41,10 @@ public class LeaderboardPageController {
 		model.addAttribute(
 			"capitalDaily",
 			leaderboardService.getLeaderboard(LeaderboardGameMode.CAPITAL, LeaderboardScope.DAILY, 10)
+		);
+		model.addAttribute(
+			"flagDaily",
+			leaderboardService.getLeaderboard(LeaderboardGameMode.FLAG, LeaderboardScope.DAILY, 10)
 		);
 		model.addAttribute(
 			"populationBattleDaily",

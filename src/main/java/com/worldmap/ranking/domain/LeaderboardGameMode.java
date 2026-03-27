@@ -4,6 +4,7 @@ public enum LeaderboardGameMode {
 
 	LOCATION("location"),
 	CAPITAL("capital"),
+	FLAG("flag"),
 	POPULATION_BATTLE("population-battle"),
 	POPULATION("population");
 

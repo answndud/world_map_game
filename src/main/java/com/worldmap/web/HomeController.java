@@ -34,6 +34,13 @@ public class HomeController {
 				"/games/capital/start"
 			),
 			new ModeCardView(
+				"국기 보고 나라 맞히기",
+				"Flag Quiz",
+				"국기 이미지를 보고 4개 국가 보기 중 정답을 고르는 퀴즈입니다.",
+				"Quiz",
+				"/games/flag/start"
+			),
+			new ModeCardView(
 				"인구 비교 퀵 배틀",
 				"Population Battle",
 				"두 나라 중 더 큰 인구를 가진 나라를 고르는 빠른 좌우 선택 모드입니다.",

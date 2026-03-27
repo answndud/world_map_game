@@ -16,6 +16,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.worldmap.country.domain.CountryRepository;
 import com.worldmap.game.capital.domain.CapitalGameStage;
 import com.worldmap.game.capital.domain.CapitalGameStageRepository;
+import com.worldmap.game.flag.domain.FlagGameStage;
+import com.worldmap.game.flag.domain.FlagGameStageRepository;
 import com.worldmap.game.location.domain.LocationGameStage;
 import com.worldmap.game.location.domain.LocationGameStageRepository;
 import com.worldmap.game.population.domain.PopulationGameStage;
@@ -59,6 +61,9 @@ class LeaderboardIntegrationTest {
 
 	@Autowired
 	private CapitalGameStageRepository capitalGameStageRepository;
+
+	@Autowired
+	private FlagGameStageRepository flagGameStageRepository;
 
 	@Autowired
 	private PopulationGameStageRepository populationGameStageRepository;
@@ -130,12 +135,14 @@ class LeaderboardIntegrationTest {
 				.andExpect(content().string(containsString("지금 새로고침")))
 				.andExpect(content().string(containsString("게임 종류")))
 				.andExpect(content().string(containsString("수도 맞히기")))
+				.andExpect(content().string(containsString("국기 퀴즈")))
 				.andExpect(content().string(containsString("인구 비교 배틀")))
 				.andExpect(content().string(containsString("동점 처리")))
 				.andExpect(content().string(containsString("15초마다 갱신")))
 				.andExpect(content().string(not(containsString("Redis Leaderboard"))))
 			.andExpect(model().attributeExists("locationAll"))
 			.andExpect(model().attributeExists("capitalAll"))
+			.andExpect(model().attributeExists("flagAll"))
 			.andExpect(model().attributeExists("populationBattleAll"))
 			.andExpect(model().attributeExists("populationAll"));
 
@@ -172,6 +179,37 @@ class LeaderboardIntegrationTest {
 			.andExpect(content().string(containsString("ranking-capital-all-body")));
 
 		assertThat(stringRedisTemplate.opsForZSet().zCard(TEST_PREFIX + ":all:capital")).isEqualTo(1L);
+	}
+
+	@Test
+	void gameOverRecordsFlagLeaderboardAndRendersFlagBoard() throws Exception {
+		UUID sessionId = UUID.fromString(startFlagGame("rank-flag"));
+		FlagGameStage firstStage = flagGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
+			.orElseThrow();
+		int wrongOptionNumber = firstStage.getCorrectOptionNumber() == 1 ? 2 : 1;
+
+		for (int attempt = 1; attempt <= 3; attempt++) {
+			mockMvc.perform(
+				post("/api/games/flag/sessions/{sessionId}/answer", sessionId)
+					.contentType("application/json")
+					.content(flagAnswerPayload(1, wrongOptionNumber))
+			)
+				.andExpect(status().isOk());
+		}
+
+		mockMvc.perform(get("/api/rankings/flag").param("scope", "ALL").param("limit", "5"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.gameMode").value("FLAG"))
+			.andExpect(jsonPath("$.entries[0].playerNickname").value("rank-flag"));
+
+		mockMvc.perform(get("/ranking"))
+			.andExpect(status().isOk())
+			.andExpect(model().attributeExists("flagAll"))
+			.andExpect(model().attributeExists("flagDaily"))
+			.andExpect(content().string(containsString("ranking-mode-flag")))
+			.andExpect(content().string(containsString("ranking-flag-all-body")));
+
+		assertThat(stringRedisTemplate.opsForZSet().zCard(TEST_PREFIX + ":all:flag")).isEqualTo(1L);
 	}
 
 	@Test
@@ -257,6 +295,19 @@ class LeaderboardIntegrationTest {
 		return json.get("sessionId").asText();
 	}
 
+	private String startFlagGame(String nickname) throws Exception {
+		MvcResult result = mockMvc.perform(
+			post("/api/games/flag/sessions")
+				.contentType("application/json")
+				.content("{\"nickname\":\"" + nickname + "\"}")
+		)
+			.andExpect(status().isCreated())
+			.andReturn();
+
+		JsonNode json = objectMapper.readTree(result.getResponse().getContentAsString());
+		return json.get("sessionId").asText();
+	}
+
 	private String locationAnswerPayload(Integer stageNumber, String selectedCountryIso3Code) {
 		return """
 			{
@@ -285,6 +336,15 @@ class LeaderboardIntegrationTest {
 	}
 
 	private String populationBattleAnswerPayload(Integer stageNumber, Integer selectedOptionNumber) {
+		return """
+			{
+			  "stageNumber": %d,
+			  "selectedOptionNumber": %d
+			}
+			""".formatted(stageNumber, selectedOptionNumber);
+	}
+
+	private String flagAnswerPayload(Integer stageNumber, Integer selectedOptionNumber) {
 		return """
 			{
 			  "stageNumber": %d,

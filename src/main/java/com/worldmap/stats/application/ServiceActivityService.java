@@ -2,6 +2,7 @@ package com.worldmap.stats.application;
 
 import com.worldmap.auth.domain.MemberRepository;
 import com.worldmap.game.capital.domain.CapitalGameSessionRepository;
+import com.worldmap.game.flag.domain.FlagGameSessionRepository;
 import com.worldmap.game.location.domain.LocationGameSessionRepository;
 import com.worldmap.game.population.domain.PopulationGameSessionRepository;
 import com.worldmap.game.populationbattle.domain.PopulationBattleGameSessionRepository;
@@ -20,6 +21,7 @@ public class ServiceActivityService {
 
 	private final MemberRepository memberRepository;
 	private final CapitalGameSessionRepository capitalGameSessionRepository;
+	private final FlagGameSessionRepository flagGameSessionRepository;
 	private final LocationGameSessionRepository locationGameSessionRepository;
 	private final PopulationGameSessionRepository populationGameSessionRepository;
 	private final PopulationBattleGameSessionRepository populationBattleGameSessionRepository;
@@ -28,6 +30,7 @@ public class ServiceActivityService {
 	public ServiceActivityService(
 		MemberRepository memberRepository,
 		CapitalGameSessionRepository capitalGameSessionRepository,
+		FlagGameSessionRepository flagGameSessionRepository,
 		LocationGameSessionRepository locationGameSessionRepository,
 		PopulationGameSessionRepository populationGameSessionRepository,
 		PopulationBattleGameSessionRepository populationBattleGameSessionRepository,
@@ -35,6 +38,7 @@ public class ServiceActivityService {
 	) {
 		this.memberRepository = memberRepository;
 		this.capitalGameSessionRepository = capitalGameSessionRepository;
+		this.flagGameSessionRepository = flagGameSessionRepository;
 		this.locationGameSessionRepository = locationGameSessionRepository;
 		this.populationGameSessionRepository = populationGameSessionRepository;
 		this.populationBattleGameSessionRepository = populationBattleGameSessionRepository;
@@ -52,7 +56,10 @@ public class ServiceActivityService {
 				populationGameSessionRepository.findDistinctMemberIdsByStartedAtBetween(todayStart, tomorrowStart).stream(),
 				Stream.concat(
 					capitalGameSessionRepository.findDistinctMemberIdsByStartedAtBetween(todayStart, tomorrowStart).stream(),
-					populationBattleGameSessionRepository.findDistinctMemberIdsByStartedAtBetween(todayStart, tomorrowStart).stream()
+					java.util.stream.Stream.concat(
+						flagGameSessionRepository.findDistinctMemberIdsByStartedAtBetween(todayStart, tomorrowStart).stream(),
+						populationBattleGameSessionRepository.findDistinctMemberIdsByStartedAtBetween(todayStart, tomorrowStart).stream()
+					)
 				)
 			)
 		).collect(Collectors.toSet());
@@ -63,7 +70,10 @@ public class ServiceActivityService {
 				populationGameSessionRepository.findDistinctGuestSessionKeysByStartedAtBetween(todayStart, tomorrowStart).stream(),
 				Stream.concat(
 					capitalGameSessionRepository.findDistinctGuestSessionKeysByStartedAtBetween(todayStart, tomorrowStart).stream(),
-					populationBattleGameSessionRepository.findDistinctGuestSessionKeysByStartedAtBetween(todayStart, tomorrowStart).stream()
+					java.util.stream.Stream.concat(
+						flagGameSessionRepository.findDistinctGuestSessionKeysByStartedAtBetween(todayStart, tomorrowStart).stream(),
+						populationBattleGameSessionRepository.findDistinctGuestSessionKeysByStartedAtBetween(todayStart, tomorrowStart).stream()
+					)
 				)
 			)
 		).collect(Collectors.toSet());
@@ -71,6 +81,7 @@ public class ServiceActivityService {
 		long todayStartedSessionCount =
 			locationGameSessionRepository.countByStartedAtGreaterThanEqualAndStartedAtLessThan(todayStart, tomorrowStart)
 				+ capitalGameSessionRepository.countByStartedAtGreaterThanEqualAndStartedAtLessThan(todayStart, tomorrowStart)
+				+ flagGameSessionRepository.countByStartedAtGreaterThanEqualAndStartedAtLessThan(todayStart, tomorrowStart)
 				+ populationBattleGameSessionRepository.countByStartedAtGreaterThanEqualAndStartedAtLessThan(todayStart, tomorrowStart)
 				+ populationGameSessionRepository.countByStartedAtGreaterThanEqualAndStartedAtLessThan(todayStart, tomorrowStart);
 
@@ -92,6 +103,11 @@ public class ServiceActivityService {
 			),
 			leaderboardRecordRepository.countByGameModeAndFinishedAtGreaterThanEqualAndFinishedAtLessThan(
 				LeaderboardGameMode.CAPITAL,
+				todayStart,
+				tomorrowStart
+			),
+			leaderboardRecordRepository.countByGameModeAndFinishedAtGreaterThanEqualAndFinishedAtLessThan(
+				LeaderboardGameMode.FLAG,
 				todayStart,
 				tomorrowStart
 			),

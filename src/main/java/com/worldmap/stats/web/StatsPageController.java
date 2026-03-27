@@ -35,6 +35,11 @@ public class StatsPageController {
 			LeaderboardScope.DAILY,
 			3
 		));
+		model.addAttribute("flagDailyTop", leaderboardService.getLeaderboard(
+			LeaderboardGameMode.FLAG,
+			LeaderboardScope.DAILY,
+			3
+		));
 		model.addAttribute("populationBattleDailyTop", leaderboardService.getLeaderboard(
 			LeaderboardGameMode.POPULATION_BATTLE,
 			LeaderboardScope.DAILY,

@@ -49,6 +49,10 @@
                     <strong th:text="${activity.todayCapitalCompletedRunCount}">0</strong>
                 </article>
                 <article class="stat-card">
+                    <span class="subtitle">TODAY FLAG RUNS</span>
+                    <strong th:text="${activity.todayFlagCompletedRunCount}">0</strong>
+                </article>
+                <article class="stat-card">
                     <span class="subtitle">TODAY POPULATION BATTLE RUNS</span>
                     <strong th:text="${activity.todayPopulationBattleCompletedRunCount}">0</strong>
                 </article>
@@ -138,6 +142,34 @@
                         </tr>
                         <tr th:if="${#lists.isEmpty(populationDailyTop.entries)}">
                             <td colspan="3">아직 오늘 완료된 인구수 퀴즈 기록이 없습니다.</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </article>
+
+            <article class="panel">
+                <div class="panel-head">
+                    <h2>오늘의 국기 퀴즈 Top 3</h2>
+                    <p>오늘 완료된 국기 보고 나라 맞히기 기준 상위 기록입니다.</p>
+                </div>
+                <div class="table-shell">
+                    <table class="result-table">
+                        <thead>
+                        <tr>
+                            <th>순위</th>
+                            <th>플레이어</th>
+                            <th>점수</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="entry : ${flagDailyTop.entries}">
+                            <td th:text="${entry.rank}">1</td>
+                            <td th:text="${entry.playerNickname}">Guest</td>
+                            <td th:text="${entry.totalScore} + '점'">420점</td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(flagDailyTop.entries)}">
+                            <td colspan="3">아직 오늘 완료된 국기 퀴즈 기록이 없습니다.</td>
                         </tr>
                         </tbody>
                     </table>

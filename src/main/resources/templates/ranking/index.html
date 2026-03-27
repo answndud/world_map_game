@@ -59,6 +59,13 @@
                                 수도 맞히기
                             </button>
                             <button class="secondary-button ranking-filter-button"
+                                    id="ranking-mode-flag"
+                                    type="button"
+                                    data-ranking-mode="flag"
+                                    aria-pressed="false">
+                                국기 퀴즈
+                            </button>
+                            <button class="secondary-button ranking-filter-button"
                                     id="ranking-mode-population-battle"
                                     type="button"
                                     data-ranking-mode="population-battle"
@@ -167,6 +174,38 @@
                                 <td th:text="${entry.totalAttemptCount}">7</td>
                             </tr>
                             <tr th:if="${#lists.isEmpty(capitalAll.entries)}">
+                                <td colspan="5">아직 기록이 없습니다.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </article>
+
+                <article class="panel ranking-board-panel"
+                         data-ranking-panel="flag:ALL"
+                         data-title="국기 보고 나라 맞히기 · 전체 Top 10"
+                         data-copy="현재 운영 중인 국기 퀴즈 전체 누적 랭킹입니다."
+                         hidden>
+                    <div class="table-shell">
+                        <table class="result-table">
+                            <thead>
+                            <tr>
+                                <th>순위</th>
+                                <th>플레이어</th>
+                                <th>점수</th>
+                                <th>클리어</th>
+                                <th>시도 수</th>
+                            </tr>
+                            </thead>
+                            <tbody id="ranking-flag-all-body" data-game-mode="flag" data-scope="ALL">
+                            <tr th:each="entry : ${flagAll.entries}">
+                                <td th:text="${entry.rank}">1</td>
+                                <td th:text="${entry.playerNickname}">Guest</td>
+                                <td th:text="${entry.totalScore}">420</td>
+                                <td th:text="${entry.clearedStageCount}">5</td>
+                                <td th:text="${entry.totalAttemptCount}">7</td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(flagAll.entries)}">
                                 <td colspan="5">아직 기록이 없습니다.</td>
                             </tr>
                             </tbody>
@@ -295,6 +334,38 @@
                                 <td th:text="${entry.totalAttemptCount}">7</td>
                             </tr>
                             <tr th:if="${#lists.isEmpty(capitalDaily.entries)}">
+                                <td colspan="5">아직 기록이 없습니다.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </article>
+
+                <article class="panel ranking-board-panel"
+                         data-ranking-panel="flag:DAILY"
+                         data-title="국기 보고 나라 맞히기 · 오늘 Top 10"
+                         th:data-copy="${'오늘 기준 국기 퀴즈 랭킹입니다. 기준 날짜: ' + flagDaily.targetDate}"
+                         hidden>
+                    <div class="table-shell">
+                        <table class="result-table">
+                            <thead>
+                            <tr>
+                                <th>순위</th>
+                                <th>플레이어</th>
+                                <th>점수</th>
+                                <th>클리어</th>
+                                <th>시도 수</th>
+                            </tr>
+                            </thead>
+                            <tbody id="ranking-flag-daily-body" data-game-mode="flag" data-scope="DAILY">
+                            <tr th:each="entry : ${flagDaily.entries}">
+                                <td th:text="${entry.rank}">1</td>
+                                <td th:text="${entry.playerNickname}">Guest</td>
+                                <td th:text="${entry.totalScore}">420</td>
+                                <td th:text="${entry.clearedStageCount}">5</td>
+                                <td th:text="${entry.totalAttemptCount}">7</td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(flagDaily.entries)}">
                                 <td colspan="5">아직 기록이 없습니다.</td>
                             </tr>
                             </tbody>

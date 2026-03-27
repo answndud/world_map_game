@@ -1472,6 +1472,28 @@ button:disabled {
     color: var(--text-muted);
 }
 
+.flag-display-card {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 12rem;
+    padding: 1rem;
+    border: 1px solid var(--line-soft);
+    background: var(--surface-soft);
+}
+
+.flag-display-image {
+    width: min(100%, 22rem);
+    aspect-ratio: 4 / 3;
+    object-fit: contain;
+    border: 1px solid var(--line-soft);
+    background: color-mix(in srgb, var(--surface-strong) 84%, white 16%);
+}
+
+.flag-display-image--result {
+    width: 8rem;
+}
+
 .rule-grid {
     display: grid;
     gap: 12px;
