@@ -7,6 +7,14 @@ import com.worldmap.auth.domain.MemberRepository;
 import com.worldmap.auth.domain.MemberRole;
 import com.worldmap.country.domain.Country;
 import com.worldmap.country.domain.CountryRepository;
+import com.worldmap.game.flag.application.FlagQuestionCountryPoolService;
+import com.worldmap.game.flag.application.FlagQuestionCountryView;
+import com.worldmap.game.flag.domain.FlagGameAttempt;
+import com.worldmap.game.flag.domain.FlagGameAttemptRepository;
+import com.worldmap.game.flag.domain.FlagGameSession;
+import com.worldmap.game.flag.domain.FlagGameSessionRepository;
+import com.worldmap.game.flag.domain.FlagGameStage;
+import com.worldmap.game.flag.domain.FlagGameStageRepository;
 import com.worldmap.game.location.domain.LocationGameAttempt;
 import com.worldmap.game.location.domain.LocationGameAttemptRepository;
 import com.worldmap.game.location.domain.LocationGameSession;
@@ -42,6 +50,7 @@ public class DemoBootstrapService {
 	private static final String DEMO_GUEST_SESSION_KEY = "demo-guest-live";
 	private static final String DEMO_LOCATION_RUN_SIGNATURE = "demo:location:orbit_runner:1";
 	private static final String DEMO_POPULATION_RUN_SIGNATURE = "demo:population:orbit_runner:1";
+	private static final String DEMO_FLAG_RUN_SIGNATURE = "demo:flag:orbit_runner:1";
 	private static final int DEMO_CURRENT_FEEDBACK_TARGET = 5;
 
 	private final DemoBootstrapProperties demoBootstrapProperties;
@@ -49,6 +58,10 @@ public class DemoBootstrapService {
 	private final MemberPasswordHasher memberPasswordHasher;
 	private final MemberCredentialPolicy memberCredentialPolicy;
 	private final CountryRepository countryRepository;
+	private final FlagQuestionCountryPoolService flagQuestionCountryPoolService;
+	private final FlagGameSessionRepository flagGameSessionRepository;
+	private final FlagGameStageRepository flagGameStageRepository;
+	private final FlagGameAttemptRepository flagGameAttemptRepository;
 	private final LocationGameSessionRepository locationGameSessionRepository;
 	private final LocationGameStageRepository locationGameStageRepository;
 	private final LocationGameAttemptRepository locationGameAttemptRepository;
@@ -65,6 +78,10 @@ public class DemoBootstrapService {
 		MemberPasswordHasher memberPasswordHasher,
 		MemberCredentialPolicy memberCredentialPolicy,
 		CountryRepository countryRepository,
+		FlagQuestionCountryPoolService flagQuestionCountryPoolService,
+		FlagGameSessionRepository flagGameSessionRepository,
+		FlagGameStageRepository flagGameStageRepository,
+		FlagGameAttemptRepository flagGameAttemptRepository,
 		LocationGameSessionRepository locationGameSessionRepository,
 		LocationGameStageRepository locationGameStageRepository,
 		LocationGameAttemptRepository locationGameAttemptRepository,
@@ -80,6 +97,10 @@ public class DemoBootstrapService {
 		this.memberPasswordHasher = memberPasswordHasher;
 		this.memberCredentialPolicy = memberCredentialPolicy;
 		this.countryRepository = countryRepository;
+		this.flagQuestionCountryPoolService = flagQuestionCountryPoolService;
+		this.flagGameSessionRepository = flagGameSessionRepository;
+		this.flagGameStageRepository = flagGameStageRepository;
+		this.flagGameAttemptRepository = flagGameAttemptRepository;
 		this.locationGameSessionRepository = locationGameSessionRepository;
 		this.locationGameStageRepository = locationGameStageRepository;
 		this.locationGameAttemptRepository = locationGameAttemptRepository;
@@ -105,6 +126,7 @@ public class DemoBootstrapService {
 		Member demoMember = provisionDemoMember();
 		provisionDemoLocationRun(demoMember);
 		provisionDemoPopulationRun(demoMember);
+		provisionDemoFlagRun(demoMember);
 		provisionDemoGuestLiveSession();
 		provisionCurrentRecommendationFeedbackSamples();
 	}
@@ -291,6 +313,103 @@ public class DemoBootstrapService {
 			session.getTotalScore(),
 			session.getClearedStageCount(),
 			6,
+			session.getFinishedAt()
+		);
+	}
+
+	private void provisionDemoFlagRun(Member demoMember) {
+		if (leaderboardRecordRepository.findByRunSignature(DEMO_FLAG_RUN_SIGNATURE).isPresent()) {
+			return;
+		}
+
+		FlagQuestionCountryView japan = flagCountry("JPN");
+		FlagQuestionCountryView france = flagCountry("FRA");
+		FlagQuestionCountryView germany = flagCountry("DEU");
+		FlagQuestionCountryView italy = flagCountry("ITA");
+		FlagQuestionCountryView belgium = flagCountry("BEL");
+		FlagQuestionCountryView poland = flagCountry("POL");
+
+		LocalDateTime startedAt = LocalDateTime.now().minusMinutes(90);
+		FlagGameSession session = FlagGameSession.ready(
+			demoMember.getNickname(),
+			demoMember.getId(),
+			null,
+			4
+		);
+		session.startGame(startedAt);
+		flagGameSessionRepository.save(session);
+
+		FlagGameStage stage1 = FlagGameStage.create(
+			session,
+			1,
+			japan,
+			List.of(japan.countryNameKr(), france.countryNameKr(), germany.countryNameKr(), italy.countryNameKr()),
+			1
+		);
+		flagGameStageRepository.save(stage1);
+		LocalDateTime stage1At = startedAt.plusMinutes(2);
+		stage1.recordAttempt(true, 150, stage1At);
+		flagGameAttemptRepository.save(
+			FlagGameAttempt.create(stage1, 1, 1, stage1.getOptions().get(0), true, 3, stage1At)
+		);
+		session.clearCurrentStage(1, 150, stage1At);
+
+		FlagGameStage stage2 = FlagGameStage.create(
+			session,
+			2,
+			france,
+			List.of(belgium.countryNameKr(), france.countryNameKr(), poland.countryNameKr(), italy.countryNameKr()),
+			2
+		);
+		flagGameStageRepository.save(stage2);
+		LocalDateTime stage2WrongAt = startedAt.plusMinutes(5);
+		stage2.recordAttempt(false, null, stage2WrongAt);
+		session.recordWrongAttempt(2, stage2WrongAt);
+		flagGameAttemptRepository.save(
+			FlagGameAttempt.create(stage2, 1, 1, stage2.getOptions().get(0), false, 2, stage2WrongAt)
+		);
+		LocalDateTime stage2ClearAt = startedAt.plusMinutes(7);
+		stage2.recordAttempt(true, 135, stage2ClearAt);
+		flagGameAttemptRepository.save(
+			FlagGameAttempt.create(stage2, 2, 2, stage2.getOptions().get(1), true, 2, stage2ClearAt)
+		);
+		session.clearCurrentStage(2, 135, stage2ClearAt);
+
+		FlagGameStage stage3 = FlagGameStage.create(
+			session,
+			3,
+			germany,
+			List.of(germany.countryNameKr(), japan.countryNameKr(), france.countryNameKr(), poland.countryNameKr()),
+			1
+		);
+		flagGameStageRepository.save(stage3);
+		LocalDateTime stage3WrongAt1 = startedAt.plusMinutes(10);
+		stage3.recordAttempt(false, null, stage3WrongAt1);
+		session.recordWrongAttempt(3, stage3WrongAt1);
+		flagGameAttemptRepository.save(
+			FlagGameAttempt.create(stage3, 1, 2, stage3.getOptions().get(1), false, 1, stage3WrongAt1)
+		);
+		LocalDateTime stage3WrongAt2 = startedAt.plusMinutes(12);
+		stage3.recordAttempt(false, null, stage3WrongAt2);
+		session.recordWrongAttempt(3, stage3WrongAt2);
+		flagGameAttemptRepository.save(
+			FlagGameAttempt.create(stage3, 2, 3, stage3.getOptions().get(2), false, 0, stage3WrongAt2)
+		);
+		stage3.markFailed();
+
+		flagGameSessionRepository.save(session);
+		flagGameStageRepository.saveAll(List.of(stage1, stage2, stage3));
+
+		saveLeaderboardRecord(
+			DEMO_FLAG_RUN_SIGNATURE,
+			session.getId(),
+			LeaderboardGameMode.FLAG,
+			demoMember.getNickname(),
+			demoMember.getId(),
+			null,
+			session.getTotalScore(),
+			session.getClearedStageCount(),
+			4,
 			session.getFinishedAt()
 		);
 	}
@@ -499,5 +618,10 @@ public class DemoBootstrapService {
 	private Country country(String iso3Code) {
 		return countryRepository.findByIso3CodeIgnoreCase(iso3Code)
 			.orElseThrow(() -> new IllegalStateException("데모 bootstrap용 국가가 없습니다: " + iso3Code));
+	}
+
+	private FlagQuestionCountryView flagCountry(String iso3Code) {
+		return flagQuestionCountryPoolService.findAvailableCountry(iso3Code)
+			.orElseThrow(() -> new IllegalStateException("데모 bootstrap용 국기 자산 국가가 없습니다: " + iso3Code));
 	}
 }

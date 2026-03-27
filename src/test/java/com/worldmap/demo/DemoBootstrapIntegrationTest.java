@@ -64,6 +64,7 @@ class DemoBootstrapIntegrationTest {
 
 		assertThat(leaderboardRecordRepository.findByRunSignature("demo:location:orbit_runner:1")).isPresent();
 		assertThat(leaderboardRecordRepository.findByRunSignature("demo:population:orbit_runner:1")).isPresent();
+		assertThat(leaderboardRecordRepository.findByRunSignature("demo:flag:orbit_runner:1")).isPresent();
 		assertThat(locationGameSessionRepository.findAllByGuestSessionKeyAndMemberIdIsNull("demo-guest-live")).hasSize(1);
 		assertThat(populationGameSessionRepository.countByMemberIdAndFinishedAtIsNotNull(demoMember.getId())).isGreaterThanOrEqualTo(1L);
 		assertThat(
