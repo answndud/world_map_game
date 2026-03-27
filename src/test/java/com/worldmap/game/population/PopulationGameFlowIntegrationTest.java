@@ -3,13 +3,16 @@ package com.worldmap.game.population;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.worldmap.game.population.application.PopulationOptionLabelFormatter;
 import com.worldmap.game.population.domain.PopulationGameAttemptRepository;
 import com.worldmap.game.population.domain.PopulationGameSessionRepository;
 import com.worldmap.game.population.domain.PopulationGameStage;
@@ -42,6 +45,9 @@ class PopulationGameFlowIntegrationTest {
 
 	@Autowired
 	private PopulationGameAttemptRepository populationGameAttemptRepository;
+
+	@Autowired
+	private PopulationOptionLabelFormatter populationOptionLabelFormatter;
 
 	@Test
 	void populationGameContinuesBeyondFiveStages() throws Exception {
@@ -182,6 +188,40 @@ class PopulationGameFlowIntegrationTest {
 			.isEmpty();
 		assertThat(populationGameStageRepository.findAllBySessionIdOrderByStageNumber(sessionId))
 			.hasSize(1);
+	}
+
+	@Test
+	void resultPageHidesSelectionAndAnswerDetailsForClearedStage() throws Exception {
+		UUID sessionId = UUID.fromString(startGame("pop-result-hide"));
+		PopulationGameStage firstStage = populationGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
+			.orElseThrow();
+		int wrongOptionNumber = findWrongOptionNumber(firstStage.getCorrectOptionNumber());
+		String wrongLabel = populationOptionLabelFormatter.labelForLowerBound(firstStage.getOptions().get(wrongOptionNumber - 1));
+		String correctLabel = populationOptionLabelFormatter.labelForLowerBound(
+			firstStage.getOptions().get(firstStage.getCorrectOptionNumber() - 1)
+		);
+
+		mockMvc.perform(
+			post("/api/games/population/sessions/{sessionId}/answer", sessionId)
+				.contentType("application/json")
+				.content(answerPayload(1, wrongOptionNumber))
+		)
+			.andExpect(status().isOk());
+
+		mockMvc.perform(
+			post("/api/games/population/sessions/{sessionId}/answer", sessionId)
+				.contentType("application/json")
+				.content(answerPayload(1, firstStage.getCorrectOptionNumber()))
+		)
+			.andExpect(status().isOk());
+
+		mockMvc.perform(get("/games/population/result/{sessionId}", sessionId))
+			.andExpect(status().isOk())
+			.andExpect(content().string(containsString("1차 오답 / 하트 2")))
+			.andExpect(content().string(containsString("2차 정답 / 점수 +")))
+			.andExpect(content().string(not(containsString(wrongLabel))))
+			.andExpect(content().string(not(containsString(correctLabel))))
+			.andExpect(content().string(not(containsString("정답 구간"))));
 	}
 
 	private String startGame(String nickname) throws Exception {

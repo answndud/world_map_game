@@ -13,7 +13,7 @@
         <p class="eyebrow">Population Battle Result</p>
         <h1>게임 결과</h1>
         <p class="hero-copy">
-            Session, Stage, Attempt, 하트 상태를 서버가 저장한 그대로 보여줍니다.
+            Session과 Stage 흐름은 유지하면서, 정답 텍스트보다 점수와 진행 결과를 중심으로 보여줍니다.
         </p>
     </header>
 
@@ -72,7 +72,6 @@
                     <tr>
                         <th>Stage</th>
                         <th>비교 쌍</th>
-                        <th>정답</th>
                         <th>상태</th>
                         <th>시도 기록</th>
                         <th>점수</th>
@@ -83,15 +82,13 @@
                         <td th:text="${stage.stageNumber}">1</td>
                         <td>
                             <strong th:text="${stage.optionOneCountryName + ' vs ' + stage.optionTwoCountryName}">인도 vs 독일</strong>
-                            <p class="hint" th:text="${stage.optionOnePopulation + ' / ' + stage.optionTwoPopulation}">1400000000 / 83000000</p>
                         </td>
-                        <td th:text="${stage.correctCountryName}">인도</td>
                         <td th:text="${stage.status}">CLEARED</td>
                         <td>
                             <div class="attempt-log" th:if="${!#lists.isEmpty(stage.attempts)}">
                                 <p th:each="attempt : ${stage.attempts}"
-                                   th:text="${attempt.attemptNumber + '차: ' + attempt.selectedCountryName + ' / ' + (attempt.correct ? 'Correct' : 'Wrong') + ' / 하트 ' + attempt.livesRemainingAfter}">
-                                    1차: 인도 / Correct / 하트 3
+                                   th:text="${attempt.correct ? attempt.attemptNumber + '차 정답 / 점수 +' + stage.awardedScore + ' / 하트 ' + attempt.livesRemainingAfter : attempt.attemptNumber + '차 오답 / 하트 ' + attempt.livesRemainingAfter}">
+                                    1차 정답 / 점수 +130 / 하트 3
                                 </p>
                             </div>
                             <span th:if="${#lists.isEmpty(stage.attempts)}">-</span>

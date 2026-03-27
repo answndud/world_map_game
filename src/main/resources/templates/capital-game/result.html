@@ -13,7 +13,7 @@
         <p class="eyebrow">Capital Game Result</p>
         <h1>게임 결과</h1>
         <p class="hero-copy">
-            Session, Stage, Attempt, 하트 상태를 서버가 저장한 그대로 보여줍니다.
+            Session과 Stage 흐름은 유지하면서, 정답 텍스트보다 점수와 진행 결과를 중심으로 보여줍니다.
         </p>
     </header>
 
@@ -74,7 +74,6 @@
                     <tr>
                         <th>Stage</th>
                         <th>국가</th>
-                        <th>정답 수도</th>
                         <th>상태</th>
                         <th>시도 기록</th>
                         <th>점수</th>
@@ -84,13 +83,12 @@
                     <tr th:each="stage : ${result.stages}">
                         <td th:text="${stage.stageNumber}">1</td>
                         <td th:text="${stage.targetCountryName}">대한민국</td>
-                        <td th:text="${stage.correctCapitalCity}">서울</td>
                         <td th:text="${stage.status}">CLEARED</td>
                         <td>
                             <div class="attempt-log" th:if="${!#lists.isEmpty(stage.attempts)}">
                                 <p th:each="attempt : ${stage.attempts}"
-                                   th:text="${attempt.attemptNumber + '차: ' + attempt.selectedCapitalCity + ' / ' + (attempt.correct ? 'Correct' : 'Wrong') + ' / 하트 ' + attempt.livesRemainingAfter}">
-                                    1차: 서울 / Wrong / 하트 2
+                                   th:text="${attempt.correct ? attempt.attemptNumber + '차 정답 / 점수 +' + stage.awardedScore + ' / 하트 ' + attempt.livesRemainingAfter : attempt.attemptNumber + '차 오답 / 하트 ' + attempt.livesRemainingAfter}">
+                                    1차 오답 / 하트 2
                                 </p>
                             </div>
                             <span th:if="${#lists.isEmpty(stage.attempts)}">-</span>

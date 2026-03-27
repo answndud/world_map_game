@@ -13,7 +13,7 @@
         <p class="eyebrow">Location Game Result</p>
         <h1>게임 결과</h1>
         <p class="hero-copy">
-            엔드리스 러닝 동안 서버가 저장한 Session, Stage, Attempt, 하트 상태를 그대로 보여줍니다.
+            엔드리스 러닝 동안 서버가 저장한 Stage 진행 흐름과 점수 변화를 다시 보여줍니다.
         </p>
     </header>
 
@@ -73,7 +73,6 @@
                     <thead>
                     <tr>
                         <th>Stage</th>
-                        <th>문제 국가</th>
                         <th>상태</th>
                         <th>시도 기록</th>
                         <th>점수</th>
@@ -82,13 +81,12 @@
                     <tbody>
                     <tr th:each="stage : ${result.stages}">
                         <td th:text="${stage.stageNumber}">1</td>
-                        <td th:text="${stage.targetCountryName}">대한민국</td>
                         <td th:text="${stage.status}">CLEARED</td>
                         <td>
                             <div class="attempt-log" th:if="${!#lists.isEmpty(stage.attempts)}">
                                 <p th:each="attempt : ${stage.attempts}"
-                                   th:text="${attempt.attemptNumber + '차: ' + attempt.selectedCountryName + ' / ' + (attempt.correct ? 'Correct' : 'Wrong') + ' / 하트 ' + attempt.livesRemainingAfter}">
-                                    1차: 일본 / Wrong / 하트 2
+                                   th:text="${attempt.correct ? attempt.attemptNumber + '차 정답 / 점수 +' + stage.awardedScore + ' / 하트 ' + attempt.livesRemainingAfter : attempt.attemptNumber + '차 오답 / 하트 ' + attempt.livesRemainingAfter}">
+                                    1차 오답 / 하트 2
                                 </p>
                             </div>
                             <span th:if="${#lists.isEmpty(stage.attempts)}">-</span>

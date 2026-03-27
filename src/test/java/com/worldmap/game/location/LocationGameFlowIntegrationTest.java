@@ -3,6 +3,7 @@ package com.worldmap.game.location;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -192,6 +193,38 @@ class LocationGameFlowIntegrationTest {
 			.isEmpty();
 		assertThat(locationGameStageRepository.findAllBySessionIdOrderByStageNumber(sessionId))
 			.hasSize(1);
+	}
+
+	@Test
+	void resultPageHidesSelectionAndAnswerDetailsForClearedStage() throws Exception {
+		UUID sessionId = UUID.fromString(startGame("location-result-hide"));
+		LocationGameStage firstStage = locationGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
+			.orElseThrow();
+		String wrongCountryIso3Code = findWrongCountryIso3Code(sessionId, firstStage.getTargetCountryIso3Code());
+		String wrongCountryName = countryRepository.findByIso3CodeIgnoreCase(wrongCountryIso3Code)
+			.orElseThrow()
+			.getNameKr();
+
+		mockMvc.perform(
+			post("/api/games/location/sessions/{sessionId}/answer", sessionId)
+				.contentType("application/json")
+				.content(answerPayload(1, wrongCountryIso3Code))
+		)
+			.andExpect(status().isOk());
+
+		mockMvc.perform(
+			post("/api/games/location/sessions/{sessionId}/answer", sessionId)
+				.contentType("application/json")
+				.content(answerPayload(1, firstStage.getTargetCountryIso3Code()))
+		)
+			.andExpect(status().isOk());
+
+		mockMvc.perform(get("/games/location/result/{sessionId}", sessionId))
+			.andExpect(status().isOk())
+			.andExpect(content().string(containsString("1차 오답 / 하트 2")))
+			.andExpect(content().string(containsString("2차 정답 / 점수 +")))
+			.andExpect(content().string(not(containsString(wrongCountryName))))
+			.andExpect(content().string(not(containsString(firstStage.getTargetCountryName()))));
 	}
 
 	private String startGame(String nickname) throws Exception {

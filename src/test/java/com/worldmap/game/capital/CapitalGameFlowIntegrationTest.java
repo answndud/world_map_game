@@ -1,8 +1,11 @@
 package com.worldmap.game.capital;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -203,6 +206,38 @@ class CapitalGameFlowIntegrationTest {
 			.isEmpty();
 		assertThat(capitalGameStageRepository.findAllBySessionIdOrderByStageNumber(sessionId))
 			.hasSize(1);
+	}
+
+	@Test
+	void resultPageHidesSelectionAndAnswerDetailsForClearedStage() throws Exception {
+		UUID sessionId = UUID.fromString(startGame("capital-result-hide"));
+		CapitalGameStage firstStage = capitalGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
+			.orElseThrow();
+		int wrongOptionNumber = findWrongOptionNumber(firstStage.getCorrectOptionNumber());
+		String wrongCapitalCity = firstStage.getOptions().get(wrongOptionNumber - 1);
+		String correctCapitalCity = firstStage.getOptions().get(firstStage.getCorrectOptionNumber() - 1);
+
+		mockMvc.perform(
+			post("/api/games/capital/sessions/{sessionId}/answer", sessionId)
+				.contentType("application/json")
+				.content(answerPayload(1, wrongOptionNumber))
+		)
+			.andExpect(status().isOk());
+
+		mockMvc.perform(
+			post("/api/games/capital/sessions/{sessionId}/answer", sessionId)
+				.contentType("application/json")
+				.content(answerPayload(1, firstStage.getCorrectOptionNumber()))
+		)
+			.andExpect(status().isOk());
+
+		mockMvc.perform(get("/games/capital/result/{sessionId}", sessionId))
+			.andExpect(status().isOk())
+			.andExpect(content().string(containsString("1차 오답 / 하트 2")))
+			.andExpect(content().string(containsString("2차 정답 / 점수 +")))
+			.andExpect(content().string(not(containsString(wrongCapitalCity))))
+			.andExpect(content().string(not(containsString(correctCapitalCity))))
+			.andExpect(content().string(not(containsString("정답 수도"))));
 	}
 
 	private String startGame(String nickname) throws Exception {

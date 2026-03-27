@@ -1,8 +1,11 @@
 package com.worldmap.game.populationbattle;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -181,6 +184,40 @@ class PopulationBattleGameFlowIntegrationTest {
 			.isEmpty();
 		assertThat(populationBattleGameStageRepository.findAllBySessionIdOrderByStageNumber(sessionId))
 			.hasSize(1);
+	}
+
+	@Test
+	void resultPageHidesSelectionAndAnswerDetailsForClearedStage() throws Exception {
+		UUID sessionId = UUID.fromString(startGame("battle-result-hide"));
+		PopulationBattleGameStage firstStage = populationBattleGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
+			.orElseThrow();
+		int wrongOptionNumber = findWrongOptionNumber(firstStage.getCorrectOptionNumber());
+		String wrongCountryName = wrongOptionNumber == 1 ? firstStage.getOptionOneCountryName() : firstStage.getOptionTwoCountryName();
+		String correctCountryName = firstStage.getCorrectCountryName();
+
+		mockMvc.perform(
+			post("/api/games/population-battle/sessions/{sessionId}/answer", sessionId)
+				.contentType("application/json")
+				.content(answerPayload(1, wrongOptionNumber))
+		)
+			.andExpect(status().isOk());
+
+		mockMvc.perform(
+			post("/api/games/population-battle/sessions/{sessionId}/answer", sessionId)
+				.contentType("application/json")
+				.content(answerPayload(1, firstStage.getCorrectOptionNumber()))
+		)
+			.andExpect(status().isOk());
+
+		mockMvc.perform(get("/games/population-battle/result/{sessionId}", sessionId))
+			.andExpect(status().isOk())
+			.andExpect(content().string(containsString("1차 오답 / 하트 2")))
+			.andExpect(content().string(containsString("2차 정답 / 점수 +")))
+			.andExpect(content().string(not(containsString("1차: " + wrongCountryName))))
+			.andExpect(content().string(not(containsString("2차: " + correctCountryName))))
+			.andExpect(content().string(not(containsString(String.valueOf(firstStage.getOptionOnePopulation())))))
+			.andExpect(content().string(not(containsString(String.valueOf(firstStage.getOptionTwoPopulation())))))
+			.andExpect(content().string(not(containsString("<th>정답</th>"))));
 	}
 
 	private String startGame(String nickname) throws Exception {
