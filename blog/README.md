@@ -129,6 +129,7 @@
 66. [남아 있던 internal Level 2 호환 코드를 완전히 제거하기](./73-remove-internal-level-2-compatibility-code.md)
 67. [polling 유지로 9단계를 닫고 실시간 전달 기준 고정하기](./74-close-stage-9-with-polling-first.md)
 68. [아키텍처, ERD, 요청 흐름, 발표 자료를 한 번에 정리하기](./75-package-architecture-and-presentation-kit.md)
+69. [다음에 어떤 게임을 더 넣을지 먼저 설계하기](./76-plan-next-country-game-expansion.md)
 
 ### Part E. 확장과 포트폴리오 정리
 
