@@ -96,6 +96,7 @@
 - user 계정: `orbit_runner / secret123`
 - local에서 샘플 run, guest live session, current recommendation feedback sample까지 bootstrap
 - 위치/수도/인구수 게임이 현재 public 기본 모드이고, 예전 `LEVEL_2` 세션 / 랭킹 row와 Redis `l2` 키는 startup rollback initializer가 먼저 정리
+- 국기 게임은 아직 public route를 열지 않았고, 내부적으로 `FlagAssetCatalog + FlagQuestionCountryPoolService` 기준 12개 출제 가능 국가 pool만 고정해 둔 상태다.
 
 근거:
 
@@ -215,6 +216,10 @@ set +a
 7. [08-ranking-filter-and-tie-rule.md](./08-ranking-filter-and-tie-rule.md)
 8. [72-roll-back-game-level-2-and-purge-legacy-data.md](./72-roll-back-game-level-2-and-purge-legacy-data.md)
 9. [77-add-capital-quiz-level-1-vertical-slice.md](./77-add-capital-quiz-level-1-vertical-slice.md)
+10. [78-add-population-battle-level-1-vertical-slice.md](./78-add-population-battle-level-1-vertical-slice.md)
+11. [79-add-flag-asset-catalog-before-opening-flag-game.md](./79-add-flag-asset-catalog-before-opening-flag-game.md)
+12. [80-add-korean-capital-names-to-country-seed-and-capital-quiz.md](./80-add-korean-capital-names-to-country-seed-and-capital-quiz.md)
+13. [81-build-flag-question-country-pool-from-seed-and-assets.md](./81-build-flag-question-country-pool-from-seed-and-assets.md)
 
 이 구간은 현재 코드와 비교적 직접 대응된다.
 

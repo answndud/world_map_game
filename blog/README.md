@@ -134,6 +134,7 @@
 71. [인구 비교 퀵 배틀 Level 1 vertical slice를 현재 구조에 붙이기](./78-add-population-battle-level-1-vertical-slice.md)
 72. [국기 게임을 열기 전에 FlagAssetCatalog를 먼저 만들기](./79-add-flag-asset-catalog-before-opening-flag-game.md)
 73. [수도 맞히기 seed에 한국어 수도명을 따로 넣고 게임 UI를 맞추기](./80-add-korean-capital-names-to-country-seed-and-capital-quiz.md)
+74. [국기 자산과 country seed를 합쳐 출제 가능 국가 pool 만들기](./81-build-flag-question-country-pool-from-seed-and-assets.md)
 
 ### Part E. 확장과 포트폴리오 정리
 

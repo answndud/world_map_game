@@ -3842,3 +3842,32 @@
 - 배운 점: 같은 read model이라도 API/복기 화면/운영 화면이 모두 같은 밀도로 보여 줄 필요는 없다. 선택값과 정답값을 서버가 보존하되, 화면 노출은 템플릿 정책으로 조절하는 편이 사용자 요구에 빠르게 맞출 수 있다.
 - 아직 약한 부분: 현재는 결과 페이지에서만 숨겼고, 운영 `/dashboard`나 내부 디버깅 도구까지 같은 정책을 강제하지는 않았다. 나중에 `public surface와 internal surface의 공개 범위`를 더 엄격하게 나누고 싶다면 read model 자체를 public/internal로 분리하는 선택도 검토할 수 있다.
 - 면접용 30초 요약: 플레이 중 정답 피드백을 줄인 뒤에도 결과 페이지가 정답과 선택을 다시 다 보여 줘서 UX가 일관되지 않았습니다. 그래서 서버 상태나 점수 로직은 건드리지 않고, 결과 템플릿을 `정답/오답 흐름 + 점수` 중심으로 다시 구성했습니다. 이 방식은 데이터는 보존하면서도 public 복기 화면의 정보 밀도만 빠르게 줄일 수 있다는 점이 핵심입니다.
+
+## 2026-03-27 - 국기 게임 출제 가능 국가 pool 계산
+
+- 단계: 11. 신규 게임 확장
+- 목적: `FlagAssetCatalog`와 sample SVG 12개만으로는 다음 `flag` game mode를 바로 열 수 없다. 실제 게임은 “어떤 국가가 출제 가능하냐”를 seed와 자산 교집합 기준으로 설명할 수 있어야 하므로, 이번 조각은 출제 가능 국기 국가 pool을 서버 read model로 고정하는 데 목적이 있다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/game/flag/application/FlagQuestionCountryPoolService.java`
+  - `src/main/java/com/worldmap/game/flag/application/FlagQuestionCountryPoolView.java`
+  - `src/main/java/com/worldmap/game/flag/application/FlagQuestionCountryView.java`
+  - `src/main/java/com/worldmap/game/flag/application/FlagQuestionCountryContinentCountView.java`
+  - `src/test/java/com/worldmap/game/flag/application/FlagQuestionCountryPoolServiceIntegrationTest.java`
+  - `docs/NEW_GAME_EXPANSION_PLAN.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/50-current-state-rebuild-map.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/81-build-flag-question-country-pool-from-seed-and-assets.md`
+- 요청 흐름 / 데이터 흐름: public HTTP 요청은 아직 없다. 현재 흐름은 `FlagQuestionCountryPoolService.loadPool() -> CountryRepository.findAllByOrderByNameKrAsc() + FlagAssetCatalog`이다. 서비스는 country seed 194개를 읽고, 그중 manifest와 실제 정적 SVG가 모두 있는 국가만 `FlagQuestionCountryView`로 매핑한다. 동시에 `FlagAssetCatalog`에 있지만 seed에 없는 ISO3가 발견되면 예외로 터뜨려 자산/시드 불일치를 조기에 드러낸다.
+- 데이터 / 상태 변화: DB 스키마 변화는 없다. 새로운 것은 서버 내부 read model이다. 출제 가능 국기 국가는 이제 `countryId / iso3 / 한글명 / 영문명 / 대륙 / flagRelativePath / format`을 가진 목록으로 계산되고, 대륙별 count도 같이 제공된다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “국기 자산이 있다고 바로 게임이 가능한 것이 아니다”라는 점이다. `FlagAssetCatalog`는 자산 무결성을 검증하는 catalog이고, `FlagQuestionCountryPoolService`는 그 catalog와 `country` 시드의 교집합을 실제 출제 pool로 만드는 read model이다. 이 계산은 단순 util보다 `다음 flag game mode가 신뢰할 source of truth`에 가깝기 때문에 서비스로 두는 편이 설명 가능성이 높다.
+- 예외 / 엣지 케이스: manifest에 있지만 seed에 없는 ISO3는 startup 이후라도 조용히 무시하지 않고 `IllegalStateException`으로 실패하게 했다. 반대로 seed에 있지만 자산이 없는 국가는 아직 출제 가능 대상이 아니므로 조용히 제외된다. 현재 sample 자산 기준으로는 `EUROPE 11`, `ASIA 1`이라 대륙 분포가 치우쳐 있다는 것도 이 read model에서 바로 드러난다.
+- 테스트:
+  - `./gradlew test --tests com.worldmap.game.flag.application.FlagAssetCatalogTest --tests com.worldmap.game.flag.application.FlagQuestionCountryPoolServiceIntegrationTest`
+  - `./gradlew test`
+  - `git diff --check`
+- 배운 점: 정적 자산 파이프라인을 설명 가능하게 만들려면 파일 존재 검증만으로는 부족하고, 실제 게임이 읽을 출제 가능 pool을 별도 read model로 고정해야 한다. 그래야 다음 단계에서 `flag` game mode를 열 때 “왜 이 국가만 지금 출제되느냐”를 서버 코드만 보고 바로 설명할 수 있다.
+- 아직 약한 부분: 현재 pool은 12개 sample 국기만 포함하므로 실제 game mode를 열어도 다양성이 부족하다. 다음 단계에서 skeleton을 열 때는 이 제한을 제품 문구로 숨기지 말고, sample mode인지 beta pool인지 표현을 따로 결정해야 한다.
+- 면접용 30초 요약: 국기 게임은 화면보다 자산 재현성이 더 중요한 모드라서, 단순히 SVG 파일만 넣지 않고 `country seed`와 `flag manifest`의 교집합을 계산하는 서버 read model을 먼저 만들었습니다. 지금은 이 서비스가 출제 가능한 12개 국가와 대륙 분포를 정확히 설명해 주기 때문에, 다음 단계에서 flag game mode를 열어도 어떤 국가가 왜 문제에 들어가는지 명확하게 설명할 수 있습니다.

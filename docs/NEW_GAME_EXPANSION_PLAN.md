@@ -195,8 +195,9 @@
 - 출제 가능 국가는 `country seed ∩ manifest ∩ 실제 파일 존재` 교집합
 - `FlagAssetCatalog`가 manifest를 읽고, ISO3 / 경로 / format / 파일 존재를 startup 기준으로 검증하게 했다.
 - sample SVG 12개를 먼저 저장소에 포함해 local/demo에서도 같은 자산을 재현 가능하게 했다.
+- `FlagQuestionCountryPoolService`가 `country seed ∩ manifest ∩ 실제 파일 존재` 교집합을 실제 서버 read model로 계산하고, 출제 가능 국가 12개와 대륙별 count(EUROPE 11 / ASIA 1)를 고정한다.
 
-다음 작은 코드 조각은 `flag` game mode vertical slice가 아니라 `출제 가능 flag country pool 계산 + game mode 첫 skeleton`이다.
+다음 작은 코드 조각은 `flag` game mode 첫 skeleton이다.
 
 ## 이번 우선순위 변경 이유
 

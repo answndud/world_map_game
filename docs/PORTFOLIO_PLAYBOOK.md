@@ -820,11 +820,14 @@
 - 출제 가능 국가를 `country seed ∩ manifest ∩ 실제 파일 존재` 교집합으로 설명하는 기준을 세움
 - `FlagAssetCatalog`를 추가해 manifest를 서버가 읽고, ISO3 / 경로 / format / 실제 파일 존재를 startup 기준으로 검증
 - sample SVG 12개와 `FlagAssetCatalogTest`로 국기 자산 파이프라인 첫 코드를 고정
+- `FlagQuestionCountryPoolService`를 추가해 `country seed ∩ manifest ∩ 실제 파일 존재` 교집합을 실제 서버 read model로 계산
+- 출제 가능 국기 국가 목록에 `countryId / ISO3 / 한글명 / 영문명 / 대륙 / 정적 flag 경로`를 묶어, 다음 `flag` game mode skeleton이 바로 재사용할 수 있게 함
+- `FlagQuestionCountryPoolServiceIntegrationTest`로 출제 가능 국가 12개, 대륙별 count(EUROPE 11 / ASIA 1), ISO3 lookup, 비지원 국가 제외를 고정
 
 다음에 이어서 할 일:
 
-- 출제 가능 flag country pool 계산용 read model을 실제 코드로 추가
-- `flag` game mode의 세션/Stage/Attempt skeleton을 열지 판단
+- `flag` game mode의 세션/Stage/Attempt skeleton을 열기
+- `FlagQuestionCountryPoolService`를 사용해 출제 국가 선택과 distractor 후보 규칙을 첫 버전으로 고정
 - 수도 / 인구 비교 퀵 배틀 local demo 샘플 run을 추가할지 판단
 
 반드시 이해할 것:
@@ -840,6 +843,7 @@
 - 왜 국기 게임은 규칙보다 에셋 파이프라인이 먼저인가
 - 왜 국기 자산은 1차에서 DB 컬럼보다 정적 파일 + manifest 구조가 더 설명 가능하고 재현성이 좋은가
 - 왜 `FlagAssetCatalog`가 단순 유틸이 아니라 startup validation 역할을 같이 맡게 했는가
+- 왜 `FlagQuestionCountryPoolService`가 단순 util이 아니라 seed와 정적 자산의 교집합을 계산하는 read model이어야 하는가
 - 왜 새로운 게임도 서버 주도 세션 / Stage / Attempt 구조를 유지해야 하는가
 
 면접 포인트:
