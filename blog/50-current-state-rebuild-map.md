@@ -141,19 +141,19 @@ set +a
 - `/games/capital/start`
   - 닉네임 입력과 게임 시작하기가 보이는가
 - `/games/capital/play/{sessionId}`
-  - 한국어 수도 보기 4개와 제출 버튼, 하트/점수 HUD가 보이는가
+  - 한국어 수도 보기 4개와 제출 버튼, 하트/점수 HUD가 보이고 정답 뒤에는 `획득 점수`만 잠깐 보인 뒤 자동으로 다음 Stage로 넘어가는가
 - `/games/capital/result/{sessionId}`
   - Stage별 시도 로그와 점수 흐름만 보이고, 한국어 정답 수도는 직접 노출되지 않는가
 - `/games/population-battle/start`
   - 닉네임 입력과 게임 시작하기가 보이는가
 - `/games/population-battle/play/{sessionId}`
-  - 두 나라 중 인구가 더 많은 나라를 고르는 좌/우 2-choice Stage가 보이는가
+  - 두 나라 중 인구가 더 많은 나라를 고르는 좌/우 2-choice Stage가 보이고 정답 뒤에는 `획득 점수`만 잠깐 보인 뒤 자동으로 다음 Stage로 넘어가는가
 - `/games/population-battle/result/{sessionId}`
   - Stage별 비교쌍과 점수 흐름만 보이고, 정답 국가와 선택 로그는 직접 노출되지 않는가
 - `/games/flag/start`
   - 닉네임 입력과 게임 시작하기가 보이는가
 - `/games/flag/play/{sessionId}`
-  - 국기 이미지 1개와 나라 보기 4개, 제출 버튼, 하트/점수 HUD가 보이는가
+  - 국기 이미지 1개와 나라 보기 4개, 제출 버튼, 하트/점수 HUD가 보이고 정답 뒤에는 `획득 점수`만 잠깐 보인 뒤 자동으로 다음 Stage로 넘어가는가
 - `/games/flag/result/{sessionId}`
   - Stage별 시도 로그와 국기 카드가 보이고, 정답 국가/선택 국가는 직접 노출되지 않는가
 - `/recommendation/survey`
@@ -161,7 +161,7 @@ set +a
 - `/games/population/start`
   - 닉네임 입력과 게임 시작하기만 보이고, Level 선택 UI는 더 이상 보이지 않는가
 - `/games/population/play/{sessionId}`
-  - 보기 4개 구간 선택형 Stage만 보이는가
+  - 보기 4개 구간 선택형 Stage만 보이고 정답 뒤에는 `획득 점수`만 잠깐 보인 뒤 자동으로 다음 Stage로 넘어가는가
 - `/games/location/start`
   - 닉네임 입력과 게임 시작하기만 보이고, Level 선택 UI는 더 이상 보이지 않는가
 - `/games/location/play/{sessionId}`

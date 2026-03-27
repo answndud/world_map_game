@@ -4132,3 +4132,39 @@
 - 배운 점: product scope에서 Level 2 코드를 지운 뒤에도 local DB에는 schema 제약이 남아 있을 수 있다. rollback initializer는 row 삭제만이 아니라 “현재 엔티티가 더 이상 모르는 legacy 제약을 어디까지 완화할 것인가”까지 같이 다뤄야 local 재현성이 안정된다.
 - 아직 약한 부분: 현재는 `leaderboard_record.game_level`만 local boot에서 실제 장애를 일으킨 것이 확인돼 그것만 완화했다. 다른 legacy 제약이 더 있는지는 이후 local smoke 중 추가로 발견되면 같은 방식으로 정리해야 한다.
 - 면접용 30초 요약: Level 2 코드를 지운 뒤에도 local DB에 `leaderboard_record.game_level NOT NULL` 제약과 예전 `game_mode` check constraint가 남아 있으면, 현재 엔티티가 새 게임 모드를 저장할 때 demo bootstrap insert가 실패할 수 있었습니다. 그래서 `GameLevelRollbackInitializer`가 예전 `LEVEL_2` row를 지우는 것에 더해, legacy `game_level` 제약과 stale `game_mode` check까지 같이 정리하게 바꿨습니다. 덕분에 현재 코드 기준 local demo가 예전 DB에서도 바로 올라오게 됐습니다.
+
+## 2026-03-27 - 모든 게임 정답 시 자동 다음 Stage 전환
+
+- 단계: 11. 신규 게임 확장
+- 목적: 위치 게임을 제외한 나머지 public 게임은 정답을 맞혀도 `다음 Stage` 버튼을 한 번 더 눌러야 해서 리듬이 끊겼다. 이번 조각의 목적은 모든 게임에서 정답 시 `획득 점수`만 짧게 보여 주고, 곧바로 다음 Stage를 자동으로 로드하게 맞춰 게임 루프를 더 짧고 일관되게 만드는 것이다.
+- 변경 파일:
+  - `src/main/resources/static/js/capital-game.js`
+  - `src/main/resources/static/js/population-game.js`
+  - `src/main/resources/static/js/population-battle-game.js`
+  - `src/main/resources/static/js/flag-game.js`
+  - `src/main/resources/templates/capital-game/play.html`
+  - `src/main/resources/templates/population-game/play.html`
+  - `src/main/resources/templates/population-battle-game/play.html`
+  - `src/main/resources/templates/flag-game/play.html`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/50-current-state-rebuild-map.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/90-auto-advance-to-the-next-stage-after-correct-answers.md`
+- 요청 흐름 / 데이터 흐름: 서버 API 흐름은 바뀌지 않았다. 여전히 `POST /api/games/.../sessions/{id}/answer`가 정답 판정과 점수 계산을 맡고, 다음 Stage는 `GET /api/games/.../sessions/{id}/state`로 다시 불러온다. 달라진 것은 프론트 루프다. 수도/인구수/인구 비교/국기 게임 JS가 이제 정답 응답을 받은 뒤 `획득 점수` overlay를 보여 주고, 약 950ms 후 같은 세션의 `loadState()`를 자동 호출한다.
+- 데이터 / 상태 변화: DB나 Redis 변화는 없다. public play 템플릿에서 `다음 Stage` 버튼이 제거됐고, JS의 정답 branch는 수동 버튼 표시 대신 자동 타이머를 사용한다. 오답과 게임오버 흐름은 그대로 유지한다.
+- 핵심 도메인 개념: 이번 조각은 서버 판정 로직을 옮긴 게 아니라, 이미 있는 `answer -> next state` read flow를 더 짧게 붙인 것이다. 점수 계산과 정답 판정은 계속 서버가 맡고, 프론트는 정답 시 `언제 다음 state를 다시 요청할지`만 바꾼다. 그래서 컨트롤러나 서비스 수정 없이도 게임 루프의 제품 감각을 크게 바꿀 수 있다.
+- 예외 / 엣지 케이스: 결과 화면으로 가는 `FINISHED`는 여전히 즉시 state reload 대신 `resultPageUrl` redirect를 사용한다. 자동 `loadState()`가 실패하면 interaction을 다시 풀고 message box에 에러를 보여 주게 해서, 네트워크 오류로 플레이어가 잠긴 상태에 머물지 않게 했다.
+- 테스트:
+  - `node --check src/main/resources/static/js/location-game.js`
+  - `node --check src/main/resources/static/js/population-game.js`
+  - `node --check src/main/resources/static/js/capital-game.js`
+  - `node --check src/main/resources/static/js/population-battle-game.js`
+  - `node --check src/main/resources/static/js/flag-game.js`
+  - `./gradlew test`
+  - `git diff --check`
+- 배운 점: 같은 endless run 구조를 여러 게임에 복제했다면, UX도 가능한 한 같은 리듬을 가져야 한다. 정답 뒤 한 번 더 눌러야 하는 수동 단계는 작은 차이처럼 보여도 반복 플레이 감각을 확실히 무겁게 만든다.
+- 아직 약한 부분: 지금은 모든 게임에 같은 `950ms` 지연을 쓰고 있다. 장기적으로는 게임별 overlay 길이를 다르게 줄 수도 있지만, 현재는 공통 리듬을 먼저 맞추는 편이 더 낫다고 판단했다.
+- 면접용 30초 요약: 위치 게임만 정답 후 자동 전환되고 나머지 게임은 `다음 Stage` 버튼을 다시 눌러야 해서 게임 리듬이 끊겼습니다. 그래서 서버 판정 로직은 그대로 둔 채, 수도/인구수/인구 비교/국기 게임 JS가 정답 응답 뒤 `획득 점수`만 잠깐 보여 주고 약 1초 뒤 같은 세션의 다음 state를 자동으로 다시 읽게 바꿨습니다. 핵심은 상태 변경 책임은 계속 서버에 두고, 프론트는 read flow만 더 짧게 연결했다는 점입니다.
