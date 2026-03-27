@@ -19,7 +19,7 @@ public class CapitalGameOptionGenerator {
 		}
 
 		Set<String> usedCapitalKeys = new LinkedHashSet<>();
-		usedCapitalKeys.add(normalizeCapital(targetCountry.getCapitalCity()));
+		usedCapitalKeys.add(normalizeCapital(targetCountry.getCapitalCityKr()));
 		List<String> distractors = new ArrayList<>();
 
 		collectDistinctCapitals(
@@ -46,7 +46,7 @@ public class CapitalGameOptionGenerator {
 
 		List<String> options = new ArrayList<>(distractors);
 		int insertionIndex = ThreadLocalRandom.current().nextInt(4);
-		options.add(insertionIndex, targetCountry.getCapitalCity());
+		options.add(insertionIndex, targetCountry.getCapitalCityKr());
 
 		return new CapitalRoundOptions(List.copyOf(options), insertionIndex + 1);
 	}
@@ -69,7 +69,7 @@ public class CapitalGameOptionGenerator {
 				return;
 			}
 
-			String capitalCity = country.getCapitalCity();
+			String capitalCity = country.getCapitalCityKr();
 			if (capitalCity == null || capitalCity.isBlank()) {
 				continue;
 			}

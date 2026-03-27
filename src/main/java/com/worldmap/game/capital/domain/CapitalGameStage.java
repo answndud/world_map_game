@@ -94,7 +94,7 @@ public class CapitalGameStage {
 		this.countryId = country.getId();
 		this.countryIso3Code = country.getIso3Code();
 		this.targetCountryName = country.getNameKr();
-		this.targetCapitalCity = country.getCapitalCity();
+		this.targetCapitalCity = country.getCapitalCityKr();
 		this.optionOneCapitalCity = options.get(0);
 		this.optionTwoCapitalCity = options.get(1);
 		this.optionThreeCapitalCity = options.get(2);

@@ -60,6 +60,7 @@ public class CountrySeedReader {
 		String nameEn,
 		Continent continent,
 		String capitalCity,
+		String capitalCityKr,
 		BigDecimal referenceLatitude,
 		BigDecimal referenceLongitude,
 		CountryReferenceType referenceType,

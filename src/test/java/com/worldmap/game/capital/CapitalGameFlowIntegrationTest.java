@@ -46,12 +46,15 @@ class CapitalGameFlowIntegrationTest {
 		UUID sessionId = UUID.fromString(startGame("capital-player"));
 
 		for (int stageNumber = 1; stageNumber <= 7; stageNumber++) {
-			mockMvc.perform(get("/api/games/capital/sessions/{sessionId}/state", sessionId))
+			MvcResult stateResult = mockMvc.perform(get("/api/games/capital/sessions/{sessionId}/state", sessionId))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.stageNumber").value(stageNumber))
 				.andExpect(jsonPath("$.options.length()").value(4))
 				.andExpect(jsonPath("$.livesRemaining").value(3))
-				.andExpect(jsonPath("$.difficultyLabel").isNotEmpty());
+				.andExpect(jsonPath("$.difficultyLabel").isNotEmpty())
+				.andReturn();
+
+			assertOptionsUseKoreanCapitalNames(stateResult);
 
 			CapitalGameStage stage = capitalGameStageRepository.findBySessionIdAndStageNumber(sessionId, stageNumber)
 				.orElseThrow();
@@ -79,6 +82,26 @@ class CapitalGameFlowIntegrationTest {
 			.andExpect(jsonPath("$.totalAttemptCount").value(7))
 			.andExpect(jsonPath("$.firstTryClearCount").value(7))
 			.andExpect(jsonPath("$.stages.length()").value(8));
+	}
+
+	@Test
+	void capitalGameReturnsKoreanCapitalNamesInAnswerPayload() throws Exception {
+		UUID sessionId = UUID.fromString(startGame("capital-korean"));
+		CapitalGameStage firstStage = capitalGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
+			.orElseThrow();
+
+		MvcResult answerResult = mockMvc.perform(
+			post("/api/games/capital/sessions/{sessionId}/answer", sessionId)
+				.contentType("application/json")
+				.content(answerPayload(1, firstStage.getCorrectOptionNumber()))
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.correct").value(true))
+			.andReturn();
+
+		JsonNode answerJson = objectMapper.readTree(answerResult.getResponse().getContentAsString());
+		assertThat(answerJson.get("selectedCapitalCity").asText()).matches(".*[가-힣].*");
+		assertThat(answerJson.get("correctCapitalCity").asText()).matches(".*[가-힣].*");
 	}
 
 	@Test
@@ -206,5 +229,12 @@ class CapitalGameFlowIntegrationTest {
 
 	private int findWrongOptionNumber(int correctOptionNumber) {
 		return correctOptionNumber == 1 ? 2 : 1;
+	}
+
+	private void assertOptionsUseKoreanCapitalNames(MvcResult stateResult) throws Exception {
+		JsonNode stateJson = objectMapper.readTree(stateResult.getResponse().getContentAsString());
+		for (JsonNode option : stateJson.get("options")) {
+			assertThat(option.get("capitalCity").asText()).matches(".*[가-힣].*");
+		}
 	}
 }

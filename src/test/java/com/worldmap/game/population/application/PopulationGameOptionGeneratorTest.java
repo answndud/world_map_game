@@ -43,6 +43,7 @@ class PopulationGameOptionGeneratorTest {
 			nameKr,
 			Continent.ASIA,
 			"Capital",
+			"수도",
 			BigDecimal.ZERO,
 			BigDecimal.ZERO,
 			CountryReferenceType.CAPITAL_CITY,

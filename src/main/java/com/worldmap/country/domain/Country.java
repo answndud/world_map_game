@@ -44,6 +44,9 @@ public class Country {
 	@Column(name = "capital_city", nullable = false, length = 80)
 	private String capitalCity;
 
+	@Column(name = "capital_city_kr", length = 120)
+	private String capitalCityKr;
+
 	@Column(name = "reference_latitude", nullable = false, precision = 9, scale = 4)
 	private BigDecimal referenceLatitude;
 
@@ -70,6 +73,7 @@ public class Country {
 		String nameEn,
 		Continent continent,
 		String capitalCity,
+		String capitalCityKr,
 		BigDecimal referenceLatitude,
 		BigDecimal referenceLongitude,
 		CountryReferenceType referenceType,
@@ -82,6 +86,7 @@ public class Country {
 		this.nameEn = nameEn;
 		this.continent = continent;
 		this.capitalCity = capitalCity;
+		this.capitalCityKr = capitalCityKr;
 		this.referenceLatitude = referenceLatitude;
 		this.referenceLongitude = referenceLongitude;
 		this.referenceType = referenceType;
@@ -96,6 +101,7 @@ public class Country {
 		String nameEn,
 		Continent continent,
 		String capitalCity,
+		String capitalCityKr,
 		BigDecimal referenceLatitude,
 		BigDecimal referenceLongitude,
 		CountryReferenceType referenceType,
@@ -109,6 +115,7 @@ public class Country {
 			nameEn,
 			continent,
 			capitalCity,
+			capitalCityKr,
 			referenceLatitude,
 			referenceLongitude,
 			referenceType,
@@ -124,6 +131,7 @@ public class Country {
 		String nameEn,
 		Continent continent,
 		String capitalCity,
+		String capitalCityKr,
 		BigDecimal referenceLatitude,
 		BigDecimal referenceLongitude,
 		CountryReferenceType referenceType,
@@ -136,6 +144,7 @@ public class Country {
 		this.nameEn = nameEn;
 		this.continent = continent;
 		this.capitalCity = capitalCity;
+		this.capitalCityKr = capitalCityKr;
 		this.referenceLatitude = referenceLatitude;
 		this.referenceLongitude = referenceLongitude;
 		this.referenceType = referenceType;
@@ -169,6 +178,12 @@ public class Country {
 
 	public String getCapitalCity() {
 		return capitalCity;
+	}
+
+	public String getCapitalCityKr() {
+		return capitalCityKr == null || capitalCityKr.isBlank()
+			? capitalCity
+			: capitalCityKr;
 	}
 
 	public BigDecimal getReferenceLatitude() {

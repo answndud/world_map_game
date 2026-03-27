@@ -51,6 +51,7 @@ class CountrySeedIntegrationTest {
 		Country norway = countryRepository.findByIso3CodeIgnoreCase("nor").orElseThrow();
 
 		assertThat(korea.getNameKr()).isEqualTo("대한민국");
+		assertThat(korea.getCapitalCityKr()).isEqualTo("서울");
 		assertThat(korea.getPopulationYear()).isEqualTo(2024);
 		assertThat(france.getNameKr()).isEqualTo("프랑스");
 		assertThat(norway.getNameKr()).isEqualTo("노르웨이");
@@ -65,6 +66,7 @@ class CountrySeedIntegrationTest {
 			"Testland",
 			Continent.EUROPE,
 			"Test City",
+			"테스트시",
 			new java.math.BigDecimal("10.0000"),
 			new java.math.BigDecimal("20.0000"),
 			CountryReferenceType.CAPITAL_CITY,

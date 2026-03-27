@@ -314,7 +314,7 @@ public class CapitalGameService {
 	private List<Country> getCountriesSortedByPopulation() {
 		return countryRepository.findAll()
 			.stream()
-			.filter(country -> country.getCapitalCity() != null && !country.getCapitalCity().isBlank())
+			.filter(country -> country.getCapitalCityKr() != null && !country.getCapitalCityKr().isBlank())
 			.sorted(
 				Comparator.comparing(Country::getPopulation, Comparator.reverseOrder())
 					.thenComparing(Country::getNameKr)

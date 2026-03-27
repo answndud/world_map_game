@@ -388,6 +388,7 @@ class RecommendationSurveyServiceTest {
 			nameEn,
 			continent,
 			capitalCity,
+			capitalCity,
 			BigDecimal.ZERO,
 			BigDecimal.ZERO,
 			CountryReferenceType.CAPITAL_CITY,

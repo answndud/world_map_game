@@ -42,6 +42,7 @@ public class CountrySeedValidator {
 		requireText(item.nameKr(), "nameKr");
 		requireText(item.nameEn(), "nameEn");
 		requireText(item.capitalCity(), "capitalCity");
+		requireText(item.capitalCityKr(), "capitalCityKr");
 
 		if (item.iso2Code().length() != 2 || !item.iso2Code().equals(item.iso2Code().toUpperCase(Locale.ROOT))) {
 			throw new IllegalStateException("iso2Code 형식이 올바르지 않습니다: " + item.iso2Code());
