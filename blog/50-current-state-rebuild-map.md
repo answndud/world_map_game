@@ -136,9 +136,9 @@ set +a
 - `/games/capital/start`
   - 닉네임 입력과 게임 시작하기가 보이는가
 - `/games/capital/play/{sessionId}`
-  - 수도 보기 4개와 제출 버튼, 하트/점수 HUD가 보이는가
+  - 한국어 수도 보기 4개와 제출 버튼, 하트/점수 HUD가 보이는가
 - `/games/capital/result/{sessionId}`
-  - Stage별 시도 로그와 정답 수도가 보이는가
+  - Stage별 시도 로그와 한국어 정답 수도가 보이는가
 - `/games/population-battle/start`
   - 닉네임 입력과 게임 시작하기가 보이는가
 - `/games/population-battle/play/{sessionId}`

@@ -3754,3 +3754,41 @@
 - 배운 점: 국기 게임은 “이미지 하나 보여주기”보다 `어떤 국기가 실제로 앱 안에 있고, 그걸 서버가 어떻게 검증하느냐`가 먼저다. 이걸 먼저 catalog와 테스트로 고정해 두면, 나중에 flag game mode를 열 때는 세션/Stage/Attempt와 option generator 쪽에만 집중할 수 있다.
 - 아직 약한 부분: sample SVG 12개는 파이프라인을 검증하기 위한 첫 묶음일 뿐이라, 실제 flag game vertical slice를 열기 전에는 자산 수를 더 늘리거나 “출제 가능 국가를 subset으로 먼저 운영한다”는 제품 결정을 확정해야 한다. 라이선스 노트도 지금은 placeholder 수준이라 출처와 정리 방식을 더 명확히 해야 한다.
 - 면접용 30초 요약: 국기 게임은 규칙보다 자산 검증이 먼저라고 판단해서, 바로 게임 모드를 열지 않고 `FlagAssetCatalog`를 먼저 만들었습니다. 이 catalog는 manifest를 읽고 ISO3, 경로, format, 실제 SVG 파일 존재를 startup에서 검증합니다. 그래서 지금은 서버가 “어떤 국기들이 현재 출제 가능하냐”를 설명 가능한 read model로 갖게 됐고, 다음 조각에서는 이 pool을 가지고 game mode를 열 수 있습니다.
+
+## 2026-03-27 - 11단계 수도 맞히기 한국어 수도명 seed 보강
+
+- 단계: 11. 신규 게임 확장
+- 목적: 수도 맞히기 게임은 한국어 UI인데 보기와 정답 수도명이 영어로 노출되고 있었다. 이번 조각은 영어 원본 `capitalCity`는 유지하면서, 수도 게임만 한국어 수도명을 읽도록 seed와 도메인을 보강하는 작업이다.
+- 변경 파일:
+  - `scripts/sync_capital_city_kr.py`
+  - `src/main/resources/data/countries.json`
+  - `src/main/java/com/worldmap/country/domain/Country.java`
+  - `src/main/java/com/worldmap/country/infrastructure/CountrySeedReader.java`
+  - `src/main/java/com/worldmap/country/application/CountrySeedValidator.java`
+  - `src/main/java/com/worldmap/country/application/CountrySeedInitializer.java`
+  - `src/main/java/com/worldmap/game/capital/application/CapitalGameService.java`
+  - `src/main/java/com/worldmap/game/capital/application/CapitalGameOptionGenerator.java`
+  - `src/main/java/com/worldmap/game/capital/domain/CapitalGameStage.java`
+  - `src/test/java/com/worldmap/country/CountrySeedIntegrationTest.java`
+  - `src/test/java/com/worldmap/game/capital/CapitalGameFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/game/population/application/PopulationGameOptionGeneratorTest.java`
+  - `src/test/java/com/worldmap/recommendation/application/RecommendationSurveyServiceTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/50-current-state-rebuild-map.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/80-add-korean-capital-names-to-country-seed-and-capital-quiz.md`
+- 요청 흐름 / 데이터 흐름: runtime 요청은 그대로 `POST /api/games/capital/sessions -> GET /state -> POST /answer -> GET /result`다. 달라진 것은 seed 준비 단계다. `scripts/sync_capital_city_kr.py`가 `countries.json`의 194개 국가에 `capitalCityKr`를 채우고, 앱 startup에서 `CountrySeedInitializer`가 그 값을 DB `country.capital_city_kr`로 동기화한다. 이후 `CapitalGameService`와 `CapitalGameOptionGenerator`는 영어 `capitalCity` 대신 한국어 `capitalCityKr`를 읽어 Stage와 보기 문자열을 만든다.
+- 데이터 / 상태 변화: `country`에 `capital_city_kr` 컬럼이 추가됐고, `countries.json` 194건에 `capitalCityKr`가 모두 채워졌다. `capitalCity` 영어 원본은 recommendation / country API 같은 기존 read model 호환을 위해 유지하고, 수도 게임 Stage/Attempt snapshot만 한국어 수도명 문자열로 저장한다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 원본 reference 값과 표시 언어를 분리하는 것이다. 영어 수도명 `capitalCity`를 덮어쓰면 추천/국가 조회까지 흔들리기 때문에, seed에 `capitalCityKr`를 따로 두고 capital quiz만 그 필드를 읽게 하는 편이 설명 가능성과 호환성이 더 좋다.
+- 예외 / 엣지 케이스: Wikidata의 현재 국가 수도와 현재 seed의 영어 수도가 불일치하는 나라(예: 부룬디, 적도 기니, 스리랑카, 남아공)가 있고, 일부 한국어 label은 `서울특별시`, `도쿄도`, `베이징시`처럼 행정 단위 suffix를 포함한다. 그래서 스크립트는 Wikidata 한국어 label을 기본으로 쓰되, 이런 예외는 `MANUAL_KOREAN_CAPITAL_OVERRIDES`로 seed 기준과 국어사전식 표기를 보정한다.
+- 테스트:
+  - `python3 scripts/sync_capital_city_kr.py`
+  - `./gradlew test --tests com.worldmap.country.CountrySeedIntegrationTest --tests com.worldmap.game.capital.CapitalGameFlowIntegrationTest --tests com.worldmap.game.population.application.PopulationGameOptionGeneratorTest --tests com.worldmap.recommendation.application.RecommendationSurveyServiceTest`
+  - `./gradlew test`
+  - `git diff --check`
+- 배운 점: 사용자에게 보이는 표기 언어를 바꾼다고 해서 원본 reference 필드를 덮어쓰는 건 좋은 선택이 아니다. 특히 추천처럼 다른 도메인이 같은 seed를 읽고 있으면, `영어 원본 + 한국어 표시용 필드`를 분리하고 game mode가 필요한 필드만 읽게 만드는 편이 장기적으로 더 단순하다.
+- 아직 약한 부분: `capitalCityKr`는 현재 수도 맞히기 게임에만 연결돼 있다. recommendation 결과 카드나 country detail 같은 다른 public read model은 아직 영어 `capitalCity`를 그대로 쓰므로, 이후 제품 카피 일관성을 더 올리고 싶다면 그 표면들도 한국어 수도명으로 바꿀지 별도 판단이 필요하다.
+- 면접용 30초 요약: 수도 맞히기 게임이 한국어 UI인데 수도명이 영어로 보이는 문제가 있었습니다. 그래서 영어 원본 `capitalCity`는 그대로 두고, seed에 `capitalCityKr`를 추가한 뒤 capital game만 그 필드를 읽게 했습니다. 한국어 수도명은 runtime 번역이 아니라 seed 재생성 스크립트로 미리 고정해서, 서버는 여전히 정적 seed만 읽고도 안정적으로 한국어 수도 보기 4개를 만들 수 있게 됐습니다.

@@ -146,6 +146,7 @@
 
 - `country` 테이블과 `Continent`, `CountryReferenceType` 도메인 추가
 - `src/main/resources/data/countries.json` JSON 시드 포맷 확정
+- `capitalCityKr`를 포함한 국가 시드 보강과 검증 규칙 추가
 - 앱 시작 시 ISO3 기준으로 추가 / 갱신 / 삭제를 동기화하는 `CountrySeedInitializer` 구현
 - ISO 코드 중복, 좌표 범위, 필수값을 검사하는 `CountrySeedValidator` 구현
 - `GET /api/countries`, `GET /api/countries/{iso3Code}` 조회 API 추가
@@ -806,6 +807,7 @@
 - `capital` game mode와 `capital_game_session / stage / attempt` 저장 구조를 추가해 위치/인구수 게임과 같은 endless run 패턴을 재사용
 - `POST /api/games/capital/sessions -> GET /state -> POST /answer -> POST /restart -> GET /result` 흐름을 구현
 - same-continent 우선 distractor 생성과 글로벌 fallback 규칙으로 수도 보기 4개를 서버가 생성
+- `scripts/sync_capital_city_kr.py`로 `capitalCityKr`를 seed에 재생성 가능하게 추가하고, 수도 게임 옵션/정답/결과를 한국어 수도명 기준으로 전환
 - 수도 게임 run을 `leaderboard_record`에 반영하고, 공개 `/ranking`, `/stats`, 홈 모드 카드까지 연결
 - `CapitalGameFlowIntegrationTest`, `LeaderboardIntegrationTest`, `StatsPageControllerTest`, `HomeControllerTest`로 첫 vertical slice를 고정
 - `population-battle` game mode와 `population_battle_game_session / stage / attempt` 저장 구조를 추가해 기존 endless run 패턴을 네 번째 게임에도 재사용
@@ -829,6 +831,8 @@
 
 - 왜 수도 맞히기를 첫 확장 대상으로 잡는가
 - 왜 수도 보기 생성에서 같은 대륙 우선 fallback 정책을 썼는가
+- 왜 `capitalCity`를 덮어쓰지 않고 `capitalCityKr`를 별도 필드로 두는가
+- 왜 한국어 수도명은 runtime 번역이 아니라 seed 재생성 스크립트로 고정하는가
 - 왜 수도 게임도 위치/인구수와 같은 세션 / Stage / Attempt 구조를 유지하는가
 - 왜 인구 비교 퀵 배틀은 인구수 게임과 비슷하지만 여전히 별도 모드 가치가 있는가
 - 왜 인구 비교 퀵 배틀은 4지선다보다 2-choice endless 배틀이 더 설명하기 쉬운가

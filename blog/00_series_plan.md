@@ -99,6 +99,7 @@
 72. [수도 맞히기 Level 1 vertical slice를 현재 구조에 붙이기](./77-add-capital-quiz-level-1-vertical-slice.md)
 73. [인구 비교 퀵 배틀 Level 1 vertical slice를 현재 구조에 붙이기](./78-add-population-battle-level-1-vertical-slice.md)
 74. [국기 게임을 열기 전에 FlagAssetCatalog를 먼저 만들기](./79-add-flag-asset-catalog-before-opening-flag-game.md)
+75. [수도 맞히기 seed에 한국어 수도명을 따로 넣고 게임 UI를 맞추기](./80-add-korean-capital-names-to-country-seed-and-capital-quiz.md)
 
 ### Part E. 테스트, 확장, 취업 패키징
 
