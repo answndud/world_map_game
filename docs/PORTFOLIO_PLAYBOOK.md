@@ -836,11 +836,13 @@
 - `DemoBootstrapIntegrationTest`로 admin/user 계정 + location/population/capital/flag/population-battle sample run + recommendation feedback sample bootstrap을 같이 고정
 - `FlagGameOptionGenerator`를 same-continent random에서 `same continent -> 인접 대륙 -> 전체 pool` 순 fallback으로 바꿔, 북미/오세아니아처럼 후보가 적은 문제도 더 설명 가능하게 정리
 - `FlagGameOptionGeneratorTest`로 `EUROPE same-continent 유지`, `OCEANIA -> ASIA fallback`, `NORTH_AMERICA -> SOUTH_AMERICA fallback`을 고정
+- `FlagGameDifficultyPolicy`를 플레이어 관점의 `기본 / 확장 / 전체 라운드`로 다시 정의하고, `FlagGameService`가 초반 라운드에서는 same-continent distractor가 충분한 대륙만 우선 출제하도록 정리
+- `FlagGameDifficultyPolicyTest`, `FlagGameFlowIntegrationTest`로 `difficultyGuide`, 초반 라운드 target continent 안정화, 결과 화면의 구간 표시를 고정
 
 다음 후속 개선 후보:
 
-- 국기 게임 난이도 단계와 결과 카피를 더 다듬을지 결정
-- 새 게임 3종의 난이도 / 결과 카피 / 홈 카드 밀도를 한 번 더 점검
+- 새 게임 3종의 홈 카드 / 랭킹 / Stats 밀도를 한 번 더 점검
+- 국기 게임 세부 난이도(동일 대륙 고정 비율, 자산 36개 이후 확장 전략)를 더 넓힐지 결정
 
 반드시 이해할 것:
 

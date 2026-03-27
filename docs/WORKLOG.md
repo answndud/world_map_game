@@ -4038,3 +4038,39 @@
 - 배운 점: 자산 pool을 넓힌 뒤에는 “몇 개까지 늘렸는가”보다 “그 pool을 어떤 규칙으로 문제에 쓰는가”가 더 중요해진다. 특히 국기 게임은 오답 보기 품질이 난이도와 직결되므로, same-continent 원칙을 유지하되 부족할 때는 전세계 랜덤이 아니라 지역 fallback 순서를 먼저 주는 편이 훨씬 설명 가능하다.
 - 아직 약한 부분: 현재 fallback은 대륙 단위라 여전히 거칠다. 예를 들어 유럽 내부나 아시아 내부의 세부 권역까지는 반영하지 않는다. 다음 후보는 난이도 단계별로 같은 대륙 고정 비율을 더 명확히 하거나, 결과/플레이 카피를 신규 게임 3종 기준으로 다시 다듬는 것이다.
 - 면접용 30초 요약: 국기 게임은 자산 수를 36개로 늘린 뒤에도 same-continent 후보가 부족한 대륙은 여전히 보기 품질이 흔들릴 수 있었습니다. 그래서 `FlagGameOptionGenerator`를 same-continent 우선 뒤에 `인접 대륙 -> 전체 pool` 순 fallback으로 바꾸고, 오세아니아는 아시아를, 북미는 남미를 먼저 쓰도록 테스트로 고정했습니다. 덕분에 자산 확대 이후에도 보기 품질을 서버 규칙으로 설명할 수 있게 됐습니다.
+
+## 2026-03-27 - 11단계 국기 게임 난이도 단계와 결과 카피 polish
+
+- 단계: 11. 신규 게임 확장
+- 목적: distractor fallback 순서를 정리한 뒤에도, 플레이어 입장에서는 `Pool A / Pool B` 같은 내부 라벨이 그대로 보였고, 초반 라운드가 실제로 더 쉬운 문제만 내는지 코드로 드러나지 않았다. 이번 조각의 목적은 국기 게임 난이도를 플레이어 언어로 다시 묶고, 초반 라운드를 실제로 더 안정적인 대륙에서만 출제하도록 만드는 것이다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/game/flag/application/FlagGameDifficultyPlan.java`
+  - `src/main/java/com/worldmap/game/flag/application/FlagGameDifficultyPolicy.java`
+  - `src/main/java/com/worldmap/game/flag/application/FlagGameService.java`
+  - `src/main/java/com/worldmap/game/flag/application/FlagGameStateView.java`
+  - `src/main/java/com/worldmap/game/flag/application/FlagGameAnswerView.java`
+  - `src/main/java/com/worldmap/game/flag/application/FlagGameStageResultView.java`
+  - `src/main/resources/templates/flag-game/play.html`
+  - `src/main/resources/templates/flag-game/result.html`
+  - `src/main/resources/static/js/flag-game.js`
+  - `src/test/java/com/worldmap/game/flag/application/FlagGameDifficultyPolicyTest.java`
+  - `src/test/java/com/worldmap/game/flag/FlagGameFlowIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/50-current-state-rebuild-map.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/87-polish-flag-difficulty-phases-and-result-copy.md`
+- 요청 흐름 / 데이터 흐름: public 요청 흐름은 바뀌지 않았다. 여전히 `POST /api/games/flag/sessions -> FlagGameService -> FlagGameDifficultyPolicy / FlagGameOptionGenerator -> GET /state -> POST /answer -> GET /result` 순서다. 이번에는 `FlagGameDifficultyPolicy`가 `기본 / 확장 / 전체 라운드`와 가이드를 정하고, `FlagGameService`가 초반 라운드에서 same-continent distractor가 충분한 대륙만 target pool로 먼저 쓰도록 바뀌었다. 결과 조회 시에도 stageNumber를 기준으로 같은 difficulty label을 다시 계산해 result read model에 붙인다.
+- 데이터 / 상태 변화: DB/Redis 스키마 변화는 없다. 다만 state payload에는 `difficultyGuide`, answer payload에는 `nextDifficultyGuide`, result stage read model에는 `difficultyLabel`이 추가됐다. 또한 Stage 1~4 target은 북미/오세아니아처럼 같은 대륙 distractor가 부족한 대륙을 우선적으로 피하게 된다.
+- 핵심 도메인 개념: 난이도 라벨은 단순 UI 문구가 아니라 어떤 국가 pool에서 문제를 뽑을지와 연결된 서버 규칙이다. 따라서 `기본 라운드에서 어떤 대륙을 우선할지`, `다음 라운드 안내 문구를 무엇으로 줄지`, `결과 화면에서 Stage를 어떤 구간으로 보여 줄지`는 컨트롤러가 아니라 `FlagGameDifficultyPolicy`와 `FlagGameService`가 맡아야 한다.
+- 예외 / 엣지 케이스: available flag pool이 바뀌어 stable continent가 4개 미만이 되는 경우를 대비해, `stableContinentTargetsOnly`가 켜져 있어도 필터 결과가 4개 미만이면 전체 pool로 되돌아간다. 즉 early round 규칙 때문에 게임 시작 자체가 막히지는 않는다.
+- 테스트:
+  - `node --check src/main/resources/static/js/flag-game.js`
+  - `./gradlew test --tests com.worldmap.game.flag.application.FlagGameDifficultyPolicyTest --tests com.worldmap.game.flag.application.FlagGameOptionGeneratorTest --tests com.worldmap.game.flag.FlagGameFlowIntegrationTest`
+  - `./gradlew test`
+  - `git diff --check`
+- 배운 점: 자산 기반 게임은 “문제 수”와 “보기 품질”만으로 끝나지 않고, 그 변화가 플레이어가 체감하는 난이도 단계와 연결돼야 한다. 초반 라운드를 실제로 더 쉬운 대륙에서만 열어 주고, 그 사실을 state/result copy에서도 같은 정책으로 설명해야 vertical slice가 더 설득력 있어진다.
+- 아직 약한 부분: 현재 단계 구분은 `기본 / 확장 / 전체` 3단계로 충분하지만, 같은 대륙 distractor 비율을 stage마다 세밀하게 바꾸는 수준까지는 아직 아니다. 다음 후보는 국기 게임 세부 난이도와 새 게임 3종의 공개 화면 밀도 조정이다.
+- 면접용 30초 요약: 국기 게임은 pool을 36개로 늘린 뒤에도 초반이 실제로 쉬운지 플레이어 입장에서 잘 드러나지 않았습니다. 그래서 `FlagGameDifficultyPolicy`를 `기본 / 확장 / 전체 라운드`로 다시 정의하고, `FlagGameService`가 초반에는 same-continent distractor가 충분한 대륙만 먼저 출제하게 바꿨습니다. 그리고 이 규칙을 `difficultyGuide`와 결과 화면의 `구간` 표시까지 연결해서, 난이도도 서버 정책으로 설명할 수 있게 정리했습니다.

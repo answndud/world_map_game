@@ -98,6 +98,7 @@
 - 위치/수도/인구수/인구 비교 퀵 배틀 게임이 현재 public 기본 모드이고, 예전 `LEVEL_2` 세션 / 랭킹 row와 Redis `l2` 키는 startup rollback initializer가 먼저 정리
 - 국기 게임은 현재 public route `/games/flag/start`가 열려 있고, `FlagAssetCatalog + FlagQuestionCountryPoolService` 기준 36개 출제 가능 국가 pool로 운영한다.
 - 국기 distractor 생성은 `same continent -> 인접 대륙 -> 전체 pool` fallback 규칙으로 서버가 관리한다.
+- 국기 난이도는 `기본 라운드 -> 확장 라운드 -> 전체 라운드` 3단계이고, 초반 라운드는 same-continent distractor가 충분한 대륙을 우선 target으로 고른다.
 - local demo bootstrap에는 `orbit_runner`의 위치 / 인구수 / 수도 / 인구 비교 퀵 배틀 / 국기 sample run이 같이 들어가서 `/stats`와 `/ranking`의 5개 게임 보드를 바로 확인할 수 있다.
 
 근거:

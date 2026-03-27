@@ -191,6 +191,7 @@
 - 출제 가능 국가는 `country seed ∩ flag manifest ∩ 실제 파일 존재` 교집합만 사용한다.
 - 현재 public 서비스는 flagcdn snapshot 기반 SVG 36개를 기준으로 국기 게임 Level 1을 운영한다.
 - distractor는 같은 대륙 국가를 먼저 우선하고, 부족하면 인접 대륙 순서로 보충한 뒤 마지막에만 전체 출제 가능 pool으로 fallback한다.
+- 난이도는 `기본 라운드 -> 확장 라운드 -> 전체 라운드` 3단계로 진행되고, 초반 라운드는 같은 대륙 distractor가 충분한 대륙에서만 먼저 출제한다.
 
 #### 서버 책임
 
