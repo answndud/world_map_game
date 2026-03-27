@@ -3979,3 +3979,36 @@
 - 배운 점: 새 게임을 public 제품에 붙인 뒤 local demo가 그 상태를 바로 보여 주지 못하면 설명력이 급격히 떨어진다. 특히 `/stats`, `/ranking`이 제품 존재감을 보여 주는 표면이라면, sample run seed도 그 read model을 함께 채우는 방향으로 정리하는 편이 더 낫다.
 - 아직 약한 부분: 현재 local demo는 다섯 게임 모두 보이지만, 국기 자산 pool은 여전히 sample 12개에 머문다. 다음 후보는 `flag asset pool 확대` 또는 신규 게임 3종의 난이도/카피 polish다.
 - 면접용 30초 요약: local demo에서 수도 맞히기와 인구 비교 퀵 배틀 보드가 비어 있으면, 신규 게임 5종이 다 살아 있다는 걸 한 번에 보여 주기 어려웠습니다. 그래서 startup `DemoBootstrapService`에 `CAPITAL`, `POPULATION_BATTLE` sample run도 추가하고, 세션 / Stage / Attempt와 leaderboard row를 실제 게임 규칙과 같은 패턴으로 같이 만들게 했습니다. 덕분에 local profile로 서버를 다시 띄우기만 해도 `/stats`, `/ranking`의 다섯 게임 보드를 바로 시연할 수 있게 됐습니다.
+
+## 2026-03-27 - 11단계 국기 자산 pool을 36개 snapshot으로 확대
+
+- 단계: 11. 신규 게임 확장
+- 목적: 국기 게임 vertical slice는 동작하지만 출제 가능 국기가 12개뿐이고 대륙 분포가 `EUROPE 11 / ASIA 1`로 치우쳐 있었다. 이번 조각의 목적은 게임 규칙을 건드리지 않고 asset pipeline만 넓혀, same-continent distractor 품질과 국가 다양성을 올리는 것이다.
+- 변경 파일:
+  - `scripts/fetch_flag_assets.py`
+  - `src/main/resources/data/flag-assets.json`
+  - `src/main/resources/static/images/flags/*.svg`
+  - `src/test/java/com/worldmap/game/flag/application/FlagAssetCatalogTest.java`
+  - `src/test/java/com/worldmap/game/flag/application/FlagQuestionCountryPoolServiceIntegrationTest.java`
+  - `README.md`
+  - `docs/FLAG_GAME_ASSET_PIPELINE_PLAN.md`
+  - `docs/NEW_GAME_EXPANSION_PLAN.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/LOCAL_DEMO_BOOTSTRAP.md`
+  - `docs/WORKLOG.md`
+  - `blog/50-current-state-rebuild-map.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/85-expand-flag-asset-pool-with-regeneratable-snapshots.md`
+- 요청 흐름 / 데이터 흐름: runtime HTTP 요청은 바뀌지 않았다. 자산 준비 흐름은 `scripts/fetch_flag_assets.py -> countries.json(iso3/iso2 매핑) -> flagcdn.com SVG download -> static/images/flags/{iso3}.svg 저장 + flag-assets.json 재생성`으로 정리했다. 앱 runtime에서는 기존처럼 `FlagAssetCatalog -> FlagQuestionCountryPoolService -> FlagGameService` 순서로만 읽는다.
+- 데이터 / 상태 변화: `flag-assets.json` manifest와 정적 SVG 파일 세트가 12개에서 36개로 늘어났다. 현재 출제 가능 국기 국가 분포는 `EUROPE 15 / ASIA 8 / NORTH_AMERICA 3 / SOUTH_AMERICA 4 / AFRICA 4 / OCEANIA 2`다. DB 스키마 변화는 없다.
+- 핵심 도메인 개념: 국기 게임에서 자산 확대는 단순 파일 추가가 아니라 `출제 가능 국가 pool` 품질을 바꾸는 작업이다. 다만 runtime은 여전히 local static file만 읽고, download/rebuild는 별도 스크립트로 분리했다. 즉 앱 부팅과 asset regeneration을 분리해 재현성과 운영 단순성을 같이 유지했다.
+- 예외 / 엣지 케이스: 스크립트는 `countries.json`에 없는 ISO3를 받으면 즉시 실패한다. manifest에는 있지만 실제 파일이 없으면 `FlagAssetCatalog`가 startup/test에서 예외를 낸다. 대륙 분포는 여전히 완전히 균형적이지 않지만, 기존 12개 subset보다 distractor fallback 품질이 훨씬 나아졌다.
+- 테스트:
+  - `python3 -m py_compile scripts/fetch_flag_assets.py`
+  - `./gradlew test --tests com.worldmap.game.flag.application.FlagAssetCatalogTest --tests com.worldmap.game.flag.application.FlagQuestionCountryPoolServiceIntegrationTest`
+  - `./gradlew test`
+  - `git diff --check`
+- 배운 점: 국기 게임은 session/stage/attempt 구조보다 자산 재현성이 먼저다. 단순히 SVG 개수를 늘리는 것보다, `선택된 ISO3 목록 -> SVG download -> manifest 재생성` 흐름을 스크립트로 남겨야 다음 확장도 설명 가능해진다.
+- 아직 약한 부분: 현재 36개는 첫 균형화 단계일 뿐이라, 대륙별 분포가 완전히 고른 상태는 아니다. 다음 후보는 자산을 더 넓히기보다, 현재 36개 pool에서 난이도와 distractor 품질이 실제로 좋아졌는지 게임 테스트 기준으로 다시 보는 것이다.
+- 면접용 30초 요약: 국기 게임은 자산 수가 적으면 same-continent distractor 품질과 국가 다양성이 모두 떨어집니다. 그래서 sample 12개로 vertical slice를 먼저 연 뒤, 이번에는 `fetch_flag_assets.py`를 만들어 선택된 ISO3 목록의 SVG와 manifest를 함께 재생성하도록 바꿨습니다. 그 결과 출제 가능 국가는 36개로 늘었고, 서버는 여전히 `country seed ∩ manifest ∩ 실제 파일 존재` 교집합만 문제 pool로 쓰기 때문에 자산 확대 후에도 설명 가능한 구조를 유지할 수 있게 됐습니다.

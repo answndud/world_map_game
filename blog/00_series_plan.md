@@ -104,6 +104,7 @@
 77. [국기 보고 나라 맞히기 Level 1 vertical slice를 현재 구조에 붙이기](./82-add-flag-quiz-level-1-vertical-slice.md)
 78. [local demo bootstrap에 국기 퀴즈 sample run을 넣기](./83-seed-flag-sample-run-in-local-demo-bootstrap.md)
 79. [local demo bootstrap에 수도/인구 비교 sample run도 넣기](./84-seed-capital-and-population-battle-sample-runs-in-local-demo-bootstrap.md)
+80. [국기 자산 pool을 36개 snapshot으로 넓히고 재생성 스크립트를 붙이기](./85-expand-flag-asset-pool-with-regeneratable-snapshots.md)
 
 ### Part E. 테스트, 확장, 취업 패키징
 

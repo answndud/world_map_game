@@ -53,7 +53,7 @@ demo bootstrap은 아래 확인용 데이터를 local DB에 넣는다.
   - 클리어 Stage `3`
   - 총 시도 수 `6`
 - `orbit_runner` 국기 퀴즈 완료 run 1개
-  - sample SVG 12개 pool 기준 Level 1 run
+  - flagcdn snapshot SVG 36개 pool 기준 Level 1 run
   - 총점 `285`
   - 클리어 Stage `2`
   - 총 시도 수 `4`

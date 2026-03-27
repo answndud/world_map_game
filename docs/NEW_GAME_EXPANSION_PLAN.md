@@ -196,8 +196,9 @@
 - manifest는 `src/main/resources/data/flag-assets.json`
 - 출제 가능 국가는 `country seed ∩ manifest ∩ 실제 파일 존재` 교집합
 - `FlagAssetCatalog`가 manifest를 읽고, ISO3 / 경로 / format / 파일 존재를 startup 기준으로 검증하게 했다.
-- sample SVG 12개를 먼저 저장소에 포함해 local/demo에서도 같은 자산을 재현 가능하게 했다.
-- `FlagQuestionCountryPoolService`가 `country seed ∩ manifest ∩ 실제 파일 존재` 교집합을 실제 서버 read model로 계산하고, 출제 가능 국가 12개와 대륙별 count(EUROPE 11 / ASIA 1)를 고정한다.
+- flagcdn snapshot SVG 36개를 저장소에 포함해 local/demo에서도 같은 자산을 재현 가능하게 했다.
+- `scripts/fetch_flag_assets.py`가 선택된 ISO3 목록을 기준으로 SVG와 manifest를 함께 재생성한다.
+- `FlagQuestionCountryPoolService`가 `country seed ∩ manifest ∩ 실제 파일 존재` 교집합을 실제 서버 read model로 계산하고, 출제 가능 국가 36개와 대륙별 분포(EUROPE 15 / ASIA 8 / NORTH_AMERICA 3 / SOUTH_AMERICA 4 / AFRICA 4 / OCEANIA 2)를 고정한다.
 
 ### 현재 완료 상태
 
@@ -206,9 +207,9 @@
 - start/state/answer/restart/result API 및 SSR 화면 추가
 - `FlagQuestionCountryPoolService` 기반 출제 국가 선택과 같은 대륙 우선 distractor 생성 구현
 - 공개 홈, `/ranking`, `/stats`까지 flag 모드 연결
-- sample 자산 12개를 기준으로 local/demo에서도 같은 국기 문제를 재현 가능하게 고정
+- flag 자산 36개를 기준으로 local/demo에서도 같은 국기 문제를 재현 가능하게 고정
 
-다음 작은 코드 조각은 `flag asset pool 확대 또는 capital / population-battle local demo sample run 추가`다.
+다음 작은 코드 조각은 `신규 게임 난이도 조정 또는 home/ranking/stats 밀도 정리`다.
 
 ## 이번 우선순위 변경 이유
 

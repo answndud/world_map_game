@@ -55,7 +55,15 @@
 - 특정 국기가 SVG 확보가 어렵다면 임시로 PNG fallback을 허용할 수 있다.
 - 다만 첫 구현 기준은 `svg only`를 목표로 한다.
 
-### 3. 출제 가능 국가 기준
+### 3. 현재 source snapshot
+
+- 현재 저장소는 `flagcdn.com`에서 내려받은 SVG snapshot 36개를 `static/images/flags/` 아래에 포함한다.
+- `scripts/fetch_flag_assets.py`가 선택된 ISO3 목록을 기준으로 SVG와 `flag-assets.json`을 함께 재생성한다.
+
+즉, local/demo 부팅은 여전히 네트워크 없이 가능하고,
+자산 확대나 갱신이 필요할 때만 스크립트를 다시 실행하는 구조다.
+
+### 4. 출제 가능 국가 기준
 
 국기 게임의 출제 가능 국가는
 
@@ -120,6 +128,12 @@
 - local 부팅 시 외부 다운로드를 강제하지 않는다.
 - 필요하면 별도 스크립트로 자산 카탈로그를 재생성하되,
   앱 부팅 자체는 스크립트 없이 가능해야 한다.
+
+현재 재생성 명령:
+
+```bash
+python3 scripts/fetch_flag_assets.py
+```
 
 즉, demo 재현은
 `git clone -> local profile bootRun`
