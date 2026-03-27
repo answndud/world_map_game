@@ -5,6 +5,7 @@
 현재 public 제품은
 
 - 국가 위치 찾기
+- 수도 맞히기
 - 국가 인구수 맞추기
 - 나라 추천
 - 랭킹
@@ -103,7 +104,7 @@
 
 ## 수도 맞히기 첫 조각
 
-다음 구현 조각은 `수도 맞히기 Level 1 vertical slice`다.
+첫 구현 조각인 `수도 맞히기 Level 1 vertical slice`는 현재 완료됐다.
 
 ### 입력 방식
 
@@ -132,6 +133,17 @@
 3. SSR 시작/플레이/결과 화면 추가
 4. 최소 1개 핵심 통합 테스트 추가
 5. 랭킹 반영은 첫 조각에서는 붙이되, UI polish는 다음 턴로 넘김
+
+### 현재 완료 상태
+
+- `capital` game mode 추가
+- `capital_game_session / stage / attempt` 저장 구조 추가
+- start/state/answer/restart/result API 및 SSR 화면 추가
+- same-continent 우선 distractor 생성과 글로벌 fallback 구현
+- 공개 홈, `/ranking`, `/stats`까지 capital 모드 연결
+- 핵심 통합 테스트와 ranking/stats/home 회귀 테스트 추가
+
+다음 작은 조각은 `인구 비교 퀵 배틀 Level 1 설계`다.
 
 ## 인구 비교 퀵 배틀 초안
 

@@ -1876,6 +1876,7 @@
 - 변경 파일:
   - `src/main/java/com/worldmap/recommendation/web/RecommendationPageController.java`
   - `src/main/java/com/worldmap/admin/application/AdminDashboardService.java`
+  - `src/main/java/com/worldmap/mypage/application/MyPageService.java`
   - `src/main/java/com/worldmap/admin/application/AdminDashboardView.java`
   - `src/main/java/com/worldmap/admin/application/AdminDashboardRouteView.java`
   - `src/main/java/com/worldmap/admin/application/AdminDashboardFocusView.java`
@@ -3566,3 +3567,76 @@
 - 배운 점: 새 기능을 만들기 전에 “현재 데이터로 바로 가능한가”를 먼저 보는 것이 중요하다. 지금은 `capitalCity`와 `population`이 이미 있기 때문에 수도 맞히기와 인구 비교 퀵 배틀은 설계가 쉽고, 국기 게임은 오히려 데이터/에셋 준비가 본질이라는 점이 명확해졌다.
 - 아직 약한 부분: 아직은 새 게임 로드맵만 고정했을 뿐 실제 `capital` game mode 구현은 시작하지 않았다. 다음 조각에서 세션/Stage/Attempt 구조를 기존 게임과 어떻게 재사용할지 실제 코드 기준으로 열어야 한다.
 - 면접용 30초 요약: 기존 두 게임이 안정화된 뒤에는 무작정 기능을 늘리기보다, 현재 `country` 데이터와 공통 게임 구조를 재사용할 수 있는 모드부터 여는 것이 맞다고 판단했습니다. 그래서 `capitalCity`가 이미 있는 수도 맞히기를 첫 확장 대상으로 잡고, 그 다음 population 재사용이 쉬운 인구 비교 배틀, 마지막으로 에셋 파이프라인이 필요한 국기 게임 순으로 로드맵을 고정했습니다.
+
+## 2026-03-27 - 11단계 수도 맞히기 Level 1 vertical slice
+
+- 단계: 11. 신규 게임 확장
+- 목적: 새 게임 확장을 실제 제품에 연결할 때는 가장 작고 설명 가능한 모드부터 여는 것이 맞다. `country.capitalCity`를 그대로 재사용할 수 있는 수도 맞히기는 현재 데이터와 공통 게임 구조를 가장 적게 비틀고도 새 모드를 설명할 수 있는 첫 vertical slice다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/game/capital/application/CapitalAnswerJudgement.java`
+  - `src/main/java/com/worldmap/game/capital/application/CapitalGameAnswerOutcome.java`
+  - `src/main/java/com/worldmap/game/capital/application/CapitalGameAnswerView.java`
+  - `src/main/java/com/worldmap/game/capital/application/CapitalGameAttemptResultView.java`
+  - `src/main/java/com/worldmap/game/capital/application/CapitalGameDifficultyPlan.java`
+  - `src/main/java/com/worldmap/game/capital/application/CapitalGameDifficultyPolicy.java`
+  - `src/main/java/com/worldmap/game/capital/application/CapitalGameOptionGenerator.java`
+  - `src/main/java/com/worldmap/game/capital/application/CapitalGameScoringPolicy.java`
+  - `src/main/java/com/worldmap/game/capital/application/CapitalGameService.java`
+  - `src/main/java/com/worldmap/game/capital/application/CapitalGameSessionResultView.java`
+  - `src/main/java/com/worldmap/game/capital/application/CapitalGameStageResultView.java`
+  - `src/main/java/com/worldmap/game/capital/application/CapitalGameStateView.java`
+  - `src/main/java/com/worldmap/game/capital/application/CapitalGameStartView.java`
+  - `src/main/java/com/worldmap/game/capital/application/CapitalOptionView.java`
+  - `src/main/java/com/worldmap/game/capital/application/CapitalRoundOptions.java`
+  - `src/main/java/com/worldmap/game/capital/domain/CapitalGameAttempt.java`
+  - `src/main/java/com/worldmap/game/capital/domain/CapitalGameAttemptRepository.java`
+  - `src/main/java/com/worldmap/game/capital/domain/CapitalGameSession.java`
+  - `src/main/java/com/worldmap/game/capital/domain/CapitalGameSessionRepository.java`
+  - `src/main/java/com/worldmap/game/capital/domain/CapitalGameStage.java`
+  - `src/main/java/com/worldmap/game/capital/domain/CapitalGameStageRepository.java`
+  - `src/main/java/com/worldmap/game/capital/domain/CapitalGameStageStatus.java`
+  - `src/main/java/com/worldmap/game/capital/web/CapitalGameApiController.java`
+  - `src/main/java/com/worldmap/game/capital/web/CapitalGamePageController.java`
+  - `src/main/java/com/worldmap/game/capital/web/StartCapitalGameRequest.java`
+  - `src/main/java/com/worldmap/game/capital/web/SubmitCapitalAnswerRequest.java`
+  - `src/main/resources/templates/capital-game/start.html`
+  - `src/main/resources/templates/capital-game/play.html`
+  - `src/main/resources/templates/capital-game/result.html`
+  - `src/main/resources/static/js/capital-game.js`
+  - `src/main/java/com/worldmap/ranking/domain/LeaderboardGameMode.java`
+  - `src/main/java/com/worldmap/ranking/application/LeaderboardService.java`
+  - `src/main/java/com/worldmap/ranking/web/LeaderboardPageController.java`
+  - `src/main/java/com/worldmap/stats/application/ServiceActivityService.java`
+  - `src/main/java/com/worldmap/stats/application/ServiceActivityView.java`
+  - `src/main/java/com/worldmap/stats/web/StatsPageController.java`
+  - `src/main/java/com/worldmap/web/HomeController.java`
+  - `src/main/java/com/worldmap/admin/application/AdminDashboardService.java`
+  - `src/main/resources/templates/ranking/index.html`
+  - `src/main/resources/templates/stats/index.html`
+  - `src/main/resources/templates/admin/index.html`
+  - `src/test/java/com/worldmap/game/capital/CapitalGameFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/ranking/LeaderboardIntegrationTest.java`
+  - `src/test/java/com/worldmap/stats/StatsPageControllerTest.java`
+  - `src/test/java/com/worldmap/web/HomeControllerTest.java`
+  - `src/test/java/com/worldmap/admin/AdminPageIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `docs/NEW_GAME_EXPANSION_PLAN.md`
+  - `docs/LOCAL_DEMO_BOOTSTRAP.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/50-current-state-rebuild-map.md`
+  - `blog/77-add-capital-quiz-level-1-vertical-slice.md`
+- 요청 흐름 / 데이터 흐름: `GET /games/capital/start`에서 SSR 시작 화면이 열린 뒤, `POST /api/games/capital/sessions`가 guest/member ownership을 가진 세션을 만든다. 이후 `GET /api/games/capital/sessions/{id}/state`가 현재 Stage와 보기 4개를 내려주고, `POST /api/games/capital/sessions/{id}/answer`가 정답 여부와 점수, 하트 감소, 다음 Stage 생성을 서버에서 처리한다. `POST /api/games/capital/sessions/{id}/restart`는 같은 `sessionId`를 재사용해 run을 리셋하고, `GET /api/games/capital/sessions/{id}`는 Stage/Attempt 결과를 읽는다. 세션이 끝나면 `LeaderboardService.recordCapitalResult(...)`가 `leaderboard_record`와 Redis 랭킹을 같이 반영한다.
+- 데이터 / 상태 변화: 새 모드 `CAPITAL`과 `capital_game_session / capital_game_stage / capital_game_attempt`가 추가됐다. Stage는 출제 국가, 수도 보기 4개, 정답 보기 번호를 저장하고, Attempt는 사용자가 고른 보기와 남은 하트를 기록한다. 공개 `/ranking`, `/stats`, 홈 모드 카드도 `CAPITAL` read model을 함께 사용하기 시작했다.
+- 핵심 도메인 개념: 수도 게임도 위치/인구수와 같은 endless run, 하트 3개, same-session restart 구조를 유지한다. 새 추상화를 만들지 않고 기존 `session -> stage -> attempt -> leaderboard_record` 패턴을 재사용해, “새 게임 하나를 더 열었다”는 사실보다 “같은 서버 주도 게임 구조를 세 번째 모드에 적용했다”는 점을 설명하기 쉽게 만들었다.
+- 예외 상황 또는 엣지 케이스: 같은 수도명이 중복되면 distractor 보기가 깨질 수 있으므로, option generator는 정답 수도와 이미 쓴 수도명을 normalized key로 관리한다. same-continent 후보가 3개보다 적을 수 있으므로 먼저 같은 대륙에서 모으고, 부족한 수는 전체 국가 수도에서 보충한다. 국가 데이터가 4개 미만이거나 서로 다른 수도를 4개 만들 수 없는 상태면 게임 시작/문제 생성 자체를 막는다.
+- 테스트 내용:
+  - `node --check src/main/resources/static/js/capital-game.js`
+  - `./gradlew test --tests com.worldmap.game.capital.CapitalGameFlowIntegrationTest --tests com.worldmap.ranking.LeaderboardIntegrationTest --tests com.worldmap.stats.StatsPageControllerTest --tests com.worldmap.web.HomeControllerTest`
+  - `./gradlew test`
+  - `git diff --check`
+- 배운 점: 새 게임을 추가할 때 “완전히 새로운 구조를 만들어야 하나”부터 고민할 필요는 없다. 기존 게임이 이미 세션/Stage/Attempt로 설명 가능하면, 새 모드도 그 뼈대를 재사용하는 편이 설계와 테스트, 문서화까지 모두 단순해진다.
+- 아직 약한 부분: local demo bootstrap에는 아직 capital 샘플 run을 넣지 않아 `/stats`와 `/ranking`의 capital 보드가 처음엔 비어 있을 수 있다. 다음 조각에서 demo seed를 넣을지, 아니면 capital는 플레이 후 채워지는 보드로 둘지 판단해야 한다.
+- 면접용 30초 요약: 수도 맞히기는 `country.capitalCity`가 이미 있어서 현재 구조에 가장 작게 붙일 수 있는 새 게임이었습니다. 그래서 위치/인구수와 같은 endless run, 하트 3개, session-stage-attempt 구조를 그대로 재사용하고, 보기 생성만 same-continent 우선 정책으로 새로 만들었습니다. 덕분에 새 게임 하나를 추가하면서도 세션 시작, 정답 판정, 랭킹 반영, public stats/ranking 연결까지 같은 서버 주도 구조로 설명할 수 있게 됐습니다.

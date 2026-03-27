@@ -803,15 +803,23 @@
 - [docs/NEW_GAME_EXPANSION_PLAN.md](/Users/alex/project/worldmap/docs/NEW_GAME_EXPANSION_PLAN.md)로 세 게임의 우선순위와 이유를 고정
 - `수도 맞히기 -> 인구 비교 퀵 배틀 -> 국기 맞히기` 순서로 가는 이유를 `기존 데이터 재사용 / 에셋 필요도 / 설명 가능성` 기준으로 정리
 - 첫 구현 조각을 `수도 맞히기 Level 1 vertical slice`로 확정
+- `capital` game mode와 `capital_game_session / stage / attempt` 저장 구조를 추가해 위치/인구수 게임과 같은 endless run 패턴을 재사용
+- `POST /api/games/capital/sessions -> GET /state -> POST /answer -> POST /restart -> GET /result` 흐름을 구현
+- same-continent 우선 distractor 생성과 글로벌 fallback 규칙으로 수도 보기 4개를 서버가 생성
+- 수도 게임 run을 `leaderboard_record`에 반영하고, 공개 `/ranking`, `/stats`, 홈 모드 카드까지 연결
+- `CapitalGameFlowIntegrationTest`, `LeaderboardIntegrationTest`, `StatsPageControllerTest`, `HomeControllerTest`로 첫 vertical slice를 고정
 
 다음에 이어서 할 일:
 
-- `capital` game mode의 세션 / Stage / Attempt 구조 설계
-- 수도 맞히기 start/state/answer/result 첫 구현
+- 인구 비교 퀵 배틀 Level 1 규칙 설계
+- 수도 맞히기 local demo 샘플 run을 추가할지 판단
+- 수도 게임 My Page 확장 여부 결정
 
 반드시 이해할 것:
 
 - 왜 수도 맞히기를 첫 확장 대상으로 잡는가
+- 왜 수도 보기 생성에서 같은 대륙 우선 fallback 정책을 썼는가
+- 왜 수도 게임도 위치/인구수와 같은 세션 / Stage / Attempt 구조를 유지하는가
 - 왜 인구 비교 퀵 배틀은 인구수 게임과 비슷하지만 여전히 별도 모드 가치가 있는가
 - 왜 국기 게임은 규칙보다 에셋 파이프라인이 먼저인가
 - 왜 새로운 게임도 서버 주도 세션 / Stage / Attempt 구조를 유지해야 하는가
@@ -825,6 +833,7 @@
 완료 기준:
 
 - 최소 1개 새 게임이 start/state/answer/result까지 동작한다.
+- 수도 맞히기 Level 1 vertical slice가 start/state/answer/result, 랭킹, 공개 stats까지 동작한다.
 - 랭킹과 문서까지 현재 범위에 맞게 연결된다.
 - 나머지 두 게임의 선행 조건과 순서를 설명할 수 있다.
 

@@ -56,6 +56,7 @@
 - `/`
 - `/stats`
 - `/ranking`
+- `/games/capital/start`
 - `/games/location/start`
 - `/games/population/start`
 - `/recommendation/survey`
@@ -94,7 +95,7 @@
 - admin 계정: `worldmap_admin / secret123`
 - user 계정: `orbit_runner / secret123`
 - local에서 샘플 run, guest live session, current recommendation feedback sample까지 bootstrap
-- 위치/인구수 게임은 현재 Level 1만 public으로 운영되고, 예전 `LEVEL_2` 세션 / 랭킹 row와 Redis `l2` 키는 startup rollback initializer가 먼저 정리
+- 위치/수도/인구수 게임이 현재 public 기본 모드이고, 예전 `LEVEL_2` 세션 / 랭킹 row와 Redis `l2` 키는 startup rollback initializer가 먼저 정리
 
 근거:
 
@@ -128,9 +129,16 @@ set +a
   - `Home`, `Stats`, `Ranking`, `My Page` 헤더가 보이는가
 - `/stats`
   - public 활동 지표가 보이는가
-  - 위치/인구수 기본 활동 지표와 공개 Top 보드만 보이고, `Level 2 하이라이트`는 더 이상 보이지 않는가
+  - 위치/수도/인구수 기본 활동 지표와 공개 Top 보드가 보이는가
+  - capital 보드는 local demo 기본 seed에서 비어 있을 수 있다는 점을 이해하고 있는가
 - `/ranking`
-  - 위치/인구수 게임 전환과 전체/일간 필터만 보이고, `게임 레벨` 필터는 더 이상 보이지 않는가
+  - 위치/수도/인구수 게임 전환과 전체/일간 필터만 보이고, `게임 레벨` 필터는 더 이상 보이지 않는가
+- `/games/capital/start`
+  - 닉네임 입력과 게임 시작하기가 보이는가
+- `/games/capital/play/{sessionId}`
+  - 수도 보기 4개와 제출 버튼, 하트/점수 HUD가 보이는가
+- `/games/capital/result/{sessionId}`
+  - Stage별 시도 로그와 정답 수도가 보이는가
 - `/recommendation/survey`
   - 20문항 설문이 보이는가
 - `/games/population/start`
@@ -200,6 +208,7 @@ set +a
 6. [07-leaderboard-polling-refresh.md](./07-leaderboard-polling-refresh.md)
 7. [08-ranking-filter-and-tie-rule.md](./08-ranking-filter-and-tie-rule.md)
 8. [72-roll-back-game-level-2-and-purge-legacy-data.md](./72-roll-back-game-level-2-and-purge-legacy-data.md)
+9. [77-add-capital-quiz-level-1-vertical-slice.md](./77-add-capital-quiz-level-1-vertical-slice.md)
 
 이 구간은 현재 코드와 비교적 직접 대응된다.
 
@@ -243,6 +252,11 @@ Level 2 실험은 현재 public 제품 범위에서 완전히 제거됐고, inte
 8. [31-add-dashboard-activity-metrics.md](./31-add-dashboard-activity-metrics.md)
 9. [32-make-public-stats-page-from-dashboard-metrics.md](./32-make-public-stats-page-from-dashboard-metrics.md)
 10. [33-bootstrap-local-demo-accounts-and-sample-runs.md](./33-bootstrap-local-demo-accounts-and-sample-runs.md)
+
+### 5. 신규 게임 확장 현재 상태
+
+1. [76-plan-next-country-game-expansion.md](./76-plan-next-country-game-expansion.md)
+2. [77-add-capital-quiz-level-1-vertical-slice.md](./77-add-capital-quiz-level-1-vertical-slice.md)
 
 이 구간에서 중요한 건 `/admin`보다 `/dashboard`를 기준으로 읽는 것이다.
 
