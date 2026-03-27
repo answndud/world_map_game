@@ -114,6 +114,7 @@ function initPlayPage() {
             renderStatus(statusBox, {
                 stageNumber: payload.nextStageNumber || currentState.stageNumber,
                 difficultyLabel: payload.nextDifficultyLabel || currentState.difficultyLabel,
+                difficultyGuide: payload.nextDifficultyGuide || currentState.difficultyGuide,
                 clearedStageCount: payload.clearedStageCount,
                 totalScore: payload.totalScore,
                 livesRemaining: payload.livesRemaining
@@ -123,7 +124,11 @@ function initPlayPage() {
                 renderFeedback(feedback, payload);
                 renderStageOverlay(overlay, "정답", `+${payload.awardedScore}`, "success");
                 setSelectionState("정답 처리 완료");
-                setStageHint("정답입니다. 결과를 확인한 뒤 다음 Stage 버튼으로 직접 넘어가세요.");
+                setStageHint(
+                    payload.nextDifficultyGuide
+                        ? `정답입니다. 다음은 ${payload.nextDifficultyLabel}입니다. ${payload.nextDifficultyGuide}`
+                        : "정답입니다. 결과를 확인한 뒤 다음 Stage 버튼으로 직접 넘어가세요."
+                );
 
                 if (payload.outcome === "FINISHED") {
                     setTimeout(() => {
@@ -258,6 +263,7 @@ function initPlayPage() {
             <article class="stat-card">
                 <span class="subtitle">난이도</span>
                 <strong>${payload.difficultyLabel}</strong>
+                <p class="stat-card-copy">${payload.difficultyGuide}</p>
             </article>
             <article class="stat-card">
                 <span class="subtitle">누적 점수</span>
@@ -327,7 +333,7 @@ function initPlayPage() {
 
     function resetHudGuidance(payload) {
         setSelectionState("국가 보기 하나를 고르면 여기서 확인합니다.");
-        setStageHint(`현재 ${payload.difficultyLabel} 구간입니다. 국기를 보고 정답 국가를 고르세요.`);
+        setStageHint(`${payload.difficultyLabel}: ${payload.difficultyGuide}`);
     }
 
     function clearAnswerInput() {

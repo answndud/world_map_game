@@ -11,6 +11,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.worldmap.country.domain.Continent;
+import com.worldmap.game.flag.application.FlagQuestionCountryPoolService;
 import com.worldmap.game.flag.domain.FlagGameAttemptRepository;
 import com.worldmap.game.flag.domain.FlagGameStage;
 import com.worldmap.game.flag.domain.FlagGameStageRepository;
@@ -40,6 +42,9 @@ class FlagGameFlowIntegrationTest {
 	@Autowired
 	private FlagGameAttemptRepository flagGameAttemptRepository;
 
+	@Autowired
+	private FlagQuestionCountryPoolService flagQuestionCountryPoolService;
+
 	@Test
 	void flagGameContinuesBeyondFiveStages() throws Exception {
 		UUID sessionId = UUID.fromString(startGame("flag-player"));
@@ -52,6 +57,7 @@ class FlagGameFlowIntegrationTest {
 				.andExpect(jsonPath("$.livesRemaining").value(3))
 				.andExpect(jsonPath("$.targetFlagRelativePath").value(org.hamcrest.Matchers.startsWith("/images/flags/")))
 				.andExpect(jsonPath("$.difficultyLabel").isNotEmpty())
+				.andExpect(jsonPath("$.difficultyGuide").isNotEmpty())
 				.andReturn();
 
 			assertOptionsUseKoreanCountryNames(stateResult);
@@ -74,6 +80,7 @@ class FlagGameFlowIntegrationTest {
 			JsonNode answerJson = objectMapper.readTree(answerResult.getResponse().getContentAsString());
 			assertThat(answerJson.get("gameStatus").asText()).isEqualTo("IN_PROGRESS");
 			assertThat(answerJson.get("targetFlagRelativePath").asText()).startsWith("/images/flags/");
+			assertThat(answerJson.get("nextDifficultyGuide").asText()).isNotBlank();
 		}
 
 		mockMvc.perform(get("/api/games/flag/sessions/{sessionId}", sessionId))
@@ -83,6 +90,19 @@ class FlagGameFlowIntegrationTest {
 			.andExpect(jsonPath("$.totalAttemptCount").value(7))
 			.andExpect(jsonPath("$.firstTryClearCount").value(7))
 			.andExpect(jsonPath("$.stages.length()").value(8));
+	}
+
+	@Test
+	void earlyRoundTargetsStayWithinContinentsThatHaveEnoughSameContinentDistractors() throws Exception {
+		UUID sessionId = UUID.fromString(startGame("flag-continent"));
+		FlagGameStage firstStage = flagGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
+			.orElseThrow();
+
+		Continent continent = flagQuestionCountryPoolService.findAvailableCountry(firstStage.getCountryIso3Code())
+			.orElseThrow()
+			.continent();
+
+		assertThat(continent).isNotIn(Continent.NORTH_AMERICA, Continent.OCEANIA);
 	}
 
 	@Test
@@ -231,6 +251,8 @@ class FlagGameFlowIntegrationTest {
 
 		mockMvc.perform(get("/games/flag/result/{sessionId}", sessionId))
 			.andExpect(status().isOk())
+			.andExpect(content().string(containsString("구간")))
+			.andExpect(content().string(containsString("기본 라운드")))
 			.andExpect(content().string(containsString("1차 오답 / 하트 2")))
 			.andExpect(content().string(containsString("2차 정답 / 점수 +")))
 			.andExpect(content().string(not(containsString(wrongCountryName))))

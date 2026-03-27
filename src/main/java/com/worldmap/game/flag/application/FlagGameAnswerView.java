@@ -18,6 +18,7 @@ public record FlagGameAnswerView(
 	Integer livesRemaining,
 	Integer nextStageNumber,
 	String nextDifficultyLabel,
+	String nextDifficultyGuide,
 	GameSessionStatus gameStatus,
 	FlagGameAnswerOutcome outcome,
 	String resultPageUrl

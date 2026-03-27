@@ -1,6 +1,7 @@
 package com.worldmap.game.flag.application;
 
 import com.worldmap.common.exception.ResourceNotFoundException;
+import com.worldmap.country.domain.Continent;
 import com.worldmap.game.common.domain.GameSessionStatus;
 import com.worldmap.game.flag.domain.FlagGameAttempt;
 import com.worldmap.game.flag.domain.FlagGameAttemptRepository;
@@ -20,6 +21,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -108,6 +110,7 @@ public class FlagGameService {
 			session.getId(),
 			stage.getStageNumber(),
 			difficultyPlan.label(),
+			difficultyPlan.guide(),
 			session.getClearedStageCount(),
 			session.getTotalScore(),
 			session.getLivesRemaining(),
@@ -231,6 +234,7 @@ public class FlagGameService {
 			session.getLivesRemaining(),
 			session.getStatus() == GameSessionStatus.IN_PROGRESS ? session.getCurrentStageNumber() : null,
 			nextDifficultyPlan != null ? nextDifficultyPlan.label() : null,
+			nextDifficultyPlan != null ? nextDifficultyPlan.guide() : null,
 			session.getStatus(),
 			outcome,
 			"/games/flag/result/" + session.getId()
@@ -257,6 +261,7 @@ public class FlagGameService {
 			.stream()
 			.map(stage -> new FlagGameStageResultView(
 				stage.getStageNumber(),
+				resolveDifficulty(stage.getStageNumber()).label(),
 				stage.getTargetFlagRelativePath(),
 				stage.getStatus(),
 				stage.getAttemptCount(),
@@ -338,8 +343,9 @@ public class FlagGameService {
 		}
 
 		FlagGameDifficultyPlan difficultyPlan = flagGameDifficultyPolicy.resolve(stageNumber, availableCountries.size());
-		List<FlagQuestionCountryView> difficultyPool = takeDifficultyPool(availableCountries, difficultyPlan.candidatePoolSize());
-		FlagQuestionCountryView nextCountry = selectCountryForStage(availableCountries, existingStages, difficultyPool);
+		List<FlagQuestionCountryView> eligibleTargetCountries = selectEligibleTargetCountries(availableCountries, difficultyPlan);
+		List<FlagQuestionCountryView> difficultyPool = takeDifficultyPool(eligibleTargetCountries, difficultyPlan.candidatePoolSize());
+		FlagQuestionCountryView nextCountry = selectCountryForStage(eligibleTargetCountries, existingStages, difficultyPool);
 		FlagRoundOptions roundOptions = flagGameOptionGenerator.generate(nextCountry, availableCountries);
 		flagGameStageRepository.save(
 			FlagGameStage.create(
@@ -351,6 +357,29 @@ public class FlagGameService {
 			)
 		);
 		session.planNextStage(stageNumber);
+	}
+
+	private List<FlagQuestionCountryView> selectEligibleTargetCountries(
+		List<FlagQuestionCountryView> availableCountries,
+		FlagGameDifficultyPlan difficultyPlan
+	) {
+		if (!difficultyPlan.stableContinentTargetsOnly()) {
+			return availableCountries;
+		}
+
+		Set<Continent> stableContinents = availableCountries.stream()
+			.collect(Collectors.groupingBy(FlagQuestionCountryView::continent, Collectors.counting()))
+			.entrySet()
+			.stream()
+			.filter(entry -> entry.getValue() >= 4)
+			.map(Map.Entry::getKey)
+			.collect(Collectors.toSet());
+
+		List<FlagQuestionCountryView> filtered = availableCountries.stream()
+			.filter(country -> stableContinents.contains(country.continent()))
+			.toList();
+
+		return filtered.size() >= 4 ? filtered : availableCountries;
 	}
 
 	private List<FlagQuestionCountryView> takeDifficultyPool(

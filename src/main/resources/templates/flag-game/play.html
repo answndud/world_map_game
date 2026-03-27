@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>국기 보고 나라 맞히기 플레이</title>
     <link rel="stylesheet" th:href="@{/css/site.css(v='20260325-light-depth-10')}">
-    <script th:src="@{/js/flag-game.js(v='20260327-flag-1')}" defer></script>
+    <script th:src="@{/js/flag-game.js(v='20260327-flag-2')}" defer></script>
 </head>
 <body data-page="flag-play" th:attr="data-session-id=${sessionId}">
 <div class="page-shell">
@@ -14,7 +14,7 @@
         <p class="eyebrow">Arcade Flag Scan</p>
         <h1>국기를 보고 국가를 계속 맞혀보세요</h1>
         <p class="hero-copy">
-            정답 생성, 보기 구성, 점수 계산, 하트 감소까지 모두 서버 state를 기준으로 진행됩니다.
+            초반은 비교가 쉬운 대표 국기부터 시작하고, 뒤로 갈수록 지역 fallback과 전체 pool이 열립니다.
         </p>
     </header>
 
@@ -26,7 +26,7 @@
                 <figure class="flag-display-card">
                     <img id="flag-target-image" class="flag-display-image" src="" alt="문제 국기">
                 </figure>
-                <p id="flag-stage-copy" class="hint">국기 이미지와 보기 4개를 준비하는 중입니다.</p>
+                <p id="flag-stage-copy" class="hint">현재 라운드 규칙에 맞는 국기와 보기 4개를 준비하는 중입니다.</p>
             </article>
 
             <div class="selection-row">
@@ -36,7 +36,7 @@
                 </article>
                 <article class="selection-pill">
                     <span class="subtitle">진행 가이드</span>
-                    <strong id="flag-stage-hint">국기를 보고 정답 국가를 하나 고른 뒤 제출하세요.</strong>
+                    <strong id="flag-stage-hint">현재 라운드 설명을 불러온 뒤, 국기를 보고 정답 국가를 하나 고른 뒤 제출하세요.</strong>
                 </article>
             </div>
 

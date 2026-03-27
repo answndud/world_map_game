@@ -8,6 +8,7 @@ public record FlagGameStateView(
 	UUID sessionId,
 	Integer stageNumber,
 	String difficultyLabel,
+	String difficultyGuide,
 	Integer clearedStageCount,
 	Integer totalScore,
 	Integer livesRemaining,
