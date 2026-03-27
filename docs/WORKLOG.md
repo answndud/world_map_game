@@ -3816,3 +3816,29 @@
 - 배운 점: 모든 UX 문제를 서버 응답 구조 변경으로 풀 필요는 없다. 판정 데이터는 그대로 두고, 플레이 템포와 정보 밀도를 프론트 렌더링 branch에서 조절하는 편이 더 작고 안전하게 끝나는 경우가 있다.
 - 아직 약한 부분: 결과 페이지에도 정답/선택 이력이 남아 있기 때문에, 사용자가 “플레이 중뿐 아니라 결과 화면에서도 정답 노출을 줄이고 싶다”고 느낄 수 있다. 그 경우엔 즉시 피드백과 결과 복기 화면을 별도 정책으로 다시 나눠야 한다.
 - 면접용 30초 요약: 이번 조각은 게임 규칙을 바꾸지 않고 플레이 템포만 다듬는 작업이었습니다. 서버는 여전히 선택값과 정답값을 내려주지만, 정답 직후에는 그걸 다 보여 주지 않고 `획득 점수`만 보여 주도록 프론트 correct branch를 정리했습니다. 덕분에 각 게임의 정답 피드백이 더 짧아지고, 다음 Stage로 넘어가는 리듬이 덜 끊기게 됐습니다.
+
+## 2026-03-27 - 공통 게임 결과 페이지에서 선택/정답 로그 숨기기
+
+- 단계: 3. 국가 위치 찾기 게임 Level 1 / 4. 국가 인구수 맞추기 게임 Level 1 / 11. 신규 게임 확장
+- 목적: 플레이 중 정답 피드백은 이미 점수 중심으로 줄였지만, 결과 페이지는 여전히 선택값과 정답값을 다시 보여 주고 있었다. 이번 조각은 결과 페이지도 같은 원칙으로 맞춰서, 복기 화면이 점수와 정답/오답 흐름 중심으로 보이게 만드는 UX 패치다.
+- 변경 파일:
+  - `src/main/resources/templates/location-game/result.html`
+  - `src/main/resources/templates/population-game/result.html`
+  - `src/main/resources/templates/capital-game/result.html`
+  - `src/main/resources/templates/population-battle-game/result.html`
+  - `src/test/java/com/worldmap/game/location/LocationGameFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/game/population/PopulationGameFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/game/capital/CapitalGameFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/game/populationbattle/PopulationBattleGameFlowIntegrationTest.java`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 서버 요청 흐름은 바뀌지 않았다. 각 게임은 그대로 `GET /games/.../result/{sessionId}`에서 서버가 만든 result read model을 받고, SSR 템플릿이 이를 렌더링한다. 이번 변경은 템플릿과 HTML 검증 테스트만 건드려서, 정답 시도는 `N차 정답 / 점수 +X / 하트 Y`, 오답 시도는 `N차 오답 / 하트 Y`처럼 요약되도록 만들었다.
+- 데이터 / 상태 변화: DB와 result JSON 구조는 그대로다. `selected*`, `correct*` 필드도 read model 안에는 남아 있지만, 결과 화면에서는 사용하지 않는다. 즉 서버 read model을 더 얇게 만들기보다 템플릿 단계에서 노출 범위를 줄인 조각이다.
+- 핵심 도메인 개념: 이 변경은 점수 정책이나 판정 규칙 변경이 아니다. `결과 복기 화면은 어디까지 보여 줄 것인가`라는 presentation rule 변경이므로 컨트롤러나 서비스보다 Thymeleaf 템플릿이 책임지는 편이 맞다. 테스트는 HTML에 실제로 정답/선택 문자열이 없는지 고정해서 회귀를 막는다.
+- 예외 / 엣지 케이스: 위치 게임 결과는 문제 국가명 자체가 정답이기 때문에 Stage 테이블에서 해당 열을 아예 제거했다. 반면 수도/인구/배틀은 문제 문맥 자체는 남겨 두고, `정답 수도`, `정답 구간`, `정답 국가`, raw 인구 수치 같은 직접적인 해설만 걷어냈다.
+- 테스트:
+  - `./gradlew test --tests com.worldmap.game.location.LocationGameFlowIntegrationTest --tests com.worldmap.game.population.PopulationGameFlowIntegrationTest --tests com.worldmap.game.capital.CapitalGameFlowIntegrationTest --tests com.worldmap.game.populationbattle.PopulationBattleGameFlowIntegrationTest`
+  - `./gradlew test`
+  - `git diff --check`
+- 배운 점: 같은 read model이라도 API/복기 화면/운영 화면이 모두 같은 밀도로 보여 줄 필요는 없다. 선택값과 정답값을 서버가 보존하되, 화면 노출은 템플릿 정책으로 조절하는 편이 사용자 요구에 빠르게 맞출 수 있다.
+- 아직 약한 부분: 현재는 결과 페이지에서만 숨겼고, 운영 `/dashboard`나 내부 디버깅 도구까지 같은 정책을 강제하지는 않았다. 나중에 `public surface와 internal surface의 공개 범위`를 더 엄격하게 나누고 싶다면 read model 자체를 public/internal로 분리하는 선택도 검토할 수 있다.
+- 면접용 30초 요약: 플레이 중 정답 피드백을 줄인 뒤에도 결과 페이지가 정답과 선택을 다시 다 보여 줘서 UX가 일관되지 않았습니다. 그래서 서버 상태나 점수 로직은 건드리지 않고, 결과 템플릿을 `정답/오답 흐름 + 점수` 중심으로 다시 구성했습니다. 이 방식은 데이터는 보존하면서도 public 복기 화면의 정보 밀도만 빠르게 줄일 수 있다는 점이 핵심입니다.
