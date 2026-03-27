@@ -15,6 +15,12 @@ import com.worldmap.game.flag.domain.FlagGameSession;
 import com.worldmap.game.flag.domain.FlagGameSessionRepository;
 import com.worldmap.game.flag.domain.FlagGameStage;
 import com.worldmap.game.flag.domain.FlagGameStageRepository;
+import com.worldmap.game.capital.domain.CapitalGameAttempt;
+import com.worldmap.game.capital.domain.CapitalGameAttemptRepository;
+import com.worldmap.game.capital.domain.CapitalGameSession;
+import com.worldmap.game.capital.domain.CapitalGameSessionRepository;
+import com.worldmap.game.capital.domain.CapitalGameStage;
+import com.worldmap.game.capital.domain.CapitalGameStageRepository;
 import com.worldmap.game.location.domain.LocationGameAttempt;
 import com.worldmap.game.location.domain.LocationGameAttemptRepository;
 import com.worldmap.game.location.domain.LocationGameSession;
@@ -27,6 +33,13 @@ import com.worldmap.game.population.domain.PopulationGameSession;
 import com.worldmap.game.population.domain.PopulationGameSessionRepository;
 import com.worldmap.game.population.domain.PopulationGameStage;
 import com.worldmap.game.population.domain.PopulationGameStageRepository;
+import com.worldmap.game.populationbattle.application.PopulationBattleRoundOptions;
+import com.worldmap.game.populationbattle.domain.PopulationBattleGameAttempt;
+import com.worldmap.game.populationbattle.domain.PopulationBattleGameAttemptRepository;
+import com.worldmap.game.populationbattle.domain.PopulationBattleGameSession;
+import com.worldmap.game.populationbattle.domain.PopulationBattleGameSessionRepository;
+import com.worldmap.game.populationbattle.domain.PopulationBattleGameStage;
+import com.worldmap.game.populationbattle.domain.PopulationBattleGameStageRepository;
 import com.worldmap.ranking.application.LeaderboardRankingPolicy;
 import com.worldmap.ranking.domain.LeaderboardGameMode;
 import com.worldmap.ranking.domain.LeaderboardRecord;
@@ -50,7 +63,9 @@ public class DemoBootstrapService {
 	private static final String DEMO_GUEST_SESSION_KEY = "demo-guest-live";
 	private static final String DEMO_LOCATION_RUN_SIGNATURE = "demo:location:orbit_runner:1";
 	private static final String DEMO_POPULATION_RUN_SIGNATURE = "demo:population:orbit_runner:1";
+	private static final String DEMO_CAPITAL_RUN_SIGNATURE = "demo:capital:orbit_runner:1";
 	private static final String DEMO_FLAG_RUN_SIGNATURE = "demo:flag:orbit_runner:1";
+	private static final String DEMO_POPULATION_BATTLE_RUN_SIGNATURE = "demo:population-battle:orbit_runner:1";
 	private static final int DEMO_CURRENT_FEEDBACK_TARGET = 5;
 
 	private final DemoBootstrapProperties demoBootstrapProperties;
@@ -62,12 +77,18 @@ public class DemoBootstrapService {
 	private final FlagGameSessionRepository flagGameSessionRepository;
 	private final FlagGameStageRepository flagGameStageRepository;
 	private final FlagGameAttemptRepository flagGameAttemptRepository;
+	private final CapitalGameSessionRepository capitalGameSessionRepository;
+	private final CapitalGameStageRepository capitalGameStageRepository;
+	private final CapitalGameAttemptRepository capitalGameAttemptRepository;
 	private final LocationGameSessionRepository locationGameSessionRepository;
 	private final LocationGameStageRepository locationGameStageRepository;
 	private final LocationGameAttemptRepository locationGameAttemptRepository;
 	private final PopulationGameSessionRepository populationGameSessionRepository;
 	private final PopulationGameStageRepository populationGameStageRepository;
 	private final PopulationGameAttemptRepository populationGameAttemptRepository;
+	private final PopulationBattleGameSessionRepository populationBattleGameSessionRepository;
+	private final PopulationBattleGameStageRepository populationBattleGameStageRepository;
+	private final PopulationBattleGameAttemptRepository populationBattleGameAttemptRepository;
 	private final LeaderboardRecordRepository leaderboardRecordRepository;
 	private final LeaderboardRankingPolicy leaderboardRankingPolicy;
 	private final RecommendationFeedbackRepository recommendationFeedbackRepository;
@@ -82,12 +103,18 @@ public class DemoBootstrapService {
 		FlagGameSessionRepository flagGameSessionRepository,
 		FlagGameStageRepository flagGameStageRepository,
 		FlagGameAttemptRepository flagGameAttemptRepository,
+		CapitalGameSessionRepository capitalGameSessionRepository,
+		CapitalGameStageRepository capitalGameStageRepository,
+		CapitalGameAttemptRepository capitalGameAttemptRepository,
 		LocationGameSessionRepository locationGameSessionRepository,
 		LocationGameStageRepository locationGameStageRepository,
 		LocationGameAttemptRepository locationGameAttemptRepository,
 		PopulationGameSessionRepository populationGameSessionRepository,
 		PopulationGameStageRepository populationGameStageRepository,
 		PopulationGameAttemptRepository populationGameAttemptRepository,
+		PopulationBattleGameSessionRepository populationBattleGameSessionRepository,
+		PopulationBattleGameStageRepository populationBattleGameStageRepository,
+		PopulationBattleGameAttemptRepository populationBattleGameAttemptRepository,
 		LeaderboardRecordRepository leaderboardRecordRepository,
 		LeaderboardRankingPolicy leaderboardRankingPolicy,
 		RecommendationFeedbackRepository recommendationFeedbackRepository
@@ -101,12 +128,18 @@ public class DemoBootstrapService {
 		this.flagGameSessionRepository = flagGameSessionRepository;
 		this.flagGameStageRepository = flagGameStageRepository;
 		this.flagGameAttemptRepository = flagGameAttemptRepository;
+		this.capitalGameSessionRepository = capitalGameSessionRepository;
+		this.capitalGameStageRepository = capitalGameStageRepository;
+		this.capitalGameAttemptRepository = capitalGameAttemptRepository;
 		this.locationGameSessionRepository = locationGameSessionRepository;
 		this.locationGameStageRepository = locationGameStageRepository;
 		this.locationGameAttemptRepository = locationGameAttemptRepository;
 		this.populationGameSessionRepository = populationGameSessionRepository;
 		this.populationGameStageRepository = populationGameStageRepository;
 		this.populationGameAttemptRepository = populationGameAttemptRepository;
+		this.populationBattleGameSessionRepository = populationBattleGameSessionRepository;
+		this.populationBattleGameStageRepository = populationBattleGameStageRepository;
+		this.populationBattleGameAttemptRepository = populationBattleGameAttemptRepository;
 		this.leaderboardRecordRepository = leaderboardRecordRepository;
 		this.leaderboardRankingPolicy = leaderboardRankingPolicy;
 		this.recommendationFeedbackRepository = recommendationFeedbackRepository;
@@ -126,7 +159,9 @@ public class DemoBootstrapService {
 		Member demoMember = provisionDemoMember();
 		provisionDemoLocationRun(demoMember);
 		provisionDemoPopulationRun(demoMember);
+		provisionDemoCapitalRun(demoMember);
 		provisionDemoFlagRun(demoMember);
+		provisionDemoPopulationBattleRun(demoMember);
 		provisionDemoGuestLiveSession();
 		provisionCurrentRecommendationFeedbackSamples();
 	}
@@ -404,6 +439,201 @@ public class DemoBootstrapService {
 			DEMO_FLAG_RUN_SIGNATURE,
 			session.getId(),
 			LeaderboardGameMode.FLAG,
+			demoMember.getNickname(),
+			demoMember.getId(),
+			null,
+			session.getTotalScore(),
+			session.getClearedStageCount(),
+			4,
+			session.getFinishedAt()
+		);
+	}
+
+	private void provisionDemoCapitalRun(Member demoMember) {
+		if (leaderboardRecordRepository.findByRunSignature(DEMO_CAPITAL_RUN_SIGNATURE).isPresent()) {
+			return;
+		}
+
+		Country korea = country("KOR");
+		Country japan = country("JPN");
+		Country france = country("FRA");
+		Country italy = country("ITA");
+		Country germany = country("DEU");
+		Country spain = country("ESP");
+		Country portugal = country("PRT");
+
+		LocalDateTime startedAt = LocalDateTime.now().minusMinutes(80);
+		CapitalGameSession session = CapitalGameSession.ready(
+			demoMember.getNickname(),
+			demoMember.getId(),
+			null,
+			4
+		);
+		session.startGame(startedAt);
+		capitalGameSessionRepository.save(session);
+
+		CapitalGameStage stage1 = CapitalGameStage.create(
+			session,
+			1,
+			korea,
+			List.of(korea.getCapitalCityKr(), japan.getCapitalCityKr(), france.getCapitalCityKr(), italy.getCapitalCityKr()),
+			1
+		);
+		capitalGameStageRepository.save(stage1);
+		LocalDateTime stage1At = startedAt.plusMinutes(2);
+		stage1.recordAttempt(true, 150, stage1At);
+		capitalGameAttemptRepository.save(
+			CapitalGameAttempt.create(stage1, 1, 1, stage1.getOptions().get(0), true, 3, stage1At)
+		);
+		session.clearCurrentStage(1, 150, stage1At);
+
+		CapitalGameStage stage2 = CapitalGameStage.create(
+			session,
+			2,
+			france,
+			List.of(germany.getCapitalCityKr(), france.getCapitalCityKr(), spain.getCapitalCityKr(), portugal.getCapitalCityKr()),
+			2
+		);
+		capitalGameStageRepository.save(stage2);
+		LocalDateTime stage2WrongAt = startedAt.plusMinutes(5);
+		stage2.recordAttempt(false, null, stage2WrongAt);
+		session.recordWrongAttempt(2, stage2WrongAt);
+		capitalGameAttemptRepository.save(
+			CapitalGameAttempt.create(stage2, 1, 1, stage2.getOptions().get(0), false, 2, stage2WrongAt)
+		);
+		LocalDateTime stage2ClearAt = startedAt.plusMinutes(7);
+		stage2.recordAttempt(true, 135, stage2ClearAt);
+		capitalGameAttemptRepository.save(
+			CapitalGameAttempt.create(stage2, 2, 2, stage2.getOptions().get(1), true, 2, stage2ClearAt)
+		);
+		session.clearCurrentStage(2, 135, stage2ClearAt);
+
+		CapitalGameStage stage3 = CapitalGameStage.create(
+			session,
+			3,
+			japan,
+			List.of(japan.getCapitalCityKr(), korea.getCapitalCityKr(), italy.getCapitalCityKr(), germany.getCapitalCityKr()),
+			1
+		);
+		capitalGameStageRepository.save(stage3);
+		LocalDateTime stage3WrongAt1 = startedAt.plusMinutes(10);
+		stage3.recordAttempt(false, null, stage3WrongAt1);
+		session.recordWrongAttempt(3, stage3WrongAt1);
+		capitalGameAttemptRepository.save(
+			CapitalGameAttempt.create(stage3, 1, 2, stage3.getOptions().get(1), false, 1, stage3WrongAt1)
+		);
+		LocalDateTime stage3WrongAt2 = startedAt.plusMinutes(12);
+		stage3.recordAttempt(false, null, stage3WrongAt2);
+		session.recordWrongAttempt(3, stage3WrongAt2);
+		capitalGameAttemptRepository.save(
+			CapitalGameAttempt.create(stage3, 2, 3, stage3.getOptions().get(2), false, 0, stage3WrongAt2)
+		);
+		stage3.markFailed();
+
+		capitalGameSessionRepository.save(session);
+		capitalGameStageRepository.saveAll(List.of(stage1, stage2, stage3));
+
+		saveLeaderboardRecord(
+			DEMO_CAPITAL_RUN_SIGNATURE,
+			session.getId(),
+			LeaderboardGameMode.CAPITAL,
+			demoMember.getNickname(),
+			demoMember.getId(),
+			null,
+			session.getTotalScore(),
+			session.getClearedStageCount(),
+			4,
+			session.getFinishedAt()
+		);
+	}
+
+	private void provisionDemoPopulationBattleRun(Member demoMember) {
+		if (leaderboardRecordRepository.findByRunSignature(DEMO_POPULATION_BATTLE_RUN_SIGNATURE).isPresent()) {
+			return;
+		}
+
+		Country usa = country("USA");
+		Country mexico = country("MEX");
+		Country spain = country("ESP");
+		Country brazil = country("BRA");
+		Country india = country("IND");
+		Country canada = country("CAN");
+
+		LocalDateTime startedAt = LocalDateTime.now().minusMinutes(70);
+		PopulationBattleGameSession session = PopulationBattleGameSession.ready(
+			demoMember.getNickname(),
+			demoMember.getId(),
+			null,
+			4
+		);
+		session.startGame(startedAt);
+		populationBattleGameSessionRepository.save(session);
+
+		PopulationBattleGameStage stage1 = PopulationBattleGameStage.create(
+			session,
+			1,
+			"더 많은 인구를 가진 나라를 고르세요.",
+			new PopulationBattleRoundOptions(usa, mexico, 1),
+			1
+		);
+		populationBattleGameStageRepository.save(stage1);
+		LocalDateTime stage1At = startedAt.plusMinutes(2);
+		stage1.recordAttempt(true, 145, stage1At);
+		populationBattleGameAttemptRepository.save(
+			PopulationBattleGameAttempt.create(stage1, 1, 1, stage1.optionName(1), true, 3, stage1At)
+		);
+		session.clearCurrentStage(1, 145, stage1At);
+
+		PopulationBattleGameStage stage2 = PopulationBattleGameStage.create(
+			session,
+			2,
+			"더 많은 인구를 가진 나라를 고르세요.",
+			new PopulationBattleRoundOptions(spain, brazil, 2),
+			2
+		);
+		populationBattleGameStageRepository.save(stage2);
+		LocalDateTime stage2WrongAt = startedAt.plusMinutes(5);
+		stage2.recordAttempt(false, null, stage2WrongAt);
+		session.recordWrongAttempt(2, stage2WrongAt);
+		populationBattleGameAttemptRepository.save(
+			PopulationBattleGameAttempt.create(stage2, 1, 1, stage2.optionName(1), false, 2, stage2WrongAt)
+		);
+		LocalDateTime stage2ClearAt = startedAt.plusMinutes(7);
+		stage2.recordAttempt(true, 130, stage2ClearAt);
+		populationBattleGameAttemptRepository.save(
+			PopulationBattleGameAttempt.create(stage2, 2, 2, stage2.optionName(2), true, 2, stage2ClearAt)
+		);
+		session.clearCurrentStage(2, 130, stage2ClearAt);
+
+		PopulationBattleGameStage stage3 = PopulationBattleGameStage.create(
+			session,
+			3,
+			"더 많은 인구를 가진 나라를 고르세요.",
+			new PopulationBattleRoundOptions(india, canada, 1),
+			1
+		);
+		populationBattleGameStageRepository.save(stage3);
+		LocalDateTime stage3WrongAt1 = startedAt.plusMinutes(10);
+		stage3.recordAttempt(false, null, stage3WrongAt1);
+		session.recordWrongAttempt(3, stage3WrongAt1);
+		populationBattleGameAttemptRepository.save(
+			PopulationBattleGameAttempt.create(stage3, 1, 2, stage3.optionName(2), false, 1, stage3WrongAt1)
+		);
+		LocalDateTime stage3WrongAt2 = startedAt.plusMinutes(12);
+		stage3.recordAttempt(false, null, stage3WrongAt2);
+		session.recordWrongAttempt(3, stage3WrongAt2);
+		populationBattleGameAttemptRepository.save(
+			PopulationBattleGameAttempt.create(stage3, 2, 2, stage3.optionName(2), false, 0, stage3WrongAt2)
+		);
+		stage3.markFailed();
+
+		populationBattleGameSessionRepository.save(session);
+		populationBattleGameStageRepository.saveAll(List.of(stage1, stage2, stage3));
+
+		saveLeaderboardRecord(
+			DEMO_POPULATION_BATTLE_RUN_SIGNATURE,
+			session.getId(),
+			LeaderboardGameMode.POPULATION_BATTLE,
 			demoMember.getNickname(),
 			demoMember.getId(),
 			null,

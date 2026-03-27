@@ -8,8 +8,10 @@ import com.worldmap.auth.domain.MemberRepository;
 import com.worldmap.auth.domain.MemberRole;
 import com.worldmap.admin.application.AdminRecommendationOpsReviewService;
 import com.worldmap.admin.application.AdminRecommendationOpsReviewView;
+import com.worldmap.game.capital.domain.CapitalGameSessionRepository;
 import com.worldmap.game.location.domain.LocationGameSessionRepository;
 import com.worldmap.game.population.domain.PopulationGameSessionRepository;
+import com.worldmap.game.populationbattle.domain.PopulationBattleGameSessionRepository;
 import com.worldmap.ranking.domain.LeaderboardRecordRepository;
 import com.worldmap.recommendation.application.RecommendationSurveyService;
 import com.worldmap.recommendation.domain.RecommendationFeedbackRepository;
@@ -47,6 +49,12 @@ class DemoBootstrapIntegrationTest {
 	private PopulationGameSessionRepository populationGameSessionRepository;
 
 	@Autowired
+	private CapitalGameSessionRepository capitalGameSessionRepository;
+
+	@Autowired
+	private PopulationBattleGameSessionRepository populationBattleGameSessionRepository;
+
+	@Autowired
 	private RecommendationFeedbackRepository recommendationFeedbackRepository;
 
 	@Autowired
@@ -64,9 +72,13 @@ class DemoBootstrapIntegrationTest {
 
 		assertThat(leaderboardRecordRepository.findByRunSignature("demo:location:orbit_runner:1")).isPresent();
 		assertThat(leaderboardRecordRepository.findByRunSignature("demo:population:orbit_runner:1")).isPresent();
+		assertThat(leaderboardRecordRepository.findByRunSignature("demo:capital:orbit_runner:1")).isPresent();
 		assertThat(leaderboardRecordRepository.findByRunSignature("demo:flag:orbit_runner:1")).isPresent();
+		assertThat(leaderboardRecordRepository.findByRunSignature("demo:population-battle:orbit_runner:1")).isPresent();
 		assertThat(locationGameSessionRepository.findAllByGuestSessionKeyAndMemberIdIsNull("demo-guest-live")).hasSize(1);
 		assertThat(populationGameSessionRepository.countByMemberIdAndFinishedAtIsNotNull(demoMember.getId())).isGreaterThanOrEqualTo(1L);
+		assertThat(capitalGameSessionRepository.countByMemberIdAndFinishedAtIsNotNull(demoMember.getId())).isGreaterThanOrEqualTo(1L);
+		assertThat(populationBattleGameSessionRepository.countByMemberIdAndFinishedAtIsNotNull(demoMember.getId())).isGreaterThanOrEqualTo(1L);
 		assertThat(
 			recommendationFeedbackRepository.countBySurveyVersionAndEngineVersion(
 				RecommendationSurveyService.SURVEY_VERSION,
