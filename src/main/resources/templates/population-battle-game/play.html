@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>인구 비교 퀵 배틀 플레이</title>
     <link rel="stylesheet" th:href="@{/css/site.css(v='20260325-light-depth-10')}">
-    <script th:src="@{/js/population-battle-game.js(v='20260327-population-battle-1')}" defer></script>
+    <script th:src="@{/js/population-battle-game.js(v='20260327-population-battle-auto-next-1')}" defer></script>
 </head>
 <body data-page="population-battle-play" th:attr="data-session-id=${sessionId}">
 <div class="page-shell">
@@ -42,7 +42,6 @@
                 <div id="population-battle-options" class="options-grid"></div>
                 <div class="action-buttons">
                     <button id="population-battle-submit-button" class="primary-button" type="submit" disabled>선택 제출</button>
-                    <button id="population-battle-next-stage-button" class="secondary-button" type="button" hidden>다음 Stage</button>
                 </div>
             </form>
 

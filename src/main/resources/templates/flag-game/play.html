@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>국기 보고 나라 맞히기 플레이</title>
     <link rel="stylesheet" th:href="@{/css/site.css(v='20260325-light-depth-10')}">
-    <script th:src="@{/js/flag-game.js(v='20260327-flag-2')}" defer></script>
+    <script th:src="@{/js/flag-game.js(v='20260327-flag-auto-next-1')}" defer></script>
 </head>
 <body data-page="flag-play" th:attr="data-session-id=${sessionId}">
 <div class="page-shell">
@@ -44,7 +44,6 @@
                 <div id="flag-options" class="options-grid"></div>
                 <div class="action-buttons">
                     <button id="flag-submit-button" class="primary-button" type="submit" disabled>선택 제출</button>
-                    <button id="flag-next-stage-button" class="secondary-button" type="button" hidden>다음 Stage</button>
                 </div>
             </form>
 

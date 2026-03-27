@@ -48,6 +48,7 @@ function initStartPage() {
 }
 
 function initPlayPage() {
+    const AUTO_ADVANCE_DELAY_MS = 950;
     const sessionId = document.body.dataset.sessionId;
     const form = document.getElementById("flag-answer-form");
     const statusBox = document.getElementById("flag-game-status");
@@ -60,7 +61,6 @@ function initPlayPage() {
     const selectionLabel = document.getElementById("flag-selection-label");
     const stageHint = document.getElementById("flag-stage-hint");
     const submitButton = document.getElementById("flag-submit-button");
-    const nextStageButton = document.getElementById("flag-next-stage-button");
     const gameOverModal = document.getElementById("flag-game-over-modal");
     const restartButton = document.getElementById("flag-restart-button");
 
@@ -69,16 +69,6 @@ function initPlayPage() {
 
     window.addEventListener("pageshow", hideGameOverModal);
     restartButton?.addEventListener("click", restartCurrentSession);
-    nextStageButton?.addEventListener("click", () => {
-        hideFlagMessage(messageBox);
-        nextStageButton.disabled = true;
-        loadState()
-            .catch((error) => showFlagMessage(messageBox, error.message, "error"))
-            .finally(() => {
-                nextStageButton.disabled = false;
-            });
-    });
-
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
         hideFlagMessage(messageBox);
@@ -126,8 +116,8 @@ function initPlayPage() {
                 setSelectionState("정답 처리 완료");
                 setStageHint(
                     payload.nextDifficultyGuide
-                        ? `정답입니다. 다음은 ${payload.nextDifficultyLabel}입니다. ${payload.nextDifficultyGuide}`
-                        : "정답입니다. 결과를 확인한 뒤 다음 Stage 버튼으로 직접 넘어가세요."
+                        ? `정답입니다. 다음은 ${payload.nextDifficultyLabel}입니다. ${payload.nextDifficultyGuide} 잠시 뒤 자동 이동합니다.`
+                        : "정답입니다. 잠시 뒤 다음 Stage로 자동 이동합니다."
                 );
 
                 if (payload.outcome === "FINISHED") {
@@ -137,7 +127,12 @@ function initPlayPage() {
                     return;
                 }
 
-                showNextStageAction();
+                setTimeout(() => {
+                    loadState().catch((error) => {
+                        lockInteraction(false);
+                        showFlagMessage(messageBox, error.message, "error");
+                    });
+                }, AUTO_ADVANCE_DELAY_MS);
                 return;
             }
 
@@ -173,7 +168,7 @@ function initPlayPage() {
                 clearAnswerInput();
                 resetHudGuidance(currentState);
                 lockInteraction(false);
-            }, 950);
+            }, AUTO_ADVANCE_DELAY_MS);
         } catch (error) {
             lockInteraction(false);
             showFlagMessage(messageBox, error.message, "error");
@@ -202,7 +197,6 @@ function initPlayPage() {
         renderOptions(optionsBox, payload.options || []);
         hideFlagFeedback(feedback);
         overlay.hidden = true;
-        hideNextStageAction();
         hideGameOverModal();
         clearAnswerInput();
         lockInteraction(false);
@@ -225,7 +219,6 @@ function initPlayPage() {
             hideGameOverModal();
             hideFlagFeedback(feedback);
             overlay.hidden = true;
-            hideNextStageAction();
             showFlagMessage(messageBox, "같은 세션을 Stage 1부터 다시 시작했습니다.", "success");
             await loadState();
         } catch (error) {
@@ -356,16 +349,6 @@ function initPlayPage() {
 
     function canSubmitCurrentAnswer() {
         return Boolean(form.querySelector("input[name='flag-option']:checked"));
-    }
-
-    function showNextStageAction() {
-        submitButton.hidden = true;
-        nextStageButton.hidden = false;
-    }
-
-    function hideNextStageAction() {
-        submitButton.hidden = false;
-        nextStageButton.hidden = true;
     }
 
     function showGameOverModal() {

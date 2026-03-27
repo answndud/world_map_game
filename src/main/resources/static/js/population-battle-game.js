@@ -46,6 +46,7 @@ function initPopulationBattleStartPage() {
 }
 
 function initPopulationBattlePlayPage() {
+    const AUTO_ADVANCE_DELAY_MS = 950;
     const sessionId = document.body.dataset.sessionId;
     const form = document.getElementById("population-battle-answer-form");
     const statusBox = document.getElementById("population-battle-game-status");
@@ -57,7 +58,6 @@ function initPopulationBattlePlayPage() {
     const selectionLabel = document.getElementById("population-battle-selection-label");
     const stageHint = document.getElementById("population-battle-stage-hint");
     const submitButton = document.getElementById("population-battle-submit-button");
-    const nextStageButton = document.getElementById("population-battle-next-stage-button");
     const gameOverModal = document.getElementById("population-battle-game-over-modal");
     const gameOverSummary = document.getElementById("population-battle-game-over-summary");
     const restartButton = document.getElementById("population-battle-restart-button");
@@ -67,16 +67,6 @@ function initPopulationBattlePlayPage() {
 
     window.addEventListener("pageshow", hideGameOverModal);
     restartButton?.addEventListener("click", restartCurrentSession);
-    nextStageButton?.addEventListener("click", () => {
-        hidePopulationBattleMessage(messageBox);
-        nextStageButton.disabled = true;
-        loadState()
-            .catch((error) => showPopulationBattleMessage(messageBox, error.message, "error"))
-            .finally(() => {
-                nextStageButton.disabled = false;
-            });
-    });
-
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
         hidePopulationBattleMessage(messageBox);
@@ -121,7 +111,7 @@ function initPopulationBattlePlayPage() {
                 renderFeedback(feedback, payload);
                 renderStageOverlay(overlay, "정답", `+${payload.awardedScore}`, "success");
                 setSelectionState("정답 처리 완료");
-                setStageHint("정답입니다. 결과를 확인한 뒤 다음 Stage 버튼으로 직접 넘어가세요.");
+                setStageHint("정답입니다. 잠시 뒤 다음 Stage로 자동 이동합니다.");
 
                 if (payload.outcome === "FINISHED") {
                     setTimeout(() => {
@@ -130,7 +120,12 @@ function initPopulationBattlePlayPage() {
                     return;
                 }
 
-                showNextStageAction();
+                setTimeout(() => {
+                    loadState().catch((error) => {
+                        lockInteraction(false);
+                        showPopulationBattleMessage(messageBox, error.message, "error");
+                    });
+                }, AUTO_ADVANCE_DELAY_MS);
                 return;
             }
 
@@ -166,7 +161,7 @@ function initPopulationBattlePlayPage() {
                 clearAnswerInput();
                 resetHudGuidance(currentState);
                 lockInteraction(false);
-            }, 950);
+            }, AUTO_ADVANCE_DELAY_MS);
         } catch (error) {
             lockInteraction(false);
             showPopulationBattleMessage(messageBox, error.message, "error");
@@ -195,7 +190,6 @@ function initPopulationBattlePlayPage() {
         renderOptions(optionsBox, payload.options || []);
         hidePopulationBattleFeedback(feedback);
         overlay.hidden = true;
-        hideNextStageAction();
         hideGameOverModal();
         clearAnswerInput();
         lockInteraction(false);
@@ -218,7 +212,6 @@ function initPopulationBattlePlayPage() {
             hideGameOverModal();
             hidePopulationBattleFeedback(feedback);
             overlay.hidden = true;
-            hideNextStageAction();
             showPopulationBattleMessage(messageBox, "같은 세션을 Stage 1부터 다시 시작했습니다.", "success");
             await loadState();
         } catch (error) {
@@ -347,17 +340,6 @@ function initPopulationBattlePlayPage() {
     function resetHudGuidance(payload) {
         setSelectionState("좌우 보기 중 하나를 고르면 여기서 확인합니다.");
         setStageHint(payload.questionPrompt);
-    }
-
-    function showNextStageAction() {
-        nextStageButton.hidden = false;
-        submitButton.hidden = true;
-        lockInteraction(true);
-    }
-
-    function hideNextStageAction() {
-        nextStageButton.hidden = true;
-        submitButton.hidden = false;
     }
 
     function showGameOverModal(payload) {

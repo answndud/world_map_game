@@ -48,6 +48,7 @@ function initStartPage() {
 }
 
 function initPlayPage() {
+    const AUTO_ADVANCE_DELAY_MS = 950;
     const sessionId = document.body.dataset.sessionId;
     const form = document.getElementById("population-answer-form");
     const statusBox = document.getElementById("population-game-status");
@@ -60,7 +61,6 @@ function initPlayPage() {
     const selectionLabel = document.getElementById("population-selection-label");
     const stageHint = document.getElementById("population-stage-hint");
     const submitButton = document.getElementById("population-submit-button");
-    const nextStageButton = document.getElementById("population-next-stage-button");
     const gameOverModal = document.getElementById("population-game-over-modal");
     const gameOverSummary = document.getElementById("population-game-over-summary");
     const restartButton = document.getElementById("population-restart-button");
@@ -70,16 +70,6 @@ function initPlayPage() {
 
     window.addEventListener("pageshow", hideGameOverModal);
     restartButton?.addEventListener("click", restartCurrentSession);
-    nextStageButton?.addEventListener("click", () => {
-        hidePopulationMessage(messageBox);
-        nextStageButton.disabled = true;
-        loadState()
-            .catch((error) => showPopulationMessage(messageBox, error.message, "error"))
-            .finally(() => {
-                nextStageButton.disabled = false;
-            });
-    });
-
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
         hidePopulationMessage(messageBox);
@@ -124,7 +114,7 @@ function initPlayPage() {
                 renderFeedback(feedback, payload);
                 renderStageOverlay(overlay, "정답", `+${payload.awardedScore}`, "success");
                 setSelectionState("정답 처리 완료");
-                setStageHint("정답입니다. 결과를 확인한 뒤 다음 Stage 버튼으로 직접 넘어가세요.");
+                setStageHint("정답입니다. 잠시 뒤 다음 Stage로 자동 이동합니다.");
 
                 if (payload.outcome === "FINISHED") {
                     setTimeout(() => {
@@ -133,7 +123,12 @@ function initPlayPage() {
                     return;
                 }
 
-                showNextStageAction();
+                setTimeout(() => {
+                    loadState().catch((error) => {
+                        lockInteraction(false);
+                        showPopulationMessage(messageBox, error.message, "error");
+                    });
+                }, AUTO_ADVANCE_DELAY_MS);
                 return;
             }
 
@@ -169,7 +164,7 @@ function initPlayPage() {
                 clearAnswerInput();
                 resetHudGuidance(currentState);
                 lockInteraction(false);
-            }, 950);
+            }, AUTO_ADVANCE_DELAY_MS);
         } catch (error) {
             lockInteraction(false);
             showPopulationMessage(messageBox, error.message, "error");
@@ -199,7 +194,6 @@ function initPlayPage() {
         renderOptions(optionsBox, payload.options || []);
         hidePopulationFeedback(feedback);
         overlay.hidden = true;
-        hideNextStageAction();
         hideGameOverModal();
         clearAnswerInput();
         lockInteraction(false);
@@ -222,7 +216,6 @@ function initPlayPage() {
             hideGameOverModal();
             hidePopulationFeedback(feedback);
             overlay.hidden = true;
-            hideNextStageAction();
             showPopulationMessage(messageBox, "같은 세션을 Stage 1부터 다시 시작했습니다.", "success");
             await loadState();
         } catch (error) {
@@ -326,20 +319,6 @@ function initPlayPage() {
         target.innerHTML = "";
     }
 
-    function showNextStageAction() {
-        nextStageButton.hidden = false;
-        nextStageButton.disabled = false;
-        submitButton.disabled = true;
-        optionsBox.querySelectorAll("input[name='population-option']").forEach((input) => {
-            input.disabled = true;
-        });
-    }
-
-    function hideNextStageAction() {
-        nextStageButton.hidden = true;
-        nextStageButton.disabled = true;
-    }
-
     function clearAnswerInput() {
         optionsBox.querySelectorAll("input[name='population-option']").forEach((input) => {
             input.checked = false;
@@ -406,7 +385,6 @@ function initPlayPage() {
     function lockInteraction(locked) {
         interactionLocked = locked;
         submitButton.disabled = locked || !canSubmitCurrentAnswer();
-        nextStageButton.disabled = locked || nextStageButton.hidden;
         optionsBox.querySelectorAll("input[name='population-option']").forEach((input) => {
             input.disabled = locked;
         });
