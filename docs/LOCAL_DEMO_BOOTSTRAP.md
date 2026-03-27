@@ -52,6 +52,11 @@ demo bootstrap은 아래 확인용 데이터를 local DB에 넣는다.
   - 총점 `390`
   - 클리어 Stage `3`
   - 총 시도 수 `6`
+- `orbit_runner` 국기 퀴즈 완료 run 1개
+  - sample SVG 12개 pool 기준 Level 1 run
+  - 총점 `285`
+  - 클리어 Stage `2`
+  - 총 시도 수 `4`
 - guest 진행 중 위치 게임 세션 1개
   - `guestSessionKey = demo-guest-live`
   - `status = IN_PROGRESS`
@@ -63,8 +68,6 @@ demo bootstrap은 아래 확인용 데이터를 local DB에 넣는다.
   - 그래서 `/stats`와 `/ranking`의 capital 보드는 첫 플레이 전까지 비어 있을 수 있다.
 - 인구 비교 퀵 배틀 샘플 run도 아직 기본 seed에 넣지 않는다.
   - 그래서 `/stats`와 `/ranking`의 population-battle 보드도 첫 플레이 전까지 비어 있을 수 있다.
-- 국기 게임 샘플 run도 아직 기본 seed에 넣지 않는다.
-  - 그래서 `/stats`와 `/ranking`의 flag 보드도 첫 플레이 전까지 비어 있을 수 있다.
 
 또한 예전 local DB에 남아 있던 `LEVEL_2` 위치/인구수 세션, 시도, 랭킹 데이터와 Redis `l2` 키는 startup rollback initializer가 먼저 비운다.
 

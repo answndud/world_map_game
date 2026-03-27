@@ -3925,3 +3925,30 @@
 - 배운 점: 국기 게임은 자산이 적더라도 vertical slice를 먼저 여는 편이 설명 가능성이 높다. 출제 pool이 12개로 제한돼 있어도, `세션 / Stage / Attempt -> 랭킹 -> 공개 stats`까지 같은 서버 주도 구조로 연결하면 “새 게임을 현재 시스템에 붙이는 방법”을 더 명확하게 보여 줄 수 있다.
 - 아직 약한 부분: 현재는 sample 국기 12개에 의존하므로, 난이도 다양성과 대륙 분포가 제한적이다. 후속 작업에서는 asset pool 확장과 local demo sample run 추가를 검토해야 한다.
 - 면접용 30초 요약: 국기 게임은 먼저 자산 catalog와 출제 가능 국가 pool을 고정한 뒤, 그걸 읽는 `flag` 세션 / Stage / Attempt 구조를 열었습니다. 컨트롤러는 요청만 받고, 실제 문제 생성과 정답 판정은 `FlagGameService`가 맡습니다. 덕분에 국기 자산처럼 정적 파일이 필요한 모드도 기존 위치/인구수/수도 게임과 같은 서버 주도 패턴으로 랭킹과 공개 stats까지 연결해 설명할 수 있게 됐습니다.
+
+## 2026-03-27 - 11단계 local demo에 국기 퀴즈 sample run seed 추가
+
+- 단계: 11. 신규 게임 확장
+- 목적: 국기 게임 vertical slice는 public 제품에 열렸지만, local demo bootstrap에는 아직 sample run이 없어서 `/stats`와 `/ranking`의 flag 보드가 첫 플레이 전까지 비어 있었다. 이번 조각의 목적은 demo 환경을 바로 설명 가능한 상태로 맞춰, 서버 재기동 직후에도 새 게임 보드를 확인할 수 있게 하는 것이다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/demo/application/DemoBootstrapService.java`
+  - `src/test/java/com/worldmap/demo/DemoBootstrapIntegrationTest.java`
+  - `README.md`
+  - `docs/LOCAL_DEMO_BOOTSTRAP.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/50-current-state-rebuild-map.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/83-seed-flag-sample-run-in-local-demo-bootstrap.md`
+- 요청 흐름 / 데이터 흐름: 이번 조각은 public HTTP가 아니라 startup bootstrap 흐름이다. `CountrySeedInitializer -> AdminBootstrapInitializer -> RecommendationFeedbackLegacyColumnInitializer -> GameLevelRollbackInitializer -> DemoBootstrapInitializer` 순서가 유지되고, 그 안에서 `DemoBootstrapService.ensureLocalDemoData()`가 `orbit_runner` member를 만든 뒤 위치 / 인구수 / 국기 sample run과 guest live session, recommendation feedback sample을 채운다. 국기 sample run은 `FlagQuestionCountryPoolService`에서 지원 ISO3를 읽어 `flag_game_session / stage / attempt`와 `leaderboard_record`를 함께 만든다.
+- 데이터 / 상태 변화: local profile 기준으로 `orbit_runner` 완료 run이 2개에서 3개로 늘어난다. 새로 추가되는 것은 `demo:flag:orbit_runner:1` 시그니처를 가진 `FLAG` leaderboard run 1개와 이에 대응하는 `flag_game_session / stage / attempt` sample 데이터다. 이로 인해 `/stats`와 `/ranking`의 flag 보드는 서버 첫 기동 직후부터 값을 가진다.
+- 핵심 도메인 개념: demo bootstrap은 “서비스 규칙을 우회하는 fixture 덤프”가 아니라, 현재 제품이 설명 가능한 시작 상태를 재현하는 startup service다. 그래서 국기 sample run도 임의 SQL 삽입이 아니라 `FlagQuestionCountryPoolService`가 확인한 출제 가능 국가 subset을 기준으로 만들었다. 즉 demo 데이터도 실제 게임 규칙과 같은 source of truth를 공유해야 한다.
+- 예외 / 엣지 케이스: 현재 국기 자산 pool은 sample 12개뿐이므로 demo run도 그 subset 안에서만 생성된다. 반대로 수도 맞히기와 인구 비교 퀵 배틀은 여전히 bootstrap에 sample run을 넣지 않았기 때문에 `/stats`, `/ranking`의 `capital`, `population-battle` 보드는 첫 플레이 전까지 비어 있을 수 있다.
+- 테스트:
+  - `./gradlew test --tests com.worldmap.demo.DemoBootstrapIntegrationTest --tests com.worldmap.stats.StatsPageControllerTest`
+  - `./gradlew test`
+  - `git diff --check`
+- 배운 점: local demo의 설명 가능성은 기능을 여는 것만큼 중요하다. 특히 새 게임을 public 화면에 붙였으면, 최소한 하나의 sample run이 bootstrap에 있어야 `/stats`와 `/ranking`에서 그 모드를 즉시 보여 줄 수 있다.
+- 아직 약한 부분: capital과 population-battle 보드는 아직 demo seed에 넣지 않았고, flag 자산 pool도 12개 subset에 머무른다. 다음 후보는 `capital / population-battle sample run 추가` 또는 `flag asset pool 확대`다.
+- 면접용 30초 요약: 국기 게임을 열어도 local demo에서 보드가 비어 있으면 설명 흐름이 끊겼습니다. 그래서 startup `DemoBootstrapService`에 `FLAG` sample run 하나를 더 넣고, 그 데이터도 임의 문자열이 아니라 `FlagQuestionCountryPoolService`가 보장한 출제 가능 국가 subset을 기준으로 만들었습니다. 덕분에 서버를 local profile로 다시 띄우기만 해도 `/stats`와 `/ranking`에서 국기 게임이 실제로 돌고 있다는 걸 바로 보여 줄 수 있게 됐습니다.

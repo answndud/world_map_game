@@ -208,7 +208,7 @@
 - 공개 홈, `/ranking`, `/stats`까지 flag 모드 연결
 - sample 자산 12개를 기준으로 local/demo에서도 같은 국기 문제를 재현 가능하게 고정
 
-다음 작은 코드 조각은 `flag asset pool 확대 또는 local demo sample run 추가`다.
+다음 작은 코드 조각은 `flag asset pool 확대 또는 capital / population-battle local demo sample run 추가`다.
 
 ## 이번 우선순위 변경 이유
 

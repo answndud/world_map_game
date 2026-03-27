@@ -34,7 +34,7 @@
 | 8 | 인증, 전적, 마이페이지 | Done |
 | 9 | 고도화 실험 롤백과 실시간성 개선 | Done |
 | 10 | 포트폴리오 정리와 발표 준비 | Not Started |
-| 11 | 신규 게임 확장 | Done |
+| 11 | 신규 게임 확장 | In Progress |
 
 ## 공통 체크리스트
 
@@ -829,11 +829,13 @@
 - 국기 게임 run을 `leaderboard_record`에 반영하고, 공개 `/ranking`, `/stats`, 홈 모드 카드까지 연결
 - `FlagGameFlowIntegrationTest`, `LeaderboardIntegrationTest`, `StatsPageControllerTest`, `HomeControllerTest`로 세 번째 신규 게임 vertical slice를 고정
 - 세 신규 게임(수도 / 인구 비교 퀵 배틀 / 국기)이 모두 public start/state/answer/result, 랭킹, 공개 stats까지 연결된 상태로 닫힘
+- `DemoBootstrapService`에 flag sample run을 추가해 local `/stats`, `/ranking`에서 flag 보드가 서버 재기동 직후 바로 보이게 함
+- `DemoBootstrapIntegrationTest`로 admin/user 계정 + location/population/flag sample run + recommendation feedback sample bootstrap을 같이 고정
 
 다음 후속 개선 후보:
 
 - 국기 자산 pool을 12개 sample에서 더 넓힐지 결정
-- 수도 / 인구 비교 퀵 배틀 / 국기 local demo 샘플 run을 추가할지 판단
+- 수도 / 인구 비교 퀵 배틀 local demo 샘플 run을 추가할지 판단
 - 새 게임 3종의 난이도 / 결과 카피 / 홈 카드 밀도를 한 번 더 점검
 
 반드시 이해할 것:
