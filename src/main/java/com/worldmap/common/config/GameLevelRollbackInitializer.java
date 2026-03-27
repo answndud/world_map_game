@@ -37,6 +37,14 @@ public class GameLevelRollbackInitializer implements ApplicationRunner {
 		boolean hasPopulationGameLevel = hasColumn("population_game_session", "game_level");
 		boolean hasLeaderboardGameLevel = hasColumn("leaderboard_record", "game_level");
 
+		if (hasConstraint("leaderboard_record", "leaderboard_record_game_mode_check")) {
+			jdbcTemplate.execute("ALTER TABLE leaderboard_record DROP CONSTRAINT leaderboard_record_game_mode_check");
+		}
+
+		if (hasLeaderboardGameLevel) {
+			jdbcTemplate.execute("ALTER TABLE leaderboard_record ALTER COLUMN game_level DROP NOT NULL");
+		}
+
 		int deletedLocationAttempts = hasLocationGameLevel ? jdbcTemplate.update("""
 			DELETE FROM location_game_attempt
 			WHERE stage_id IN (
@@ -115,6 +123,21 @@ public class GameLevelRollbackInitializer implements ApplicationRunner {
 			Integer.class,
 			tableName,
 			columnName
+		);
+		return count != null && count > 0;
+	}
+
+	private boolean hasConstraint(String tableName, String constraintName) {
+		Integer count = jdbcTemplate.queryForObject(
+			"""
+				SELECT count(*)
+				FROM information_schema.table_constraints
+				WHERE lower(table_name) = lower(?)
+				  AND lower(constraint_name) = lower(?)
+				""",
+			Integer.class,
+			tableName,
+			constraintName
 		);
 		return count != null && count > 0;
 	}

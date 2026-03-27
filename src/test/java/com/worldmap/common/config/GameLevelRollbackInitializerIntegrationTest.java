@@ -69,6 +69,8 @@ class GameLevelRollbackInitializerIntegrationTest {
 	@Test
 	void initializerPurgesLevelTwoRowsAndKeepsLevelOneRows() {
 		ensureLegacyGameLevelColumns();
+		jdbcTemplate.execute("alter table leaderboard_record alter column game_level set not null");
+		replaceLeaderboardGameModeCheckWithLegacySubset();
 		Country korea = countryRepository.findByIso3CodeIgnoreCase("KOR").orElseThrow();
 		Country japan = countryRepository.findByIso3CodeIgnoreCase("JPN").orElseThrow();
 		LocalDateTime now = LocalDateTime.now();
@@ -89,6 +91,8 @@ class GameLevelRollbackInitializerIntegrationTest {
 		assertThat(count("select count(*) from location_game_session where game_level = 'LEVEL_2'")).isZero();
 		assertThat(count("select count(*) from population_game_session where game_level = 'LEVEL_2'")).isZero();
 		assertThat(count("select count(*) from leaderboard_record where game_level = 'LEVEL_2'")).isZero();
+		assertThat(nullableState("leaderboard_record", "game_level")).isEqualTo("YES");
+		assertThat(hasConstraint("leaderboard_record", "leaderboard_record_game_mode_check")).isFalse();
 
 		assertThat(count("select count(*) from location_game_session")).isEqualTo(locationSessionsBefore + 1);
 		assertThat(count("select count(*) from population_game_session")).isEqualTo(populationSessionsBefore + 1);
@@ -196,5 +200,43 @@ class GameLevelRollbackInitializerIntegrationTest {
 	private long count(String sql) {
 		Long value = jdbcTemplate.queryForObject(sql, Long.class);
 		return value == null ? 0L : value;
+	}
+
+	private String nullableState(String tableName, String columnName) {
+		return jdbcTemplate.queryForObject(
+			"""
+				select is_nullable
+				from information_schema.columns
+				where lower(table_name) = lower(?)
+				  and lower(column_name) = lower(?)
+				""",
+			String.class,
+			tableName,
+			columnName
+		);
+	}
+
+	private void replaceLeaderboardGameModeCheckWithLegacySubset() {
+		jdbcTemplate.execute("alter table leaderboard_record drop constraint if exists leaderboard_record_game_mode_check");
+		jdbcTemplate.execute("""
+			alter table leaderboard_record
+			add constraint leaderboard_record_game_mode_check
+			check (game_mode in ('LOCATION', 'POPULATION'))
+			""");
+	}
+
+	private boolean hasConstraint(String tableName, String constraintName) {
+		Integer count = jdbcTemplate.queryForObject(
+			"""
+				select count(*)
+				from information_schema.table_constraints
+				where lower(table_name) = lower(?)
+				  and lower(constraint_name) = lower(?)
+				""",
+			Integer.class,
+			tableName,
+			constraintName
+		);
+		return count != null && count > 0;
 	}
 }
