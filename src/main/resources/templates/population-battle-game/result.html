@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>인구 비교 퀵 배틀 결과</title>
+    <link rel="stylesheet" th:href="@{/css/site.css(v='20260325-light-depth-10')}">
+</head>
+<body>
+<div class="page-shell">
+    <th:block th:replace="~{fragments/site-header :: siteHeader('population-battle')}"></th:block>
+    <header class="hero compact-hero">
+        <p class="eyebrow">Population Battle Result</p>
+        <h1>게임 결과</h1>
+        <p class="hero-copy">
+            Session, Stage, Attempt, 하트 상태를 서버가 저장한 그대로 보여줍니다.
+        </p>
+    </header>
+
+    <main class="layout">
+        <section class="panel game-panel">
+            <article class="result-banner" th:classappend="${result.status.name() == 'GAME_OVER'} ? ' danger' : ' success'">
+                <p class="subtitle">Battle Result</p>
+                <h2 th:text="${result.status.name() == 'GAME_OVER' ? 'Run Over' : 'Mission Debrief'}">Run Over</h2>
+                <p th:text="${result.status.name() == 'GAME_OVER' ? '마지막 Stage에서 하트를 모두 잃었습니다. 어떤 인구 비교에서 막혔는지 Attempt 기록으로 다시 설명할 수 있습니다.' : '현재까지 진행된 엔드리스 인구 비교 러닝 기록입니다.'}">
+                    마지막 Stage에서 하트를 모두 잃었습니다.
+                </p>
+            </article>
+            <div class="stats-grid">
+                <article class="stat-card">
+                    <span class="subtitle">플레이어</span>
+                    <strong th:text="${result.playerNickname}">Guest</strong>
+                </article>
+                <article class="stat-card">
+                    <span class="subtitle">상태</span>
+                    <strong th:text="${result.status}">FINISHED</strong>
+                </article>
+                <article class="stat-card">
+                    <span class="subtitle">총 점수</span>
+                    <strong th:text="${result.totalScore}">500</strong>
+                </article>
+                <article class="stat-card">
+                    <span class="subtitle">클리어 Stage</span>
+                    <strong th:text="${result.clearedStageCount}">5</strong>
+                </article>
+                <article class="stat-card">
+                    <span class="subtitle">총 시도 수</span>
+                    <strong th:text="${result.totalAttemptCount}">8</strong>
+                </article>
+                <article class="stat-card">
+                    <span class="subtitle">1트 클리어</span>
+                    <strong th:text="${result.firstTryClearCount}">4</strong>
+                </article>
+                <article class="stat-card">
+                    <span class="subtitle">도달 Stage</span>
+                    <strong th:text="${result.currentStageNumber}">6</strong>
+                </article>
+                <article class="stat-card">
+                    <span class="subtitle">남은 하트</span>
+                    <strong th:text="${result.livesRemaining}">0</strong>
+                </article>
+            </div>
+
+            <div class="panel-head">
+                <h2>Stage별 기록</h2>
+                <p>각 Stage는 좌우 2선택 비교 1개로 구성되고, 오답 시 같은 Stage를 다시 시도합니다.</p>
+            </div>
+
+            <div class="table-shell">
+                <table class="result-table">
+                    <thead>
+                    <tr>
+                        <th>Stage</th>
+                        <th>비교 쌍</th>
+                        <th>정답</th>
+                        <th>상태</th>
+                        <th>시도 기록</th>
+                        <th>점수</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="stage : ${result.stages}">
+                        <td th:text="${stage.stageNumber}">1</td>
+                        <td>
+                            <strong th:text="${stage.optionOneCountryName + ' vs ' + stage.optionTwoCountryName}">인도 vs 독일</strong>
+                            <p class="hint" th:text="${stage.optionOnePopulation + ' / ' + stage.optionTwoPopulation}">1400000000 / 83000000</p>
+                        </td>
+                        <td th:text="${stage.correctCountryName}">인도</td>
+                        <td th:text="${stage.status}">CLEARED</td>
+                        <td>
+                            <div class="attempt-log" th:if="${!#lists.isEmpty(stage.attempts)}">
+                                <p th:each="attempt : ${stage.attempts}"
+                                   th:text="${attempt.attemptNumber + '차: ' + attempt.selectedCountryName + ' / ' + (attempt.correct ? 'Correct' : 'Wrong') + ' / 하트 ' + attempt.livesRemainingAfter}">
+                                    1차: 인도 / Correct / 하트 3
+                                </p>
+                            </div>
+                            <span th:if="${#lists.isEmpty(stage.attempts)}">-</span>
+                        </td>
+                        <td th:text="${stage.awardedScore != null ? stage.awardedScore : '-'}">100</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="page-actions">
+                <a class="primary-link" th:href="@{/games/population-battle/start}">다시 플레이</a>
+                <a class="ghost-link" th:href="@{/}">메인으로 돌아가기</a>
+            </div>
+        </section>
+    </main>
+</div>
+</body>
+</html>

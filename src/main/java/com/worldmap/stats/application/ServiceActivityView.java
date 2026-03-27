@@ -8,6 +8,7 @@ public record ServiceActivityView(
 	long todayCompletedRunCount,
 	long todayLocationCompletedRunCount,
 	long todayCapitalCompletedRunCount,
+	long todayPopulationBattleCompletedRunCount,
 	long todayPopulationCompletedRunCount
 ) {
 

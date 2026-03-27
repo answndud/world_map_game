@@ -20,6 +20,8 @@ import com.worldmap.game.location.domain.LocationGameStage;
 import com.worldmap.game.location.domain.LocationGameStageRepository;
 import com.worldmap.game.population.domain.PopulationGameStage;
 import com.worldmap.game.population.domain.PopulationGameStageRepository;
+import com.worldmap.game.populationbattle.domain.PopulationBattleGameStage;
+import com.worldmap.game.populationbattle.domain.PopulationBattleGameStageRepository;
 import com.worldmap.ranking.domain.LeaderboardRecordRepository;
 import java.util.Set;
 import java.util.UUID;
@@ -60,6 +62,9 @@ class LeaderboardIntegrationTest {
 
 	@Autowired
 	private PopulationGameStageRepository populationGameStageRepository;
+
+	@Autowired
+	private PopulationBattleGameStageRepository populationBattleGameStageRepository;
 
 	@Autowired
 	private CountryRepository countryRepository;
@@ -125,11 +130,13 @@ class LeaderboardIntegrationTest {
 				.andExpect(content().string(containsString("지금 새로고침")))
 				.andExpect(content().string(containsString("게임 종류")))
 				.andExpect(content().string(containsString("수도 맞히기")))
+				.andExpect(content().string(containsString("인구 비교 배틀")))
 				.andExpect(content().string(containsString("동점 처리")))
 				.andExpect(content().string(containsString("15초마다 갱신")))
 				.andExpect(content().string(not(containsString("Redis Leaderboard"))))
 			.andExpect(model().attributeExists("locationAll"))
 			.andExpect(model().attributeExists("capitalAll"))
+			.andExpect(model().attributeExists("populationBattleAll"))
 			.andExpect(model().attributeExists("populationAll"));
 
 		assertThat(leaderboardRecordRepository.count()).isEqualTo(1);
@@ -165,6 +172,37 @@ class LeaderboardIntegrationTest {
 			.andExpect(content().string(containsString("ranking-capital-all-body")));
 
 		assertThat(stringRedisTemplate.opsForZSet().zCard(TEST_PREFIX + ":all:capital")).isEqualTo(1L);
+	}
+
+	@Test
+	void gameOverRecordsPopulationBattleLeaderboardAndRendersBattleBoard() throws Exception {
+		UUID sessionId = UUID.fromString(startPopulationBattleGame("rank-battle"));
+		PopulationBattleGameStage firstStage = populationBattleGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
+			.orElseThrow();
+		int wrongOptionNumber = firstStage.getCorrectOptionNumber() == 1 ? 2 : 1;
+
+		for (int attempt = 1; attempt <= 3; attempt++) {
+			mockMvc.perform(
+				post("/api/games/population-battle/sessions/{sessionId}/answer", sessionId)
+					.contentType("application/json")
+					.content(populationBattleAnswerPayload(1, wrongOptionNumber))
+			)
+				.andExpect(status().isOk());
+		}
+
+		mockMvc.perform(get("/api/rankings/population-battle").param("scope", "ALL").param("limit", "5"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.gameMode").value("POPULATION_BATTLE"))
+			.andExpect(jsonPath("$.entries[0].playerNickname").value("rank-battle"));
+
+		mockMvc.perform(get("/ranking"))
+			.andExpect(status().isOk())
+			.andExpect(model().attributeExists("populationBattleAll"))
+			.andExpect(model().attributeExists("populationBattleDaily"))
+			.andExpect(content().string(containsString("ranking-mode-population-battle")))
+			.andExpect(content().string(containsString("ranking-population-battle-all-body")));
+
+		assertThat(stringRedisTemplate.opsForZSet().zCard(TEST_PREFIX + ":all:population-battle")).isEqualTo(1L);
 	}
 
 	private String startLocationGame(String nickname) throws Exception {
@@ -206,6 +244,19 @@ class LeaderboardIntegrationTest {
 		return json.get("sessionId").asText();
 	}
 
+	private String startPopulationBattleGame(String nickname) throws Exception {
+		MvcResult result = mockMvc.perform(
+			post("/api/games/population-battle/sessions")
+				.contentType("application/json")
+				.content("{\"nickname\":\"" + nickname + "\"}")
+		)
+			.andExpect(status().isCreated())
+			.andReturn();
+
+		JsonNode json = objectMapper.readTree(result.getResponse().getContentAsString());
+		return json.get("sessionId").asText();
+	}
+
 	private String locationAnswerPayload(Integer stageNumber, String selectedCountryIso3Code) {
 		return """
 			{
@@ -225,6 +276,15 @@ class LeaderboardIntegrationTest {
 	}
 
 	private String capitalAnswerPayload(Integer stageNumber, Integer selectedOptionNumber) {
+		return """
+			{
+			  "stageNumber": %d,
+			  "selectedOptionNumber": %d
+			}
+			""".formatted(stageNumber, selectedOptionNumber);
+	}
+
+	private String populationBattleAnswerPayload(Integer stageNumber, Integer selectedOptionNumber) {
 		return """
 			{
 			  "stageNumber": %d,

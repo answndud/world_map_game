@@ -4,6 +4,7 @@ public enum LeaderboardGameMode {
 
 	LOCATION("location"),
 	CAPITAL("capital"),
+	POPULATION_BATTLE("population-battle"),
 	POPULATION("population");
 
 	private final String pathValue;

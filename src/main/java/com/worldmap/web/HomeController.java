@@ -34,6 +34,13 @@ public class HomeController {
 				"/games/capital/start"
 			),
 			new ModeCardView(
+				"인구 비교 퀵 배틀",
+				"Population Battle",
+				"두 나라 중 더 큰 인구를 가진 나라를 고르는 빠른 좌우 선택 모드입니다.",
+				"Battle",
+				"/games/population-battle/start"
+			),
+			new ModeCardView(
 				"국가 인구수 맞추기",
 				"4 Choices",
 				"국가 이름을 보고 가장 가까운 인구 규모를 골라 맞히는 퀴즈입니다.",

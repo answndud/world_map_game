@@ -49,7 +49,7 @@ class StatsPageControllerTest {
 	@Test
 	void statsPageRendersPublicMetricsWithoutDashboardLinkForGuest() throws Exception {
 		given(serviceActivityService.loadTodayActivity()).willReturn(
-			new ServiceActivityView(12, 3, 4, 9, 5, 3, 1, 2)
+			new ServiceActivityView(12, 3, 4, 9, 5, 3, 1, 2, 2)
 		);
 		given(leaderboardService.getLeaderboard(LeaderboardGameMode.LOCATION, LeaderboardScope.DAILY, 3)).willReturn(
 			new LeaderboardView(
@@ -75,6 +75,14 @@ class StatsPageControllerTest {
 				List.of(new LeaderboardEntryView(1, "guest_live", 390, 3, 5, LocalDateTime.now()))
 			)
 		);
+		given(leaderboardService.getLeaderboard(LeaderboardGameMode.POPULATION_BATTLE, LeaderboardScope.DAILY, 3)).willReturn(
+			new LeaderboardView(
+				LeaderboardGameMode.POPULATION_BATTLE,
+				LeaderboardScope.DAILY,
+				LocalDate.now(),
+				List.of(new LeaderboardEntryView(1, "battle_runner", 405, 4, 6, LocalDateTime.now()))
+			)
+		);
 		mockMvc.perform(get("/stats"))
 			.andExpect(status().isOk())
 			.andExpect(view().name("stats/index"))
@@ -84,6 +92,8 @@ class StatsPageControllerTest {
 			.andExpect(content().string(not(containsString(">Dashboard<"))))
 			.andExpect(content().string(containsString("TODAY ACTIVE PLAYERS")))
 			.andExpect(content().string(containsString("TODAY CAPITAL RUNS")))
+			.andExpect(content().string(containsString("TODAY POPULATION BATTLE RUNS")))
+			.andExpect(content().string(containsString("battle_runner")))
 			.andExpect(content().string(containsString("capital_hunter")))
 			.andExpect(content().string(containsString("orbit_runner")))
 			.andExpect(content().string(not(containsString("Level 2 하이라이트"))));
@@ -92,7 +102,7 @@ class StatsPageControllerTest {
 	@Test
 	void statsPageShowsDashboardLinkForAdminSession() throws Exception {
 		given(serviceActivityService.loadTodayActivity()).willReturn(
-			new ServiceActivityView(12, 3, 4, 9, 5, 3, 1, 2)
+			new ServiceActivityView(12, 3, 4, 9, 5, 3, 1, 2, 2)
 		);
 		given(leaderboardService.getLeaderboard(LeaderboardGameMode.LOCATION, LeaderboardScope.DAILY, 3)).willReturn(
 			new LeaderboardView(LeaderboardGameMode.LOCATION, LeaderboardScope.DAILY, LocalDate.now(), List.of())
@@ -102,6 +112,9 @@ class StatsPageControllerTest {
 		);
 		given(leaderboardService.getLeaderboard(LeaderboardGameMode.POPULATION, LeaderboardScope.DAILY, 3)).willReturn(
 			new LeaderboardView(LeaderboardGameMode.POPULATION, LeaderboardScope.DAILY, LocalDate.now(), List.of())
+		);
+		given(leaderboardService.getLeaderboard(LeaderboardGameMode.POPULATION_BATTLE, LeaderboardScope.DAILY, 3)).willReturn(
+			new LeaderboardView(LeaderboardGameMode.POPULATION_BATTLE, LeaderboardScope.DAILY, LocalDate.now(), List.of())
 		);
 		MockHttpSession session = new MockHttpSession();
 		session.setAttribute(MEMBER_ID_ATTRIBUTE, 1L);

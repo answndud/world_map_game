@@ -27,12 +27,20 @@ public class LeaderboardPageController {
 			leaderboardService.getLeaderboard(LeaderboardGameMode.CAPITAL, LeaderboardScope.ALL, 10)
 		);
 		model.addAttribute(
+			"populationBattleAll",
+			leaderboardService.getLeaderboard(LeaderboardGameMode.POPULATION_BATTLE, LeaderboardScope.ALL, 10)
+		);
+		model.addAttribute(
 			"locationDaily",
 			leaderboardService.getLeaderboard(LeaderboardGameMode.LOCATION, LeaderboardScope.DAILY, 10)
 		);
 		model.addAttribute(
 			"capitalDaily",
 			leaderboardService.getLeaderboard(LeaderboardGameMode.CAPITAL, LeaderboardScope.DAILY, 10)
+		);
+		model.addAttribute(
+			"populationBattleDaily",
+			leaderboardService.getLeaderboard(LeaderboardGameMode.POPULATION_BATTLE, LeaderboardScope.DAILY, 10)
 		);
 		model.addAttribute(
 			"populationAll",

@@ -131,7 +131,7 @@ class AdminPageIntegrationTest {
 			.andExpect(content().string(containsString("TODAY ACTIVE MEMBERS")))
 			.andExpect(content().string(containsString("TODAY ACTIVE GUESTS")))
 			.andExpect(content().string(containsString("TODAY COMPLETED RUNS")))
-			.andExpect(content().string(containsString("L 1 / C 0 / P 1")))
+			.andExpect(content().string(containsString("L 1 / C 0 / B 0 / P 1")))
 			.andExpect(content().string(containsString("추천 운영 상태")))
 			.andExpect(content().string(containsString("survey-v4")))
 			.andExpect(content().string(containsString(RecommendationSurveyService.ENGINE_VERSION)))

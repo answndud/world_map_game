@@ -4,6 +4,7 @@ import com.worldmap.auth.domain.MemberRepository;
 import com.worldmap.game.capital.domain.CapitalGameSessionRepository;
 import com.worldmap.game.location.domain.LocationGameSessionRepository;
 import com.worldmap.game.population.domain.PopulationGameSessionRepository;
+import com.worldmap.game.populationbattle.domain.PopulationBattleGameSessionRepository;
 import com.worldmap.ranking.domain.LeaderboardGameMode;
 import com.worldmap.ranking.domain.LeaderboardRecordRepository;
 import java.time.LocalDate;
@@ -21,6 +22,7 @@ public class ServiceActivityService {
 	private final CapitalGameSessionRepository capitalGameSessionRepository;
 	private final LocationGameSessionRepository locationGameSessionRepository;
 	private final PopulationGameSessionRepository populationGameSessionRepository;
+	private final PopulationBattleGameSessionRepository populationBattleGameSessionRepository;
 	private final LeaderboardRecordRepository leaderboardRecordRepository;
 
 	public ServiceActivityService(
@@ -28,12 +30,14 @@ public class ServiceActivityService {
 		CapitalGameSessionRepository capitalGameSessionRepository,
 		LocationGameSessionRepository locationGameSessionRepository,
 		PopulationGameSessionRepository populationGameSessionRepository,
+		PopulationBattleGameSessionRepository populationBattleGameSessionRepository,
 		LeaderboardRecordRepository leaderboardRecordRepository
 	) {
 		this.memberRepository = memberRepository;
 		this.capitalGameSessionRepository = capitalGameSessionRepository;
 		this.locationGameSessionRepository = locationGameSessionRepository;
 		this.populationGameSessionRepository = populationGameSessionRepository;
+		this.populationBattleGameSessionRepository = populationBattleGameSessionRepository;
 		this.leaderboardRecordRepository = leaderboardRecordRepository;
 	}
 
@@ -46,7 +50,10 @@ public class ServiceActivityService {
 			locationGameSessionRepository.findDistinctMemberIdsByStartedAtBetween(todayStart, tomorrowStart).stream(),
 			Stream.concat(
 				populationGameSessionRepository.findDistinctMemberIdsByStartedAtBetween(todayStart, tomorrowStart).stream(),
-				capitalGameSessionRepository.findDistinctMemberIdsByStartedAtBetween(todayStart, tomorrowStart).stream()
+				Stream.concat(
+					capitalGameSessionRepository.findDistinctMemberIdsByStartedAtBetween(todayStart, tomorrowStart).stream(),
+					populationBattleGameSessionRepository.findDistinctMemberIdsByStartedAtBetween(todayStart, tomorrowStart).stream()
+				)
 			)
 		).collect(Collectors.toSet());
 
@@ -54,13 +61,17 @@ public class ServiceActivityService {
 			locationGameSessionRepository.findDistinctGuestSessionKeysByStartedAtBetween(todayStart, tomorrowStart).stream(),
 			Stream.concat(
 				populationGameSessionRepository.findDistinctGuestSessionKeysByStartedAtBetween(todayStart, tomorrowStart).stream(),
-				capitalGameSessionRepository.findDistinctGuestSessionKeysByStartedAtBetween(todayStart, tomorrowStart).stream()
+				Stream.concat(
+					capitalGameSessionRepository.findDistinctGuestSessionKeysByStartedAtBetween(todayStart, tomorrowStart).stream(),
+					populationBattleGameSessionRepository.findDistinctGuestSessionKeysByStartedAtBetween(todayStart, tomorrowStart).stream()
+				)
 			)
 		).collect(Collectors.toSet());
 
 		long todayStartedSessionCount =
 			locationGameSessionRepository.countByStartedAtGreaterThanEqualAndStartedAtLessThan(todayStart, tomorrowStart)
 				+ capitalGameSessionRepository.countByStartedAtGreaterThanEqualAndStartedAtLessThan(todayStart, tomorrowStart)
+				+ populationBattleGameSessionRepository.countByStartedAtGreaterThanEqualAndStartedAtLessThan(todayStart, tomorrowStart)
 				+ populationGameSessionRepository.countByStartedAtGreaterThanEqualAndStartedAtLessThan(todayStart, tomorrowStart);
 
 		long todayCompletedRunCount = leaderboardRecordRepository.countByFinishedAtGreaterThanEqualAndFinishedAtLessThan(
@@ -81,6 +92,11 @@ public class ServiceActivityService {
 			),
 			leaderboardRecordRepository.countByGameModeAndFinishedAtGreaterThanEqualAndFinishedAtLessThan(
 				LeaderboardGameMode.CAPITAL,
+				todayStart,
+				tomorrowStart
+			),
+			leaderboardRecordRepository.countByGameModeAndFinishedAtGreaterThanEqualAndFinishedAtLessThan(
+				LeaderboardGameMode.POPULATION_BATTLE,
 				todayStart,
 				tomorrowStart
 			),

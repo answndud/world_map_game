@@ -3,6 +3,7 @@ package com.worldmap.ranking.application;
 import com.worldmap.game.capital.domain.CapitalGameSession;
 import com.worldmap.game.location.domain.LocationGameSession;
 import com.worldmap.game.population.domain.PopulationGameSession;
+import com.worldmap.game.populationbattle.domain.PopulationBattleGameSession;
 import com.worldmap.ranking.domain.LeaderboardGameMode;
 import com.worldmap.ranking.domain.LeaderboardRecord;
 import com.worldmap.ranking.domain.LeaderboardRecordRepository;
@@ -58,6 +59,21 @@ public class LeaderboardService {
 	public void recordCapitalResult(CapitalGameSession session, Integer totalAttemptCount) {
 		recordResult(
 			LeaderboardGameMode.CAPITAL,
+			session.getId(),
+			session.getPlayerNickname(),
+			session.getMemberId(),
+			session.getGuestSessionKey(),
+			session.getTotalScore(),
+			session.getClearedStageCount(),
+			totalAttemptCount,
+			session.getFinishedAt()
+		);
+	}
+
+	@Transactional
+	public void recordPopulationBattleResult(PopulationBattleGameSession session, Integer totalAttemptCount) {
+		recordResult(
+			LeaderboardGameMode.POPULATION_BATTLE,
 			session.getId(),
 			session.getPlayerNickname(),
 			session.getMemberId(),
