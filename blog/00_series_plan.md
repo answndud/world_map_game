@@ -105,6 +105,7 @@
 78. [local demo bootstrap에 국기 퀴즈 sample run을 넣기](./83-seed-flag-sample-run-in-local-demo-bootstrap.md)
 79. [local demo bootstrap에 수도/인구 비교 sample run도 넣기](./84-seed-capital-and-population-battle-sample-runs-in-local-demo-bootstrap.md)
 80. [국기 자산 pool을 36개 snapshot으로 넓히고 재생성 스크립트를 붙이기](./85-expand-flag-asset-pool-with-regeneratable-snapshots.md)
+81. [국기 게임 distractor fallback 순서를 지역 기준으로 다듬기](./86-tune-flag-distractor-fallback-order.md)
 
 ### Part E. 테스트, 확장, 취업 패키징
 

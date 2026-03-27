@@ -834,10 +834,12 @@
 - `DemoBootstrapIntegrationTest`로 admin/user 계정 + location/population/flag sample run + recommendation feedback sample bootstrap을 같이 고정
 - `DemoBootstrapService`에 capital / population-battle sample run도 추가해 local `/stats`, `/ranking`에서 신규 게임 5종 보드가 서버 재기동 직후 바로 보이게 함
 - `DemoBootstrapIntegrationTest`로 admin/user 계정 + location/population/capital/flag/population-battle sample run + recommendation feedback sample bootstrap을 같이 고정
+- `FlagGameOptionGenerator`를 same-continent random에서 `same continent -> 인접 대륙 -> 전체 pool` 순 fallback으로 바꿔, 북미/오세아니아처럼 후보가 적은 문제도 더 설명 가능하게 정리
+- `FlagGameOptionGeneratorTest`로 `EUROPE same-continent 유지`, `OCEANIA -> ASIA fallback`, `NORTH_AMERICA -> SOUTH_AMERICA fallback`을 고정
 
 다음 후속 개선 후보:
 
-- 국기 게임 난이도와 같은 대륙 distractor 품질을 더 다듬을지 결정
+- 국기 게임 난이도 단계와 결과 카피를 더 다듬을지 결정
 - 새 게임 3종의 난이도 / 결과 카피 / 홈 카드 밀도를 한 번 더 점검
 
 반드시 이해할 것:

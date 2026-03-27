@@ -4012,3 +4012,29 @@
 - 배운 점: 국기 게임은 session/stage/attempt 구조보다 자산 재현성이 먼저다. 단순히 SVG 개수를 늘리는 것보다, `선택된 ISO3 목록 -> SVG download -> manifest 재생성` 흐름을 스크립트로 남겨야 다음 확장도 설명 가능해진다.
 - 아직 약한 부분: 현재 36개는 첫 균형화 단계일 뿐이라, 대륙별 분포가 완전히 고른 상태는 아니다. 다음 후보는 자산을 더 넓히기보다, 현재 36개 pool에서 난이도와 distractor 품질이 실제로 좋아졌는지 게임 테스트 기준으로 다시 보는 것이다.
 - 면접용 30초 요약: 국기 게임은 자산 수가 적으면 same-continent distractor 품질과 국가 다양성이 모두 떨어집니다. 그래서 sample 12개로 vertical slice를 먼저 연 뒤, 이번에는 `fetch_flag_assets.py`를 만들어 선택된 ISO3 목록의 SVG와 manifest를 함께 재생성하도록 바꿨습니다. 그 결과 출제 가능 국가는 36개로 늘었고, 서버는 여전히 `country seed ∩ manifest ∩ 실제 파일 존재` 교집합만 문제 pool로 쓰기 때문에 자산 확대 후에도 설명 가능한 구조를 유지할 수 있게 됐습니다.
+
+## 2026-03-27 - 11단계 국기 게임 distractor fallback 품질 정리
+
+- 단계: 11. 신규 게임 확장
+- 목적: 국기 자산 pool을 36개로 넓힌 뒤에도 보기 생성 규칙은 여전히 `same continent -> 전세계 fallback`이라, 특히 북미/오세아니아처럼 같은 대륙 후보가 부족한 경우 보기 품질이 들쭉날쭉했다. 이번 조각의 목적은 runtime을 복잡하게 키우지 않고, 국기 distractor를 더 설명 가능한 지역 fallback 규칙으로 고정하는 것이다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/game/flag/application/FlagGameOptionGenerator.java`
+  - `src/test/java/com/worldmap/game/flag/application/FlagGameOptionGeneratorTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/50-current-state-rebuild-map.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/86-tune-flag-distractor-fallback-order.md`
+- 요청 흐름 / 데이터 흐름: public 요청 흐름은 바뀌지 않았다. 여전히 `POST /api/games/flag/sessions -> FlagGameService -> FlagGameOptionGenerator` 순서로 문제 Stage를 만들고, `GET /state`가 그 보기 4개를 내려준다. 이번에는 `FlagQuestionCountryPoolService`가 만든 출제 가능 국가 pool 위에서 `FlagGameOptionGenerator`만 same-continent 우선 뒤에 `인접 대륙 fallback -> 전체 pool fallback` 순서를 적용하도록 바뀌었다.
+- 데이터 / 상태 변화: DB나 Redis 스키마 변화는 없다. 바뀐 것은 Stage 생성 시점의 보기 품질 규칙뿐이다. 예를 들어 오세아니아 target은 같은 대륙 후보가 1개뿐일 때 유럽/남미보다 아시아 후보를 먼저 끌어오고, 북미 target은 유럽보다 남미 후보를 먼저 끌어온다.
+- 핵심 도메인 개념: 국기 distractor 품질은 프론트 연출이 아니라 서버 문제 생성 규칙이다. 따라서 이 로직은 컨트롤러나 JS가 아니라 `FlagGameOptionGenerator`에 있어야 한다. 컨트롤러는 HTTP 요청만 해석하고, 실제로 어떤 나라 4개가 비교군이 되는지는 server-side game rule로 고정해야 테스트와 설명이 가능하다.
+- 예외 / 엣지 케이스: 유럽/아시아/아프리카/남미처럼 같은 대륙 후보가 충분한 경우에는 기존처럼 same-continent만으로 3개 distractor를 채운다. 반대로 북미/오세아니아처럼 pool이 작은 대륙은 fallback 대륙 순서를 타고 내려가며, 그래도 부족할 때만 마지막에 전체 pool fallback을 사용한다.
+- 테스트:
+  - `./gradlew test --tests com.worldmap.game.flag.application.FlagGameOptionGeneratorTest --tests com.worldmap.game.flag.application.FlagQuestionCountryPoolServiceIntegrationTest --tests com.worldmap.game.flag.FlagGameFlowIntegrationTest`
+  - `./gradlew test`
+  - `git diff --check`
+- 배운 점: 자산 pool을 넓힌 뒤에는 “몇 개까지 늘렸는가”보다 “그 pool을 어떤 규칙으로 문제에 쓰는가”가 더 중요해진다. 특히 국기 게임은 오답 보기 품질이 난이도와 직결되므로, same-continent 원칙을 유지하되 부족할 때는 전세계 랜덤이 아니라 지역 fallback 순서를 먼저 주는 편이 훨씬 설명 가능하다.
+- 아직 약한 부분: 현재 fallback은 대륙 단위라 여전히 거칠다. 예를 들어 유럽 내부나 아시아 내부의 세부 권역까지는 반영하지 않는다. 다음 후보는 난이도 단계별로 같은 대륙 고정 비율을 더 명확히 하거나, 결과/플레이 카피를 신규 게임 3종 기준으로 다시 다듬는 것이다.
+- 면접용 30초 요약: 국기 게임은 자산 수를 36개로 늘린 뒤에도 same-continent 후보가 부족한 대륙은 여전히 보기 품질이 흔들릴 수 있었습니다. 그래서 `FlagGameOptionGenerator`를 same-continent 우선 뒤에 `인접 대륙 -> 전체 pool` 순 fallback으로 바꾸고, 오세아니아는 아시아를, 북미는 남미를 먼저 쓰도록 테스트로 고정했습니다. 덕분에 자산 확대 이후에도 보기 품질을 서버 규칙으로 설명할 수 있게 됐습니다.
