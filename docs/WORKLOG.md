@@ -3792,3 +3792,27 @@
 - 배운 점: 사용자에게 보이는 표기 언어를 바꾼다고 해서 원본 reference 필드를 덮어쓰는 건 좋은 선택이 아니다. 특히 추천처럼 다른 도메인이 같은 seed를 읽고 있으면, `영어 원본 + 한국어 표시용 필드`를 분리하고 game mode가 필요한 필드만 읽게 만드는 편이 장기적으로 더 단순하다.
 - 아직 약한 부분: `capitalCityKr`는 현재 수도 맞히기 게임에만 연결돼 있다. recommendation 결과 카드나 country detail 같은 다른 public read model은 아직 영어 `capitalCity`를 그대로 쓰므로, 이후 제품 카피 일관성을 더 올리고 싶다면 그 표면들도 한국어 수도명으로 바꿀지 별도 판단이 필요하다.
 - 면접용 30초 요약: 수도 맞히기 게임이 한국어 UI인데 수도명이 영어로 보이는 문제가 있었습니다. 그래서 영어 원본 `capitalCity`는 그대로 두고, seed에 `capitalCityKr`를 추가한 뒤 capital game만 그 필드를 읽게 했습니다. 한국어 수도명은 runtime 번역이 아니라 seed 재생성 스크립트로 미리 고정해서, 서버는 여전히 정적 seed만 읽고도 안정적으로 한국어 수도 보기 4개를 만들 수 있게 됐습니다.
+
+## 2026-03-27 - 공통 게임 정답 피드백에서 선택/정답 텍스트 숨기기
+
+- 단계: 3. 국가 위치 찾기 게임 Level 1 / 4. 국가 인구수 맞추기 게임 Level 1 / 11. 신규 게임 확장
+- 목적: 플레이 도중 정답을 맞혔을 때 `내가 뭘 골랐는지`, `정답이 무엇인지`까지 바로 노출되면 피드백이 장황해지고 리듬이 느려진다. 이번 조각은 모든 게임의 정답 직후 피드백을 `획득 점수 중심`으로 단순화하는 UX 패치다.
+- 변경 파일:
+  - `src/main/resources/static/js/location-game.js`
+  - `src/main/resources/static/js/population-game.js`
+  - `src/main/resources/static/js/capital-game.js`
+  - `src/main/resources/static/js/population-battle-game.js`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 서버 요청 흐름은 바뀌지 않았다. 각 게임은 그대로 `POST /answer` 응답을 받은 뒤 프론트 JS가 overlay/feedback 영역을 렌더링한다. 이번 변경은 그 correct branch만 바꿔서, 정답일 때는 점수만 보여 주고 선택값/정답값 문자열은 숨긴다. wrong / game over branch는 기존처럼 정보를 유지한다.
+- 데이터 / 상태 변화: 서버 payload와 DB 상태 변화는 없다. `selected*`, `correct*` 필드는 여전히 응답에 남아 있지만, 플레이 화면의 정답 피드백 read model만 더 얇아졌다.
+- 핵심 도메인 개념: 이 조각은 점수 정책 변경이 아니라 presentation rule 변경이다. 따라서 컨트롤러나 서비스가 아니라 각 게임 JS의 correct feedback branch에서만 처리하는 편이 맞다. 서버는 여전히 판정과 점수를 계산하고, 클라이언트는 그 결과를 얼마나 많이 보여 줄지 결정한다.
+- 예외 / 엣지 케이스: 결과 페이지의 Stage/Attempt 로그는 그대로 남겨 뒀다. 사용자가 요구한 것은 `정답을 맞혔을 때`의 즉시 피드백 단순화였기 때문에, 게임 종료 후 복기용 로그까지 같이 지우지는 않았다. wrong / game over에서는 학습과 복기가 필요해 선택/정답 정보 노출을 유지했다.
+- 테스트:
+  - `node --check src/main/resources/static/js/location-game.js`
+  - `node --check src/main/resources/static/js/population-game.js`
+  - `node --check src/main/resources/static/js/capital-game.js`
+  - `node --check src/main/resources/static/js/population-battle-game.js`
+  - `git diff --check`
+- 배운 점: 모든 UX 문제를 서버 응답 구조 변경으로 풀 필요는 없다. 판정 데이터는 그대로 두고, 플레이 템포와 정보 밀도를 프론트 렌더링 branch에서 조절하는 편이 더 작고 안전하게 끝나는 경우가 있다.
+- 아직 약한 부분: 결과 페이지에도 정답/선택 이력이 남아 있기 때문에, 사용자가 “플레이 중뿐 아니라 결과 화면에서도 정답 노출을 줄이고 싶다”고 느낄 수 있다. 그 경우엔 즉시 피드백과 결과 복기 화면을 별도 정책으로 다시 나눠야 한다.
+- 면접용 30초 요약: 이번 조각은 게임 규칙을 바꾸지 않고 플레이 템포만 다듬는 작업이었습니다. 서버는 여전히 선택값과 정답값을 내려주지만, 정답 직후에는 그걸 다 보여 주지 않고 `획득 점수`만 보여 주도록 프론트 correct branch를 정리했습니다. 덕분에 각 게임의 정답 피드백이 더 짧아지고, 다음 Stage로 넘어가는 리듬이 덜 끊기게 됐습니다.
