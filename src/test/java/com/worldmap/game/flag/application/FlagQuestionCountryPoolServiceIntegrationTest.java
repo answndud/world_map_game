@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.worldmap.country.domain.Continent;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,10 +21,15 @@ class FlagQuestionCountryPoolServiceIntegrationTest {
 	void loadPoolReturnsOnlyCountriesBackedBySeedAndFlagAssets() {
 		FlagQuestionCountryPoolView pool = flagQuestionCountryPoolService.loadPool();
 
-		assertThat(pool.availableCountryCount()).isEqualTo(12);
+		assertThat(pool.availableCountryCount()).isEqualTo(36);
 		assertThat(pool.countries())
 			.extracting(FlagQuestionCountryView::iso3Code)
-			.containsExactlyInAnyOrder("AUT", "BEL", "DEU", "EST", "FRA", "IRL", "ITA", "JPN", "LTU", "NLD", "POL", "UKR");
+			.containsExactlyInAnyOrder(
+				"ARG", "AUS", "AUT", "BEL", "BRA", "CAN", "CHE", "CHL", "CHN", "COL",
+				"DEU", "EGY", "ESP", "EST", "FRA", "GBR", "IDN", "IND", "IRL", "ITA",
+				"JPN", "KEN", "KOR", "LTU", "MAR", "MEX", "NLD", "NZL", "POL", "PRT",
+				"SGP", "THA", "TUR", "UKR", "USA", "ZAF"
+			);
 		assertThat(pool.countries())
 			.allSatisfy(country -> {
 				assertThat(country.flagRelativePath()).startsWith("/images/flags/");
@@ -35,20 +39,29 @@ class FlagQuestionCountryPoolServiceIntegrationTest {
 
 		Map<Continent, Integer> continentCountMap = pool.continentCounts().stream()
 			.collect(Collectors.toMap(FlagQuestionCountryContinentCountView::continent, FlagQuestionCountryContinentCountView::countryCount));
-		assertThat(continentCountMap).containsEntry(Continent.EUROPE, 11);
-		assertThat(continentCountMap).containsEntry(Continent.ASIA, 1);
+		assertThat(continentCountMap).containsEntry(Continent.EUROPE, 15);
+		assertThat(continentCountMap).containsEntry(Continent.ASIA, 8);
+		assertThat(continentCountMap).containsEntry(Continent.NORTH_AMERICA, 3);
+		assertThat(continentCountMap).containsEntry(Continent.SOUTH_AMERICA, 4);
+		assertThat(continentCountMap).containsEntry(Continent.AFRICA, 4);
+		assertThat(continentCountMap).containsEntry(Continent.OCEANIA, 2);
 	}
 
 	@Test
 	void serviceSupportsIso3LookupAndContinentFiltering() {
 		FlagQuestionCountryView japan = flagQuestionCountryPoolService.findAvailableCountry("jpn")
 			.orElseThrow();
+		FlagQuestionCountryView korea = flagQuestionCountryPoolService.findAvailableCountry("KOR")
+			.orElseThrow();
 
 		assertThat(japan.countryNameKr()).isEqualTo("일본");
 		assertThat(japan.continent()).isEqualTo(Continent.ASIA);
+		assertThat(korea.countryNameKr()).isEqualTo("대한민국");
 		assertThat(flagQuestionCountryPoolService.availableCountriesByContinent(Continent.ASIA))
 			.extracting(FlagQuestionCountryView::iso3Code)
-			.containsExactly("JPN");
-		assertThat(flagQuestionCountryPoolService.findAvailableCountry("KOR")).isEmpty();
+			.containsExactlyInAnyOrder("CHN", "IDN", "IND", "JPN", "KOR", "SGP", "THA", "TUR");
+		assertThat(flagQuestionCountryPoolService.availableCountriesByContinent(Continent.OCEANIA))
+			.extracting(FlagQuestionCountryView::iso3Code)
+			.containsExactlyInAnyOrder("AUS", "NZL");
 	}
 }

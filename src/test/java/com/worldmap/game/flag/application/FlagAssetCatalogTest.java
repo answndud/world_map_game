@@ -16,8 +16,10 @@ class FlagAssetCatalogTest {
 	void catalogLoadsStaticFlagAssetsAndSupportsIso3Lookup() {
 		FlagAssetCatalog catalog = new FlagAssetCatalog(new ObjectMapper(), new DefaultResourceLoader());
 
-		assertThat(catalog.assets()).hasSize(12);
+		assertThat(catalog.assets()).hasSize(36);
 		assertThat(catalog.supports("jpn")).isTrue();
+		assertThat(catalog.supports("kor")).isTrue();
+		assertThat(catalog.supports("usa")).isTrue();
 		assertThat(catalog.findByIso3Code("JPN"))
 			.get()
 			.extracting(FlagAsset::relativePath, FlagAsset::format)

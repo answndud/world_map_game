@@ -4,85 +4,253 @@
       "iso3Code": "JPN",
       "relativePath": "/images/flags/jpn.svg",
       "format": "svg",
-      "source": "local-static",
-      "licenseNote": "sample-svg"
+      "source": "flagcdn.com",
+      "licenseNote": "source-snapshot"
     },
     {
       "iso3Code": "FRA",
       "relativePath": "/images/flags/fra.svg",
       "format": "svg",
-      "source": "local-static",
-      "licenseNote": "sample-svg"
+      "source": "flagcdn.com",
+      "licenseNote": "source-snapshot"
     },
     {
       "iso3Code": "DEU",
       "relativePath": "/images/flags/deu.svg",
       "format": "svg",
-      "source": "local-static",
-      "licenseNote": "sample-svg"
+      "source": "flagcdn.com",
+      "licenseNote": "source-snapshot"
     },
     {
       "iso3Code": "ITA",
       "relativePath": "/images/flags/ita.svg",
       "format": "svg",
-      "source": "local-static",
-      "licenseNote": "sample-svg"
+      "source": "flagcdn.com",
+      "licenseNote": "source-snapshot"
     },
     {
       "iso3Code": "IRL",
       "relativePath": "/images/flags/irl.svg",
       "format": "svg",
-      "source": "local-static",
-      "licenseNote": "sample-svg"
+      "source": "flagcdn.com",
+      "licenseNote": "source-snapshot"
     },
     {
       "iso3Code": "BEL",
       "relativePath": "/images/flags/bel.svg",
       "format": "svg",
-      "source": "local-static",
-      "licenseNote": "sample-svg"
+      "source": "flagcdn.com",
+      "licenseNote": "source-snapshot"
     },
     {
       "iso3Code": "POL",
       "relativePath": "/images/flags/pol.svg",
       "format": "svg",
-      "source": "local-static",
-      "licenseNote": "sample-svg"
+      "source": "flagcdn.com",
+      "licenseNote": "source-snapshot"
     },
     {
       "iso3Code": "UKR",
       "relativePath": "/images/flags/ukr.svg",
       "format": "svg",
-      "source": "local-static",
-      "licenseNote": "sample-svg"
+      "source": "flagcdn.com",
+      "licenseNote": "source-snapshot"
     },
     {
       "iso3Code": "AUT",
       "relativePath": "/images/flags/aut.svg",
       "format": "svg",
-      "source": "local-static",
-      "licenseNote": "sample-svg"
+      "source": "flagcdn.com",
+      "licenseNote": "source-snapshot"
     },
     {
       "iso3Code": "NLD",
       "relativePath": "/images/flags/nld.svg",
       "format": "svg",
-      "source": "local-static",
-      "licenseNote": "sample-svg"
+      "source": "flagcdn.com",
+      "licenseNote": "source-snapshot"
     },
     {
       "iso3Code": "EST",
       "relativePath": "/images/flags/est.svg",
       "format": "svg",
-      "source": "local-static",
-      "licenseNote": "sample-svg"
+      "source": "flagcdn.com",
+      "licenseNote": "source-snapshot"
     },
     {
       "iso3Code": "LTU",
       "relativePath": "/images/flags/ltu.svg",
       "format": "svg",
-      "source": "local-static",
-      "licenseNote": "sample-svg"
+      "source": "flagcdn.com",
+      "licenseNote": "source-snapshot"
+    },
+    {
+      "iso3Code": "GBR",
+      "relativePath": "/images/flags/gbr.svg",
+      "format": "svg",
+      "source": "flagcdn.com",
+      "licenseNote": "source-snapshot"
+    },
+    {
+      "iso3Code": "ESP",
+      "relativePath": "/images/flags/esp.svg",
+      "format": "svg",
+      "source": "flagcdn.com",
+      "licenseNote": "source-snapshot"
+    },
+    {
+      "iso3Code": "PRT",
+      "relativePath": "/images/flags/prt.svg",
+      "format": "svg",
+      "source": "flagcdn.com",
+      "licenseNote": "source-snapshot"
+    },
+    {
+      "iso3Code": "CHE",
+      "relativePath": "/images/flags/che.svg",
+      "format": "svg",
+      "source": "flagcdn.com",
+      "licenseNote": "source-snapshot"
+    },
+    {
+      "iso3Code": "KOR",
+      "relativePath": "/images/flags/kor.svg",
+      "format": "svg",
+      "source": "flagcdn.com",
+      "licenseNote": "source-snapshot"
+    },
+    {
+      "iso3Code": "CHN",
+      "relativePath": "/images/flags/chn.svg",
+      "format": "svg",
+      "source": "flagcdn.com",
+      "licenseNote": "source-snapshot"
+    },
+    {
+      "iso3Code": "IND",
+      "relativePath": "/images/flags/ind.svg",
+      "format": "svg",
+      "source": "flagcdn.com",
+      "licenseNote": "source-snapshot"
+    },
+    {
+      "iso3Code": "THA",
+      "relativePath": "/images/flags/tha.svg",
+      "format": "svg",
+      "source": "flagcdn.com",
+      "licenseNote": "source-snapshot"
+    },
+    {
+      "iso3Code": "SGP",
+      "relativePath": "/images/flags/sgp.svg",
+      "format": "svg",
+      "source": "flagcdn.com",
+      "licenseNote": "source-snapshot"
+    },
+    {
+      "iso3Code": "TUR",
+      "relativePath": "/images/flags/tur.svg",
+      "format": "svg",
+      "source": "flagcdn.com",
+      "licenseNote": "source-snapshot"
+    },
+    {
+      "iso3Code": "IDN",
+      "relativePath": "/images/flags/idn.svg",
+      "format": "svg",
+      "source": "flagcdn.com",
+      "licenseNote": "source-snapshot"
+    },
+    {
+      "iso3Code": "USA",
+      "relativePath": "/images/flags/usa.svg",
+      "format": "svg",
+      "source": "flagcdn.com",
+      "licenseNote": "source-snapshot"
+    },
+    {
+      "iso3Code": "CAN",
+      "relativePath": "/images/flags/can.svg",
+      "format": "svg",
+      "source": "flagcdn.com",
+      "licenseNote": "source-snapshot"
+    },
+    {
+      "iso3Code": "MEX",
+      "relativePath": "/images/flags/mex.svg",
+      "format": "svg",
+      "source": "flagcdn.com",
+      "licenseNote": "source-snapshot"
+    },
+    {
+      "iso3Code": "BRA",
+      "relativePath": "/images/flags/bra.svg",
+      "format": "svg",
+      "source": "flagcdn.com",
+      "licenseNote": "source-snapshot"
+    },
+    {
+      "iso3Code": "ARG",
+      "relativePath": "/images/flags/arg.svg",
+      "format": "svg",
+      "source": "flagcdn.com",
+      "licenseNote": "source-snapshot"
+    },
+    {
+      "iso3Code": "CHL",
+      "relativePath": "/images/flags/chl.svg",
+      "format": "svg",
+      "source": "flagcdn.com",
+      "licenseNote": "source-snapshot"
+    },
+    {
+      "iso3Code": "COL",
+      "relativePath": "/images/flags/col.svg",
+      "format": "svg",
+      "source": "flagcdn.com",
+      "licenseNote": "source-snapshot"
+    },
+    {
+      "iso3Code": "ZAF",
+      "relativePath": "/images/flags/zaf.svg",
+      "format": "svg",
+      "source": "flagcdn.com",
+      "licenseNote": "source-snapshot"
+    },
+    {
+      "iso3Code": "EGY",
+      "relativePath": "/images/flags/egy.svg",
+      "format": "svg",
+      "source": "flagcdn.com",
+      "licenseNote": "source-snapshot"
+    },
+    {
+      "iso3Code": "MAR",
+      "relativePath": "/images/flags/mar.svg",
+      "format": "svg",
+      "source": "flagcdn.com",
+      "licenseNote": "source-snapshot"
+    },
+    {
+      "iso3Code": "KEN",
+      "relativePath": "/images/flags/ken.svg",
+      "format": "svg",
+      "source": "flagcdn.com",
+      "licenseNote": "source-snapshot"
+    },
+    {
+      "iso3Code": "AUS",
+      "relativePath": "/images/flags/aus.svg",
+      "format": "svg",
+      "source": "flagcdn.com",
+      "licenseNote": "source-snapshot"
+    },
+    {
+      "iso3Code": "NZL",
+      "relativePath": "/images/flags/nzl.svg",
+      "format": "svg",
+      "source": "flagcdn.com",
+      "licenseNote": "source-snapshot"
     }
   ]
 }
