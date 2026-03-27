@@ -14,6 +14,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.worldmap.country.domain.CountryRepository;
+import com.worldmap.game.capital.domain.CapitalGameStage;
+import com.worldmap.game.capital.domain.CapitalGameStageRepository;
 import com.worldmap.game.location.domain.LocationGameStage;
 import com.worldmap.game.location.domain.LocationGameStageRepository;
 import com.worldmap.game.population.domain.PopulationGameStage;
@@ -52,6 +54,9 @@ class LeaderboardIntegrationTest {
 
 	@Autowired
 	private LocationGameStageRepository locationGameStageRepository;
+
+	@Autowired
+	private CapitalGameStageRepository capitalGameStageRepository;
 
 	@Autowired
 	private PopulationGameStageRepository populationGameStageRepository;
@@ -119,14 +124,47 @@ class LeaderboardIntegrationTest {
 				.andExpect(view().name("ranking/index"))
 				.andExpect(content().string(containsString("지금 새로고침")))
 				.andExpect(content().string(containsString("게임 종류")))
+				.andExpect(content().string(containsString("수도 맞히기")))
 				.andExpect(content().string(containsString("동점 처리")))
 				.andExpect(content().string(containsString("15초마다 갱신")))
 				.andExpect(content().string(not(containsString("Redis Leaderboard"))))
 			.andExpect(model().attributeExists("locationAll"))
+			.andExpect(model().attributeExists("capitalAll"))
 			.andExpect(model().attributeExists("populationAll"));
 
 		assertThat(leaderboardRecordRepository.count()).isEqualTo(1);
 		assertThat(stringRedisTemplate.opsForZSet().zCard(TEST_PREFIX + ":all:location")).isEqualTo(1L);
+	}
+
+	@Test
+	void gameOverRecordsCapitalLeaderboardAndRendersCapitalBoard() throws Exception {
+		UUID sessionId = UUID.fromString(startCapitalGame("rank-capital"));
+		CapitalGameStage firstStage = capitalGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
+			.orElseThrow();
+		int wrongOptionNumber = firstStage.getCorrectOptionNumber() == 1 ? 2 : 1;
+
+		for (int attempt = 1; attempt <= 3; attempt++) {
+			mockMvc.perform(
+				post("/api/games/capital/sessions/{sessionId}/answer", sessionId)
+					.contentType("application/json")
+					.content(capitalAnswerPayload(1, wrongOptionNumber))
+			)
+				.andExpect(status().isOk());
+		}
+
+		mockMvc.perform(get("/api/rankings/capital").param("scope", "ALL").param("limit", "5"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.gameMode").value("CAPITAL"))
+			.andExpect(jsonPath("$.entries[0].playerNickname").value("rank-capital"));
+
+		mockMvc.perform(get("/ranking"))
+			.andExpect(status().isOk())
+			.andExpect(model().attributeExists("capitalAll"))
+			.andExpect(model().attributeExists("capitalDaily"))
+			.andExpect(content().string(containsString("ranking-mode-capital")))
+			.andExpect(content().string(containsString("ranking-capital-all-body")));
+
+		assertThat(stringRedisTemplate.opsForZSet().zCard(TEST_PREFIX + ":all:capital")).isEqualTo(1L);
 	}
 
 	private String startLocationGame(String nickname) throws Exception {
@@ -155,6 +193,19 @@ class LeaderboardIntegrationTest {
 		return json.get("sessionId").asText();
 	}
 
+	private String startCapitalGame(String nickname) throws Exception {
+		MvcResult result = mockMvc.perform(
+			post("/api/games/capital/sessions")
+				.contentType("application/json")
+				.content("{\"nickname\":\"" + nickname + "\"}")
+		)
+			.andExpect(status().isCreated())
+			.andReturn();
+
+		JsonNode json = objectMapper.readTree(result.getResponse().getContentAsString());
+		return json.get("sessionId").asText();
+	}
+
 	private String locationAnswerPayload(Integer stageNumber, String selectedCountryIso3Code) {
 		return """
 			{
@@ -165,6 +216,15 @@ class LeaderboardIntegrationTest {
 	}
 
 	private String populationAnswerPayload(Integer stageNumber, Integer selectedOptionNumber) {
+		return """
+			{
+			  "stageNumber": %d,
+			  "selectedOptionNumber": %d
+			}
+			""".formatted(stageNumber, selectedOptionNumber);
+	}
+
+	private String capitalAnswerPayload(Integer stageNumber, Integer selectedOptionNumber) {
 		return """
 			{
 			  "stageNumber": %d,

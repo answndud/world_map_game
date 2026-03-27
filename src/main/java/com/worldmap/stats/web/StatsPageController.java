@@ -30,6 +30,11 @@ public class StatsPageController {
 			LeaderboardScope.DAILY,
 			3
 		));
+		model.addAttribute("capitalDailyTop", leaderboardService.getLeaderboard(
+			LeaderboardGameMode.CAPITAL,
+			LeaderboardScope.DAILY,
+			3
+		));
 		model.addAttribute("populationDailyTop", leaderboardService.getLeaderboard(
 			LeaderboardGameMode.POPULATION,
 			LeaderboardScope.DAILY,

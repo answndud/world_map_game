@@ -71,7 +71,7 @@ public class AdminDashboardService {
 			),
 			new AdminDashboardRouteView(
 				"추천 설문 점검",
-				"현재 public 설문 문구와 8개 질문 구성을 그대로 확인합니다.",
+				"현재 public 설문 문구와 20개 질문 구성을 그대로 확인합니다.",
 				"/recommendation/survey"
 			)
 		);

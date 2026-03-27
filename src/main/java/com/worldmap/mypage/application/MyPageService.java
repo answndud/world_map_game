@@ -167,6 +167,7 @@ public class MyPageService {
 	private String gameModeLabel(LeaderboardGameMode gameMode) {
 		return switch (gameMode) {
 			case LOCATION -> "국가 위치 찾기";
+			case CAPITAL -> "수도 맞히기";
 			case POPULATION -> "국가 인구수 맞추기";
 		};
 	}

@@ -3,6 +3,7 @@ package com.worldmap.ranking.domain;
 public enum LeaderboardGameMode {
 
 	LOCATION("location"),
+	CAPITAL("capital"),
 	POPULATION("population");
 
 	private final String pathValue;

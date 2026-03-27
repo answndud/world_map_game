@@ -1,6 +1,7 @@
 package com.worldmap.stats.application;
 
 import com.worldmap.auth.domain.MemberRepository;
+import com.worldmap.game.capital.domain.CapitalGameSessionRepository;
 import com.worldmap.game.location.domain.LocationGameSessionRepository;
 import com.worldmap.game.population.domain.PopulationGameSessionRepository;
 import com.worldmap.ranking.domain.LeaderboardGameMode;
@@ -17,17 +18,20 @@ import org.springframework.transaction.annotation.Transactional;
 public class ServiceActivityService {
 
 	private final MemberRepository memberRepository;
+	private final CapitalGameSessionRepository capitalGameSessionRepository;
 	private final LocationGameSessionRepository locationGameSessionRepository;
 	private final PopulationGameSessionRepository populationGameSessionRepository;
 	private final LeaderboardRecordRepository leaderboardRecordRepository;
 
 	public ServiceActivityService(
 		MemberRepository memberRepository,
+		CapitalGameSessionRepository capitalGameSessionRepository,
 		LocationGameSessionRepository locationGameSessionRepository,
 		PopulationGameSessionRepository populationGameSessionRepository,
 		LeaderboardRecordRepository leaderboardRecordRepository
 	) {
 		this.memberRepository = memberRepository;
+		this.capitalGameSessionRepository = capitalGameSessionRepository;
 		this.locationGameSessionRepository = locationGameSessionRepository;
 		this.populationGameSessionRepository = populationGameSessionRepository;
 		this.leaderboardRecordRepository = leaderboardRecordRepository;
@@ -40,16 +44,23 @@ public class ServiceActivityService {
 
 		Set<Long> activeMemberIds = Stream.concat(
 			locationGameSessionRepository.findDistinctMemberIdsByStartedAtBetween(todayStart, tomorrowStart).stream(),
-			populationGameSessionRepository.findDistinctMemberIdsByStartedAtBetween(todayStart, tomorrowStart).stream()
+			Stream.concat(
+				populationGameSessionRepository.findDistinctMemberIdsByStartedAtBetween(todayStart, tomorrowStart).stream(),
+				capitalGameSessionRepository.findDistinctMemberIdsByStartedAtBetween(todayStart, tomorrowStart).stream()
+			)
 		).collect(Collectors.toSet());
 
 		Set<String> activeGuestKeys = Stream.concat(
 			locationGameSessionRepository.findDistinctGuestSessionKeysByStartedAtBetween(todayStart, tomorrowStart).stream(),
-			populationGameSessionRepository.findDistinctGuestSessionKeysByStartedAtBetween(todayStart, tomorrowStart).stream()
+			Stream.concat(
+				populationGameSessionRepository.findDistinctGuestSessionKeysByStartedAtBetween(todayStart, tomorrowStart).stream(),
+				capitalGameSessionRepository.findDistinctGuestSessionKeysByStartedAtBetween(todayStart, tomorrowStart).stream()
+			)
 		).collect(Collectors.toSet());
 
 		long todayStartedSessionCount =
 			locationGameSessionRepository.countByStartedAtGreaterThanEqualAndStartedAtLessThan(todayStart, tomorrowStart)
+				+ capitalGameSessionRepository.countByStartedAtGreaterThanEqualAndStartedAtLessThan(todayStart, tomorrowStart)
 				+ populationGameSessionRepository.countByStartedAtGreaterThanEqualAndStartedAtLessThan(todayStart, tomorrowStart);
 
 		long todayCompletedRunCount = leaderboardRecordRepository.countByFinishedAtGreaterThanEqualAndFinishedAtLessThan(
@@ -65,6 +76,11 @@ public class ServiceActivityService {
 			todayCompletedRunCount,
 			leaderboardRecordRepository.countByGameModeAndFinishedAtGreaterThanEqualAndFinishedAtLessThan(
 				LeaderboardGameMode.LOCATION,
+				todayStart,
+				tomorrowStart
+			),
+			leaderboardRecordRepository.countByGameModeAndFinishedAtGreaterThanEqualAndFinishedAtLessThan(
+				LeaderboardGameMode.CAPITAL,
 				todayStart,
 				tomorrowStart
 			),

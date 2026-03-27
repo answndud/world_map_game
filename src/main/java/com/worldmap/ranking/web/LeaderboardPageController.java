@@ -23,8 +23,16 @@ public class LeaderboardPageController {
 			leaderboardService.getLeaderboard(LeaderboardGameMode.LOCATION, LeaderboardScope.ALL, 10)
 		);
 		model.addAttribute(
+			"capitalAll",
+			leaderboardService.getLeaderboard(LeaderboardGameMode.CAPITAL, LeaderboardScope.ALL, 10)
+		);
+		model.addAttribute(
 			"locationDaily",
 			leaderboardService.getLeaderboard(LeaderboardGameMode.LOCATION, LeaderboardScope.DAILY, 10)
+		);
+		model.addAttribute(
+			"capitalDaily",
+			leaderboardService.getLeaderboard(LeaderboardGameMode.CAPITAL, LeaderboardScope.DAILY, 10)
 		);
 		model.addAttribute(
 			"populationAll",

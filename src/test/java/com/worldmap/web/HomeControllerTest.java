@@ -41,6 +41,7 @@ class HomeControllerTest {
 			.andExpect(content().string(containsString(">My Page<")))
 			.andExpect(content().string(containsString(">로그인<")))
 			.andExpect(content().string(containsString(">회원가입<")))
+			.andExpect(content().string(containsString("수도 맞히기")))
 			.andExpect(content().string(containsString("나에게 어울리는 국가 찾기")))
 			.andExpect(content().string(not(containsString("게임 선택하기"))))
 			.andExpect(content().string(not(containsString("어울리는 나라 추천"))))

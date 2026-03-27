@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>수도 맞히기 플레이</title>
+    <link rel="stylesheet" th:href="@{/css/site.css(v='20260325-light-depth-10')}">
+    <script th:src="@{/js/capital-game.js(v='20260327-capital-1')}" defer></script>
+</head>
+<body data-page="capital-play" th:attr="data-session-id=${sessionId}">
+<div class="page-shell">
+    <th:block th:replace="~{fragments/site-header :: siteHeader('capital')}"></th:block>
+    <header class="hero compact-hero">
+        <p class="eyebrow">Arcade Capital Scan</p>
+        <h1>국가 이름만 보고 수도를 계속 맞혀보세요</h1>
+        <p class="hero-copy">
+            정답 생성, 보기 구성, 점수 계산, 하트 감소까지 모두 서버 state를 기준으로 진행됩니다.
+        </p>
+    </header>
+
+    <main class="layout">
+        <section class="panel game-panel">
+            <div id="capital-game-status" class="stats-grid"></div>
+            <article class="question-card">
+                <p class="subtitle">현재 미션</p>
+                <h2 id="capital-target-country-name">문제를 불러오는 중...</h2>
+                <p id="capital-stage-copy" class="hint">보기 4개를 준비하는 중입니다.</p>
+            </article>
+
+            <div class="selection-row">
+                <article class="selection-pill">
+                    <span class="subtitle">선택 상태</span>
+                    <strong id="capital-selection-label">수도 보기 하나를 고르면 여기서 확인합니다.</strong>
+                </article>
+                <article class="selection-pill">
+                    <span class="subtitle">진행 가이드</span>
+                    <strong id="capital-stage-hint">국가 이름을 보고 수도 하나를 고른 뒤 제출하세요.</strong>
+                </article>
+            </div>
+
+            <form id="capital-answer-form" class="game-form">
+                <div id="capital-options" class="options-grid"></div>
+                <div class="action-buttons">
+                    <button id="capital-submit-button" class="primary-button" type="submit" disabled>선택 제출</button>
+                    <button id="capital-next-stage-button" class="secondary-button" type="button" hidden>다음 Stage</button>
+                </div>
+            </form>
+
+            <div id="capital-answer-feedback" class="feedback-card" hidden></div>
+            <div id="capital-stage-overlay" class="stage-overlay" hidden></div>
+            <p id="capital-play-message" class="message-box" data-tone="info" hidden></p>
+        </section>
+    </main>
+</div>
+<div id="capital-game-over-modal" class="game-over-modal" hidden>
+    <div class="game-over-modal__backdrop"></div>
+    <section class="game-over-modal__panel" role="dialog" aria-modal="true" aria-labelledby="capital-game-over-title">
+        <p class="eyebrow">Capital Scan Failed</p>
+        <h2 id="capital-game-over-title">탈락했습니다</h2>
+        <p id="capital-game-over-summary" class="hero-copy">
+            하트를 모두 잃었습니다. 같은 세션을 Stage 1부터 다시 시작하거나 홈으로 돌아갈 수 있습니다.
+        </p>
+        <div class="modal-actions">
+            <a class="secondary-button" href="/">홈페이지로 돌아가기</a>
+            <button id="capital-restart-button" class="primary-button" type="button">다시 시작하기</button>
+        </div>
+    </section>
+</div>
+</body>
+</html>

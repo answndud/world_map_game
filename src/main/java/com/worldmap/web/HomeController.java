@@ -27,6 +27,13 @@ public class HomeController {
 				"/games/location/start"
 			),
 			new ModeCardView(
+				"수도 맞히기",
+				"Capital Quiz",
+				"국가 이름을 보고 4개 수도 보기 중 정답을 고르는 퀴즈입니다.",
+				"Quiz",
+				"/games/capital/start"
+			),
+			new ModeCardView(
 				"국가 인구수 맞추기",
 				"4 Choices",
 				"국가 이름을 보고 가장 가까운 인구 규모를 골라 맞히는 퀴즈입니다.",
