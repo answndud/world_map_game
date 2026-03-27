@@ -813,12 +813,15 @@
 - 인구 rank gap 기반 pair 선택과 left/right 랜덤 배치 규칙으로 2-choice 아케이드 배틀을 서버가 생성
 - 인구 비교 퀵 배틀 run을 `leaderboard_record`에 반영하고, 공개 `/ranking`, `/stats`, 홈 모드 카드까지 연결
 - `PopulationBattleGameFlowIntegrationTest`, `LeaderboardIntegrationTest`, `StatsPageControllerTest`, `HomeControllerTest`로 두 번째 vertical slice를 고정
+- `FLAG_GAME_ASSET_PIPELINE_PLAN.md`로 국기 게임의 source / manifest / 정적 파일 경로 / local 재현 원칙을 먼저 고정
+- 국기 자산은 DB 컬럼보다 `static/images/flags + flag-assets.json`을 source of truth로 두기로 결정
+- 출제 가능 국가를 `country seed ∩ manifest ∩ 실제 파일 존재` 교집합으로 설명하는 기준을 세움
 
 다음에 이어서 할 일:
 
-- 국기 게임 자산 파이프라인과 파일 구조를 먼저 설계
+- `FlagAssetCatalog`와 manifest loader를 실제 코드로 추가
+- startup 또는 테스트에서 국기 파일 존재 검증을 붙일지 결정
 - 수도 / 인구 비교 퀵 배틀 local demo 샘플 run을 추가할지 판단
-- 새 게임이 늘어난 뒤 홈 / stats / ranking의 카드 밀도를 어떻게 정리할지 점검
 
 반드시 이해할 것:
 
@@ -829,6 +832,7 @@
 - 왜 인구 비교 퀵 배틀은 4지선다보다 2-choice endless 배틀이 더 설명하기 쉬운가
 - 왜 population quiz의 정답 구간 비교를 그대로 재사용하지 않고, rank gap pair 생성 규칙을 별도 정책으로 분리했는가
 - 왜 국기 게임은 규칙보다 에셋 파이프라인이 먼저인가
+- 왜 국기 자산은 1차에서 DB 컬럼보다 정적 파일 + manifest 구조가 더 설명 가능하고 재현성이 좋은가
 - 왜 새로운 게임도 서버 주도 세션 / Stage / Attempt 구조를 유지해야 하는가
 
 면접 포인트:

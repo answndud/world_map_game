@@ -3696,3 +3696,21 @@
 - 배운 점: “데이터를 재사용한다”와 “같은 게임을 또 만든다”는 다르다. 인구수 퀴즈와 인구 비교 배틀은 둘 다 `country.population`을 쓰지만, 하나는 구간 판정형이고 다른 하나는 빠른 pair comparison이어서 Stage 생성 정책과 UI 리듬이 완전히 다르다. 덕분에 새 모드를 추가하면서도 왜 separate game mode가 필요한지 더 명확해졌다.
 - 아직 약한 부분: local demo bootstrap에는 아직 population-battle 샘플 run이 없어 public `/stats`와 `/ranking`에서 새 보드가 바로 보이지 않을 수 있다. 다음 조각에서 국기 게임 자산 설계로 넘어가기 전에, demo seed와 홈 카드 밀도를 한 번 더 점검할 필요가 있다.
 - 면접용 30초 요약: 인구 비교 퀵 배틀은 기존 인구수 데이터만으로도 완전히 다른 리듬의 게임을 만들 수 있다는 걸 보여 주는 조각이었습니다. 저는 기존 세션 / Stage / Attempt 구조와 랭킹 흐름은 그대로 재사용하고, 문제 생성만 `인구 rank gap 기반 pair selection`으로 새로 분리했습니다. 그래서 새 게임을 추가하면서도 서버가 비교쌍 생성, 정답 판정, 하트 감소, 게임오버, 랭킹 반영까지 주도한다는 구조를 그대로 설명할 수 있게 됐습니다.
+
+## 2026-03-27 - 11단계 국기 게임 자산 파이프라인 설계
+
+- 단계: 11. 신규 게임 확장
+- 목적: 국기 보고 나라 맞히기 게임은 룰보다 에셋 재현성이 더 큰 리스크다. 외부 URL에 의존하면 local/demo에서 같은 문제를 그대로 재현하기 어렵기 때문에, 먼저 국기 자산의 source of truth를 `정적 파일 + manifest`로 고정하는 것이 맞다.
+- 변경 파일:
+  - `docs/FLAG_GAME_ASSET_PIPELINE_PLAN.md`
+  - `docs/NEW_GAME_EXPANSION_PLAN.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 이번 조각은 planning-only 작업이라 런타임 요청 흐름 변화는 없다. 대신 다음 구현 흐름을 `flag-assets.json + static/images/flags/{iso3}.svg -> FlagAssetCatalog -> 출제 가능 국가 pool 계산 -> flag game mode vertical slice`로 고정했다.
+- 데이터 / 상태 변화: DB 스키마나 엔티티는 아직 바뀌지 않았다. 대신 앞으로 국기 자산은 `country` 테이블 컬럼보다 `src/main/resources/static/images/flags`와 `src/main/resources/data/flag-assets.json` manifest를 기준으로 관리하고, 출제 가능 국가는 `country seed ∩ manifest ∩ 실제 파일 존재` 교집합으로 설명하기로 했다.
+- 핵심 도메인 개념: 국기 게임에서 중요한 건 “국가 자체 데이터”와 “정적 에셋 데이터”를 구분하는 것이다. 1차에서는 국기 경로를 `country`에 바로 넣기보다, 앱이 함께 배포하는 정적 파일과 manifest를 source of truth로 두는 편이 local/demo 재현성과 설명 가능성 모두에 유리하다.
+- 예외 / 엣지 케이스: 특정 국가의 SVG 확보가 어렵거나 라이선스가 불분명할 수 있다. 그래서 첫 구현은 194개 국가 전체 강제가 아니라 manifest에 있는 국가만 출제 후보로 삼고, fallback 포맷(PNG)은 나중으로 미룬다. 국기 게임을 열기 전에 `FlagAssetCatalog`와 file existence 검증이 먼저 필요하다.
+- 테스트: 없음. planning-only 조각이라 코드 테스트는 돌리지 않았고, `git diff --check`만 확인했다.
+- 배운 점: 새 게임이 꼭 바로 코딩부터 들어가야 하는 것은 아니다. 특히 국기 게임처럼 에셋 품질과 재현성이 핵심인 경우에는, 도메인 모델보다 자산 관리 방식을 먼저 고정하는 편이 이후 코드가 훨씬 단순해진다.
+- 아직 약한 부분: 아직 실제 `flag-assets.json`과 SVG 파일이 없어서, source 후보와 라이선스 정리를 한 번 더 해야 한다. 다음 조각에서 `FlagAssetCatalog`를 넣기 전에 manifest 샘플 수와 검증 시점을 더 구체화해야 한다.
+- 면접용 30초 요약: 국기 게임은 규칙보다 에셋 관리가 먼저라고 판단했습니다. 그래서 바로 `flag` game mode를 열기보다, 국기 자산을 외부 URL이 아니라 저장소 내부 정적 파일과 manifest로 관리하기로 먼저 결정했습니다. 이렇게 하면 local/demo 환경에서도 네트워크 없이 같은 문제를 재현할 수 있고, 출제 가능 국가도 `country seed ∩ manifest ∩ 실제 파일 존재`로 명확하게 설명할 수 있습니다.

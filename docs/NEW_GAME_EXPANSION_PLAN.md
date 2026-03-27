@@ -143,7 +143,7 @@
 - 공개 홈, `/ranking`, `/stats`까지 capital 모드 연결
 - 핵심 통합 테스트와 ranking/stats/home 회귀 테스트 추가
 
-다음 작은 조각은 `인구 비교 퀵 배틀 Level 1 설계`다.
+다음 작은 조각은 `인구 비교 퀵 배틀 Level 1 설계`였다.
 
 ## 인구 비교 퀵 배틀 초안
 
@@ -163,6 +163,15 @@
 
 그래서 수도 맞히기 다음 순서가 맞다.
 
+### 현재 완료 상태
+
+- `population-battle` game mode 추가
+- `population_battle_game_session / stage / attempt` 저장 구조 추가
+- start/state/answer/restart/result API 및 SSR 화면 추가
+- 인구 rank gap 기반 pair 생성과 left/right 랜덤 배치 구현
+- 공개 홈, `/ranking`, `/stats`까지 population-battle 모드 연결
+- 핵심 통합 테스트와 ranking/stats/home 회귀 테스트 추가
+
 ## 국기 게임 초안
 
 ### 입력 방식
@@ -177,6 +186,15 @@
 - local/dev/demo에 포함 가능한 크기와 형식 결정
 
 즉, 이 게임은 규칙 설계보다 에셋 파이프라인이 먼저다.
+
+### 현재 결정
+
+- [FLAG_GAME_ASSET_PIPELINE_PLAN.md](/Users/alex/project/worldmap/docs/FLAG_GAME_ASSET_PIPELINE_PLAN.md)로 국기 게임 1차 자산 기준을 고정
+- 실제 파일은 `src/main/resources/static/images/flags/{iso3}.svg`
+- manifest는 `src/main/resources/data/flag-assets.json`
+- 출제 가능 국가는 `country seed ∩ manifest ∩ 실제 파일 존재` 교집합
+
+다음 작은 코드 조각은 `flag` game mode가 아니라 `FlagAssetCatalog + manifest 검증`이다.
 
 ## 이번 우선순위 변경 이유
 
