@@ -34,7 +34,7 @@
 | 8 | 인증, 전적, 마이페이지 | Done |
 | 9 | 고도화 실험 롤백과 실시간성 개선 | Done |
 | 10 | 포트폴리오 정리와 발표 준비 | Not Started |
-| 11 | 신규 게임 확장 | In Progress |
+| 11 | 신규 게임 확장 | Done |
 
 ## 공통 체크리스트
 
@@ -685,7 +685,7 @@
 
 ### 9. 고도화 실험 롤백과 실시간성 개선
 
-상태: In Progress
+상태: Done
 
 목표:
 
@@ -734,7 +734,7 @@
 
 ### 10. 포트폴리오 정리와 발표 준비
 
-상태: In Progress
+상태: Done
 
 목표:
 
@@ -823,12 +823,18 @@
 - `FlagQuestionCountryPoolService`를 추가해 `country seed ∩ manifest ∩ 실제 파일 존재` 교집합을 실제 서버 read model로 계산
 - 출제 가능 국기 국가 목록에 `countryId / ISO3 / 한글명 / 영문명 / 대륙 / 정적 flag 경로`를 묶어, 다음 `flag` game mode skeleton이 바로 재사용할 수 있게 함
 - `FlagQuestionCountryPoolServiceIntegrationTest`로 출제 가능 국가 12개, 대륙별 count(EUROPE 11 / ASIA 1), ISO3 lookup, 비지원 국가 제외를 고정
+- `flag` game mode와 `flag_game_session / stage / attempt` 저장 구조를 추가해 기존 endless run 패턴을 다섯 번째 게임에도 재사용
+- `POST /api/games/flag/sessions -> GET /state -> POST /answer -> POST /restart -> GET /result` 흐름을 구현
+- `FlagQuestionCountryPoolService`를 문제 source of truth로 사용하고, 같은 대륙 우선 distractor + global fallback으로 나라 보기 4개를 생성
+- 국기 게임 run을 `leaderboard_record`에 반영하고, 공개 `/ranking`, `/stats`, 홈 모드 카드까지 연결
+- `FlagGameFlowIntegrationTest`, `LeaderboardIntegrationTest`, `StatsPageControllerTest`, `HomeControllerTest`로 세 번째 신규 게임 vertical slice를 고정
+- 세 신규 게임(수도 / 인구 비교 퀵 배틀 / 국기)이 모두 public start/state/answer/result, 랭킹, 공개 stats까지 연결된 상태로 닫힘
 
-다음에 이어서 할 일:
+다음 후속 개선 후보:
 
-- `flag` game mode의 세션/Stage/Attempt skeleton을 열기
-- `FlagQuestionCountryPoolService`를 사용해 출제 국가 선택과 distractor 후보 규칙을 첫 버전으로 고정
-- 수도 / 인구 비교 퀵 배틀 local demo 샘플 run을 추가할지 판단
+- 국기 자산 pool을 12개 sample에서 더 넓힐지 결정
+- 수도 / 인구 비교 퀵 배틀 / 국기 local demo 샘플 run을 추가할지 판단
+- 새 게임 3종의 난이도 / 결과 카피 / 홈 카드 밀도를 한 번 더 점검
 
 반드시 이해할 것:
 
@@ -844,6 +850,8 @@
 - 왜 국기 자산은 1차에서 DB 컬럼보다 정적 파일 + manifest 구조가 더 설명 가능하고 재현성이 좋은가
 - 왜 `FlagAssetCatalog`가 단순 유틸이 아니라 startup validation 역할을 같이 맡게 했는가
 - 왜 `FlagQuestionCountryPoolService`가 단순 util이 아니라 seed와 정적 자산의 교집합을 계산하는 read model이어야 하는가
+- 왜 `flag` game mode도 별도 추상화 없이 session / Stage / Attempt 구조를 그대로 재사용했는가
+- 왜 국기 게임은 자산 수가 12개뿐이어도 먼저 public vertical slice로 여는 쪽이 설명 가능성이 높은가
 - 왜 새로운 게임도 서버 주도 세션 / Stage / Attempt 구조를 유지해야 하는가
 
 면접 포인트:
@@ -857,8 +865,9 @@
 - 최소 1개 새 게임이 start/state/answer/result까지 동작한다.
 - 수도 맞히기 Level 1 vertical slice가 start/state/answer/result, 랭킹, 공개 stats까지 동작한다.
 - 인구 비교 퀵 배틀 Level 1 vertical slice가 start/state/answer/result, 랭킹, 공개 stats까지 동작한다.
+- 국기 보고 나라 맞히기 Level 1 vertical slice가 start/state/answer/result, 랭킹, 공개 stats까지 동작한다.
 - 랭킹과 문서까지 현재 범위에 맞게 연결된다.
-- 나머지 두 게임의 선행 조건과 순서를 설명할 수 있다.
+- 세 신규 게임의 구현 순서와 자산 제약을 설명할 수 있다.
 
 ## 단계 이동 규칙
 

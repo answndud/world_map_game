@@ -7,6 +7,8 @@
 - 국가 위치 찾기
 - 수도 맞히기
 - 국가 인구수 맞추기
+- 인구 비교 퀵 배틀
+- 국기 보고 나라 맞히기
 - 나라 추천
 - 랭킹
 
@@ -197,7 +199,16 @@
 - sample SVG 12개를 먼저 저장소에 포함해 local/demo에서도 같은 자산을 재현 가능하게 했다.
 - `FlagQuestionCountryPoolService`가 `country seed ∩ manifest ∩ 실제 파일 존재` 교집합을 실제 서버 read model로 계산하고, 출제 가능 국가 12개와 대륙별 count(EUROPE 11 / ASIA 1)를 고정한다.
 
-다음 작은 코드 조각은 `flag` game mode 첫 skeleton이다.
+### 현재 완료 상태
+
+- `flag` game mode 추가
+- `flag_game_session / stage / attempt` 저장 구조 추가
+- start/state/answer/restart/result API 및 SSR 화면 추가
+- `FlagQuestionCountryPoolService` 기반 출제 국가 선택과 같은 대륙 우선 distractor 생성 구현
+- 공개 홈, `/ranking`, `/stats`까지 flag 모드 연결
+- sample 자산 12개를 기준으로 local/demo에서도 같은 국기 문제를 재현 가능하게 고정
+
+다음 작은 코드 조각은 `flag asset pool 확대 또는 local demo sample run 추가`다.
 
 ## 이번 우선순위 변경 이유
 

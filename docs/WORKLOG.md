@@ -3871,3 +3871,57 @@
 - 배운 점: 정적 자산 파이프라인을 설명 가능하게 만들려면 파일 존재 검증만으로는 부족하고, 실제 게임이 읽을 출제 가능 pool을 별도 read model로 고정해야 한다. 그래야 다음 단계에서 `flag` game mode를 열 때 “왜 이 국가만 지금 출제되느냐”를 서버 코드만 보고 바로 설명할 수 있다.
 - 아직 약한 부분: 현재 pool은 12개 sample 국기만 포함하므로 실제 game mode를 열어도 다양성이 부족하다. 다음 단계에서 skeleton을 열 때는 이 제한을 제품 문구로 숨기지 말고, sample mode인지 beta pool인지 표현을 따로 결정해야 한다.
 - 면접용 30초 요약: 국기 게임은 화면보다 자산 재현성이 더 중요한 모드라서, 단순히 SVG 파일만 넣지 않고 `country seed`와 `flag manifest`의 교집합을 계산하는 서버 read model을 먼저 만들었습니다. 지금은 이 서비스가 출제 가능한 12개 국가와 대륙 분포를 정확히 설명해 주기 때문에, 다음 단계에서 flag game mode를 열어도 어떤 국가가 왜 문제에 들어가는지 명확하게 설명할 수 있습니다.
+
+## 2026-03-27 - 11단계 국기 보고 나라 맞히기 Level 1 vertical slice
+
+- 단계: 11. 신규 게임 확장
+- 목적: `FlagAssetCatalog`와 출제 가능 국가 pool이 준비된 뒤에는, 실제 public 제품에 연결되는 `flag` game mode를 여는 것이 맞다. 이번 조각의 목표는 sample 국기 12개만으로도 세션 / Stage / Attempt 구조, 랭킹, 공개 stats까지 일관되게 붙는 다섯 번째 서버 주도 게임을 만드는 것이다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/game/flag/application/FlagGameService.java`
+  - `src/main/java/com/worldmap/game/flag/application/FlagGameOptionGenerator.java`
+  - `src/main/java/com/worldmap/game/flag/application/FlagGameDifficultyPolicy.java`
+  - `src/main/java/com/worldmap/game/flag/application/FlagGameScoringPolicy.java`
+  - `src/main/java/com/worldmap/game/flag/application/FlagGameStateView.java`
+  - `src/main/java/com/worldmap/game/flag/application/FlagGameAnswerView.java`
+  - `src/main/java/com/worldmap/game/flag/application/FlagGameSessionResultView.java`
+  - `src/main/java/com/worldmap/game/flag/domain/FlagGameSession.java`
+  - `src/main/java/com/worldmap/game/flag/domain/FlagGameStage.java`
+  - `src/main/java/com/worldmap/game/flag/domain/FlagGameAttempt.java`
+  - `src/main/java/com/worldmap/game/flag/web/FlagGameApiController.java`
+  - `src/main/java/com/worldmap/game/flag/web/FlagGamePageController.java`
+  - `src/main/resources/templates/flag-game/start.html`
+  - `src/main/resources/templates/flag-game/play.html`
+  - `src/main/resources/templates/flag-game/result.html`
+  - `src/main/resources/static/js/flag-game.js`
+  - `src/main/java/com/worldmap/ranking/application/LeaderboardService.java`
+  - `src/main/java/com/worldmap/ranking/domain/LeaderboardGameMode.java`
+  - `src/main/java/com/worldmap/ranking/web/LeaderboardPageController.java`
+  - `src/main/java/com/worldmap/stats/application/ServiceActivityService.java`
+  - `src/main/java/com/worldmap/stats/application/ServiceActivityView.java`
+  - `src/main/java/com/worldmap/stats/web/StatsPageController.java`
+  - `src/main/java/com/worldmap/web/HomeController.java`
+  - `src/test/java/com/worldmap/game/flag/FlagGameFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/ranking/LeaderboardIntegrationTest.java`
+  - `src/test/java/com/worldmap/stats/StatsPageControllerTest.java`
+  - `src/test/java/com/worldmap/web/HomeControllerTest.java`
+  - `README.md`
+  - `docs/NEW_GAME_EXPANSION_PLAN.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/LOCAL_DEMO_BOOTSTRAP.md`
+  - `docs/WORKLOG.md`
+  - `blog/50-current-state-rebuild-map.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/82-add-flag-quiz-level-1-vertical-slice.md`
+- 요청 흐름 / 데이터 흐름: public 요청은 `GET /games/flag/start -> POST /api/games/flag/sessions -> GET /api/games/flag/sessions/{sessionId}/state -> POST /api/games/flag/sessions/{sessionId}/answer -> POST /api/games/flag/sessions/{sessionId}/restart -> GET /api/games/flag/sessions/{sessionId}`로 흐른다. `FlagGameApiController`는 요청 해석만 하고, `FlagGameService`가 `FlagQuestionCountryPoolService`에서 출제 가능 국가 pool을 읽어 Stage를 만들고, 점수 / 하트 / 재시작 / 결과 read model을 관리한다. 게임오버가 되면 `LeaderboardService.recordFlagResult()`가 `leaderboard_record`와 Redis 랭킹을 같이 반영하고, 공개 `/ranking`, `/stats`, 홈 카드도 같은 read model 규칙을 재사용한다.
+- 데이터 / 상태 변화: `flag_game_session`, `flag_game_stage`, `flag_game_attempt` 저장 구조가 추가됐고, Stage는 `targetCountryName`, `targetFlagRelativePath`, 보기 4개, correct option number를 저장한다. Attempt는 선택한 나라명과 시도 번호를 저장한다. `leaderboard_record`에는 `FLAG` game mode run이 새로 쌓이고, `/stats`와 `/ranking`은 그 보드를 읽을 수 있게 됐다.
+- 핵심 도메인 개념: 국기 게임의 핵심은 “게임이 자산 catalog를 직접 믿지 않고, 출제 가능 국가 pool read model을 통해 문제를 만든다”는 점이다. `FlagAssetCatalog`는 asset 무결성, `FlagQuestionCountryPoolService`는 실제 출제 가능 국가 집합, `FlagGameService`는 세션 / Stage / Attempt 게임 규칙을 각각 맡는다. 즉, 국기 자산 검증과 게임 문제 생성 규칙을 한 클래스에 섞지 않고, `자산 -> 출제 pool -> 게임 세션` 순서로 책임을 나눴다.
+- 예외 / 엣지 케이스: 현재 sample 자산은 12개뿐이라 국기 게임 1차 public mode도 그 subset만 출제한다. 대륙 분포가 `EUROPE 11 / ASIA 1`로 치우쳐 있으므로, distractor는 같은 대륙 우선이지만 부족하면 전체 pool fallback을 사용한다. local demo bootstrap에는 flag sample run이 아직 없어서 `/stats`와 `/ranking`의 flag 보드는 첫 플레이 전까지 비어 있을 수 있다.
+- 테스트:
+  - `node --check src/main/resources/static/js/flag-game.js`
+  - `./gradlew test --tests com.worldmap.game.flag.FlagGameFlowIntegrationTest --tests com.worldmap.game.flag.application.FlagAssetCatalogTest --tests com.worldmap.game.flag.application.FlagQuestionCountryPoolServiceIntegrationTest --tests com.worldmap.ranking.LeaderboardIntegrationTest --tests com.worldmap.stats.StatsPageControllerTest --tests com.worldmap.web.HomeControllerTest`
+  - `./gradlew test`
+  - `git diff --check`
+- 배운 점: 국기 게임은 자산이 적더라도 vertical slice를 먼저 여는 편이 설명 가능성이 높다. 출제 pool이 12개로 제한돼 있어도, `세션 / Stage / Attempt -> 랭킹 -> 공개 stats`까지 같은 서버 주도 구조로 연결하면 “새 게임을 현재 시스템에 붙이는 방법”을 더 명확하게 보여 줄 수 있다.
+- 아직 약한 부분: 현재는 sample 국기 12개에 의존하므로, 난이도 다양성과 대륙 분포가 제한적이다. 후속 작업에서는 asset pool 확장과 local demo sample run 추가를 검토해야 한다.
+- 면접용 30초 요약: 국기 게임은 먼저 자산 catalog와 출제 가능 국가 pool을 고정한 뒤, 그걸 읽는 `flag` 세션 / Stage / Attempt 구조를 열었습니다. 컨트롤러는 요청만 받고, 실제 문제 생성과 정답 판정은 `FlagGameService`가 맡습니다. 덕분에 국기 자산처럼 정적 파일이 필요한 모드도 기존 위치/인구수/수도 게임과 같은 서버 주도 패턴으로 랭킹과 공개 stats까지 연결해 설명할 수 있게 됐습니다.

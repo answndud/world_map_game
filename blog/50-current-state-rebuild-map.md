@@ -95,8 +95,9 @@
 - admin 계정: `worldmap_admin / secret123`
 - user 계정: `orbit_runner / secret123`
 - local에서 샘플 run, guest live session, current recommendation feedback sample까지 bootstrap
-- 위치/수도/인구수 게임이 현재 public 기본 모드이고, 예전 `LEVEL_2` 세션 / 랭킹 row와 Redis `l2` 키는 startup rollback initializer가 먼저 정리
-- 국기 게임은 아직 public route를 열지 않았고, 내부적으로 `FlagAssetCatalog + FlagQuestionCountryPoolService` 기준 12개 출제 가능 국가 pool만 고정해 둔 상태다.
+- 위치/수도/인구수/인구 비교 퀵 배틀 게임이 현재 public 기본 모드이고, 예전 `LEVEL_2` 세션 / 랭킹 row와 Redis `l2` 키는 startup rollback initializer가 먼저 정리
+- 국기 게임은 현재 public route `/games/flag/start`가 열려 있고, `FlagAssetCatalog + FlagQuestionCountryPoolService` 기준 12개 출제 가능 국가 pool로 운영한다.
+- 다만 local demo bootstrap에는 아직 flag sample run이 없어서 `/stats`와 `/ranking`의 flag 보드는 첫 플레이 전까지 비어 있을 수 있다.
 
 근거:
 
@@ -130,22 +131,28 @@ set +a
   - `Home`, `Stats`, `Ranking`, `My Page` 헤더가 보이는가
 - `/stats`
   - public 활동 지표가 보이는가
-  - 위치/수도/인구수/인구 비교 퀵 배틀 활동 지표와 공개 Top 보드가 보이는가
-  - `capital`, `population-battle` 보드는 local demo 기본 seed에서 비어 있을 수 있다는 점을 이해하고 있는가
+  - 위치/수도/인구수/인구 비교 퀵 배틀/국기 퀴즈 활동 지표와 공개 Top 보드가 보이는가
+  - `capital`, `population-battle`, `flag` 보드는 local demo 기본 seed에서 비어 있을 수 있다는 점을 이해하고 있는가
 - `/ranking`
-  - 위치/수도/인구수/인구 비교 퀵 배틀 게임 전환과 전체/일간 필터만 보이고, `게임 레벨` 필터는 더 이상 보이지 않는가
+  - 위치/수도/인구수/인구 비교 퀵 배틀/국기 퀴즈 게임 전환과 전체/일간 필터만 보이고, `게임 레벨` 필터는 더 이상 보이지 않는가
 - `/games/capital/start`
   - 닉네임 입력과 게임 시작하기가 보이는가
 - `/games/capital/play/{sessionId}`
   - 한국어 수도 보기 4개와 제출 버튼, 하트/점수 HUD가 보이는가
 - `/games/capital/result/{sessionId}`
-  - Stage별 시도 로그와 한국어 정답 수도가 보이는가
+  - Stage별 시도 로그와 점수 흐름만 보이고, 한국어 정답 수도는 직접 노출되지 않는가
 - `/games/population-battle/start`
   - 닉네임 입력과 게임 시작하기가 보이는가
 - `/games/population-battle/play/{sessionId}`
   - 두 나라 중 인구가 더 많은 나라를 고르는 좌/우 2-choice Stage가 보이는가
 - `/games/population-battle/result/{sessionId}`
-  - Stage별 비교쌍과 정답 국가, 선택 로그가 보이는가
+  - Stage별 비교쌍과 점수 흐름만 보이고, 정답 국가와 선택 로그는 직접 노출되지 않는가
+- `/games/flag/start`
+  - 닉네임 입력과 게임 시작하기가 보이는가
+- `/games/flag/play/{sessionId}`
+  - 국기 이미지 1개와 나라 보기 4개, 제출 버튼, 하트/점수 HUD가 보이는가
+- `/games/flag/result/{sessionId}`
+  - Stage별 시도 로그와 국기 카드가 보이고, 정답 국가/선택 국가는 직접 노출되지 않는가
 - `/recommendation/survey`
   - 20문항 설문이 보이는가
 - `/games/population/start`
@@ -220,6 +227,7 @@ set +a
 11. [79-add-flag-asset-catalog-before-opening-flag-game.md](./79-add-flag-asset-catalog-before-opening-flag-game.md)
 12. [80-add-korean-capital-names-to-country-seed-and-capital-quiz.md](./80-add-korean-capital-names-to-country-seed-and-capital-quiz.md)
 13. [81-build-flag-question-country-pool-from-seed-and-assets.md](./81-build-flag-question-country-pool-from-seed-and-assets.md)
+14. [82-add-flag-quiz-level-1-vertical-slice.md](./82-add-flag-quiz-level-1-vertical-slice.md)
 
 이 구간은 현재 코드와 비교적 직접 대응된다.
 
@@ -270,6 +278,9 @@ Level 2 실험은 현재 public 제품 범위에서 완전히 제거됐고, inte
 2. [77-add-capital-quiz-level-1-vertical-slice.md](./77-add-capital-quiz-level-1-vertical-slice.md)
 3. [78-add-population-battle-level-1-vertical-slice.md](./78-add-population-battle-level-1-vertical-slice.md)
 4. [79-add-flag-asset-catalog-before-opening-flag-game.md](./79-add-flag-asset-catalog-before-opening-flag-game.md)
+5. [80-add-korean-capital-names-to-country-seed-and-capital-quiz.md](./80-add-korean-capital-names-to-country-seed-and-capital-quiz.md)
+6. [81-build-flag-question-country-pool-from-seed-and-assets.md](./81-build-flag-question-country-pool-from-seed-and-assets.md)
+7. [82-add-flag-quiz-level-1-vertical-slice.md](./82-add-flag-quiz-level-1-vertical-slice.md)
 
 이 구간에서 중요한 건 `/admin`보다 `/dashboard`를 기준으로 읽는 것이다.
 
