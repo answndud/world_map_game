@@ -129,16 +129,22 @@ set +a
   - `Home`, `Stats`, `Ranking`, `My Page` 헤더가 보이는가
 - `/stats`
   - public 활동 지표가 보이는가
-  - 위치/수도/인구수 기본 활동 지표와 공개 Top 보드가 보이는가
-  - capital 보드는 local demo 기본 seed에서 비어 있을 수 있다는 점을 이해하고 있는가
+  - 위치/수도/인구수/인구 비교 퀵 배틀 활동 지표와 공개 Top 보드가 보이는가
+  - `capital`, `population-battle` 보드는 local demo 기본 seed에서 비어 있을 수 있다는 점을 이해하고 있는가
 - `/ranking`
-  - 위치/수도/인구수 게임 전환과 전체/일간 필터만 보이고, `게임 레벨` 필터는 더 이상 보이지 않는가
+  - 위치/수도/인구수/인구 비교 퀵 배틀 게임 전환과 전체/일간 필터만 보이고, `게임 레벨` 필터는 더 이상 보이지 않는가
 - `/games/capital/start`
   - 닉네임 입력과 게임 시작하기가 보이는가
 - `/games/capital/play/{sessionId}`
   - 수도 보기 4개와 제출 버튼, 하트/점수 HUD가 보이는가
 - `/games/capital/result/{sessionId}`
   - Stage별 시도 로그와 정답 수도가 보이는가
+- `/games/population-battle/start`
+  - 닉네임 입력과 게임 시작하기가 보이는가
+- `/games/population-battle/play/{sessionId}`
+  - 두 나라 중 인구가 더 많은 나라를 고르는 좌/우 2-choice Stage가 보이는가
+- `/games/population-battle/result/{sessionId}`
+  - Stage별 비교쌍과 정답 국가, 선택 로그가 보이는가
 - `/recommendation/survey`
   - 20문항 설문이 보이는가
 - `/games/population/start`
@@ -257,6 +263,7 @@ Level 2 실험은 현재 public 제품 범위에서 완전히 제거됐고, inte
 
 1. [76-plan-next-country-game-expansion.md](./76-plan-next-country-game-expansion.md)
 2. [77-add-capital-quiz-level-1-vertical-slice.md](./77-add-capital-quiz-level-1-vertical-slice.md)
+3. [78-add-population-battle-level-1-vertical-slice.md](./78-add-population-battle-level-1-vertical-slice.md)
 
 이 구간에서 중요한 건 `/admin`보다 `/dashboard`를 기준으로 읽는 것이다.
 

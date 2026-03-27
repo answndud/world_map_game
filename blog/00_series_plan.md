@@ -97,6 +97,7 @@
 70. [아키텍처, ERD, 요청 흐름, 발표 자료를 한 번에 정리하기](./75-package-architecture-and-presentation-kit.md)
 71. [다음에 어떤 게임을 더 넣을지 먼저 설계하기](./76-plan-next-country-game-expansion.md)
 72. [수도 맞히기 Level 1 vertical slice를 현재 구조에 붙이기](./77-add-capital-quiz-level-1-vertical-slice.md)
+73. [인구 비교 퀵 배틀 Level 1 vertical slice를 현재 구조에 붙이기](./78-add-population-battle-level-1-vertical-slice.md)
 
 ### Part E. 테스트, 확장, 취업 패키징
 

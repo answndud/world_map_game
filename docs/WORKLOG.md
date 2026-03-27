@@ -3640,3 +3640,59 @@
 - 배운 점: 새 게임을 추가할 때 “완전히 새로운 구조를 만들어야 하나”부터 고민할 필요는 없다. 기존 게임이 이미 세션/Stage/Attempt로 설명 가능하면, 새 모드도 그 뼈대를 재사용하는 편이 설계와 테스트, 문서화까지 모두 단순해진다.
 - 아직 약한 부분: local demo bootstrap에는 아직 capital 샘플 run을 넣지 않아 `/stats`와 `/ranking`의 capital 보드가 처음엔 비어 있을 수 있다. 다음 조각에서 demo seed를 넣을지, 아니면 capital는 플레이 후 채워지는 보드로 둘지 판단해야 한다.
 - 면접용 30초 요약: 수도 맞히기는 `country.capitalCity`가 이미 있어서 현재 구조에 가장 작게 붙일 수 있는 새 게임이었습니다. 그래서 위치/인구수와 같은 endless run, 하트 3개, session-stage-attempt 구조를 그대로 재사용하고, 보기 생성만 same-continent 우선 정책으로 새로 만들었습니다. 덕분에 새 게임 하나를 추가하면서도 세션 시작, 정답 판정, 랭킹 반영, public stats/ranking 연결까지 같은 서버 주도 구조로 설명할 수 있게 됐습니다.
+
+## 2026-03-27 - 11단계 인구 비교 퀵 배틀 Level 1 vertical slice
+
+- 단계: 11. 신규 게임 확장
+- 목적: 수도 맞히기로 새 게임 확장 패턴을 한 번 확인한 뒤에는, 기존 `country.population`을 가장 직접적으로 재사용하는 빠른 배틀형 모드를 붙이는 것이 맞다. 인구 비교 퀵 배틀은 인구수 퀴즈와 데이터는 공유하지만, `정답 구간 맞히기`가 아니라 `두 나라 중 더 많은 나라 고르기`라는 훨씬 짧은 판단 루프를 보여 주는 별도 아케이드 모드다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/game/populationbattle/application/PopulationBattleGameService.java`
+  - `src/main/java/com/worldmap/game/populationbattle/application/PopulationBattleGameOptionGenerator.java`
+  - `src/main/java/com/worldmap/game/populationbattle/application/PopulationBattleGameDifficultyPolicy.java`
+  - `src/main/java/com/worldmap/game/populationbattle/application/PopulationBattleGameScoringPolicy.java`
+  - `src/main/java/com/worldmap/game/populationbattle/application/PopulationBattleGameStateView.java`
+  - `src/main/java/com/worldmap/game/populationbattle/application/PopulationBattleGameAnswerView.java`
+  - `src/main/java/com/worldmap/game/populationbattle/application/PopulationBattleGameSessionResultView.java`
+  - `src/main/java/com/worldmap/game/populationbattle/domain/PopulationBattleGameSession.java`
+  - `src/main/java/com/worldmap/game/populationbattle/domain/PopulationBattleGameStage.java`
+  - `src/main/java/com/worldmap/game/populationbattle/domain/PopulationBattleGameAttempt.java`
+  - `src/main/java/com/worldmap/game/populationbattle/web/PopulationBattleGameApiController.java`
+  - `src/main/java/com/worldmap/game/populationbattle/web/PopulationBattleGamePageController.java`
+  - `src/main/resources/templates/population-battle-game/start.html`
+  - `src/main/resources/templates/population-battle-game/play.html`
+  - `src/main/resources/templates/population-battle-game/result.html`
+  - `src/main/resources/static/js/population-battle-game.js`
+  - `src/main/java/com/worldmap/ranking/domain/LeaderboardGameMode.java`
+  - `src/main/java/com/worldmap/ranking/application/LeaderboardService.java`
+  - `src/main/java/com/worldmap/ranking/web/LeaderboardPageController.java`
+  - `src/main/java/com/worldmap/stats/application/ServiceActivityService.java`
+  - `src/main/java/com/worldmap/stats/application/ServiceActivityView.java`
+  - `src/main/java/com/worldmap/stats/web/StatsPageController.java`
+  - `src/main/java/com/worldmap/web/HomeController.java`
+  - `src/main/resources/templates/ranking/index.html`
+  - `src/main/resources/templates/stats/index.html`
+  - `src/main/resources/templates/admin/index.html`
+  - `src/test/java/com/worldmap/game/populationbattle/PopulationBattleGameFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/ranking/LeaderboardIntegrationTest.java`
+  - `src/test/java/com/worldmap/stats/StatsPageControllerTest.java`
+  - `src/test/java/com/worldmap/web/HomeControllerTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/LOCAL_DEMO_BOOTSTRAP.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/50-current-state-rebuild-map.md`
+  - `blog/78-add-population-battle-level-1-vertical-slice.md`
+- 요청 흐름 / 데이터 흐름: `GET /games/population-battle/start`에서 SSR 시작 화면이 열린 뒤, `POST /api/games/population-battle/sessions`가 guest/member ownership을 가진 세션을 만든다. 이후 `GET /api/games/population-battle/sessions/{id}/state`가 현재 Stage와 좌/우 2-choice 보기를 내려주고, `POST /api/games/population-battle/sessions/{id}/answer`가 더 인구가 많은 나라 선택 여부를 판정한다. 오답이면 같은 Stage를 유지하고 하트를 줄이며, 정답이면 점수 부여 후 다음 pair를 서버가 생성한다. `POST /api/games/population-battle/sessions/{id}/restart`는 같은 `sessionId`를 재사용해 run을 리셋하고, `GET /api/games/population-battle/sessions/{id}`는 Stage/Attempt 결과를 읽는다. 게임오버 시 `LeaderboardService.recordPopulationBattleResult(...)`가 `leaderboard_record`와 Redis 랭킹을 같이 반영한다.
+- 데이터 / 상태 변화: 새 모드 `POPULATION_BATTLE`와 `population_battle_game_session / population_battle_game_stage / population_battle_game_attempt`가 추가됐다. Stage는 비교 국가 2개, 각 보기의 인구수, 정답 보기 번호를 저장하고, Attempt는 사용자가 고른 나라와 남은 하트를 기록한다. 공개 `/ranking`, `/stats`, 홈 모드 카드, admin 활동 카드도 `POPULATION_BATTLE` read model을 함께 사용하기 시작했다.
+- 핵심 도메인 개념: 인구 비교 퀵 배틀은 인구수 퀴즈와 같은 endless run / 하트 3개 / same-session restart 구조를 유지하되, 입력 루프를 `4개 구간 중 선택`에서 `2개 국가 중 선택`으로 줄인 모드다. 난이도는 절대 인구값이 아니라 국가 인구 순위의 gap으로 설명한다. 즉, Stage 생성 규칙의 핵심은 “어떤 두 나라를 비교쌍으로 고를 것인가”다.
+- 예외 / 엣지 케이스: 인구가 같은 국가끼리는 문제로 쓰면 안 되므로 pair 생성 단계에서 동일 population과 동일 country를 모두 제외한다. 지나치게 쉬운 비교만 반복되지 않게 `candidatePoolSize`, `minimumRankGap`, `maximumRankGap`를 stage 기반 정책으로 둔다. 좌/우 배치를 서버가 랜덤화하되, 같은 pair가 뒤집힌 형태로 반복되지 않게 stage에는 option country snapshot을 저장한다. local demo bootstrap에는 아직 battle 샘플 run을 넣지 않아 `/stats`와 `/ranking`의 `population-battle` 보드는 첫 플레이 전까지 비어 있을 수 있다.
+- 테스트:
+  - `node --check src/main/resources/static/js/population-battle-game.js`
+  - `./gradlew test --tests com.worldmap.game.populationbattle.PopulationBattleGameFlowIntegrationTest --tests com.worldmap.ranking.LeaderboardIntegrationTest --tests com.worldmap.stats.StatsPageControllerTest --tests com.worldmap.web.HomeControllerTest`
+  - `./gradlew test`
+  - `git diff --check`
+- 배운 점: “데이터를 재사용한다”와 “같은 게임을 또 만든다”는 다르다. 인구수 퀴즈와 인구 비교 배틀은 둘 다 `country.population`을 쓰지만, 하나는 구간 판정형이고 다른 하나는 빠른 pair comparison이어서 Stage 생성 정책과 UI 리듬이 완전히 다르다. 덕분에 새 모드를 추가하면서도 왜 separate game mode가 필요한지 더 명확해졌다.
+- 아직 약한 부분: local demo bootstrap에는 아직 population-battle 샘플 run이 없어 public `/stats`와 `/ranking`에서 새 보드가 바로 보이지 않을 수 있다. 다음 조각에서 국기 게임 자산 설계로 넘어가기 전에, demo seed와 홈 카드 밀도를 한 번 더 점검할 필요가 있다.
+- 면접용 30초 요약: 인구 비교 퀵 배틀은 기존 인구수 데이터만으로도 완전히 다른 리듬의 게임을 만들 수 있다는 걸 보여 주는 조각이었습니다. 저는 기존 세션 / Stage / Attempt 구조와 랭킹 흐름은 그대로 재사용하고, 문제 생성만 `인구 rank gap 기반 pair selection`으로 새로 분리했습니다. 그래서 새 게임을 추가하면서도 서버가 비교쌍 생성, 정답 판정, 하트 감소, 게임오버, 랭킹 반영까지 주도한다는 구조를 그대로 설명할 수 있게 됐습니다.
