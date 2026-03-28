@@ -48,6 +48,8 @@ function initStartPage() {
 }
 
 function initPlayPage() {
+    const STAGE_FEEDBACK_DELAY_MS = 950;
+    const FINISH_REDIRECT_DELAY_MS = 1100;
     const COLORS = {
         active: "rgba(148, 203, 235, 0)",
         activeStroke: "rgba(196, 233, 255, 0.92)",
@@ -146,18 +148,21 @@ function initPlayPage() {
                 highlightedCorrectIso3Code = payload.selectedCountryIso3Code;
                 highlightedWrongIso3Code = null;
                 renderStageOverlay(stageOverlay, "정답", `+${payload.awardedScore}`, "success");
+                if (stageHint) {
+                    stageHint.textContent = "정답입니다. 잠시 뒤 다음 Stage로 자동 이동합니다.";
+                }
                 refreshGlobe();
 
                 if (payload.outcome === "FINISHED") {
                     setTimeout(() => {
                         window.location.href = payload.resultPageUrl;
-                    }, 1100);
+                    }, FINISH_REDIRECT_DELAY_MS);
                     return;
                 }
 
                 setTimeout(() => {
                     loadState().catch((error) => showLocationMessage(messageBox, error.message, "error"));
-                }, 950);
+                }, STAGE_FEEDBACK_DELAY_MS);
                 return;
             }
 
@@ -169,6 +174,11 @@ function initPlayPage() {
                 payload.outcome === "GAME_OVER" ? "하트를 모두 잃었습니다" : `하트 ${payload.livesRemaining}개 남음`,
                 "danger"
             );
+            if (stageHint) {
+                stageHint.textContent = payload.outcome === "GAME_OVER"
+                    ? "하트를 모두 잃었습니다. 다음 행동을 선택하세요."
+                    : "오답입니다. 잠시 뒤 같은 Stage를 다시 시도할 수 있습니다.";
+            }
             refreshGlobe();
 
             if (payload.outcome === "GAME_OVER") {
@@ -192,7 +202,7 @@ function initPlayPage() {
                     livesRemaining: payload.livesRemaining
                 });
                 refreshGlobe();
-            }, 950);
+            }, STAGE_FEEDBACK_DELAY_MS);
         } catch (error) {
             lockInteraction(false);
             showLocationMessage(messageBox, error.message, "error");
@@ -716,7 +726,7 @@ function renderFeedback(target, payload) {
 }
 
 function wrongFollowUp(payload) {
-    return "같은 Stage를 다시 시도하세요.";
+    return "잠시 뒤 같은 Stage를 다시 시도할 수 있습니다.";
 }
 
 function renderLevelCopy(heroCopyTarget, stageHintTarget) {

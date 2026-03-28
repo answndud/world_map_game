@@ -46,7 +46,8 @@ function initPopulationBattleStartPage() {
 }
 
 function initPopulationBattlePlayPage() {
-    const AUTO_ADVANCE_DELAY_MS = 950;
+    const STAGE_FEEDBACK_DELAY_MS = 950;
+    const FINISH_REDIRECT_DELAY_MS = 1100;
     const sessionId = document.body.dataset.sessionId;
     const form = document.getElementById("population-battle-answer-form");
     const statusBox = document.getElementById("population-battle-game-status");
@@ -116,7 +117,7 @@ function initPopulationBattlePlayPage() {
                 if (payload.outcome === "FINISHED") {
                     setTimeout(() => {
                         window.location.href = payload.resultPageUrl;
-                    }, 1100);
+                    }, FINISH_REDIRECT_DELAY_MS);
                     return;
                 }
 
@@ -125,7 +126,7 @@ function initPopulationBattlePlayPage() {
                         lockInteraction(false);
                         showPopulationBattleMessage(messageBox, error.message, "error");
                     });
-                }, AUTO_ADVANCE_DELAY_MS);
+                }, STAGE_FEEDBACK_DELAY_MS);
                 return;
             }
 
@@ -140,7 +141,7 @@ function initPopulationBattlePlayPage() {
             setStageHint(
                 payload.outcome === "GAME_OVER"
                     ? "하트를 모두 잃었습니다. 다음 행동을 선택하세요."
-                    : "오답입니다. 같은 Stage에서 다시 더 큰 인구의 나라를 골라보세요."
+                    : "오답입니다. 잠시 뒤 같은 Stage에서 다시 더 큰 인구의 나라를 고를 수 있습니다."
             );
 
             if (payload.outcome === "GAME_OVER") {
@@ -161,7 +162,7 @@ function initPopulationBattlePlayPage() {
                 clearAnswerInput();
                 resetHudGuidance(currentState);
                 lockInteraction(false);
-            }, AUTO_ADVANCE_DELAY_MS);
+            }, STAGE_FEEDBACK_DELAY_MS);
         } catch (error) {
             lockInteraction(false);
             showPopulationBattleMessage(messageBox, error.message, "error");
