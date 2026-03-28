@@ -142,18 +142,21 @@ set +a
   - 닉네임 입력과 게임 시작하기가 보이는가
 - `/games/capital/play/{sessionId}`
   - 한국어 수도 보기 4개와 제출 버튼, 하트/점수 HUD가 보이고 정답 뒤에는 `획득 점수`만 잠깐 보인 뒤 자동으로 다음 Stage로 넘어가는가
+  - 오답 뒤에는 약 `950ms` 동안 overlay가 보였다가 같은 Stage 재시도 상태로 자동 복귀하는가
 - `/games/capital/result/{sessionId}`
   - Stage별 시도 로그와 점수 흐름만 보이고, 한국어 정답 수도는 직접 노출되지 않는가
 - `/games/population-battle/start`
   - 닉네임 입력과 게임 시작하기가 보이는가
 - `/games/population-battle/play/{sessionId}`
   - 두 나라 중 인구가 더 많은 나라를 고르는 좌/우 2-choice Stage가 보이고 정답 뒤에는 `획득 점수`만 잠깐 보인 뒤 자동으로 다음 Stage로 넘어가는가
+  - 오답 뒤에는 약 `950ms` 동안 overlay가 보였다가 같은 Stage 재시도 상태로 자동 복귀하는가
 - `/games/population-battle/result/{sessionId}`
   - Stage별 비교쌍과 점수 흐름만 보이고, 정답 국가와 선택 로그는 직접 노출되지 않는가
 - `/games/flag/start`
   - 닉네임 입력과 게임 시작하기가 보이는가
 - `/games/flag/play/{sessionId}`
   - 국기 이미지 1개와 나라 보기 4개, 제출 버튼, 하트/점수 HUD가 보이고 정답 뒤에는 `획득 점수`만 잠깐 보인 뒤 자동으로 다음 Stage로 넘어가는가
+  - 오답 뒤에는 약 `950ms` 동안 overlay가 보였다가 같은 Stage 재시도 상태로 자동 복귀하는가
 - `/games/flag/result/{sessionId}`
   - Stage별 시도 로그와 국기 카드가 보이고, 정답 국가/선택 국가는 직접 노출되지 않는가
 - `/recommendation/survey`
@@ -162,10 +165,11 @@ set +a
   - 닉네임 입력과 게임 시작하기만 보이고, Level 선택 UI는 더 이상 보이지 않는가
 - `/games/population/play/{sessionId}`
   - 보기 4개 구간 선택형 Stage만 보이고 정답 뒤에는 `획득 점수`만 잠깐 보인 뒤 자동으로 다음 Stage로 넘어가는가
+  - 오답 뒤에는 약 `950ms` 동안 overlay가 보였다가 같은 Stage 재시도 상태로 자동 복귀하는가
 - `/games/location/start`
   - 닉네임 입력과 게임 시작하기만 보이고, Level 선택 UI는 더 이상 보이지 않는가
 - `/games/location/play/{sessionId}`
-  - 제출 버튼 하나만 있는 Level 1 흐름으로 시작하는가
+  - 제출 버튼 하나만 있는 Level 1 흐름으로 시작하고, 오답 뒤에도 약 `950ms` 동안만 overlay가 보였다가 같은 Stage 재시도 상태로 자동 복귀하는가
 - `/games/location/result/{sessionId}`
   - Level 1 attempt 로그와 점수 요약만 보이고, 거리/방향 힌트 로그나 `힌트 감점` 문구는 더 이상 보이지 않는가
 

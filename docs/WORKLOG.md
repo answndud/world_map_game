@@ -4168,3 +4168,46 @@
 - 배운 점: 같은 endless run 구조를 여러 게임에 복제했다면, UX도 가능한 한 같은 리듬을 가져야 한다. 정답 뒤 한 번 더 눌러야 하는 수동 단계는 작은 차이처럼 보여도 반복 플레이 감각을 확실히 무겁게 만든다.
 - 아직 약한 부분: 지금은 모든 게임에 같은 `950ms` 지연을 쓰고 있다. 장기적으로는 게임별 overlay 길이를 다르게 줄 수도 있지만, 현재는 공통 리듬을 먼저 맞추는 편이 더 낫다고 판단했다.
 - 면접용 30초 요약: 위치 게임만 정답 후 자동 전환되고 나머지 게임은 `다음 Stage` 버튼을 다시 눌러야 해서 게임 리듬이 끊겼습니다. 그래서 서버 판정 로직은 그대로 둔 채, 수도/인구수/인구 비교/국기 게임 JS가 정답 응답 뒤 `획득 점수`만 잠깐 보여 주고 약 1초 뒤 같은 세션의 다음 state를 자동으로 다시 읽게 바꿨습니다. 핵심은 상태 변경 책임은 계속 서버에 두고, 프론트는 read flow만 더 짧게 연결했다는 점입니다.
+
+## 2026-03-28 - 모든 게임 오답 피드백 리듬 통일
+
+- 단계: 11. 신규 게임 확장
+- 목적: 정답 자동 전환은 이미 맞췄지만, 오답 직후 overlay와 입력 잠금 해제 시점은 게임마다 하드코딩과 문구가 조금씩 달랐다. 이번 조각의 목적은 위치/인구수/수도/인구 비교/국기 게임의 오답 피드백 시간을 같은 기준으로 통일해서, 플레이 템포를 더 예측 가능하게 만드는 것이다.
+- 변경 파일:
+  - `src/main/resources/static/js/location-game.js`
+  - `src/main/resources/static/js/population-game.js`
+  - `src/main/resources/static/js/capital-game.js`
+  - `src/main/resources/static/js/population-battle-game.js`
+  - `src/main/resources/static/js/flag-game.js`
+  - `src/main/resources/templates/location-game/start.html`
+  - `src/main/resources/templates/location-game/play.html`
+  - `src/main/resources/templates/population-game/start.html`
+  - `src/main/resources/templates/population-game/play.html`
+  - `src/main/resources/templates/capital-game/start.html`
+  - `src/main/resources/templates/capital-game/play.html`
+  - `src/main/resources/templates/population-battle-game/start.html`
+  - `src/main/resources/templates/population-battle-game/play.html`
+  - `src/main/resources/templates/flag-game/start.html`
+  - `src/main/resources/templates/flag-game/play.html`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/50-current-state-rebuild-map.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/91-unify-wrong-answer-feedback-rhythm-across-public-games.md`
+- 요청 흐름: 서버 API 흐름은 그대로 `POST /api/games/.../sessions/{id}/answer`와 `GET /api/games/.../sessions/{id}/state`다. 이번 조각은 각 게임 JS가 오답 응답을 받은 뒤 overlay와 HUD 문구를 보여 주고, 약 `950ms` 뒤 같은 Stage 재시도 상태로 입력 잠금을 해제하는 프론트 리듬만 정리한다.
+- 데이터 / 상태 변화: DB나 Redis 변화는 없다. public play 템플릿은 바뀐 JS 캐시 버전을 읽게 됐고, JS는 `STAGE_FEEDBACK_DELAY_MS`, `FINISH_REDIRECT_DELAY_MS` 같은 공통 상수로 정답/오답 지연 시간을 명시적으로 관리한다.
+- 핵심 도메인 개념: 이 조각은 정답 판정 규칙 변경이 아니다. 서버는 계속 정답/오답/하트/점수를 계산하고, 프론트는 그 결과를 얼마 동안 노출할지와 언제 다시 입력을 풀지 결정한다. 즉 상태 변경 책임은 서버에 두고, 게임 템포만 JS에서 정리한 것이다.
+- 예외 / 엣지 케이스: `FINISHED`는 오답 리셋이 아니라 결과 페이지 redirect를 유지한다. 자동 `loadState()`가 실패하는 경우는 기존처럼 interaction을 풀고 message box에 에러를 보여 준다. 위치 게임은 기존에 별도 helper가 없어서 stage hint 문구도 이번에 다른 게임과 비슷한 톤으로 맞췄다.
+- 테스트:
+  - `node --check src/main/resources/static/js/location-game.js`
+  - `node --check src/main/resources/static/js/population-game.js`
+  - `node --check src/main/resources/static/js/capital-game.js`
+  - `node --check src/main/resources/static/js/population-battle-game.js`
+  - `node --check src/main/resources/static/js/flag-game.js`
+  - `./gradlew test`
+  - `git diff --check`
+- 배운 점: 정답 자동 전환만 맞춘다고 루프 리듬이 완전히 같아지지 않는다. 오답 직후 overlay가 얼마나 남고 언제 입력을 다시 받을지도 공통 기준이 있어야, 서로 다른 게임이지만 같은 서비스 안의 모드처럼 느껴진다.
+- 아직 약한 부분: 현재는 다섯 게임 모두 `950ms`를 공통 상수로 쓴다. 실제 플레이 데이터가 쌓이면 위치 게임처럼 시각 정보가 많은 모드와 퀴즈형 모드의 적정 시간을 다르게 둘 여지가 있다.
+- 면접용 30초 요약: 정답 자동 전환 뒤에도 오답 피드백 시간과 입력 잠금 해제 시점은 게임마다 조금씩 달랐습니다. 그래서 서버 판정 로직은 그대로 두고, 다섯 게임 JS가 오답 overlay와 HUD 문구를 약 `950ms`만 보여 준 뒤 같은 Stage 재시도 상태로 자동 복귀하도록 맞췄습니다. 핵심은 점수와 하트 계산은 계속 서버가 맡고, 프론트는 게임 템포만 공통 상수로 정리했다는 점입니다.
