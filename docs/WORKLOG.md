@@ -4279,3 +4279,29 @@
 - 배운 점: 배포 준비 첫 조각은 `application-prod.yml`보다 `Dockerfile`이 먼저여야 한다. 그래야 현재 Java 버전, Gradle wrapper, bootJar 생성, runtime image, 비root 실행 같은 핵심 제약이 한 번에 드러난다.
 - 아직 약한 부분: 아직 ECS에 올릴 수 있는 “운영 설정”은 비어 있다. 다음 조각에서 `application-prod.yml`, forwarded headers, JVM 옵션/종료 정책, Actuator를 이어서 넣어야 한다.
 - 면접용 30초 요약: 배포 준비 첫 코드 조각으로 Java 25 기준 multi-stage Dockerfile을 추가했습니다. builder stage는 `./gradlew bootJar -x test`로 jar를 만들고, runtime stage는 JRE 이미지에 jar만 복사해서 비root 사용자로 실행합니다. 핵심은 로컬 빌드 산출물에 기대지 않고, Docker build만으로 ECS에 올릴 수 있는 이미지가 실제로 만들어진다는 점을 먼저 검증했다는 것입니다.
+
+## 2026-03-29 - ECS용 application-prod profile 분리
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: Docker 이미지가 생긴 뒤에는 “컨테이너 안에서 어떤 설정으로 앱이 떠야 하는가”를 분리해야 한다. 이번 조각의 목적은 local/test 설정과 섞이지 않게, prod datasource, redis, demo bootstrap off, forwarded header 기준을 `application-prod.yml`로 고정하는 것이다.
+- 변경 파일:
+  - `src/main/resources/application-prod.yml`
+  - `src/test/java/com/worldmap/common/config/ProdProfileConfigTest.java`
+  - `README.md`
+  - `docs/DEPLOYMENT_RUNBOOK_AWS_ECS.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/93-add-application-prod-profile-for-ecs-runtime-baseline.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+- 요청 흐름 / 데이터 흐름: 런타임 요청 흐름은 바뀌지 않았다. 이번 조각은 profile 분리다. `prod` 프로필은 datasource/redis endpoint를 환경변수에서 읽고, demo bootstrap을 끄고, `server.forward-headers-strategy=native`를 사용하도록 분리됐다. 즉 실제 ECS task definition이 주입할 값을 어디서 읽는지의 source of truth가 생긴 셈이다.
+- 데이터 / 상태 변화: DB나 Redis 상태 변화는 없다. 다만 prod profile 기준으로 `spring.jpa.hibernate.ddl-auto=update`, `spring.sql.init.mode=never`, `spring.docker.compose.enabled=false`, `spring.thymeleaf.cache=true`, `worldmap.demo.bootstrap.enabled=false`가 고정됐다. Redis는 `SPRING_DATA_REDIS_SSL_ENABLED`로 TLS 사용 여부를 분기하게 했다.
+- 핵심 도메인 개념: 이번 조각은 게임 도메인이 아니라 운영 도메인 분리다. 설정이 `application.yml` 한 장에 섞여 있으면 “왜 local은 되는데 ECS는 안 되나”를 설명하기 어렵다. 그래서 prod에서만 필요한 입력원을 `application-prod.yml`로 모아, 배포 환경의 책임을 설정 파일 수준에서 분리했다.
+- 예외 / 엣지 케이스: 아직 `Secrets Manager/SSM`, JVM 메모리 옵션, graceful shutdown, Actuator readiness/liveness는 실제 코드로 들어가지 않았다. 그리고 Flyway가 아직 없기 때문에 prod profile은 현실적으로 `ddl-auto=update`를 유지한다. 이건 첫 공개 배포를 위한 타협이고, 후속 단계에서 `validate + Flyway`로 옮겨갈 계획이다.
+- 테스트:
+  - `./gradlew test --tests com.worldmap.common.config.ProdProfileConfigTest`
+  - `git diff --check`
+- 블로그 반영 여부: 반영. profile 분리는 배포 준비에서 설명 가치가 큰 조각이고, 특히 local/test/prod를 왜 나눴는지 초보자에게 설명하기 좋기 때문에 블로그 글도 같이 남겼다.
+- 배운 점: Dockerfile 다음엔 무조건 prod profile이 와야 한다. 이미지가 있어도 prod 설정이 분리돼 있지 않으면 ECS task definition, 환경변수, 보안 값 주입 전략을 말할 수 없다.
+- 아직 약한 부분: 아직 forwarded headers, JVM 메모리 옵션, graceful shutdown, Actuator는 실제 코드/설정으로 마감되지 않았다. 다음 조각에서 이 네 가지를 묶어 “ALB 뒤에서 안전하게 뜨는 기준”을 고정해야 한다.
+- 면접용 30초 요약: Dockerfile 다음 조각으로 `application-prod.yml`을 분리했습니다. 핵심은 ECS에서 datasource와 redis를 환경변수로 읽고, demo bootstrap은 끄고, forwarded header와 Redis TLS 분기 기준을 prod profile에 모아 둔 것입니다. 즉 로컬 설정과 운영 설정의 책임을 분리해서, 배포 환경에서 앱이 어떤 입력을 받아 떠야 하는지 설명 가능하게 만들었습니다.

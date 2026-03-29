@@ -759,11 +759,12 @@
 - [docs/DEPLOYMENT_RUNBOOK_AWS_ECS.md](/Users/alex/project/worldmap/docs/DEPLOYMENT_RUNBOOK_AWS_ECS.md)로 계정 생성, 인프라 선택, 시나리오별 비용, 수동 배포, CI/CD, 운영, 롤백까지 초보자 기준 런북 정리
 - 런북 2차 보정으로 `Java 25 배포 이미지 결정`, `forwarded headers`, `JVM 메모리 옵션`, `graceful shutdown`, `Secrets Manager/SSM`, `public IPv4 비용`, `ElastiCache TLS`, `ECR lifecycle policy`를 첫 배포 판단 항목으로 보강
 - [Dockerfile](/Users/alex/project/worldmap/Dockerfile)과 [.dockerignore](/Users/alex/project/worldmap/.dockerignore)를 추가해 Java 25 기준 multi-stage 컨테이너 빌드를 실제로 검증
+- [application-prod.yml](/Users/alex/project/worldmap/src/main/resources/application-prod.yml)을 추가해 prod datasource / redis / demo bootstrap off / forwarded header 기준이 어디서 분리되는지 고정
 - README에 실시간 전달 결정과 발표용 문서 세트 링크 반영
 
 다음에 이어서 할 일:
 
-- `application-prod.yml`, forwarded headers, JVM 메모리 옵션, graceful shutdown, `Actuator`를 추가해 실제 AWS 배포 준비 코드 조각을 연다
+- forwarded headers, JVM 메모리 옵션, graceful shutdown, `Actuator`를 추가해 실제 AWS 배포 준비 코드 조각을 연다
 - `Spring Session + Redis` 적용 전까지는 ECS `desiredCount=1` 원칙으로 먼저 공개하고, 이후 2-task 구성으로 승격한다
 
 반드시 이해할 것:

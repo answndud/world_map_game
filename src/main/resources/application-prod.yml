@@ -1,0 +1,38 @@
+spring:
+  thymeleaf:
+    cache: true
+  docker:
+    compose:
+      enabled: false
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+  sql:
+    init:
+      mode: never
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      ssl:
+        enabled: ${SPRING_DATA_REDIS_SSL_ENABLED:false}
+
+server:
+  forward-headers-strategy: native
+
+worldmap:
+  admin:
+    bootstrap:
+      enabled: ${WORLDMAP_ADMIN_BOOTSTRAP_ENABLED:false}
+      nickname: ${WORLDMAP_ADMIN_BOOTSTRAP_NICKNAME:}
+      password: ${WORLDMAP_ADMIN_BOOTSTRAP_PASSWORD:}
+  demo:
+    bootstrap:
+      enabled: false
+  ranking:
+    key-prefix: ${WORLDMAP_RANKING_KEY_PREFIX:leaderboard}

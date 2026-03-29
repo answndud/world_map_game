@@ -57,7 +57,6 @@
 
 현재 저장소 기준으로는 아래가 아직 없다.
 
-- `application-prod.yml`
 - `server.forward-headers-strategy`
 - JVM 메모리 옵션
 - graceful shutdown 설정
@@ -72,6 +71,8 @@
 - multi-stage `Dockerfile`
 - `.dockerignore`
 - Docker 내부 `bootJar` 기반 self-contained image build 검증
+- `application-prod.yml`
+  - datasource / redis / demo bootstrap off / forwarded header 기준 분리
 
 ### 3.3 현재는 `Java 25`를 사용한다
 
@@ -353,26 +354,25 @@ AWS 콘솔 작업보다 먼저 아래를 구현해야 한다.
 
 ### 필수
 
-1. `application-prod.yml`
-2. forwarded header 지원
+1. forwarded header 지원
    - `server.forward-headers-strategy=native` 또는 `framework`
-3. JVM 메모리 옵션
+2. JVM 메모리 옵션
    - 예: `-XX:MaxRAMPercentage=75.0`
-4. graceful shutdown
-5. `Actuator health/readiness/liveness`
-6. 비밀 정보 분리
+3. graceful shutdown
+4. `Actuator health/readiness/liveness`
+5. 비밀 정보 분리
    - `Secrets Manager` 또는 `SSM Parameter Store`
 
 ### 시나리오 B로 가기 전에 필수
 
-7. `Spring Session + Redis`
-8. secure cookie / same-site / session timeout 정리
+6. `Spring Session + Redis`
+7. secure cookie / same-site / session timeout 정리
 
 ### 권장
 
-9. `Flyway`
-10. CloudWatch용 log pattern 점검
-11. ECR lifecycle policy
+8. `Flyway`
+9. CloudWatch용 log pattern 점검
+10. ECR lifecycle policy
 
 ## 9. 처음부터 끝까지 실제 배포 순서
 
@@ -763,36 +763,35 @@ ElastiCache:
 
 ### 1주차
 
-1. `application-prod.yml`
-2. forwarded headers
-3. JVM 메모리 옵션 + graceful shutdown
-4. `Actuator`
+1. forwarded headers
+2. JVM 메모리 옵션 + graceful shutdown
+3. `Actuator`
 
 ### 2주차
 
-5. AWS 계정/MFA/Budget
-6. RDS
-7. ElastiCache
-8. ECR
+4. AWS 계정/MFA/Budget
+5. RDS
+6. ElastiCache
+7. ECR
 
 ### 3주차
 
-9. ECS + ALB
-10. 수동 첫 배포
-11. smoke test
+8. ECS + ALB
+9. 수동 첫 배포
+10. smoke test
 
 ### 4주차
 
-12. GitHub Actions 자동 배포
-13. CloudWatch 알람
-14. Route 53 / ACM HTTPS
+11. GitHub Actions 자동 배포
+12. CloudWatch 알람
+13. Route 53 / ACM HTTPS
 
 ### 그 다음
 
-15. `Spring Session + Redis`
-16. ECS task `1 -> 2`
-17. `Flyway`
-18. 배포/롤백 runbook 보강
+14. `Spring Session + Redis`
+15. ECS task `1 -> 2`
+16. `Flyway`
+17. 배포/롤백 runbook 보강
 
 ## 14. 지금 당장 해야 할 일 체크리스트
 
@@ -800,7 +799,7 @@ ElastiCache:
 
 - [x] `Dockerfile` 작성
 - [x] `.dockerignore` 작성
-- [ ] `application-prod.yml` 추가
+- [x] `application-prod.yml` 추가
 - [ ] Java 25 runtime image 유지 여부 또는 Java 21 LTS 전환 여부 결정
 - [ ] forwarded header 지원 추가
 - [ ] JVM 메모리 옵션 추가
