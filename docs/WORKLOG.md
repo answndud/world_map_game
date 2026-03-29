@@ -4211,3 +4211,71 @@
 - 배운 점: 정답 자동 전환만 맞춘다고 루프 리듬이 완전히 같아지지 않는다. 오답 직후 overlay가 얼마나 남고 언제 입력을 다시 받을지도 공통 기준이 있어야, 서로 다른 게임이지만 같은 서비스 안의 모드처럼 느껴진다.
 - 아직 약한 부분: 현재는 다섯 게임 모두 `950ms`를 공통 상수로 쓴다. 실제 플레이 데이터가 쌓이면 위치 게임처럼 시각 정보가 많은 모드와 퀴즈형 모드의 적정 시간을 다르게 둘 여지가 있다.
 - 면접용 30초 요약: 정답 자동 전환 뒤에도 오답 피드백 시간과 입력 잠금 해제 시점은 게임마다 조금씩 달랐습니다. 그래서 서버 판정 로직은 그대로 두고, 다섯 게임 JS가 오답 overlay와 HUD 문구를 약 `950ms`만 보여 준 뒤 같은 Stage 재시도 상태로 자동 복귀하도록 맞췄습니다. 핵심은 점수와 하트 계산은 계속 서버가 맡고, 프론트는 게임 템포만 공통 상수로 정리했다는 점입니다.
+
+## 2026-03-28 - AWS ECS 기준 배포 런북과 비용 시나리오 정리
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 사용자가 “Spring Boot 백엔드 프로젝트를 어떻게 실제로 배포할 것이냐”는 질문에 계정 생성부터 인프라 선택, 비용, 수동 배포, CI/CD, 운영, 롤백까지 한 문서로 설명할 수 있게 만드는 것이다. 특히 초보자 기준으로 무엇부터 해야 하고, 현재 코드 기준 어떤 제약 때문에 바로 2-task ECS로 가면 안 되는지까지 분리해서 정리하는 것이 목적이다.
+- 변경 파일:
+  - `docs/DEPLOYMENT_RUNBOOK_AWS_ECS.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `README.md`
+- 요청 흐름 / 데이터 흐름: 런타임 코드 변경은 없다. 이번 조각은 문서화 작업이다. 다만 배포 런북 안에서는 `GitHub Actions -> ECR push -> ECS service deploy -> ALB -> Spring Boot app -> RDS / ElastiCache` 흐름과, 현재 앱이 `HttpSession`을 직접 쓰기 때문에 `desiredCount=1`로 시작하고 `Spring Session + Redis` 이후에만 `desiredCount=2`로 올려야 하는 이유를 명시적으로 설명한다.
+- 데이터 / 상태 변화: 애플리케이션 상태 변화는 없다. DB 스키마, Redis key, 엔티티, 라우트는 바뀌지 않았다. 대신 문서에 `시나리오 A/B/C` 비용 추정과 포함/제외 항목을 분리해서, 비용 계산을 설명 가능한 형태로 고정했다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 기능 구현이 아니라 “현재 코드가 실제 운영 환경에서 어떤 제약을 갖는가”를 명시하는 것이다. 특히 `MemberSessionManager`, `GuestSessionKeyManager`, admin 접근 제어, 게임 시작 흐름이 모두 `HttpSession`에 기대고 있으므로, session externalization 전에는 단일 task 배포가 맞다는 점이 중요한 설계 판단이다.
+- 예외 / 엣지 케이스: 비용 표는 `ap-northeast-2` 기준의 고정비 중심 추정치다. public IPv4, NAT Gateway, 도메인 등록, 대량 트래픽, CloudWatch 로그 급증, Secrets Manager 사용량은 제외했으므로 실제 청구액은 더 올라갈 수 있다. 그래서 문서 본문에 “표의 합계와 실제 청구액이 다를 수 있다”는 전제를 같이 남겼다.
+- 테스트:
+  - 문서 작업이라 애플리케이션 테스트는 실행하지 않았다.
+  - `git diff --check`
+  - 비용과 배포 구조는 AWS / Spring 공식 문서를 기준으로 정리했다.
+- 블로그 반영 여부: 생략. 이번 조각은 기능 추가가 아니라 planning-only 런북 문서화라 `blog/` 글까지 늘리기보다 `docs/`에서 초보자용 실행 문서로 고정하는 편이 더 적절하다고 판단했다.
+- 배운 점: 배포 문서를 쓸 때는 “이상적인 production 구조”와 “현재 코드로 오늘 바로 열 수 있는 구조”를 섞으면 초보자가 바로 막힌다. 그래서 이번에는 `1-task 공개 배포`와 `Spring Session 이후 2-task 승격`을 의도적으로 두 단계로 나눴다.
+- 아직 약한 부분: 아직 `Dockerfile`, `application-prod.yml`, `Flyway`, `Actuator readiness/liveness`, `Spring Session + Redis`는 실제 코드로 구현되지 않았다. 문서는 준비됐지만, 다음 조각에서 이 준비 코드를 차례대로 채워야 한다.
+- 면접용 30초 요약: 이 프로젝트는 AWS ECS Fargate가 가장 설명력이 좋지만, 현재는 `HttpSession`을 직접 쓰기 때문에 처음부터 task를 2개 띄우면 세션이 흔들릴 수 있습니다. 그래서 배포 런북에서는 먼저 `ECS 1-task + RDS + ElastiCache + ALB`로 공개하고, 이후 `Spring Session + Redis`를 붙인 뒤 `2-task`로 승격하는 전략을 제안했습니다. 비용도 서울 리전 기준으로 `공개 데모`, `최종 포트폴리오`, `production-like` 세 시나리오로 나눠 정리했습니다.
+
+## 2026-03-28 - AWS ECS 배포 런북 실전 보정
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 기존 배포 런북이 방향은 맞았지만, 실제 첫 배포 성공률과 비용 정확도를 더 높이기 위해 실행 우선순위를 다시 정리한다. 특히 `첫 배포 필수 항목`과 `후속 고도화 항목`을 섞어 두면 초보자가 Flyway 같은 큰 작업을 먼저 잡고 막힐 수 있어서, 지금 당장 필요한 항목과 나중에 넣을 항목을 분리하는 것이 목적이다.
+- 변경 파일:
+  - `docs/DEPLOYMENT_RUNBOOK_AWS_ECS.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 런타임 코드 변경은 없다. 문서 상으로만 `ALB -> Spring Boot` 구간에서 forwarded headers 지원이 첫 배포부터 필요하다는 점, `ECS task 1개 -> Spring Session 후 2개`라는 세션 전략, `Secrets Manager/SSM -> ECS task secrets 주입` 흐름을 더 명확히 적었다.
+- 데이터 / 상태 변화: 애플리케이션 상태 변화는 없다. 다만 비용 표는 이제 public IPv4 고정비를 포함하고, Secrets Manager는 선택 비용으로 분리했다. 또한 `Flyway`는 1차 배포 필수에서 빼고 후속 안정화 단계로 내렸다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “배포 성공에 직접 영향을 주는 설정과, 나중에 넣어도 되는 개선을 구분하는 일”이다. `forwarded headers`, `JVM 메모리 옵션`, `graceful shutdown`, `비밀 정보 분리`는 첫 배포 성공률에 직접 영향을 주므로 필수로 올렸고, `Flyway`는 현재 스키마 규모와 startup 초기화 코드를 고려하면 후속 단계가 더 현실적이라고 문서화했다.
+- 예외 / 엣지 케이스: 비용은 여전히 트래픽과 로그량에 따라 달라질 수 있다. 이번엔 `public IPv4`를 포함했지만, NAT Gateway, 대량 데이터 전송, 도메인 등록, Secrets API 호출량, 대규모 CloudWatch 로그는 별도다. 또한 `Java 25`는 코드 기준 사실이지만, 실제 Docker runtime image 가용성을 먼저 확인하거나 `Java 21 LTS`로 내릴 가능성도 열어 두었다.
+- 테스트:
+  - 문서 작업이라 애플리케이션 테스트는 실행하지 않았다.
+  - `git diff --check`
+- 블로그 반영 여부: 생략. 이번 조각은 기능 변경이 아니라 런북 보정이라 `blog/`보다 `docs/`에서 배포 의사결정 기준을 더 정확히 남기는 편이 적절하다고 판단했다.
+- 배운 점: 초보자용 배포 문서는 “무엇을 다 해야 하는가”보다 “무엇을 지금 먼저 해야 하는가”를 더 강하게 구분해야 한다. 특히 current code constraint가 `HttpSession`과 `Java 25`라는 점을 먼저 드러내지 않으면, AWS 콘솔 단계에서보다 Dockerfile/세션 단계에서 더 크게 막히게 된다.
+- 아직 약한 부분: 아직 실제 코드에는 `Dockerfile`, `application-prod.yml`, `forwarded headers`, `Actuator readiness/liveness`, `Secrets Manager/SSM 연동`, `Spring Session + Redis`가 없다. 다음 조각에서 문서를 코드로 하나씩 구현해야 한다.
+- 면접용 30초 요약: 배포 문서를 한 번 더 현실적으로 다듬었습니다. 기존엔 Flyway 같은 후속 고도화 작업이 첫 배포 필수처럼 보였는데, 이번엔 `forwarded headers`, `JVM 메모리 옵션`, `graceful shutdown`, `Secrets Manager/SSM`, `public IPv4 비용`, `ElastiCache TLS`, `ECR lifecycle` 같은 실제 첫 배포 성공률에 직접 영향을 주는 항목을 앞쪽으로 올리고, Flyway는 후속 안정화 단계로 내렸습니다.
+
+## 2026-03-29 - Java 25 기준 multi-stage Dockerfile 추가
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 배포 런북이 계획만 있는 문서로 머무르지 않게, 실제로 컨테이너 이미지를 만들 수 있는 첫 코드 조각을 추가한다. 이번 목표는 ECS에 바로 올릴 수 있는 완성 배포가 아니라, `로컬 jar에 기대지 않는 self-contained image build`를 먼저 증명하는 것이다.
+- 변경 파일:
+  - `Dockerfile`
+  - `.dockerignore`
+  - `README.md`
+  - `docs/DEPLOYMENT_RUNBOOK_AWS_ECS.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/92-add-java-25-multi-stage-dockerfile-for-ecs-prep.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+- 요청 흐름 / 데이터 흐름: 런타임 요청 흐름은 바뀌지 않았다. 이번 조각은 build/deploy 흐름을 여는 작업이다. `docker build`가 `eclipse-temurin:25-jdk` builder image에서 `./gradlew bootJar -x test`를 실행하고, runtime image `eclipse-temurin:25-jre`에 결과 jar만 복사하는 multi-stage 구조로 바뀌었다.
+- 데이터 / 상태 변화: DB나 Redis 변화는 없다. 컨테이너 안에서 앱이 구동될 때 필요한 artifact가 이제 `build/libs`의 사전 빌드 결과가 아니라 Docker build 과정에서 직접 만들어진다. runtime image에는 소스나 Gradle 캐시가 아니라 `app.jar`만 남고, 비root 사용자 `spring`으로 실행된다.
+- 핵심 도메인 개념: 이 조각의 핵심은 웹 요청이나 게임 규칙이 아니라 “배포 단위”다. 지금부터의 source of truth는 로컬 JVM 실행만이 아니라 `container image`가 된다. 그래서 `Dockerfile`은 단순 포장 파일이 아니라, 현재 프로젝트를 AWS ECS로 옮길 수 있음을 증명하는 첫 인프라 코드다.
+- 예외 / 엣지 케이스: 아직 `application-prod.yml`, forwarded headers, Actuator readiness/liveness, Spring Session Redis는 없다. 즉 이미지 빌드는 되지만, 이 상태를 곧바로 production-ready라고 보면 안 된다. 또한 Java 25 이미지는 이번에 실제로 빌드가 됐지만, 추후 실무 표준성과 배포 호환성을 이유로 Java 21 LTS로 내릴 여지는 여전히 있다.
+- 테스트:
+  - `docker build -t worldmap-dockerfile-check .`
+  - `git diff --check`
+- 블로그 반영 여부: 반영. Dockerfile은 실제 코드와 빌드 검증이 있는 deployment feature slice라서, 왜 multi-stage로 갔는지와 왜 runtime image에 jar만 남기는지 설명할 가치가 충분하다고 판단했다.
+- 배운 점: 배포 준비 첫 조각은 `application-prod.yml`보다 `Dockerfile`이 먼저여야 한다. 그래야 현재 Java 버전, Gradle wrapper, bootJar 생성, runtime image, 비root 실행 같은 핵심 제약이 한 번에 드러난다.
+- 아직 약한 부분: 아직 ECS에 올릴 수 있는 “운영 설정”은 비어 있다. 다음 조각에서 `application-prod.yml`, forwarded headers, JVM 옵션/종료 정책, Actuator를 이어서 넣어야 한다.
+- 면접용 30초 요약: 배포 준비 첫 코드 조각으로 Java 25 기준 multi-stage Dockerfile을 추가했습니다. builder stage는 `./gradlew bootJar -x test`로 jar를 만들고, runtime stage는 JRE 이미지에 jar만 복사해서 비root 사용자로 실행합니다. 핵심은 로컬 빌드 산출물에 기대지 않고, Docker build만으로 ECS에 올릴 수 있는 이미지가 실제로 만들어진다는 점을 먼저 검증했다는 것입니다.

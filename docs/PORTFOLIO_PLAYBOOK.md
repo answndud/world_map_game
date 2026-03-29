@@ -33,7 +33,7 @@
 | 7 | AI-assisted 설문 개선 체계 | In Progress |
 | 8 | 인증, 전적, 마이페이지 | Done |
 | 9 | 고도화 실험 롤백과 실시간성 개선 | Done |
-| 10 | 포트폴리오 정리와 발표 준비 | Not Started |
+| 10 | 포트폴리오 정리와 발표 준비 | Done |
 | 11 | 신규 게임 확장 | In Progress |
 
 ## 공통 체크리스트
@@ -756,12 +756,15 @@
 - [docs/ERD.md](/Users/alex/project/worldmap/docs/ERD.md)로 핵심 테이블과 관계 고정
 - [docs/REQUEST_FLOW_GUIDE.md](/Users/alex/project/worldmap/docs/REQUEST_FLOW_GUIDE.md)로 대표 요청 흐름 3개를 시퀀스로 정리
 - [docs/PRESENTATION_PREP.md](/Users/alex/project/worldmap/docs/PRESENTATION_PREP.md)로 3분 소개, 10분 기술 설명, 예상 질문 정리
+- [docs/DEPLOYMENT_RUNBOOK_AWS_ECS.md](/Users/alex/project/worldmap/docs/DEPLOYMENT_RUNBOOK_AWS_ECS.md)로 계정 생성, 인프라 선택, 시나리오별 비용, 수동 배포, CI/CD, 운영, 롤백까지 초보자 기준 런북 정리
+- 런북 2차 보정으로 `Java 25 배포 이미지 결정`, `forwarded headers`, `JVM 메모리 옵션`, `graceful shutdown`, `Secrets Manager/SSM`, `public IPv4 비용`, `ElastiCache TLS`, `ECR lifecycle policy`를 첫 배포 판단 항목으로 보강
+- [Dockerfile](/Users/alex/project/worldmap/Dockerfile)과 [.dockerignore](/Users/alex/project/worldmap/.dockerignore)를 추가해 Java 25 기준 multi-stage 컨테이너 빌드를 실제로 검증
 - README에 실시간 전달 결정과 발표용 문서 세트 링크 반영
 
 다음에 이어서 할 일:
 
-- 대표 화면 캡처를 실제 발표 자료용으로 추려 정리
-- 발표 슬라이드 1차 구조와 데모 순서 확정
+- `application-prod.yml`, forwarded headers, JVM 메모리 옵션, graceful shutdown, `Actuator`를 추가해 실제 AWS 배포 준비 코드 조각을 연다
+- `Spring Session + Redis` 적용 전까지는 ECS `desiredCount=1` 원칙으로 먼저 공개하고, 이후 2-task 구성으로 승격한다
 
 반드시 이해할 것:
 

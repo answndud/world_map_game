@@ -145,6 +145,7 @@
 82. [local boot에서 legacy leaderboard game_level 제약 풀기](./89-relax-legacy-leaderboard-game-level-constraint-for-local-boot.md)
 83. [모든 게임에서 정답 뒤 자동으로 다음 Stage로 넘기기](./90-auto-advance-to-the-next-stage-after-correct-answers.md)
 84. [모든 게임의 오답 피드백 시간을 같은 리듬으로 맞추기](./91-unify-wrong-answer-feedback-rhythm-across-public-games.md)
+85. [Java 25 기준 multi-stage Dockerfile로 ECS 배포 준비 시작하기](./92-add-java-25-multi-stage-dockerfile-for-ecs-prep.md)
 
 ### Part E. 확장과 포트폴리오 정리
 

@@ -1,0 +1,16 @@
+.git
+.github
+.gradle
+.idea
+.vscode
+build
+blog
+docs
+scripts
+src/test
+.DS_Store
+*.log
+.env
+.env.*
+compose.yaml
+HELP.md
