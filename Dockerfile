@@ -20,6 +20,8 @@ WORKDIR /app
 
 RUN useradd --system --create-home --uid 10001 spring
 
+ENV JAVA_RUNTIME_OPTS="-XX:MaxRAMPercentage=75.0"
+
 COPY --from=builder /workspace/build/libs/*.jar /app/app.jar
 
 RUN chown -R spring:spring /app
@@ -28,4 +30,6 @@ USER spring
 
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75.0", "-jar", "/app/app.jar"]
+STOPSIGNAL SIGTERM
+
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_RUNTIME_OPTS -jar /app/app.jar"]

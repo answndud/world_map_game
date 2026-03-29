@@ -1,0 +1,86 @@
+{
+  "family": "worldmap-prod",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::<ACCOUNT_ID>:role/worldmap-ecs-execution-role",
+  "taskRoleArn": "arn:aws:iam::<ACCOUNT_ID>:role/worldmap-ecs-task-role",
+  "containerDefinitions": [
+    {
+      "name": "worldmap-app",
+      "image": "<ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com/worldmap:<IMAGE_TAG>",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8080,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "SPRING_PROFILES_ACTIVE",
+          "value": "prod"
+        },
+        {
+          "name": "SPRING_DATASOURCE_URL",
+          "value": "jdbc:postgresql://<RDS_ENDPOINT>:5432/worldmap"
+        },
+        {
+          "name": "SPRING_DATASOURCE_USERNAME",
+          "value": "worldmap_app"
+        },
+        {
+          "name": "SPRING_DATA_REDIS_HOST",
+          "value": "<ELASTICACHE_ENDPOINT>"
+        },
+        {
+          "name": "SPRING_DATA_REDIS_PORT",
+          "value": "6379"
+        },
+        {
+          "name": "SPRING_DATA_REDIS_SSL_ENABLED",
+          "value": "true"
+        },
+        {
+          "name": "WORLDMAP_DEMO_BOOTSTRAP_ENABLED",
+          "value": "false"
+        },
+        {
+          "name": "WORLDMAP_ADMIN_BOOTSTRAP_ENABLED",
+          "value": "true"
+        },
+        {
+          "name": "WORLDMAP_ADMIN_BOOTSTRAP_NICKNAME",
+          "value": "worldmap_admin"
+        },
+        {
+          "name": "WORLDMAP_RANKING_KEY_PREFIX",
+          "value": "leaderboard"
+        },
+        {
+          "name": "JAVA_RUNTIME_OPTS",
+          "value": "-XX:MaxRAMPercentage=75.0"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "SPRING_DATASOURCE_PASSWORD",
+          "valueFrom": "arn:aws:secretsmanager:<REGION>:<ACCOUNT_ID>:secret:worldmap/prod/db-password"
+        },
+        {
+          "name": "WORLDMAP_ADMIN_BOOTSTRAP_PASSWORD",
+          "valueFrom": "arn:aws:ssm:<REGION>:<ACCOUNT_ID>:parameter/worldmap/prod/admin-bootstrap-password"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/worldmap-prod",
+          "awslogs-region": "<REGION>",
+          "awslogs-stream-prefix": "worldmap"
+        }
+      }
+    }
+  ]
+}

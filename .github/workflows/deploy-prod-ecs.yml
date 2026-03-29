@@ -1,0 +1,103 @@
+name: deploy-prod-ecs
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: worldmap-prod-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+      AWS_GITHUB_ACTIONS_ROLE_ARN: ${{ vars.AWS_GITHUB_ACTIONS_ROLE_ARN }}
+      ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+      ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
+      ECS_SERVICE: ${{ vars.ECS_SERVICE }}
+      ECS_EXECUTION_ROLE_ARN: ${{ vars.ECS_EXECUTION_ROLE_ARN }}
+      ECS_TASK_ROLE_ARN: ${{ vars.ECS_TASK_ROLE_ARN }}
+      RDS_ENDPOINT: ${{ vars.RDS_ENDPOINT }}
+      ELASTICACHE_ENDPOINT: ${{ vars.ELASTICACHE_ENDPOINT }}
+      CLOUDWATCH_LOG_GROUP: ${{ vars.CLOUDWATCH_LOG_GROUP }}
+      SPRING_DATASOURCE_PASSWORD_SECRET_ARN: ${{ vars.SPRING_DATASOURCE_PASSWORD_SECRET_ARN }}
+      ADMIN_BOOTSTRAP_PASSWORD_PARAMETER_ARN: ${{ vars.ADMIN_BOOTSTRAP_PASSWORD_PARAMETER_ARN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: gradle
+
+      - name: Validate deployment inputs
+        run: |
+          required_vars=(
+            AWS_REGION
+            AWS_ACCOUNT_ID
+            AWS_GITHUB_ACTIONS_ROLE_ARN
+            ECR_REPOSITORY
+            ECS_CLUSTER
+            ECS_SERVICE
+            ECS_EXECUTION_ROLE_ARN
+            ECS_TASK_ROLE_ARN
+            RDS_ENDPOINT
+            ELASTICACHE_ENDPOINT
+            CLOUDWATCH_LOG_GROUP
+            SPRING_DATASOURCE_PASSWORD_SECRET_ARN
+            ADMIN_BOOTSTRAP_PASSWORD_PARAMETER_ARN
+          )
+          for name in "${required_vars[@]}"; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing GitHub Actions variable: ${name}"
+              exit 1
+            fi
+          done
+
+      - name: Run test suite
+        run: |
+          chmod +x ./gradlew
+          ./gradlew test
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_GITHUB_ACTIONS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push image
+        id: build-image
+        run: |
+          IMAGE_TAG="${GITHUB_SHA}"
+          IMAGE_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${IMAGE_TAG}"
+          docker build -t "${IMAGE_URI}" .
+          docker push "${IMAGE_URI}"
+          echo "image_uri=${IMAGE_URI}" >> "${GITHUB_OUTPUT}"
+
+      - name: Render ECS task definition
+        run: |
+          python3 scripts/render_ecs_task_definition.py \
+            --input deploy/ecs/task-definition.prod.sample.json \
+            --output deploy/ecs/task-definition.rendered.json
+        env:
+          IMAGE_URI: ${{ steps.build-image.outputs.image_uri }}
+
+      - name: Deploy to ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: deploy/ecs/task-definition.rendered.json
+          cluster: ${{ env.ECS_CLUSTER }}
+          service: ${{ env.ECS_SERVICE }}
+          wait-for-service-stability: true

@@ -46,3 +46,4 @@ out/
 *.jks
 *.keystore
 *.crt
+deploy/ecs/task-definition.rendered.json
