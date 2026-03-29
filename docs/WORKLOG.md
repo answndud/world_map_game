@@ -4305,3 +4305,153 @@
 - 배운 점: Dockerfile 다음엔 무조건 prod profile이 와야 한다. 이미지가 있어도 prod 설정이 분리돼 있지 않으면 ECS task definition, 환경변수, 보안 값 주입 전략을 말할 수 없다.
 - 아직 약한 부분: 아직 forwarded headers, JVM 메모리 옵션, graceful shutdown, Actuator는 실제 코드/설정으로 마감되지 않았다. 다음 조각에서 이 네 가지를 묶어 “ALB 뒤에서 안전하게 뜨는 기준”을 고정해야 한다.
 - 면접용 30초 요약: Dockerfile 다음 조각으로 `application-prod.yml`을 분리했습니다. 핵심은 ECS에서 datasource와 redis를 환경변수로 읽고, demo bootstrap은 끄고, forwarded header와 Redis TLS 분기 기준을 prod profile에 모아 둔 것입니다. 즉 로컬 설정과 운영 설정의 책임을 분리해서, 배포 환경에서 앱이 어떤 입력을 받아 떠야 하는지 설명 가능하게 만들었습니다.
+
+## 2026-03-29 - ALB 뒤 런타임 기준과 graceful shutdown 고정
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: `application-prod.yml`만 생긴 상태에서는 ECS/ALB 뒤에서 앱이 실제로 어떻게 종료되고, JVM 메모리 옵션을 어디서 override하는지 설명하기 어렵다. 이번 조각의 목적은 prod profile에 graceful shutdown 기준을 추가하고, Docker runtime JVM 옵션을 `JAVA_RUNTIME_OPTS`로 외부화해 “ALB 뒤에서 안전하게 뜨는 기본 런타임 기준”을 코드로 고정하는 것이다.
+- 변경 파일:
+  - `Dockerfile`
+  - `src/main/resources/application-prod.yml`
+  - `src/test/java/com/worldmap/common/config/ProdProfileConfigTest.java`
+  - `README.md`
+  - `docs/DEPLOYMENT_RUNBOOK_AWS_ECS.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/94-add-graceful-shutdown-and-runtime-jvm-opts-for-ecs.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+- 요청 흐름 / 데이터 흐름: 런타임 HTTP 요청 흐름은 바뀌지 않았다. 이번 조각은 `ECS task env -> Docker ENTRYPOINT -> Spring Boot prod profile` 흐름을 정리한 것이다. Docker는 `JAVA_RUNTIME_OPTS`를 읽어 JVM을 띄우고, Spring Boot는 prod profile에서 forwarded header와 graceful shutdown 기준을 읽는다.
+- 데이터 / 상태 변화: DB, Redis, 게임 상태 변화는 없다. 다만 prod profile 기준으로 `server.shutdown=graceful`, `spring.lifecycle.timeout-per-shutdown-phase=20s`가 추가됐고, 컨테이너는 기본 `-XX:MaxRAMPercentage=75.0`를 쓰되 ECS task definition에서 `JAVA_RUNTIME_OPTS` override가 가능해졌다.
+- 핵심 도메인 개념: 이 조각의 핵심은 운영 런타임 규칙이다. graceful shutdown이나 JVM 메모리 옵션은 컨트롤러/서비스 책임이 아니라 “애플리케이션을 어떤 프로세스로 띄우고 내릴 것인가”의 문제이므로 Dockerfile과 prod profile이 source of truth가 되어야 한다.
+- 예외 / 엣지 케이스: 아직 Actuator readiness/liveness는 없기 때문에 ECS/ALB health check 경로는 다음 조각에서 완성해야 한다. 또한 Spring Session Redis가 없으므로 task 2개 이상으로 늘리면 세션 일관성 문제는 여전히 남아 있다.
+- 테스트:
+  - `./gradlew test --tests com.worldmap.common.config.ProdProfileConfigTest`
+  - `docker build -t worldmap-runtime-check .`
+  - `docker run --rm --entrypoint sh worldmap-runtime-check -c 'echo \"$JAVA_RUNTIME_OPTS\"'`
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이번 조각은 요청 흐름보다 운영 런타임 기준을 설명하는 slice지만, Dockerfile과 prod profile이 실제로 어떻게 역할을 나누는지 초보자에게 설명 가치가 크다고 판단했다.
+- 배운 점: forwarded header나 graceful shutdown 같은 설정은 문서에만 있으면 의미가 없다. 실제 source of truth를 Dockerfile과 prod profile에 옮겨야 ECS task definition, ALB, 종료 시나리오를 파일 단위로 설명할 수 있다.
+- 아직 약한 부분: Actuator health endpoint, Secrets Manager/SSM, Spring Session Redis는 아직 코드화되지 않았다. 즉 “프로세스가 잘 뜨고 잘 내려가는 기준”만 정리된 상태고, health check와 secret 주입, 다중 task 세션 안정성은 다음 조각이다.
+- 면접용 30초 요약: 이번에는 배포 런타임 기준을 코드로 고정했습니다. prod profile에 `server.shutdown=graceful`과 종료 timeout을 추가하고, Dockerfile은 JVM 옵션을 하드코딩 대신 `JAVA_RUNTIME_OPTS`로 외부화해 ECS에서 메모리 옵션을 쉽게 override할 수 있게 만들었습니다. 즉 ALB 뒤에서 앱이 어떤 방식으로 뜨고, SIGTERM 때 어떻게 내려가야 하는지를 설명 가능한 상태로 만든 것입니다.
+
+## 2026-03-29 - ECS용 Actuator readiness/liveness 추가
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: graceful shutdown과 JVM 옵션만으로는 ECS/ALB가 이 앱을 어떻게 살아 있다고 판단해야 하는지 설명할 수 없다. 이번 조각의 목적은 actuator를 실제로 붙이고, prod에서 `health`, `liveness`, `readiness`를 어떤 기준으로 노출할지 고정하는 것이다.
+- 변경 파일:
+  - `build.gradle`
+  - `src/main/resources/application-prod.yml`
+  - `src/test/java/com/worldmap/common/config/ProdProfileConfigTest.java`
+  - `src/test/java/com/worldmap/common/config/ActuatorHealthEndpointIntegrationTest.java`
+  - `README.md`
+  - `docs/DEPLOYMENT_RUNBOOK_AWS_ECS.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/95-add-actuator-readiness-and-liveness-for-ecs-health-checks.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+- 요청 흐름 / 데이터 흐름: 게임 요청 흐름은 바뀌지 않았다. 새로 생긴 것은 운영 health 흐름이다. `GET /actuator/health`, `GET /actuator/health/liveness`, `GET /actuator/health/readiness`가 Spring Boot actuator에서 시작되고, prod group 설정은 `application-prod.yml`이 source of truth가 된다.
+- 데이터 / 상태 변화: DB, Redis, 게임 세션 상태는 변하지 않는다. 대신 prod에서는 readiness group이 `readinessState,db,ping`, liveness group이 `livenessState,ping`으로 고정돼, ECS/ALB가 무엇을 보고 healthy/unhealthy를 판단할지 기준이 생겼다.
+- 핵심 도메인 개념: 이 조각의 핵심은 “운영 관점 read model”이다. health endpoint는 게임 도메인 로직이 아니라 배포 환경이 앱을 관찰하는 인터페이스이므로, 컨트롤러를 따로 만들지 않고 actuator와 prod config에 맡기는 편이 가장 설명 가능하다.
+- 예외 / 엣지 케이스: readiness에는 아직 Redis를 넣지 않았다. 현재는 session externalization 전 단계라, 먼저 DB 기준으로 공개 배포를 닫고 이후 Spring Session Redis를 넣는 시점에 readiness 범위를 다시 넓히는 편이 더 현실적이라고 판단했다.
+- 테스트:
+  - `./gradlew test --tests com.worldmap.common.config.ProdProfileConfigTest --tests com.worldmap.common.config.ActuatorHealthEndpointIntegrationTest`
+  - `./gradlew test`
+  - `git diff --check`
+- 블로그 반영 여부: 반영. actuator는 단순 라이브러리 추가가 아니라 “ECS와 ALB가 앱을 어떤 URL로 판단할 것인가”를 정하는 배포 feature slice라서 설명 가치가 충분하다.
+- 배운 점: Dockerfile과 prod profile만으로는 배포 준비가 끝나지 않는다. 운영 환경은 요청을 처리하는 API뿐 아니라, 시스템이 앱을 감시하는 endpoint도 필요하다.
+- 아직 약한 부분: 비밀 값 주입은 עדיין 평문 env 중심 설명이고, 세션 외부화도 없다. 즉 health check 기준은 생겼지만, 다중 task 운영과 secret handling은 다음 단계다.
+- 면접용 30초 요약: 이번에는 ECS용 actuator health endpoint를 추가했습니다. 핵심은 `spring-boot-starter-actuator`를 붙이고, prod profile에서 `liveness`는 프로세스 생존, `readiness`는 `readinessState + db + ping` 기준으로 그룹을 나눠 `/actuator/health/liveness`, `/actuator/health/readiness`를 실제로 열었다는 점입니다. 즉 ALB와 ECS가 앱을 어떤 기준으로 healthy로 볼지 코드와 설정으로 설명 가능한 상태가 됐습니다.
+
+## 2026-03-29 - ECS task definition sample로 secrets 주입 기준 고정
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: “Secrets Manager를 써라”는 말만으로는 초보자가 실제 ECS task definition에 무엇을 넣어야 하는지 알기 어렵다. 이번 조각의 목적은 저장소에 `task-definition.prod.sample.json`을 추가해서, 어떤 값은 `environment`, 어떤 값은 `secrets`로 넣는지 파일 단위로 고정하는 것이다.
+- 변경 파일:
+  - `deploy/ecs/task-definition.prod.sample.json`
+  - `src/test/java/com/worldmap/common/config/EcsTaskDefinitionTemplateTest.java`
+  - `README.md`
+  - `docs/DEPLOYMENT_RUNBOOK_AWS_ECS.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/96-add-ecs-task-definition-sample-for-secrets-manager-and-ssm.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+- 요청 흐름 / 데이터 흐름: 런타임 요청 흐름은 바뀌지 않았다. 새로 정리된 것은 배포 입력 흐름이다. `Secrets Manager/SSM -> ECS task definition secrets field -> container env -> application-prod.yml` 순서로 비밀 값이 주입되고, 비밀이 아닌 값은 `environment`로만 들어간다.
+- 데이터 / 상태 변화: DB나 Redis 데이터 변화는 없다. 대신 저장소에 남는 배포 샘플에서 `SPRING_DATASOURCE_PASSWORD`, `WORLDMAP_ADMIN_BOOTSTRAP_PASSWORD`는 `secrets`로 이동했고, `SPRING_DATASOURCE_URL`, `SPRING_DATA_REDIS_HOST`, `JAVA_RUNTIME_OPTS` 등은 일반 `environment`로 남는 기준이 생겼다.
+- 핵심 도메인 개념: 이 조각의 핵심은 “비밀 값 계약”이다. 앱 코드를 크게 바꾸는 대신, ECS가 어떤 이름의 env/secrets를 주입해야 하는지를 샘플 파일로 남기면 초보자도 AWS 콘솔과 저장소 파일을 1:1로 대응시켜 설명할 수 있다.
+- 예외 / 엣지 케이스: 현재 sample은 `SPRING_DATA_REDIS_HOST`나 `SPRING_DATASOURCE_URL`을 비밀 값으로 보지 않는다. 네트워크 구성에 따라 이것도 SSM으로 옮기고 싶을 수 있지만, 첫 배포 기준에선 “password만 secrets로 분리”하는 편이 초보자에게 더 단순하고 설명 가능하다고 판단했다.
+- 테스트:
+  - `./gradlew test --tests com.worldmap.common.config.EcsTaskDefinitionTemplateTest`
+  - `./gradlew test`
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이 조각은 AWS 콘솔 클릭 가이드가 아니라, 저장소 기준으로 배포 입력 계약을 고정하는 feature slice라서 설명 가치가 충분하다.
+- 배운 점: 배포 문서가 길어질수록 “실제 샘플 파일”이 더 중요해진다. 초보자 기준으로는 ECS 화면 설명보다 `task-definition.prod.sample.json` 하나가 더 빠르게 이해를 돕는다.
+- 아직 약한 부분: 아직 실제 GitHub Actions deploy workflow와 ECS service update 명령은 저장소에 없다. 또한 session externalization 전 단계라 task 수는 여전히 1개가 전제다.
+- 면접용 30초 요약: 이번에는 ECS task definition 샘플 파일을 저장소에 추가해서, 어떤 값은 `environment`로 넣고 어떤 비밀번호는 `secrets`로 넣는지 기준을 고정했습니다. 핵심은 `SPRING_DATASOURCE_PASSWORD`, `WORLDMAP_ADMIN_BOOTSTRAP_PASSWORD`를 Secrets Manager/SSM으로 주입하고, 나머지 런타임 값은 일반 env로 두는 계약을 파일로 남겨 초보자도 AWS 콘솔과 코드를 같이 설명할 수 있게 만든 것입니다.
+
+## 2026-03-29 - prod 전용 Spring Session Redis 활성화
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: ECS task를 2개 이상으로 늘리려면 더 이상 servlet container 내부 session만으로는 부족하다. 이번 조각의 목적은 local/test는 그대로 두고, prod에서만 Redis-backed session을 활성화해 멀티태스크 준비 기준을 코드로 고정하는 것이다.
+- 변경 파일:
+  - `build.gradle`
+  - `src/main/resources/application.yml`
+  - `src/main/resources/application-prod.yml`
+  - `src/test/java/com/worldmap/common/config/ProdProfileConfigTest.java`
+  - `src/test/java/com/worldmap/common/config/RedisSessionConfigurationIntegrationTest.java`
+  - `README.md`
+  - `docs/DEPLOYMENT_RUNBOOK_AWS_ECS.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/97-enable-prod-only-spring-session-redis-for-fargate-scale-out.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+- 요청 흐름 / 데이터 흐름: 로그인/게스트/게임 요청 흐름 자체는 바뀌지 않았다. 달라진 것은 세션 저장 경로다. local/test는 여전히 servlet session을 쓰고, prod는 `HttpSession -> Spring Session Redis repository -> Redis namespace worldmap:session` 흐름으로 세션을 저장한다.
+- 데이터 / 상태 변화: DB 상태 변화는 없다. prod 기준으로 `RedisSessionProdConfiguration`이 Redis-backed session을 켜고, `server.servlet.session.cookie.name=WMSESSION`, `server.servlet.session.timeout=14d`, `same-site=lax`, `secure=true`가 추가됐다. local/test는 session auto-configuration을 제외해 기존 servlet session 흐름을 유지한다.
+- 핵심 도메인 개념: 이 조각의 핵심은 “세션 저장소 분리”다. `MemberSessionManager`와 `GuestSessionKeyManager`는 여전히 `HttpSession` 인터페이스만 보고 동작하고, 실제 backing store만 prod 전용 configuration으로 Redis로 바뀐다. 즉 비즈니스 로직을 고치지 않고 세션 저장 책임만 인프라 쪽으로 이동한 셈이다.
+- 예외 / 엣지 케이스: Redis-backed session 설정이 들어갔다고 바로 task 2개로 올리는 것은 아니다. 실제 ECS에서 cookie, TTL, Redis 연결, 재배포 후 로그인 유지까지 확인한 다음에만 `desiredCount=2`로 승격해야 한다.
+- 테스트:
+  - `./gradlew test --tests com.worldmap.common.config.ProdProfileConfigTest --tests com.worldmap.common.config.RedisSessionConfigurationIntegrationTest`
+  - `./gradlew test`
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이 조각은 backend 면접에서 설명 가치가 큰 “세션 저장소 외부화” slice라서, 왜 `HttpSession` 코드를 그대로 두고 backing store만 바꿨는지 설명할 가치가 충분하다.
+- 배운 점: 세션 외부화는 auth controller를 고치는 작업보다 설정과 auto-configuration의 문제에 가깝다. business code가 `HttpSession` 인터페이스에만 의존하도록 유지해 두면, backing store 교체를 훨씬 작게 가져갈 수 있다.
+- 아직 약한 부분: 실제 ECS/Redis 환경에서 세션이 다른 task에서도 이어지는지 smoke test는 아직 못 했다. 또한 secure cookie가 ALB 뒤 HTTPS에서 어떻게 보이는지도 실제 배포 검증이 남아 있다.
+- 면접용 30초 요약: 이번에는 prod에서만 Spring Session Redis를 켰습니다. 핵심은 auth/game 코드를 거의 안 바꾸고, `RedisSessionProdConfiguration`으로 `HttpSession`의 backing store만 Redis로 바꾼 점입니다. 그래서 local/test는 기존 servlet session을 유지하고, prod에서는 `WMSESSION` 쿠키와 14일 TTL, Redis namespace를 기준으로 멀티태스크 준비 상태를 만들었습니다.
+
+## 2026-03-29 - GitHub Actions ECS 배포 workflow와 task definition render 스크립트 추가
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: Dockerfile, prod profile, health probe, sample task definition, Spring Session Redis까지만 있으면 “배포 준비는 됐다”라고 말할 수는 있지만, 초보자가 실제로 ECR push와 ECS deploy를 어떻게 자동화할지까지는 따라가기 어렵다. 이번 조각의 목적은 저장소에 `workflow_dispatch` 기준 GitHub Actions workflow와 task definition render 스크립트를 넣어, `저장소 파일만 보고도` 자동 배포 흐름을 설명하고 재현할 수 있게 만드는 것이다.
+- 변경 파일:
+  - `.github/workflows/deploy-prod-ecs.yml`
+  - `scripts/render_ecs_task_definition.py`
+  - `.gitignore`
+  - `src/test/java/com/worldmap/common/config/GitHubActionsDeployWorkflowTemplateTest.java`
+  - `src/test/java/com/worldmap/common/config/RenderEcsTaskDefinitionScriptTest.java`
+  - `README.md`
+  - `docs/DEPLOYMENT_RUNBOOK_AWS_ECS.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/98-add-github-actions-ecs-deploy-workflow-from-template.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+- 요청 흐름 / 데이터 흐름: 게임 요청 흐름은 바뀌지 않았다. 새로 고정된 것은 배포 흐름이다. `workflow_dispatch -> actions/checkout -> actions/setup-java -> ./gradlew test -> aws-actions/configure-aws-credentials(OIDC) -> amazon-ecr-login -> docker build/push -> render_ecs_task_definition.py -> amazon-ecs-deploy-task-definition` 순서로 production deploy가 진행된다.
+- 데이터 / 상태 변화: 게임 세션, 랭킹, 추천 데이터는 변하지 않는다. 대신 CI 시점에 `task-definition.prod.sample.json`이 `task-definition.rendered.json`으로 한 번 더 변환되고, 이 렌더링 단계에서 `RDS_ENDPOINT`, `ELASTICACHE_ENDPOINT`, role ARN, secret ARN, image URI가 실제 값으로 치환된다.
+- 핵심 도메인 개념: 이 조각의 핵심은 “배포 입력 계약을 템플릿과 렌더링 단계로 분리하는 것”이다. sample task definition은 설명 가능한 source of truth로 남겨 두고, 실제 deploy 대상 JSON은 workflow 안에서 생성하도록 나눴다. 이 책임은 컨트롤러나 서비스가 아니라 workflow와 deployment script가 맡는다. 사용자 요청이 아니라 운영 파이프라인 규칙이기 때문이다.
+- 예외 / 엣지 케이스:
+  - GitHub repository variables가 비어 있으면 workflow가 `Validate deployment inputs` 단계에서 바로 실패한다.
+  - render script는 placeholder가 남아 있으면 종료한다. 즉 부분 치환 상태로 ECS에 올라가는 것을 막는다.
+  - production push 자동 배포는 아직 열지 않았다. 실제 AWS smoke test 전에는 `workflow_dispatch` 수동 실행만 허용하는 편이 더 안전하다.
+- 테스트:
+  - `./gradlew test --tests com.worldmap.common.config.GitHubActionsDeployWorkflowTemplateTest --tests com.worldmap.common.config.RenderEcsTaskDefinitionScriptTest`
+  - `python3 -m py_compile scripts/render_ecs_task_definition.py`
+  - `python3 -m json.tool deploy/ecs/task-definition.prod.sample.json >/dev/null`
+  - `./gradlew test`
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이 조각은 단순 CI 파일 추가가 아니라 “초보자가 sample task definition을 실제 deploy JSON으로 어떻게 바꿔 ECS에 올리는가”를 설명하는 feature slice라서 글로 남길 가치가 충분하다.
+- 배운 점: task definition template만 저장소에 두면 설명은 되지만 자동 배포까지 이어지지 않는다. 반대로 rendered JSON만 두면 source of truth가 사라진다. 둘을 `sample -> render -> deploy`로 나누는 것이 현재 프로젝트와 같은 초보자 지향 런북에 가장 설명 가능하다.
+- 아직 약한 부분: 아직 실제 AWS 계정에 OIDC role, repository variables, ECS cluster/service를 연결해 workflow를 한 번 돌린 상태는 아니다. 즉 자동 배포의 코드 뼈대는 생겼지만, smoke test는 다음 단계다.
+- 면접용 30초 요약: 이번에는 GitHub Actions로 ECS 배포 workflow를 추가했습니다. 핵심은 `OIDC 인증 -> 테스트 -> ECR push -> sample task definition 렌더링 -> ECS deploy`까지 저장소 파일로 고정한 점입니다. 특히 task definition을 사람이 직접 수정하지 않고 `render_ecs_task_definition.py`가 실제 AWS 값과 image URI를 주입하도록 만들어서, 초보자도 자동 배포 흐름을 코드 기준으로 설명할 수 있게 했습니다.

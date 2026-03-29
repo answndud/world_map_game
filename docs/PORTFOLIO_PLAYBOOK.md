@@ -760,12 +760,19 @@
 - 런북 2차 보정으로 `Java 25 배포 이미지 결정`, `forwarded headers`, `JVM 메모리 옵션`, `graceful shutdown`, `Secrets Manager/SSM`, `public IPv4 비용`, `ElastiCache TLS`, `ECR lifecycle policy`를 첫 배포 판단 항목으로 보강
 - [Dockerfile](/Users/alex/project/worldmap/Dockerfile)과 [.dockerignore](/Users/alex/project/worldmap/.dockerignore)를 추가해 Java 25 기준 multi-stage 컨테이너 빌드를 실제로 검증
 - [application-prod.yml](/Users/alex/project/worldmap/src/main/resources/application-prod.yml)을 추가해 prod datasource / redis / demo bootstrap off / forwarded header 기준이 어디서 분리되는지 고정
+- [Dockerfile](/Users/alex/project/worldmap/Dockerfile)의 JVM 옵션을 `JAVA_RUNTIME_OPTS`로 override 가능하게 바꾸고, [application-prod.yml](/Users/alex/project/worldmap/src/main/resources/application-prod.yml)에 graceful shutdown 기준을 추가해 ALB 뒤 종료 동작을 코드로 고정
+- `spring-boot-starter-actuator`를 추가하고 [application-prod.yml](/Users/alex/project/worldmap/src/main/resources/application-prod.yml)에 health/liveness/readiness probe group을 구성해 ECS/ALB health check 기준을 실제 endpoint로 열었다
+- [task-definition.prod.sample.json](/Users/alex/project/worldmap/deploy/ecs/task-definition.prod.sample.json)을 추가해 어떤 값은 `environment`, 어떤 값은 `secrets`로 ECS에 넣는지 샘플을 저장소에 고정했다
+- [RedisSessionProdConfiguration.java](/Users/alex/project/worldmap/src/main/java/com/worldmap/common/config/RedisSessionProdConfiguration.java)로 `prod` 프로필에서만 Redis-backed session을 켜고, [application-local.yml](/Users/alex/project/worldmap/src/main/resources/application-local.yml) / [application-test.yml](/Users/alex/project/worldmap/src/main/resources/application-test.yml)에서는 session auto-configuration을 제외해 기존 servlet session 흐름을 보존했다
+- [deploy-prod-ecs.yml](/Users/alex/project/worldmap/.github/workflows/deploy-prod-ecs.yml)로 `workflow_dispatch -> OIDC AWS 인증 -> ./gradlew test -> ECR push -> rendered task definition deploy` 순서를 저장소에 고정했다
+- [render_ecs_task_definition.py](/Users/alex/project/worldmap/scripts/render_ecs_task_definition.py)로 sample task definition을 실제 AWS 리소스 값과 image URI로 치환하는 렌더링 규칙을 추가했다
 - README에 실시간 전달 결정과 발표용 문서 세트 링크 반영
 
 다음에 이어서 할 일:
 
-- forwarded headers, JVM 메모리 옵션, graceful shutdown, `Actuator`를 추가해 실제 AWS 배포 준비 코드 조각을 연다
-- `Spring Session + Redis` 적용 전까지는 ECS `desiredCount=1` 원칙으로 먼저 공개하고, 이후 2-task 구성으로 승격한다
+- 실제 AWS 계정에서 `workflow_dispatch`에 필요한 repository variables와 OIDC role을 연결한다
+- ECS 수동 배포 1회와 GitHub Actions 배포 1회를 모두 성공시켜 smoke test를 남긴다
+- 실제 ECS 환경에서 Redis-backed session이 task 재기동 이후에도 유지되는지 smoke test를 한다
 
 반드시 이해할 것:
 

@@ -147,6 +147,11 @@
 84. [모든 게임의 오답 피드백 시간을 같은 리듬으로 맞추기](./91-unify-wrong-answer-feedback-rhythm-across-public-games.md)
 85. [Java 25 기준 multi-stage Dockerfile로 ECS 배포 준비 시작하기](./92-add-java-25-multi-stage-dockerfile-for-ecs-prep.md)
 86. [ECS에서 앱이 어떤 설정으로 떠야 하는지 먼저 분리하기](./93-add-application-prod-profile-for-ecs-runtime-baseline.md)
+87. [ECS에서 graceful shutdown과 JVM 옵션 기준 먼저 고정하기](./94-add-graceful-shutdown-and-runtime-jvm-opts-for-ecs.md)
+88. [ECS와 ALB가 볼 actuator health probe를 실제로 열기](./95-add-actuator-readiness-and-liveness-for-ecs-health-checks.md)
+89. [ECS task definition sample로 secrets 주입 기준 고정하기](./96-add-ecs-task-definition-sample-for-secrets-manager-and-ssm.md)
+90. [prod에서만 Spring Session Redis를 켜서 멀티태스크 준비하기](./97-enable-prod-only-spring-session-redis-for-fargate-scale-out.md)
+91. [GitHub Actions에서 sample task definition을 렌더링해 ECS에 배포하기](./98-add-github-actions-ecs-deploy-workflow-from-template.md)
 
 ### Part E. 확장과 포트폴리오 정리
 

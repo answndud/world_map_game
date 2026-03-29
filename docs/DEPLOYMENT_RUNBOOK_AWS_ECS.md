@@ -53,16 +53,12 @@
 - `Spring Session + Redis` 적용
 - session cookie / TTL / 보안 속성 점검
 
-### 3.2 일부 배포 전용 설정은 아직 없다
+### 3.2 일부 배포 전용 설정은 아직 남아 있다
 
 현재 저장소 기준으로는 아래가 아직 없다.
 
-- `server.forward-headers-strategy`
-- JVM 메모리 옵션
-- graceful shutdown 설정
 - `Flyway`
-- `Spring Session Redis`
-- `/actuator/health/readiness`, `/actuator/health/liveness`
+- 실제 AWS account에 연결된 `OIDC role / repository variables / RDS / ElastiCache / ECS service`
 
 즉, AWS 리소스를 먼저 만드는 것보다 **배포 준비 코드 조각을 먼저 구현하는 것**이 맞다.
 
@@ -73,6 +69,30 @@
 - Docker 내부 `bootJar` 기반 self-contained image build 검증
 - `application-prod.yml`
   - datasource / redis / demo bootstrap off / forwarded header 기준 분리
+- `server.forward-headers-strategy=native`
+- `server.shutdown=graceful`
+- `spring.lifecycle.timeout-per-shutdown-phase=20s`
+- Docker runtime `JAVA_RUNTIME_OPTS`
+  - 기본값 `-XX:MaxRAMPercentage=75.0`
+  - ECS task definition에서 override 가능
+- `/actuator/health`
+- `/actuator/health/liveness`
+- `/actuator/health/readiness`
+  - readiness group: `readinessState,db,ping`
+  - liveness group: `livenessState,ping`
+- `deploy/ecs/task-definition.prod.sample.json`
+  - `environment`와 `secrets`를 어떻게 나눌지 예시 포함
+- `scripts/render_ecs_task_definition.py`
+  - sample task definition을 GitHub Actions env 값으로 실제 JSON으로 치환
+- `.github/workflows/deploy-prod-ecs.yml`
+  - OIDC 기반 AWS 인증 -> `./gradlew test` -> ECR push -> rendered task definition deploy 순서 고정
+- prod 전용 Redis-backed session
+  - `RedisSessionProdConfiguration`
+  - `redisNamespace=worldmap:session`
+  - `server.servlet.session.cookie.name=WMSESSION`
+  - `server.servlet.session.timeout=14d`
+  - `server.servlet.session.cookie.same-site=lax`
+  - `server.servlet.session.cookie.secure=true`
 
 ### 3.3 현재는 `Java 25`를 사용한다
 
@@ -354,25 +374,14 @@ AWS 콘솔 작업보다 먼저 아래를 구현해야 한다.
 
 ### 필수
 
-1. forwarded header 지원
-   - `server.forward-headers-strategy=native` 또는 `framework`
-2. JVM 메모리 옵션
-   - 예: `-XX:MaxRAMPercentage=75.0`
-3. graceful shutdown
-4. `Actuator health/readiness/liveness`
-5. 비밀 정보 분리
+1. 비밀 정보 분리
    - `Secrets Manager` 또는 `SSM Parameter Store`
-
-### 시나리오 B로 가기 전에 필수
-
-6. `Spring Session + Redis`
-7. secure cookie / same-site / session timeout 정리
 
 ### 권장
 
-8. `Flyway`
-9. CloudWatch용 log pattern 점검
-10. ECR lifecycle policy
+2. `Flyway`
+3. CloudWatch용 log pattern 점검
+4. ECR lifecycle policy
 
 ## 9. 처음부터 끝까지 실제 배포 순서
 
@@ -407,6 +416,23 @@ AWS 콘솔 작업보다 먼저 아래를 구현해야 한다.
 권장 리전:
 
 - `ap-northeast-2 (Seoul)`
+
+### 9.2.1 Secrets Manager / SSM 주입 기준
+
+현재 저장소에는 바로 참고할 샘플 파일이 있다.
+
+- [task-definition.prod.sample.json](/Users/alex/project/worldmap/deploy/ecs/task-definition.prod.sample.json)
+
+이 샘플의 기준은 아래다.
+
+- `environment`
+  - 비밀이 아닌 런타임 값
+  - 예: `SPRING_PROFILES_ACTIVE`, `SPRING_DATASOURCE_URL`, `SPRING_DATA_REDIS_HOST`, `JAVA_RUNTIME_OPTS`
+- `secrets`
+  - 비밀번호나 bootstrap admin password처럼 평문으로 남기면 안 되는 값
+  - 예: `SPRING_DATASOURCE_PASSWORD`, `WORLDMAP_ADMIN_BOOTSTRAP_PASSWORD`
+
+즉, 초보자 기준으로는 “task definition을 만들 때 비밀 값은 `environment`가 아니라 `secrets`에 넣는다”는 원칙만 먼저 지키면 된다.
 
 ### 9.3 도메인 전략 결정
 
@@ -641,14 +667,43 @@ AWS 콘솔 작업보다 먼저 아래를 구현해야 한다.
    - docker build
    - ECR login
    - ECR push
-   - ECS task definition update
+   - sample task definition render
    - ECS service deploy
    - deployment stabilization wait
 
+현재 저장소에는 이 흐름을 반영한 [deploy-prod-ecs.yml](/Users/alex/project/worldmap/.github/workflows/deploy-prod-ecs.yml)이 들어 있다.
+
+핵심 특징:
+
+1. trigger는 `workflow_dispatch`만 열어 둔다.
+   - 초보자 기준으로는 자동 production deploy보다 수동 버튼 실행이 안전하다.
+2. GitHub OIDC를 사용한다.
+   - long-lived AWS access key를 저장소 secret에 넣지 않는다.
+3. sample task definition을 그대로 쓰지 않는다.
+   - [render_ecs_task_definition.py](/Users/alex/project/worldmap/scripts/render_ecs_task_definition.py)가 `RDS_ENDPOINT`, `ELASTICACHE_ENDPOINT`, secret ARN, role ARN, image URI를 치환해 `task-definition.rendered.json`을 만든다.
+4. deploy 전에 항상 `./gradlew test`를 실행한다.
+
+필요한 GitHub repository variables:
+
+- `AWS_REGION`
+- `AWS_ACCOUNT_ID`
+- `AWS_GITHUB_ACTIONS_ROLE_ARN`
+- `ECR_REPOSITORY`
+- `ECS_CLUSTER`
+- `ECS_SERVICE`
+- `ECS_EXECUTION_ROLE_ARN`
+- `ECS_TASK_ROLE_ARN`
+- `RDS_ENDPOINT`
+- `ELASTICACHE_ENDPOINT`
+- `CLOUDWATCH_LOG_GROUP`
+- `SPRING_DATASOURCE_PASSWORD_SECRET_ARN`
+- `ADMIN_BOOTSTRAP_PASSWORD_PARAMETER_ARN`
+
 권장 브랜치 정책:
 
-- `main` push 시 production deploy
+- 배포 workflow는 `workflow_dispatch`로 수동 실행
 - PR은 test만 수행
+- production 자동 push deploy는 수동 배포와 smoke test가 충분히 안정된 뒤에만 연다
 
 ## 11. 운영 관리 계획
 
@@ -763,35 +818,33 @@ ElastiCache:
 
 ### 1주차
 
-1. forwarded headers
-2. JVM 메모리 옵션 + graceful shutdown
-3. `Actuator`
+1. task definition sample을 기준으로 Secrets Manager / SSM 파라미터 생성
+2. execution role / task role 권한 정리
 
 ### 2주차
 
-4. AWS 계정/MFA/Budget
-5. RDS
-6. ElastiCache
-7. ECR
+3. AWS 계정/MFA/Budget
+4. RDS
+5. ElastiCache
+6. ECR
 
 ### 3주차
 
-8. ECS + ALB
-9. 수동 첫 배포
-10. smoke test
+7. ECS + ALB
+8. 수동 첫 배포
+9. smoke test
 
 ### 4주차
 
-11. GitHub Actions 자동 배포
-12. CloudWatch 알람
-13. Route 53 / ACM HTTPS
+10. GitHub Actions 자동 배포
+11. CloudWatch 알람
+12. Route 53 / ACM HTTPS
 
 ### 그 다음
 
-14. `Spring Session + Redis`
-15. ECS task `1 -> 2`
-16. `Flyway`
-17. 배포/롤백 runbook 보강
+13. ECS task `1 -> 2`
+14. `Flyway`
+15. 배포/롤백 runbook 보강
 
 ## 14. 지금 당장 해야 할 일 체크리스트
 
@@ -801,19 +854,20 @@ ElastiCache:
 - [x] `.dockerignore` 작성
 - [x] `application-prod.yml` 추가
 - [ ] Java 25 runtime image 유지 여부 또는 Java 21 LTS 전환 여부 결정
-- [ ] forwarded header 지원 추가
-- [ ] JVM 메모리 옵션 추가
-- [ ] graceful shutdown 추가
-- [ ] Actuator readiness/liveness 추가
-- [ ] Secrets Manager 또는 SSM Parameter Store 연결
-- [ ] session externalization 전까지 `desiredCount=1` 원칙 문서화
+- [x] forwarded header 지원 추가
+- [x] JVM 메모리 옵션 추가
+- [x] graceful shutdown 추가
+- [x] Actuator readiness/liveness 추가
+- [x] Secrets Manager 또는 SSM Parameter Store 주입 예시 파일 추가
+- [x] Spring Session + Redis 설정 추가
+- [x] session externalization 전까지 `desiredCount=1` 원칙 문서화
 - [ ] AWS 계정 생성 + MFA + Budget
 - [ ] RDS / ElastiCache 생성
 - [ ] ECR 생성
 - [ ] ECR lifecycle policy 추가
 - [ ] ECS 수동 배포 1회 성공
 - [ ] Route 53 / ACM 적용
-- [ ] GitHub Actions 자동 배포 추가
+- [x] GitHub Actions 자동 배포 workflow 추가
 - [ ] `Spring Session + Redis` 적용 후 `desiredCount=2` 승격
 - [ ] Flyway는 첫 배포 안정화 이후 도입
 
