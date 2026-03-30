@@ -160,6 +160,7 @@
 97. [추천 피드백을 session token에 묶고 summary API를 admin 전용으로 닫기](./104-bind-recommendation-feedback-to-session-token-and-lock-summary-api.md)
 98. [추천 만족도와 게임오버 모달을 키보드로도 제대로 쓰게 만들기](./105-make-recommendation-feedback-and-game-over-modal-keyboard-accessible.md)
 99. [남은 4개 게임에도 같은 game over modal focus 규칙 적용하기](./106-extend-keyboard-game-over-modal-focus-rules-to-all-games.md)
+100. [랭킹 화면은 active board만 갱신하고 일간 카피도 같이 맞추기](./107-refresh-only-the-active-ranking-board-and-keep-daily-copy-fresh.md)
 
 ### Part E. 확장과 포트폴리오 정리
 

@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>실시간 랭킹</title>
-    <link rel="stylesheet" th:href="@{/css/site.css(v='20260330-a11y-keyboard-2')}">
-    <script th:src="@{/js/ranking.js(v='20260326-ranking-l1-only-1')}" defer></script>
+    <link rel="stylesheet" th:href="@{/css/site.css(v='20260330-ranking-active-board-2')}">
+    <script th:src="@{/js/ranking.js(v='20260330-ranking-active-board-2')}" defer></script>
 </head>
 <body data-page="ranking">
 <div class="page-shell">
@@ -24,7 +24,7 @@
             <div class="ranking-sync-bar">
                 <article class="stat-card">
                     <span class="subtitle">자동 갱신</span>
-                    <strong id="ranking-auto-refresh-status">15초 간격 ON</strong>
+                    <strong id="ranking-auto-refresh-status">현재 보드 15초 간격 ON</strong>
                 </article>
                 <article class="stat-card">
                     <span class="subtitle">마지막 갱신</span>
@@ -32,8 +32,8 @@
                 </article>
                 <article class="stat-card">
                     <span class="subtitle">갱신 주기</span>
-                    <strong>15초마다 갱신</strong>
-                    <p class="stat-card-copy">화면을 보고 있는 동안 자동으로 최신 순위를 불러옵니다.</p>
+                    <strong>현재 보드를 15초마다 갱신</strong>
+                    <p class="stat-card-copy">화면을 보고 있는 동안 지금 보고 있는 랭킹 보드만 자동으로 최신 순위를 불러옵니다.</p>
                 </article>
                 <div class="action-buttons">
                     <button id="ranking-refresh-button" class="secondary-button" type="button">지금 새로고침</button>
@@ -281,6 +281,7 @@
                 <article class="panel ranking-board-panel"
                          data-ranking-panel="location:DAILY"
                          data-title="위치 찾기 · 오늘 Top 10"
+                         data-copy-base="오늘 기준 위치 찾기 랭킹입니다."
                          th:data-copy="${'오늘 기준 위치 찾기 랭킹입니다. 기준 날짜: ' + locationDaily.targetDate}"
                          hidden>
                     <div class="table-shell">
@@ -313,6 +314,7 @@
                 <article class="panel ranking-board-panel"
                          data-ranking-panel="capital:DAILY"
                          data-title="수도 맞히기 · 오늘 Top 10"
+                         data-copy-base="오늘 기준 수도 맞히기 랭킹입니다."
                          th:data-copy="${'오늘 기준 수도 맞히기 랭킹입니다. 기준 날짜: ' + capitalDaily.targetDate}"
                          hidden>
                     <div class="table-shell">
@@ -345,6 +347,7 @@
                 <article class="panel ranking-board-panel"
                          data-ranking-panel="flag:DAILY"
                          data-title="국기 보고 나라 맞히기 · 오늘 Top 10"
+                         data-copy-base="오늘 기준 국기 퀴즈 랭킹입니다."
                          th:data-copy="${'오늘 기준 국기 퀴즈 랭킹입니다. 기준 날짜: ' + flagDaily.targetDate}"
                          hidden>
                     <div class="table-shell">
@@ -377,6 +380,7 @@
                 <article class="panel ranking-board-panel"
                          data-ranking-panel="population-battle:DAILY"
                          data-title="인구 비교 퀵 배틀 · 오늘 Top 10"
+                         data-copy-base="오늘 기준 인구 비교 퀵 배틀 랭킹입니다."
                          th:data-copy="${'오늘 기준 인구 비교 퀵 배틀 랭킹입니다. 기준 날짜: ' + populationBattleDaily.targetDate}"
                          hidden>
                     <div class="table-shell">
@@ -409,7 +413,8 @@
                 <article class="panel ranking-board-panel"
                          data-ranking-panel="population:DAILY"
                          data-title="인구수 맞추기 · 오늘 Top 10"
-                         th:data-copy="${'오늘 인구수 맞추기 랭킹입니다. 기준 날짜: ' + populationDaily.targetDate}"
+                         data-copy-base="오늘 기준 인구수 맞추기 랭킹입니다."
+                         th:data-copy="${'오늘 기준 인구수 맞추기 랭킹입니다. 기준 날짜: ' + populationDaily.targetDate}"
                          hidden>
                     <div class="table-shell">
                         <table class="result-table">
