@@ -1,6 +1,7 @@
 package com.worldmap.ranking;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -11,26 +12,24 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 import com.worldmap.auth.application.AdminAccessGuard;
-import com.worldmap.auth.application.MemberSessionManager;
+import com.worldmap.auth.application.CurrentMemberAccessService;
 import com.worldmap.ranking.application.LeaderboardEntryView;
 import com.worldmap.ranking.application.LeaderboardService;
 import com.worldmap.ranking.application.LeaderboardView;
 import com.worldmap.ranking.domain.LeaderboardGameMode;
 import com.worldmap.ranking.domain.LeaderboardScope;
 import com.worldmap.ranking.web.LeaderboardPageController;
-import com.worldmap.auth.application.MemberSessionManager;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(LeaderboardPageController.class)
-@Import(MemberSessionManager.class)
 class LeaderboardPageControllerTest {
 
 	@Autowired
@@ -40,13 +39,14 @@ class LeaderboardPageControllerTest {
 	private LeaderboardService leaderboardService;
 
 	@MockBean
-	private MemberSessionManager memberSessionManager;
+	private AdminAccessGuard adminAccessGuard;
 
 	@MockBean
-	private AdminAccessGuard adminAccessGuard;
+	private CurrentMemberAccessService currentMemberAccessService;
 
 	@Test
 	void rankingPageLoadsOnlyInitialActiveBoardFromService() throws Exception {
+		given(currentMemberAccessService.currentMember(any())).willReturn(Optional.empty());
 		given(leaderboardService.getLeaderboard(LeaderboardGameMode.LOCATION, LeaderboardScope.ALL, 10)).willReturn(
 			new LeaderboardView(
 				LeaderboardGameMode.LOCATION,

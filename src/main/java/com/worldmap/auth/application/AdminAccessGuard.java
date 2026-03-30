@@ -1,24 +1,16 @@
 package com.worldmap.auth.application;
 
-import com.worldmap.auth.domain.Member;
-import com.worldmap.auth.domain.MemberRepository;
 import com.worldmap.auth.domain.MemberRole;
 import jakarta.servlet.http.HttpSession;
-import java.util.Optional;
 import org.springframework.stereotype.Component;
 
 @Component
 public class AdminAccessGuard {
 
-	private final MemberSessionManager memberSessionManager;
-	private final MemberRepository memberRepository;
+	private final CurrentMemberAccessService currentMemberAccessService;
 
-	public AdminAccessGuard(
-		MemberSessionManager memberSessionManager,
-		MemberRepository memberRepository
-	) {
-		this.memberSessionManager = memberSessionManager;
-		this.memberRepository = memberRepository;
+	public AdminAccessGuard(CurrentMemberAccessService currentMemberAccessService) {
+		this.currentMemberAccessService = currentMemberAccessService;
 	}
 
 	public AdminAccessStatus authorize(HttpSession httpSession) {
@@ -26,32 +18,15 @@ public class AdminAccessGuard {
 			return AdminAccessStatus.UNAUTHENTICATED;
 		}
 
-		Optional<AuthenticatedMemberSession> currentMember = currentMember(httpSession);
+		var currentMember = currentMemberAccessService.currentMember(httpSession);
 		if (currentMember.isEmpty()) {
 			return AdminAccessStatus.UNAUTHENTICATED;
 		}
-
-		Optional<Member> persistedMember = memberRepository.findById(currentMember.get().memberId());
-		if (persistedMember.isEmpty()) {
-			memberSessionManager.signOut(httpSession);
-			return AdminAccessStatus.UNAUTHENTICATED;
-		}
-
-		memberSessionManager.syncMember(httpSession, persistedMember.get());
-		if (persistedMember.get().getRole() != MemberRole.ADMIN) {
+		if (currentMember.get().role() != MemberRole.ADMIN) {
 			return AdminAccessStatus.FORBIDDEN;
 		}
 
 		return AdminAccessStatus.ALLOWED;
-	}
-
-	private Optional<AuthenticatedMemberSession> currentMember(HttpSession httpSession) {
-		try {
-			return memberSessionManager.currentMember(httpSession);
-		} catch (IllegalArgumentException ex) {
-			memberSessionManager.signOut(httpSession);
-			return Optional.empty();
-		}
 	}
 
 	public enum AdminAccessStatus {

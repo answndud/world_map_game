@@ -1,9 +1,8 @@
 package com.worldmap.game.population.web;
 
-import com.worldmap.auth.application.AuthenticatedMemberSession;
+import com.worldmap.auth.application.CurrentMemberAccessService;
 import com.worldmap.auth.application.GameSessionAccessContextResolver;
 import com.worldmap.auth.application.GuestSessionKeyManager;
-import com.worldmap.auth.application.MemberSessionManager;
 import com.worldmap.game.population.application.PopulationGameAnswerView;
 import com.worldmap.game.population.application.PopulationGameService;
 import com.worldmap.game.population.application.PopulationGameSessionResultView;
@@ -27,26 +26,26 @@ import org.springframework.web.bind.annotation.RestController;
 public class PopulationGameApiController {
 
 	private final PopulationGameService populationGameService;
+	private final CurrentMemberAccessService currentMemberAccessService;
 	private final GuestSessionKeyManager guestSessionKeyManager;
-	private final MemberSessionManager memberSessionManager;
 	private final GameSessionAccessContextResolver gameSessionAccessContextResolver;
 
 	public PopulationGameApiController(
 		PopulationGameService populationGameService,
+		CurrentMemberAccessService currentMemberAccessService,
 		GuestSessionKeyManager guestSessionKeyManager,
-		MemberSessionManager memberSessionManager,
 		GameSessionAccessContextResolver gameSessionAccessContextResolver
 	) {
 		this.populationGameService = populationGameService;
+		this.currentMemberAccessService = currentMemberAccessService;
 		this.guestSessionKeyManager = guestSessionKeyManager;
-		this.memberSessionManager = memberSessionManager;
 		this.gameSessionAccessContextResolver = gameSessionAccessContextResolver;
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	public PopulationGameStartView start(@Valid @RequestBody StartPopulationGameRequest request, HttpSession httpSession) {
-		AuthenticatedMemberSession currentMember = memberSessionManager.currentMember(httpSession).orElse(null);
+		var currentMember = currentMemberAccessService.currentMember(httpSession).orElse(null);
 		if (currentMember != null) {
 			return populationGameService.startMemberGame(currentMember.memberId(), currentMember.nickname());
 		}

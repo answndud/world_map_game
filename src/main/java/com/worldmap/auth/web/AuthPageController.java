@@ -2,6 +2,7 @@ package com.worldmap.auth.web;
 
 import com.worldmap.auth.application.GuestSessionKeyManager;
 import com.worldmap.auth.application.GuestProgressClaimService;
+import com.worldmap.auth.application.CurrentMemberAccessService;
 import com.worldmap.auth.application.MemberAuthService;
 import com.worldmap.auth.application.MemberSessionManager;
 import com.worldmap.auth.domain.Member;
@@ -21,24 +22,27 @@ public class AuthPageController {
 
 	private final MemberAuthService memberAuthService;
 	private final MemberSessionManager memberSessionManager;
+	private final CurrentMemberAccessService currentMemberAccessService;
 	private final GuestSessionKeyManager guestSessionKeyManager;
 	private final GuestProgressClaimService guestProgressClaimService;
 
 	public AuthPageController(
 		MemberAuthService memberAuthService,
 		MemberSessionManager memberSessionManager,
+		CurrentMemberAccessService currentMemberAccessService,
 		GuestSessionKeyManager guestSessionKeyManager,
 		GuestProgressClaimService guestProgressClaimService
 	) {
 		this.memberAuthService = memberAuthService;
 		this.memberSessionManager = memberSessionManager;
+		this.currentMemberAccessService = currentMemberAccessService;
 		this.guestSessionKeyManager = guestSessionKeyManager;
 		this.guestProgressClaimService = guestProgressClaimService;
 	}
 
 	@GetMapping("/signup")
 	public String signupPage(Model model, HttpSession httpSession) {
-		if (memberSessionManager.currentMember(httpSession).isPresent()) {
+		if (currentMemberAccessService.currentMember(httpSession).isPresent()) {
 			return "redirect:/mypage";
 		}
 		if (!model.containsAttribute("signupForm")) {
@@ -77,7 +81,7 @@ public class AuthPageController {
 		HttpSession httpSession,
 		@RequestParam(required = false) String returnTo
 	) {
-		if (memberSessionManager.currentMember(httpSession).isPresent()) {
+		if (currentMemberAccessService.currentMember(httpSession).isPresent()) {
 			return "redirect:/mypage";
 		}
 		if (!model.containsAttribute("loginForm")) {

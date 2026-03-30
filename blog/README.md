@@ -164,6 +164,7 @@
 101. [`/ranking` 첫 SSR은 기본 보드만 그리고 나머지는 지연 로드하기](./108-defer-non-active-ranking-boards-on-initial-ssr.md)
 102. [admin 운영 접근을 session role이 아니라 현재 DB role로 다시 검증하기](./109-revalidate-admin-access-against-current-member-role.md)
 103. [public 헤더의 Dashboard 링크도 현재 DB role 기준으로 맞추기](./110-align-public-dashboard-link-visibility-with-current-admin-role.md)
+104. [public/auth SSR과 게임 시작도 현재 회원 기준으로 stale 세션 UI를 정리하기](./111-use-current-member-state-for-public-auth-ssr.md)
 
 ### Part E. 확장과 포트폴리오 정리
 

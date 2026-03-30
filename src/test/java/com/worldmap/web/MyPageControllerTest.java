@@ -1,11 +1,9 @@
 package com.worldmap.web;
 
-import static com.worldmap.auth.application.MemberSessionManager.MEMBER_ID_ATTRIBUTE;
-import static com.worldmap.auth.application.MemberSessionManager.MEMBER_NICKNAME_ATTRIBUTE;
-import static com.worldmap.auth.application.MemberSessionManager.MEMBER_ROLE_ATTRIBUTE;
 import static com.worldmap.auth.domain.MemberRole.USER;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -14,6 +12,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 import com.worldmap.auth.application.AdminAccessGuard;
+import com.worldmap.auth.application.AuthenticatedMemberSession;
+import com.worldmap.auth.application.CurrentMemberAccessService;
 import com.worldmap.mypage.application.MyPageBestRunView;
 import com.worldmap.mypage.application.MyPageDashboardView;
 import com.worldmap.mypage.application.MyPageModePerformanceView;
@@ -21,16 +21,15 @@ import com.worldmap.mypage.application.MyPageRecentPlayView;
 import com.worldmap.mypage.application.MyPageService;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Import;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(MyPageController.class)
-@Import(com.worldmap.auth.application.MemberSessionManager.class)
 class MyPageControllerTest {
 
 	@Autowired
@@ -42,8 +41,13 @@ class MyPageControllerTest {
 	@MockBean
 	private AdminAccessGuard adminAccessGuard;
 
+	@MockBean
+	private CurrentMemberAccessService currentMemberAccessService;
+
 	@Test
 	void myPageShowsGuestPromptWhenNotLoggedIn() throws Exception {
+		given(currentMemberAccessService.currentMember(any())).willReturn(Optional.empty());
+
 		mockMvc.perform(get("/mypage"))
 			.andExpect(status().isOk())
 			.andExpect(view().name("mypage"))
@@ -57,10 +61,10 @@ class MyPageControllerTest {
 
 	@Test
 	void myPageShowsConnectedMemberStateWhenLoggedIn() throws Exception {
+		given(currentMemberAccessService.currentMember(any())).willReturn(Optional.of(
+			new AuthenticatedMemberSession(1L, "orbit_runner", USER)
+		));
 		MockHttpSession session = new MockHttpSession();
-		session.setAttribute(MEMBER_ID_ATTRIBUTE, 1L);
-		session.setAttribute(MEMBER_NICKNAME_ATTRIBUTE, "orbit_runner");
-		session.setAttribute(MEMBER_ROLE_ATTRIBUTE, USER.name());
 		given(myPageService.loadDashboard(eq(1L))).willReturn(
 			new MyPageDashboardView(
 				"orbit_runner",

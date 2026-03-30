@@ -1,10 +1,8 @@
 package com.worldmap.game.populationbattle.web;
 
 import com.worldmap.auth.application.GameSessionAccessContextResolver;
-import com.worldmap.auth.application.MemberSessionManager;
 import com.worldmap.game.populationbattle.application.PopulationBattleGameService;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import java.util.UUID;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -15,23 +13,18 @@ import org.springframework.web.bind.annotation.PathVariable;
 public class PopulationBattleGamePageController {
 
 	private final PopulationBattleGameService populationBattleGameService;
-	private final MemberSessionManager memberSessionManager;
 	private final GameSessionAccessContextResolver gameSessionAccessContextResolver;
 
 	public PopulationBattleGamePageController(
 		PopulationBattleGameService populationBattleGameService,
-		MemberSessionManager memberSessionManager,
 		GameSessionAccessContextResolver gameSessionAccessContextResolver
 	) {
 		this.populationBattleGameService = populationBattleGameService;
-		this.memberSessionManager = memberSessionManager;
 		this.gameSessionAccessContextResolver = gameSessionAccessContextResolver;
 	}
 
 	@GetMapping("/games/population-battle/start")
-	public String startPage(HttpSession httpSession, Model model) {
-		memberSessionManager.currentMember(httpSession)
-			.ifPresent(currentMember -> model.addAttribute("authenticatedNickname", currentMember.nickname()));
+	public String startPage() {
 		return "population-battle-game/start";
 	}
 

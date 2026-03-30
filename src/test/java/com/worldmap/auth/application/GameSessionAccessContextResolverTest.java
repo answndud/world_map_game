@@ -1,28 +1,36 @@
 package com.worldmap.auth.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.BDDMockito.given;
 
-import com.worldmap.auth.domain.Member;
 import com.worldmap.auth.domain.MemberRole;
 import com.worldmap.game.common.application.GameSessionAccessContext;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.mock.web.MockHttpSession;
 
+@ExtendWith(MockitoExtension.class)
 class GameSessionAccessContextResolverTest {
 
-	private final MemberSessionManager memberSessionManager = new MemberSessionManager();
+	@Mock
+	private CurrentMemberAccessService currentMemberAccessService;
+
 	private final GuestSessionKeyManager guestSessionKeyManager = new GuestSessionKeyManager();
-	private final GameSessionAccessContextResolver resolver =
-		new GameSessionAccessContextResolver(memberSessionManager, guestSessionKeyManager);
 
 	@Test
 	void resolveUsesAuthenticatedMemberWhenPresent() {
+		GameSessionAccessContextResolver resolver =
+			new GameSessionAccessContextResolver(currentMemberAccessService, guestSessionKeyManager);
 		MockHttpServletRequest request = new MockHttpServletRequest();
-		request.getSession();
-		Member member = Member.create("member", "hashed", MemberRole.USER);
-		ReflectionTestUtils.setField(member, "id", 42L);
-		memberSessionManager.signIn(request, member);
+		MockHttpSession session = new MockHttpSession();
+		request.setSession(session);
+		given(currentMemberAccessService.currentMember(session)).willReturn(Optional.of(
+			new AuthenticatedMemberSession(42L, "member", MemberRole.USER)
+		));
 
 		GameSessionAccessContext context = resolver.resolve(request);
 
@@ -32,8 +40,13 @@ class GameSessionAccessContextResolverTest {
 
 	@Test
 	void resolveUsesGuestSessionKeyWhenAnonymousGuestHasSession() {
+		GameSessionAccessContextResolver resolver =
+			new GameSessionAccessContextResolver(currentMemberAccessService, guestSessionKeyManager);
 		MockHttpServletRequest request = new MockHttpServletRequest();
-		String guestSessionKey = guestSessionKeyManager.ensureGuestSessionKey(request.getSession());
+		MockHttpSession session = new MockHttpSession();
+		request.setSession(session);
+		String guestSessionKey = guestSessionKeyManager.ensureGuestSessionKey(session);
+		given(currentMemberAccessService.currentMember(session)).willReturn(Optional.empty());
 
 		GameSessionAccessContext context = resolver.resolve(request);
 
@@ -43,6 +56,8 @@ class GameSessionAccessContextResolverTest {
 
 	@Test
 	void resolveReturnsAnonymousContextWhenNoSessionExists() {
+		GameSessionAccessContextResolver resolver =
+			new GameSessionAccessContextResolver(currentMemberAccessService, guestSessionKeyManager);
 		GameSessionAccessContext context = resolver.resolve(new MockHttpServletRequest());
 
 		assertThat(context.memberId()).isNull();

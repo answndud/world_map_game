@@ -1,9 +1,8 @@
 package com.worldmap.game.location.web;
 
-import com.worldmap.auth.application.AuthenticatedMemberSession;
+import com.worldmap.auth.application.CurrentMemberAccessService;
 import com.worldmap.auth.application.GameSessionAccessContextResolver;
 import com.worldmap.auth.application.GuestSessionKeyManager;
-import com.worldmap.auth.application.MemberSessionManager;
 import com.worldmap.game.location.application.LocationGameAnswerView;
 import com.worldmap.game.location.application.LocationGameService;
 import com.worldmap.game.location.application.LocationGameSessionResultView;
@@ -27,26 +26,26 @@ import org.springframework.web.bind.annotation.RestController;
 public class LocationGameApiController {
 
 	private final LocationGameService locationGameService;
+	private final CurrentMemberAccessService currentMemberAccessService;
 	private final GuestSessionKeyManager guestSessionKeyManager;
-	private final MemberSessionManager memberSessionManager;
 	private final GameSessionAccessContextResolver gameSessionAccessContextResolver;
 
 	public LocationGameApiController(
 		LocationGameService locationGameService,
+		CurrentMemberAccessService currentMemberAccessService,
 		GuestSessionKeyManager guestSessionKeyManager,
-		MemberSessionManager memberSessionManager,
 		GameSessionAccessContextResolver gameSessionAccessContextResolver
 	) {
 		this.locationGameService = locationGameService;
+		this.currentMemberAccessService = currentMemberAccessService;
 		this.guestSessionKeyManager = guestSessionKeyManager;
-		this.memberSessionManager = memberSessionManager;
 		this.gameSessionAccessContextResolver = gameSessionAccessContextResolver;
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	public LocationGameStartView start(@Valid @RequestBody StartLocationGameRequest request, HttpSession httpSession) {
-		AuthenticatedMemberSession currentMember = memberSessionManager.currentMember(httpSession).orElse(null);
+		var currentMember = currentMemberAccessService.currentMember(httpSession).orElse(null);
 		if (currentMember != null) {
 			return locationGameService.startMemberGame(currentMember.memberId(), currentMember.nickname());
 		}

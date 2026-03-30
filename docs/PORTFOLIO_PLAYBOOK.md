@@ -616,6 +616,7 @@
 - admin 접근 제어는 각 컨트롤러 메서드가 아니라 인터셉터에 뒀다. 이 규칙은 비즈니스 상태 변경보다 라우트 입구의 공통 진입 정책이기 때문이다
 - `AdminAccessGuard`는 세션의 `memberId`로 현재 회원을 다시 조회해 `role`을 재확인하고, 세션 닉네임/role도 현재 DB 값으로 동기화한다. 그래서 admin 권한이 회수된 뒤 기존 세션이 남아 있어도 `/dashboard/**`와 `/api/recommendation/feedback/summary`는 즉시 막힌다
 - public `site-header`도 `SiteHeaderModelAdvice`를 통해 같은 `AdminAccessGuard`를 사용한다. 그래서 `Dashboard` 링크 노출 역시 세션 role 문자열이 아니라 현재 DB role 기준으로 맞춰지고, 권한 강등/승격이 홈 / Stats / Ranking / My Page 같은 SSR shell에 바로 반영된다
+- `CurrentMemberAccessService`는 admin 전용 guard 밖에서도 공통 current-member source로 쓴다. 홈 hero의 계정 CTA, `/login`·`/signup` GET 진입 분기, `/mypage`, 5개 게임 시작 페이지, 세션 시작 API, `GameSessionAccessContextResolver`는 세션 캐시가 아니라 이 서비스가 확인한 현재 회원 row를 기준으로 움직인다
 - 로그인 폼은 `returnTo`를 받아, admin 사용자가 로그인 후 원래 보려던 `/admin` 경로로 바로 돌아오도록 정리했다
 - `/mypage`는 finished session에 속한 stage를 다시 읽어 모드별 `클리어 Stage 수`, `1트 클리어율`, `평균 시도 수`를 추가로 보여준다
 - 이 성향 지표는 `leaderboard_record`가 아니라 raw stage 집계에서 나온다. 최고 점수/최근 완료 이력과 달리, 플레이 방식 자체는 stage 시도 수를 봐야 설명할 수 있기 때문이다

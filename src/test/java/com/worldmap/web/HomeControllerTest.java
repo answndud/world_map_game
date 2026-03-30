@@ -4,11 +4,6 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static com.worldmap.auth.application.MemberSessionManager.MEMBER_ID_ATTRIBUTE;
-import static com.worldmap.auth.application.MemberSessionManager.MEMBER_NICKNAME_ATTRIBUTE;
-import static com.worldmap.auth.application.MemberSessionManager.MEMBER_ROLE_ATTRIBUTE;
-import static com.worldmap.auth.application.AdminAccessGuard.AdminAccessStatus.ALLOWED;
-import static com.worldmap.auth.application.AdminAccessGuard.AdminAccessStatus.FORBIDDEN;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
@@ -16,17 +11,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 import com.worldmap.auth.application.AdminAccessGuard;
+import com.worldmap.auth.application.AuthenticatedMemberSession;
+import com.worldmap.auth.application.CurrentMemberAccessService;
 import com.worldmap.auth.domain.MemberRole;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Import;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(HomeController.class)
-@Import(com.worldmap.auth.application.MemberSessionManager.class)
 class HomeControllerTest {
 
 	@Autowired
@@ -35,8 +31,13 @@ class HomeControllerTest {
 	@MockBean
 	private AdminAccessGuard adminAccessGuard;
 
+	@MockBean
+	private CurrentMemberAccessService currentMemberAccessService;
+
 	@Test
 	void homePageRenders() throws Exception {
+		given(currentMemberAccessService.currentMember(any())).willReturn(Optional.empty());
+
 		mockMvc.perform(get("/"))
 			.andExpect(status().isOk())
 			.andExpect(view().name("home"))
@@ -76,11 +77,10 @@ class HomeControllerTest {
 
 	@Test
 	void homePageShowsDashboardLinkForAdminSession() throws Exception {
-		given(adminAccessGuard.authorize(any())).willReturn(ALLOWED);
+		given(currentMemberAccessService.currentMember(any())).willReturn(Optional.of(
+			new AuthenticatedMemberSession(1L, "worldmap_admin", MemberRole.ADMIN)
+		));
 		MockHttpSession session = new MockHttpSession();
-		session.setAttribute(MEMBER_ID_ATTRIBUTE, 1L);
-		session.setAttribute(MEMBER_NICKNAME_ATTRIBUTE, "worldmap_admin");
-		session.setAttribute(MEMBER_ROLE_ATTRIBUTE, MemberRole.ADMIN.name());
 
 		mockMvc.perform(get("/").session(session))
 			.andExpect(status().isOk())
@@ -90,12 +90,9 @@ class HomeControllerTest {
 	}
 
 	@Test
-	void homePageHidesDashboardLinkWhenAdminAccessGuardRejectsStaleSession() throws Exception {
-		given(adminAccessGuard.authorize(any())).willReturn(FORBIDDEN);
+	void homePageHidesDashboardLinkWhenCurrentMemberIsMissing() throws Exception {
+		given(currentMemberAccessService.currentMember(any())).willReturn(Optional.empty());
 		MockHttpSession session = new MockHttpSession();
-		session.setAttribute(MEMBER_ID_ATTRIBUTE, 1L);
-		session.setAttribute(MEMBER_NICKNAME_ATTRIBUTE, "worldmap_admin");
-		session.setAttribute(MEMBER_ROLE_ATTRIBUTE, MemberRole.ADMIN.name());
 
 		mockMvc.perform(get("/").session(session))
 			.andExpect(status().isOk())

@@ -306,6 +306,7 @@
 - 8단계 5차 구현으로 운영 라우트는 `AdminAccessInterceptor`가 보호하고, 비로그인 사용자는 `/login?returnTo=...`로 보내며, 로그인한 일반 사용자는 `403`으로 막는다.
 - admin 접근은 세션에 저장된 role 문자열만 믿지 않고, `AdminAccessGuard`가 session `memberId`로 현재 `member_account.role`을 다시 조회해 `/dashboard/**`와 운영 summary API 접근을 재검증한다.
 - public SSR shell도 `SiteHeaderModelAdvice`가 같은 `AdminAccessGuard`를 사용해 `Dashboard` 링크 노출 여부를 계산한다. 그래서 admin 권한이 강등되거나 승격되면 홈 / Stats / Ranking / My Page 헤더도 다음 요청에서 바로 같은 기준으로 맞춰진다.
+- `CurrentMemberAccessService`는 세션의 `memberId`로 현재 회원 row를 다시 읽고 닉네임/role을 동기화한다. 홈의 계정 callout, `/login`·`/signup` 진입 분기, `/mypage`, 5개 게임 시작 페이지, 게임 세션 시작 API, `GameSessionAccessContextResolver`는 이제 이 값을 공통 current-member source로 써서, 삭제된 회원 세션이 stale 로그인 UI를 계속 보이거나 member-owned 새 게임을 시작하지 않게 정리했다.
 - 운영 화면 접근 제어는 컨트롤러마다 복붙하지 않고 인터셉터로 묶었다. dashboard 진입 정책은 도메인 상태 변경보다 라우트 입구의 공통 규칙에 가깝기 때문이다.
 - 8단계 6차 구현으로 `/mypage`는 finished session에 속한 stage를 다시 읽어 모드별 `클리어 Stage 수`, `1트 클리어율`, `평균 시도 수`까지 보여주기 시작했다.
 - `/mypage`는 이제 `leaderboard_record` 기반 완료 run 요약과, raw stage 기반 플레이 성향 요약을 함께 가진다. 즉, “무슨 결과를 냈는가”와 “어떤 방식으로 플레이하는가”를 분리해서 보여준다.

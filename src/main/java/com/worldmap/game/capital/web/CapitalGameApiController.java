@@ -1,9 +1,8 @@
 package com.worldmap.game.capital.web;
 
-import com.worldmap.auth.application.AuthenticatedMemberSession;
+import com.worldmap.auth.application.CurrentMemberAccessService;
 import com.worldmap.auth.application.GameSessionAccessContextResolver;
 import com.worldmap.auth.application.GuestSessionKeyManager;
-import com.worldmap.auth.application.MemberSessionManager;
 import com.worldmap.game.capital.application.CapitalGameAnswerView;
 import com.worldmap.game.capital.application.CapitalGameService;
 import com.worldmap.game.capital.application.CapitalGameSessionResultView;
@@ -27,26 +26,26 @@ import org.springframework.web.bind.annotation.RestController;
 public class CapitalGameApiController {
 
 	private final CapitalGameService capitalGameService;
+	private final CurrentMemberAccessService currentMemberAccessService;
 	private final GuestSessionKeyManager guestSessionKeyManager;
-	private final MemberSessionManager memberSessionManager;
 	private final GameSessionAccessContextResolver gameSessionAccessContextResolver;
 
 	public CapitalGameApiController(
 		CapitalGameService capitalGameService,
+		CurrentMemberAccessService currentMemberAccessService,
 		GuestSessionKeyManager guestSessionKeyManager,
-		MemberSessionManager memberSessionManager,
 		GameSessionAccessContextResolver gameSessionAccessContextResolver
 	) {
 		this.capitalGameService = capitalGameService;
+		this.currentMemberAccessService = currentMemberAccessService;
 		this.guestSessionKeyManager = guestSessionKeyManager;
-		this.memberSessionManager = memberSessionManager;
 		this.gameSessionAccessContextResolver = gameSessionAccessContextResolver;
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	public CapitalGameStartView start(@Valid @RequestBody StartCapitalGameRequest request, HttpSession httpSession) {
-		AuthenticatedMemberSession currentMember = memberSessionManager.currentMember(httpSession).orElse(null);
+		var currentMember = currentMemberAccessService.currentMember(httpSession).orElse(null);
 		if (currentMember != null) {
 			return capitalGameService.startMemberGame(currentMember.memberId(), currentMember.nickname());
 		}

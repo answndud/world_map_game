@@ -1,9 +1,8 @@
 package com.worldmap.game.populationbattle.web;
 
-import com.worldmap.auth.application.AuthenticatedMemberSession;
+import com.worldmap.auth.application.CurrentMemberAccessService;
 import com.worldmap.auth.application.GameSessionAccessContextResolver;
 import com.worldmap.auth.application.GuestSessionKeyManager;
-import com.worldmap.auth.application.MemberSessionManager;
 import com.worldmap.game.populationbattle.application.PopulationBattleGameAnswerView;
 import com.worldmap.game.populationbattle.application.PopulationBattleGameService;
 import com.worldmap.game.populationbattle.application.PopulationBattleGameSessionResultView;
@@ -27,19 +26,19 @@ import org.springframework.web.bind.annotation.RestController;
 public class PopulationBattleGameApiController {
 
 	private final PopulationBattleGameService populationBattleGameService;
+	private final CurrentMemberAccessService currentMemberAccessService;
 	private final GuestSessionKeyManager guestSessionKeyManager;
-	private final MemberSessionManager memberSessionManager;
 	private final GameSessionAccessContextResolver gameSessionAccessContextResolver;
 
 	public PopulationBattleGameApiController(
 		PopulationBattleGameService populationBattleGameService,
+		CurrentMemberAccessService currentMemberAccessService,
 		GuestSessionKeyManager guestSessionKeyManager,
-		MemberSessionManager memberSessionManager,
 		GameSessionAccessContextResolver gameSessionAccessContextResolver
 	) {
 		this.populationBattleGameService = populationBattleGameService;
+		this.currentMemberAccessService = currentMemberAccessService;
 		this.guestSessionKeyManager = guestSessionKeyManager;
-		this.memberSessionManager = memberSessionManager;
 		this.gameSessionAccessContextResolver = gameSessionAccessContextResolver;
 	}
 
@@ -49,7 +48,7 @@ public class PopulationBattleGameApiController {
 		@Valid @RequestBody StartPopulationBattleGameRequest request,
 		HttpSession httpSession
 	) {
-		AuthenticatedMemberSession currentMember = memberSessionManager.currentMember(httpSession).orElse(null);
+		var currentMember = currentMemberAccessService.currentMember(httpSession).orElse(null);
 		if (currentMember != null) {
 			return populationBattleGameService.startMemberGame(currentMember.memberId(), currentMember.nickname());
 		}

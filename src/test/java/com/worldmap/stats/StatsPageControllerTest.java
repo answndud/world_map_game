@@ -1,9 +1,5 @@
 package com.worldmap.stats;
 
-import static com.worldmap.auth.application.MemberSessionManager.MEMBER_ID_ATTRIBUTE;
-import static com.worldmap.auth.application.MemberSessionManager.MEMBER_NICKNAME_ATTRIBUTE;
-import static com.worldmap.auth.application.MemberSessionManager.MEMBER_ROLE_ATTRIBUTE;
-import static com.worldmap.auth.application.AdminAccessGuard.AdminAccessStatus.ALLOWED;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.mockito.ArgumentMatchers.any;
@@ -14,8 +10,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
-import com.worldmap.auth.application.MemberSessionManager;
 import com.worldmap.auth.application.AdminAccessGuard;
+import com.worldmap.auth.application.AuthenticatedMemberSession;
+import com.worldmap.auth.application.CurrentMemberAccessService;
 import com.worldmap.auth.domain.MemberRole;
 import com.worldmap.ranking.application.LeaderboardEntryView;
 import com.worldmap.ranking.application.LeaderboardService;
@@ -28,16 +25,15 @@ import com.worldmap.stats.web.StatsPageController;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Import;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(StatsPageController.class)
-@Import(MemberSessionManager.class)
 class StatsPageControllerTest {
 
 	@Autowired
@@ -52,8 +48,12 @@ class StatsPageControllerTest {
 	@MockBean
 	private AdminAccessGuard adminAccessGuard;
 
+	@MockBean
+	private CurrentMemberAccessService currentMemberAccessService;
+
 	@Test
 	void statsPageRendersPublicMetricsWithoutDashboardLinkForGuest() throws Exception {
+		given(currentMemberAccessService.currentMember(any())).willReturn(Optional.empty());
 		given(serviceActivityService.loadTodayActivity()).willReturn(
 			new ServiceActivityView(12, 3, 4, 9, 5, 3, 1, 0, 2, 2)
 		);
@@ -120,7 +120,10 @@ class StatsPageControllerTest {
 
 	@Test
 	void statsPageShowsDashboardLinkForAdminSession() throws Exception {
-		given(adminAccessGuard.authorize(any())).willReturn(ALLOWED);
+		given(currentMemberAccessService.currentMember(any())).willReturn(Optional.of(
+			new AuthenticatedMemberSession(1L, "worldmap_admin", MemberRole.ADMIN)
+		));
+		MockHttpSession session = new MockHttpSession();
 		given(serviceActivityService.loadTodayActivity()).willReturn(
 			new ServiceActivityView(12, 3, 4, 9, 5, 3, 1, 0, 2, 2)
 		);
@@ -139,10 +142,6 @@ class StatsPageControllerTest {
 		given(leaderboardService.getLeaderboard(LeaderboardGameMode.POPULATION_BATTLE, LeaderboardScope.DAILY, 3)).willReturn(
 			new LeaderboardView(LeaderboardGameMode.POPULATION_BATTLE, LeaderboardScope.DAILY, LocalDate.now(), List.of())
 		);
-		MockHttpSession session = new MockHttpSession();
-		session.setAttribute(MEMBER_ID_ATTRIBUTE, 1L);
-		session.setAttribute(MEMBER_NICKNAME_ATTRIBUTE, "worldmap_admin");
-		session.setAttribute(MEMBER_ROLE_ATTRIBUTE, MemberRole.ADMIN.name());
 
 		mockMvc.perform(get("/stats").session(session))
 			.andExpect(status().isOk())

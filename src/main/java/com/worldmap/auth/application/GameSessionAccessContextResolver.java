@@ -8,14 +8,14 @@ import org.springframework.stereotype.Component;
 @Component
 public class GameSessionAccessContextResolver {
 
-	private final MemberSessionManager memberSessionManager;
+	private final CurrentMemberAccessService currentMemberAccessService;
 	private final GuestSessionKeyManager guestSessionKeyManager;
 
 	public GameSessionAccessContextResolver(
-		MemberSessionManager memberSessionManager,
+		CurrentMemberAccessService currentMemberAccessService,
 		GuestSessionKeyManager guestSessionKeyManager
 	) {
-		this.memberSessionManager = memberSessionManager;
+		this.currentMemberAccessService = currentMemberAccessService;
 		this.guestSessionKeyManager = guestSessionKeyManager;
 	}
 
@@ -25,7 +25,7 @@ public class GameSessionAccessContextResolver {
 			return GameSessionAccessContext.anonymous();
 		}
 
-		Long memberId = memberSessionManager.currentMember(httpSession)
+		Long memberId = currentMemberAccessService.currentMember(httpSession)
 			.map(AuthenticatedMemberSession::memberId)
 			.orElse(null);
 		String guestSessionKey = guestSessionKeyManager.currentGuestSessionKey(httpSession)

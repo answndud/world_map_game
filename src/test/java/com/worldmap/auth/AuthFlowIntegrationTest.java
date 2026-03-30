@@ -1,7 +1,11 @@
 package com.worldmap.auth;
 
+import static com.worldmap.auth.application.MemberSessionManager.MEMBER_ID_ATTRIBUTE;
+import static com.worldmap.auth.application.MemberSessionManager.MEMBER_NICKNAME_ATTRIBUTE;
+import static com.worldmap.auth.application.MemberSessionManager.MEMBER_ROLE_ATTRIBUTE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -29,8 +33,12 @@ import com.worldmap.game.populationbattle.domain.PopulationBattleGameSessionRepo
 import com.worldmap.ranking.domain.LeaderboardRecord;
 import com.worldmap.ranking.domain.LeaderboardRecordRepository;
 import java.util.UUID;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -150,6 +158,78 @@ class AuthFlowIntegrationTest {
 		mockMvc.perform(get("/dashboard").session(browserSession))
 			.andExpect(status().isOk())
 			.andExpect(view().name("admin/index"));
+	}
+
+	@Test
+	void deletedMemberSessionFallsBackToGuestStateOnHomeAndMyPage() throws Exception {
+		Member member = memberRepository.save(Member.create("orbit_runner", memberPasswordHasher.hash("secret123"), MemberRole.USER));
+		MockHttpSession browserSession = sessionFor(member);
+
+		memberRepository.delete(member);
+
+		mockMvc.perform(get("/").session(browserSession))
+			.andExpect(status().isOk())
+			.andExpect(content().string(containsString(">로그인<")))
+			.andExpect(content().string(containsString(">회원가입<")))
+			.andExpect(content().string(not(containsString(">로그아웃<"))))
+			.andExpect(content().string(not(containsString("계정으로 기록을 이어서 남기고 있습니다."))));
+
+		mockMvc.perform(get("/mypage").session(browserSession))
+			.andExpect(status().isOk())
+			.andExpect(view().name("mypage"))
+			.andExpect(content().string(containsString("기록을 남기려면 로그인")))
+			.andExpect(content().string(not(containsString("로그아웃"))));
+
+		assertThat(browserSession.getAttribute(MEMBER_ID_ATTRIBUTE)).isNull();
+		assertThat(browserSession.getAttribute(MEMBER_NICKNAME_ATTRIBUTE)).isNull();
+		assertThat(browserSession.getAttribute(MEMBER_ROLE_ATTRIBUTE)).isNull();
+	}
+
+	@Test
+	void deletedMemberSessionCanOpenLoginPageInsteadOfRedirectingToMyPage() throws Exception {
+		Member member = memberRepository.save(Member.create("orbit_runner", memberPasswordHasher.hash("secret123"), MemberRole.USER));
+		MockHttpSession browserSession = sessionFor(member);
+
+		memberRepository.delete(member);
+
+		mockMvc.perform(get("/login").session(browserSession))
+			.andExpect(status().isOk())
+			.andExpect(view().name("auth/login"))
+			.andExpect(content().string(containsString("로그인")));
+	}
+
+	@ParameterizedTest
+	@MethodSource("gameStartPages")
+	void deletedMemberSessionFallsBackToGuestPromptOnGameStartPage(String path, String guestPrompt) throws Exception {
+		Member member = memberRepository.save(Member.create("orbit_runner", memberPasswordHasher.hash("secret123"), MemberRole.USER));
+		MockHttpSession browserSession = sessionFor(member);
+
+		memberRepository.delete(member);
+
+		mockMvc.perform(get(path).session(browserSession))
+			.andExpect(status().isOk())
+			.andExpect(content().string(containsString("게임 시작")))
+			.andExpect(content().string(containsString(guestPrompt)))
+			.andExpect(content().string(not(containsString("현재 로그인 상태에서는"))))
+			.andExpect(content().string(not(containsString(">orbit_runner<"))));
+	}
+
+	@Test
+	void deletedMemberSessionStartsNewGameAsGuestOwnership() throws Exception {
+		Member member = memberRepository.save(Member.create("orbit_runner", memberPasswordHasher.hash("secret123"), MemberRole.USER));
+		MockHttpSession browserSession = sessionFor(member);
+
+		memberRepository.delete(member);
+
+		UUID sessionId = UUID.fromString(startLocationGame("fallback_guest", browserSession));
+		LocationGameSession locationGameSession = locationGameSessionRepository.findById(sessionId).orElseThrow();
+
+		assertThat(locationGameSession.getMemberId()).isNull();
+		assertThat(locationGameSession.getGuestSessionKey()).isNotBlank();
+		assertThat(locationGameSession.getPlayerNickname()).isEqualTo("fallback_guest");
+		assertThat(browserSession.getAttribute(MEMBER_ID_ATTRIBUTE)).isNull();
+		assertThat(browserSession.getAttribute(MEMBER_NICKNAME_ATTRIBUTE)).isNull();
+		assertThat(browserSession.getAttribute(MEMBER_ROLE_ATTRIBUTE)).isNull();
 	}
 
 	@Test
@@ -377,5 +457,23 @@ class AuthFlowIntegrationTest {
 			)
 			.get("sessionId")
 			.asText();
+	}
+
+	private MockHttpSession sessionFor(Member member) {
+		MockHttpSession session = new MockHttpSession();
+		session.setAttribute(MEMBER_ID_ATTRIBUTE, member.getId());
+		session.setAttribute(MEMBER_NICKNAME_ATTRIBUTE, member.getNickname());
+		session.setAttribute(MEMBER_ROLE_ATTRIBUTE, member.getRole().name());
+		return session;
+	}
+
+	private static Stream<Arguments> gameStartPages() {
+		return Stream.of(
+			Arguments.of("/games/location/start", "닉네임은 선택 입력입니다."),
+			Arguments.of("/games/capital/start", "틀리면 같은 Stage를 다시 시도"),
+			Arguments.of("/games/population/start", "틀리면 같은 Stage를 다시 시도"),
+			Arguments.of("/games/flag/start", "틀리면 같은 Stage를 다시 시도"),
+			Arguments.of("/games/population-battle/start", "틀리면 같은 Stage를 다시 시도")
+		);
 	}
 }

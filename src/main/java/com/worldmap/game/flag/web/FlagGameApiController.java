@@ -1,9 +1,8 @@
 package com.worldmap.game.flag.web;
 
-import com.worldmap.auth.application.AuthenticatedMemberSession;
+import com.worldmap.auth.application.CurrentMemberAccessService;
 import com.worldmap.auth.application.GameSessionAccessContextResolver;
 import com.worldmap.auth.application.GuestSessionKeyManager;
-import com.worldmap.auth.application.MemberSessionManager;
 import com.worldmap.game.flag.application.FlagGameAnswerView;
 import com.worldmap.game.flag.application.FlagGameService;
 import com.worldmap.game.flag.application.FlagGameSessionResultView;
@@ -27,26 +26,26 @@ import org.springframework.web.bind.annotation.RestController;
 public class FlagGameApiController {
 
 	private final FlagGameService flagGameService;
+	private final CurrentMemberAccessService currentMemberAccessService;
 	private final GuestSessionKeyManager guestSessionKeyManager;
-	private final MemberSessionManager memberSessionManager;
 	private final GameSessionAccessContextResolver gameSessionAccessContextResolver;
 
 	public FlagGameApiController(
 		FlagGameService flagGameService,
+		CurrentMemberAccessService currentMemberAccessService,
 		GuestSessionKeyManager guestSessionKeyManager,
-		MemberSessionManager memberSessionManager,
 		GameSessionAccessContextResolver gameSessionAccessContextResolver
 	) {
 		this.flagGameService = flagGameService;
+		this.currentMemberAccessService = currentMemberAccessService;
 		this.guestSessionKeyManager = guestSessionKeyManager;
-		this.memberSessionManager = memberSessionManager;
 		this.gameSessionAccessContextResolver = gameSessionAccessContextResolver;
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	public FlagGameStartView start(@Valid @RequestBody StartFlagGameRequest request, HttpSession httpSession) {
-		AuthenticatedMemberSession currentMember = memberSessionManager.currentMember(httpSession).orElse(null);
+		var currentMember = currentMemberAccessService.currentMember(httpSession).orElse(null);
 		if (currentMember != null) {
 			return flagGameService.startMemberGame(currentMember.memberId(), currentMember.nickname());
 		}

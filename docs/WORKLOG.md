@@ -34,6 +34,59 @@
 - 면접용 30초 요약:
 ```
 
+## 2026-03-30 - public/auth SSR과 게임 시작도 현재 회원 기준으로 stale 세션 UI를 정리하기
+
+- 단계: 8. 인증, 전적, 마이페이지
+- 목적: 직전 조각으로 public 헤더의 `Dashboard` 링크는 현재 DB role 기준으로 맞췄지만, 홈 hero의 계정 연결 CTA와 `/login`·`/signup`·`/mypage`, 5개 게임 시작 페이지, 새 게임 세션 시작 API는 여전히 세션 캐시만 믿는 경로가 남아 있었다. 이 상태에서는 회원 row가 이미 삭제돼도 홈에는 계정 연결 완료 UI가 남고, 시작 페이지에는 stale 닉네임이 보일 수 있으며, 새 게임도 member-owned로 생성될 수 있었다. 이번 조각은 admin 여부가 아니라 “지금 이 세션이 실제 회원을 가리키는가”를 public/auth SSR과 게임 시작 경로 전체에서 다시 확인하는 데 집중했다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/auth/application/CurrentMemberAccessService.java`
+  - `src/main/java/com/worldmap/auth/application/AdminAccessGuard.java`
+  - `src/main/java/com/worldmap/auth/application/GameSessionAccessContextResolver.java`
+  - `src/main/java/com/worldmap/web/HomeController.java`
+  - `src/main/resources/templates/home.html`
+  - `src/main/java/com/worldmap/auth/web/AuthPageController.java`
+  - `src/main/java/com/worldmap/web/MyPageController.java`
+  - `src/main/java/com/worldmap/web/SiteHeaderModelAdvice.java`
+  - `src/main/java/com/worldmap/game/location/web/LocationGameApiController.java`
+  - `src/main/java/com/worldmap/game/location/web/LocationGamePageController.java`
+  - `src/main/java/com/worldmap/game/capital/web/CapitalGameApiController.java`
+  - `src/main/java/com/worldmap/game/capital/web/CapitalGamePageController.java`
+  - `src/main/java/com/worldmap/game/population/web/PopulationGameApiController.java`
+  - `src/main/java/com/worldmap/game/population/web/PopulationGamePageController.java`
+  - `src/main/java/com/worldmap/game/flag/web/FlagGameApiController.java`
+  - `src/main/java/com/worldmap/game/flag/web/FlagGamePageController.java`
+  - `src/main/java/com/worldmap/game/populationbattle/web/PopulationBattleGameApiController.java`
+  - `src/main/java/com/worldmap/game/populationbattle/web/PopulationBattleGamePageController.java`
+  - `src/test/java/com/worldmap/auth/application/CurrentMemberAccessServiceTest.java`
+  - `src/test/java/com/worldmap/auth/application/AdminAccessGuardTest.java`
+  - `src/test/java/com/worldmap/auth/application/GameSessionAccessContextResolverTest.java`
+  - `src/test/java/com/worldmap/web/HomeControllerTest.java`
+  - `src/test/java/com/worldmap/web/MyPageControllerTest.java`
+  - `src/test/java/com/worldmap/stats/StatsPageControllerTest.java`
+  - `src/test/java/com/worldmap/ranking/LeaderboardPageControllerTest.java`
+  - `src/test/java/com/worldmap/auth/AuthFlowIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/111-use-current-member-state-for-public-auth-ssr.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+- 요청 흐름: `GET /`, `GET /login`, `GET /signup`, `GET /mypage`, `GET /games/*/start`, `POST /api/games/*/sessions`는 이제 `CurrentMemberAccessService.currentMember(session)`를 공통으로 거친다. 이 서비스는 `MemberSessionManager.currentMember()`로 세션의 `memberId`를 읽고, `MemberRepository.findById()`로 현재 회원 row를 다시 조회한다. 회원이 존재하면 세션 닉네임/role을 현재 DB 값으로 동기화하고, 존재하지 않으면 세션을 비운 뒤 guest처럼 처리한다. public/auth SSR은 이 값을 `currentMember`와 `authenticatedNickname` 모델로 써서 화면 분기를 정하고, 게임 시작 API는 member start와 guest start 중 어느 쪽으로 세션을 만들지 이 값으로 결정한다. `GameSessionAccessContextResolver`도 같은 current member source를 쓰므로 stale memberId가 이후 `state / answer / restart / result` 접근 컨텍스트로 다시 흘러가지 않는다.
+- 데이터 / 상태 변화: 새 테이블은 없다. 바뀐 것은 public/auth SSR과 게임 시작 경로의 로그인 판별 source다. 삭제된 회원 세션은 홈/마이페이지/로그인/게임 시작 페이지를 치거나 새 게임을 시작하는 순간 `WORLDMAP_MEMBER_ID`, `WORLDMAP_MEMBER_NICKNAME`, `WORLDMAP_MEMBER_ROLE`이 같이 지워지고 guest 상태로 떨어진다. 그 결과 새 게임 세션은 member ownership이 아니라 guest ownership으로 생성된다. 반대로 닉네임이나 role이 바뀐 회원은 SSR/게임 시작 분기 전에 세션 캐시가 현재 값으로 다시 맞춰진다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “현재 회원 확인”과 “admin 권한 확인”을 구분하면서도, 둘 다 같은 current member source를 공유하게 만드는 것이다. admin 여부는 `AdminAccessGuard`, 일반 로그인 존재 여부와 member-owned 새 게임 시작 여부는 `CurrentMemberAccessService`가 맡는다. 삭제된 회원 세션을 guest처럼 정리하는 로직을 홈 템플릿, auth 컨트롤러, start page 컨트롤러, start API에 흩뿌리지 않고 서비스로 묶어 둬야 public/auth SSR과 게임 시작 경로가 같은 기준으로 움직인다.
+- 예외 / 엣지 케이스:
+  - 세션은 남아 있지만 DB에서 회원이 삭제된 경우, 홈은 로그인/회원가입 CTA로 돌아가고 `/login`도 다시 열리며 `/mypage`는 guest 안내 화면으로 떨어진다.
+  - 같은 삭제된 회원 세션으로 `/games/*/start`를 열면 stale nickname 대신 guest 안내 문구가 보이고, `POST /api/games/*/sessions`는 member-owned가 아니라 guest-owned 세션을 만든다.
+  - 세션 role 문자열이 malformed여도 `CurrentMemberAccessService`가 세션을 비우고 empty를 반환하므로 public/auth SSR에서 500으로 번지지 않는다.
+- 테스트:
+  - `./gradlew compileJava compileTestJava`
+  - `./gradlew test --tests com.worldmap.auth.application.CurrentMemberAccessServiceTest --tests com.worldmap.auth.application.GameSessionAccessContextResolverTest --tests com.worldmap.web.HomeControllerTest --tests com.worldmap.web.MyPageControllerTest --tests com.worldmap.stats.StatsPageControllerTest --tests com.worldmap.ranking.LeaderboardPageControllerTest --tests com.worldmap.auth.AuthFlowIntegrationTest --tests com.worldmap.web.SiteHeaderIntegrationTest`
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이 조각은 단순 copy 교체가 아니라 public/auth SSR이 stale session을 어떻게 정리해야 하는지, 그리고 current member 확인을 왜 서비스로 모으는지 설명할 수 있는 auth/UI 경계 변경이다.
+- 배운 점: “로그인 상태처럼 보이는가”와 “새 게임을 누구 소유로 시작하는가”는 같은 current member 판정에서 갈라져야 한다. 세션에 값이 남아 있다는 이유만으로 홈 CTA, 로그인 redirect, 게임 시작 ownership을 결정하면 실제 회원 row와 제품 동작이 어긋난다. admin 권한과 별개로 current member existence를 다시 확인하는 층이 있어야 public/auth SSR과 session start가 자연스럽게 동작한다.
+- 아직 약한 부분: 이번 조각은 SSR과 session start API까지 current member source를 맞췄다. 앞으로 client-side fragment나 완전한 CSR 화면이 더 늘어나면, 브라우저 쪽 비동기 진입점도 같은 기준을 어떻게 재사용할지 한 번 더 정리해야 한다.
+- 면접용 30초 요약: admin 링크만 현재 DB 기준으로 맞춰도 홈 계정 CTA, 로그인 redirect, 게임 시작 API가 세션 캐시를 그대로 믿으면 stale 로그인 UI가 남거나 삭제된 회원 세션이 member-owned 새 게임을 만들 수 있습니다. 그래서 `CurrentMemberAccessService`를 공통 current-member source로 두고 홈·로그인·회원가입·마이페이지·게임 시작 페이지·세션 시작 API가 세션의 memberId로 현재 회원을 다시 확인하도록 바꿨습니다. 회원 row가 없으면 세션을 비우고 guest처럼 처리해서, 보이는 화면과 실제 ownership이 어긋나지 않게 맞췄습니다.
+
 ## 2026-03-30 - public SSR 헤더도 현재 DB role 기준으로 Dashboard 링크를 맞추기
 
 - 단계: 8. 인증, 전적, 마이페이지
