@@ -34,6 +34,39 @@
 - 면접용 30초 요약:
 ```
 
+## 2026-03-30 - public SSR 헤더도 현재 DB role 기준으로 Dashboard 링크를 맞추기
+
+- 단계: 8. 인증, 전적, 마이페이지
+- 목적: 직전 조각으로 `/dashboard/**`와 운영 summary API는 현재 DB role 기준으로 막히게 됐지만, public `site-header`는 여전히 세션의 `WORLDMAP_MEMBER_ROLE` 문자열만 보고 `Dashboard` 링크를 렌더링하고 있었다. 그래서 권한이 회수된 직후 홈/Stats/Ranking/My Page 헤더에는 stale admin 링크가 잠깐 남을 수 있었다. 이번 조각은 전역 SSR shell도 실제 admin route와 같은 기준을 쓰게 맞추는 데 집중했다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/web/SiteHeaderModelAdvice.java`
+  - `src/main/resources/templates/fragments/site-header.html`
+  - `src/test/java/com/worldmap/web/HomeControllerTest.java`
+  - `src/test/java/com/worldmap/stats/StatsPageControllerTest.java`
+  - `src/test/java/com/worldmap/web/MyPageControllerTest.java`
+  - `src/test/java/com/worldmap/ranking/LeaderboardPageControllerTest.java`
+  - `src/test/java/com/worldmap/web/SiteHeaderIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/110-align-public-dashboard-link-visibility-with-current-admin-role.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+- 요청 흐름: public SSR 요청이 `GET /`, `GET /stats`, `GET /ranking`, `GET /mypage`처럼 들어오면 이제 `SiteHeaderModelAdvice`가 먼저 `AdminAccessGuard.authorize(request.getSession(false))`를 호출해 `showDashboardLink` 모델 값을 만든다. `site-header.html`은 더 이상 `session.WORLDMAP_MEMBER_ROLE == 'ADMIN'`을 직접 보지 않고 이 값을 사용해 `Dashboard` 링크를 렌더링한다. 즉 페이지 shell의 링크 노출과 실제 `/dashboard/**` 접근 규칙이 같은 guard를 공유한다.
+- 데이터 / 상태 변화: 새 테이블이나 API는 없다. 바뀐 것은 SSR model 계산 방식이다. `AdminAccessGuard`가 현재 회원 row를 다시 조회하면서 세션 nickname/role도 같이 동기화하기 때문에, admin 권한이 `USER -> ADMIN` 또는 `ADMIN -> USER`로 바뀌면 public 헤더도 다음 요청에서 바로 같은 값으로 맞춰진다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “보여 주는 권한 힌트도 실제 authorization source와 같아야 한다”는 점이다. 헤더 링크는 단순 UI처럼 보여도, 사용자가 제품에서 어떤 경로를 기대하게 만드는 entry point라서 session cache와 실제 route guard가 서로 다른 기준을 쓰면 설명과 동작이 어긋난다. 그래서 fragment 안에 권한 분기를 박지 않고, 전역 advice가 `AdminAccessGuard`를 재사용하게 뒀다.
+- 예외 / 엣지 케이스:
+  - 비로그인 요청은 `request.getSession(false)`를 쓰므로, 헤더 렌더링 때문에 불필요한 세션을 새로 만들지 않는다.
+  - 권한이 강등된 세션은 다음 public SSR 요청에서 `Dashboard` 링크가 바로 사라지고, 세션 role 캐시도 현재 DB 값으로 덮인다.
+  - 권한이 새로 승격된 세션도 재로그인 전까지 숨겨 두지 않고, 다음 public SSR 요청에서 바로 `Dashboard` 링크가 나타난다.
+- 테스트:
+  - `./gradlew test --tests com.worldmap.web.HomeControllerTest --tests com.worldmap.stats.StatsPageControllerTest --tests com.worldmap.web.MyPageControllerTest --tests com.worldmap.ranking.LeaderboardPageControllerTest --tests com.worldmap.web.SiteHeaderIntegrationTest`
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이 조각은 단순 텍스트 조건문 수정이 아니라 SSR 공통 셸이 authorization source를 어떻게 따라가야 하는지와 request flow를 설명할 수 있는 auth/UI 경계 정리라서 글로 남길 가치가 있다.
+- 배운 점: 보안은 “막는 라우트”만 맞춘다고 끝나지 않는다. public shell이 stale 권한 힌트를 계속 보여 주면 실제 접근은 막혀도 제품 설명이 어긋난다. route guard와 entry-point rendering이 같은 source of truth를 공유해야 사용자가 보는 화면과 실제 권한이 일치한다.
+- 아직 약한 부분: 이번 조각은 SSR 헤더까지만 맞췄다. 앞으로 client-side hydration이나 비동기 fragment가 더 생기면, 그쪽도 같은 기준을 어떻게 재사용할지 한 번 더 정리해야 한다.
+- 면접용 30초 요약: `/dashboard` 접근은 이미 DB role 기준으로 막고 있었지만, public 헤더는 세션에 남아 있는 `ADMIN` 문자열만 보고 `Dashboard` 링크를 보여 주고 있었습니다. 그래서 전역 `SiteHeaderModelAdvice`가 모든 SSR 요청에서 `AdminAccessGuard`를 그대로 호출해 `showDashboardLink`를 계산하도록 바꿨습니다. 이제 홈, Stats, Ranking, My Page에서 보이는 링크와 실제 admin route가 같은 현재 DB role 기준을 쓰게 됐습니다.
+
 ## 2026-03-30 - admin 운영 접근을 현재 DB role로 다시 검증하기
 
 - 단계: 8. 인증, 전적, 마이페이지

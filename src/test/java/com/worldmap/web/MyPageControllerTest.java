@@ -13,6 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
+import com.worldmap.auth.application.AdminAccessGuard;
 import com.worldmap.mypage.application.MyPageBestRunView;
 import com.worldmap.mypage.application.MyPageDashboardView;
 import com.worldmap.mypage.application.MyPageModePerformanceView;
@@ -37,6 +38,9 @@ class MyPageControllerTest {
 
 	@MockBean
 	private MyPageService myPageService;
+
+	@MockBean
+	private AdminAccessGuard adminAccessGuard;
 
 	@Test
 	void myPageShowsGuestPromptWhenNotLoggedIn() throws Exception {

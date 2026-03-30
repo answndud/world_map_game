@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
+import com.worldmap.auth.application.AdminAccessGuard;
 import com.worldmap.auth.application.MemberSessionManager;
 import com.worldmap.ranking.application.LeaderboardEntryView;
 import com.worldmap.ranking.application.LeaderboardService;
@@ -40,6 +41,9 @@ class LeaderboardPageControllerTest {
 
 	@MockBean
 	private MemberSessionManager memberSessionManager;
+
+	@MockBean
+	private AdminAccessGuard adminAccessGuard;
 
 	@Test
 	void rankingPageLoadsOnlyInitialActiveBoardFromService() throws Exception {

@@ -3,8 +3,10 @@ package com.worldmap.stats;
 import static com.worldmap.auth.application.MemberSessionManager.MEMBER_ID_ATTRIBUTE;
 import static com.worldmap.auth.application.MemberSessionManager.MEMBER_NICKNAME_ATTRIBUTE;
 import static com.worldmap.auth.application.MemberSessionManager.MEMBER_ROLE_ATTRIBUTE;
+import static com.worldmap.auth.application.AdminAccessGuard.AdminAccessStatus.ALLOWED;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -13,6 +15,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 import com.worldmap.auth.application.MemberSessionManager;
+import com.worldmap.auth.application.AdminAccessGuard;
 import com.worldmap.auth.domain.MemberRole;
 import com.worldmap.ranking.application.LeaderboardEntryView;
 import com.worldmap.ranking.application.LeaderboardService;
@@ -45,6 +48,9 @@ class StatsPageControllerTest {
 
 	@MockBean
 	private LeaderboardService leaderboardService;
+
+	@MockBean
+	private AdminAccessGuard adminAccessGuard;
 
 	@Test
 	void statsPageRendersPublicMetricsWithoutDashboardLinkForGuest() throws Exception {
@@ -114,6 +120,7 @@ class StatsPageControllerTest {
 
 	@Test
 	void statsPageShowsDashboardLinkForAdminSession() throws Exception {
+		given(adminAccessGuard.authorize(any())).willReturn(ALLOWED);
 		given(serviceActivityService.loadTodayActivity()).willReturn(
 			new ServiceActivityView(12, 3, 4, 9, 5, 3, 1, 0, 2, 2)
 		);
