@@ -21,6 +21,9 @@ spring:
         enabled: false
 
 worldmap:
+  legacy:
+    rollback:
+      enabled: true
   admin:
     bootstrap:
       enabled: false

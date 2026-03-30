@@ -34,6 +34,35 @@
 - 면접용 30초 요약:
 ```
 
+## 2026-03-30 - prod 설정 안전화와 legacy rollback startup 범위 제한
+
+- 단계: 10. 포트폴리오 정리와 발표 준비 보조 운영 안정화
+- 목적: ECS 배포 기준을 다시 보니 `application.yml`이 기본으로 local을 강제했고, prod는 `ddl-auto=update`, readiness는 DB만 보고, `GameLevelRollbackInitializer`는 startup 때 실제 DB/Redis를 건드릴 수 있는 상태였다. 이번 조각은 운영에서 “부팅하면서 자동 수정되는 것”을 줄이는 데 집중했다.
+- 변경 파일:
+  - `src/main/resources/application.yml`
+  - `src/main/resources/application-local.yml`
+  - `src/main/resources/application-test.yml`
+  - `src/main/resources/application-prod.yml`
+  - `src/main/java/com/worldmap/common/config/GameLevelRollbackInitializer.java`
+  - `src/test/java/com/worldmap/common/config/ApplicationConfigTest.java`
+  - `src/test/java/com/worldmap/common/config/ProdProfileConfigTest.java`
+  - `src/test/java/com/worldmap/common/config/ActuatorHealthEndpointIntegrationTest.java`
+  - `src/test/java/com/worldmap/common/config/GameLevelRollbackInitializerIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/101-harden-prod-config-with-schema-validation-and-safer-startup.md`
+- 요청 흐름: 이번 조각은 사용자 요청 흐름보다 startup 흐름이 핵심이다. 애플리케이션이 부팅되면 이제 base config는 local을 기본값으로 강제하지 않고, prod는 schema를 validate만 하며, actuator readiness는 Redis까지 본다. `GameLevelRollbackInitializer`는 `worldmap.legacy.rollback.enabled=true`일 때만 bean으로 등록되어 local/test에서만 실행된다.
+- 데이터 / 상태 변화: DB 스키마나 도메인 모델을 직접 바꾸지는 않았다. 대신 prod가 startup 때 스키마를 자동 update하지 않게 되었고, rollback initializer도 prod에서 실행되지 않는다. readiness는 이제 Redis가 내려가 있으면 ready가 아니라고 판단한다.
+- 핵심 도메인 개념: 운영 안전성도 결국 “어디서 상태가 바뀌는가”의 문제다. schema 변경과 legacy data purge는 request-time 비즈니스 로직이 아니라 startup-time 운영 책임이기 때문에, prod에서는 자동 실행을 줄이고 local/test에서만 명시적으로 허용하는 편이 설명 가능하다.
+- 예외 / 엣지 케이스: `ddl-auto=validate`로 바꾸면 prod 스키마가 엔티티와 안 맞을 때 부팅이 바로 실패한다. 이건 의도된 fail-fast다. 대신 앞으로는 migration 경로를 따로 가져가야 한다. readiness에 Redis를 넣었기 때문에 Redis 장애 시 `/actuator/health/readiness`가 내려갈 수 있다.
+- 테스트: `git diff --check` 통과. `./gradlew test --tests com.worldmap.common.config.ApplicationConfigTest --tests com.worldmap.common.config.ProdProfileConfigTest --tests com.worldmap.common.config.ActuatorHealthEndpointIntegrationTest --tests com.worldmap.common.config.GameLevelRollbackInitializerIntegrationTest` 통과.
+- 배운 점: 운영 사고를 줄이는 첫 단계는 화려한 인프라가 아니라 “앱이 부팅하면서 무엇을 자동으로 해도 되는가”를 줄이는 것이다. 특히 `ddl-auto=update`나 startup initializer 같은 자동 변경 경로는 편하지만, 책임 경계가 흐려지기 쉽다.
+- 아직 약한 부분: 이번 조각은 validate와 startup guard까지 넣었지만, 아직 Flyway/Liquibase 같은 migration 경로는 없다. 즉 “자동 변경을 막은 뒤 어떤 절차로 schema를 바꿀지”는 다음 운영 조각에서 더 명확히 해야 한다.
+- 면접용 30초 요약: ECS 배포 준비를 하면서 운영 설정을 다시 보니 base config가 local을 기본으로 강제하고, prod가 `ddl-auto=update`와 startup rollback initializer를 그대로 들고 있는 상태였습니다. 그래서 base에서는 local default를 제거하고, prod는 schema를 validate만 하게 바꾸고, legacy rollback initializer는 property gate로 local/test에서만 켜지게 제한했습니다. 또 readiness에는 Redis도 포함시켜 실제로 요청을 받을 준비가 된 뒤에만 트래픽을 받게 정리했습니다.
+
 ## 2026-03-30 - 게임 write 직렬화와 stale submit 방어
 
 - 단계: 8. 인증, 전적, 마이페이지

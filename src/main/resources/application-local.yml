@@ -16,6 +16,9 @@ spring:
       mode: never
 
 worldmap:
+  legacy:
+    rollback:
+      enabled: true
   admin:
     bootstrap:
       enabled: ${WORLDMAP_ADMIN_BOOTSTRAP_ENABLED:true}

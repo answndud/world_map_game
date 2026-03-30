@@ -782,6 +782,8 @@
 - [application-prod.yml](/Users/alex/project/worldmap/src/main/resources/application-prod.yml)을 추가해 prod datasource / redis / demo bootstrap off / forwarded header 기준이 어디서 분리되는지 고정
 - [Dockerfile](/Users/alex/project/worldmap/Dockerfile)의 JVM 옵션을 `JAVA_RUNTIME_OPTS`로 override 가능하게 바꾸고, [application-prod.yml](/Users/alex/project/worldmap/src/main/resources/application-prod.yml)에 graceful shutdown 기준을 추가해 ALB 뒤 종료 동작을 코드로 고정
 - `spring-boot-starter-actuator`를 추가하고 [application-prod.yml](/Users/alex/project/worldmap/src/main/resources/application-prod.yml)에 health/liveness/readiness probe group을 구성해 ECS/ALB health check 기준을 실제 endpoint로 열었다
+- 운영 안정화 1차로 base [application.yml](/Users/alex/project/worldmap/src/main/resources/application.yml)에서 `local` 기본 프로필을 제거하고, prod [application-prod.yml](/Users/alex/project/worldmap/src/main/resources/application-prod.yml)은 `ddl-auto=validate`, readiness `db+redis+ping` 기준으로 다시 고정했다
+- 같은 조각에서 [GameLevelRollbackInitializer.java](/Users/alex/project/worldmap/src/main/java/com/worldmap/common/config/GameLevelRollbackInitializer.java)는 `worldmap.legacy.rollback.enabled=true`일 때만 켜지게 바꿨다. local/test는 true, prod는 false로 나눠, legacy rollback 호환 코드가 운영 startup에서 실제 데이터를 건드리지 않게 했다
 - [task-definition.prod.sample.json](/Users/alex/project/worldmap/deploy/ecs/task-definition.prod.sample.json)을 추가해 어떤 값은 `environment`, 어떤 값은 `secrets`로 ECS에 넣는지 샘플을 저장소에 고정했다
 - [RedisSessionProdConfiguration.java](/Users/alex/project/worldmap/src/main/java/com/worldmap/common/config/RedisSessionProdConfiguration.java)로 `prod` 프로필에서만 Redis-backed session을 켜고, [application-local.yml](/Users/alex/project/worldmap/src/main/resources/application-local.yml) / [application-test.yml](/Users/alex/project/worldmap/src/main/resources/application-test.yml)에서는 session auto-configuration을 제외해 기존 servlet session 흐름을 보존했다
 - [deploy-prod-ecs.yml](/Users/alex/project/worldmap/.github/workflows/deploy-prod-ecs.yml)로 `workflow_dispatch -> OIDC AWS 인증 -> ./gradlew test -> ECR push -> rendered task definition deploy` 순서를 저장소에 고정했다
@@ -793,6 +795,7 @@
 - 실제 AWS 계정에서 `workflow_dispatch`에 필요한 repository variables와 OIDC role을 연결한다
 - ECS 수동 배포 1회와 GitHub Actions 배포 1회를 모두 성공시켜 smoke test를 남긴다
 - 실제 ECS 환경에서 Redis-backed session이 task 재기동 이후에도 유지되는지 smoke test를 한다
+- migration 도구(Flyway/Liquibase) 도입 여부와 첫 baseline schema 전략을 결정해 `ddl-auto=validate` 이후 운영 schema 변경 경로를 명시한다
 
 반드시 이해할 것:
 

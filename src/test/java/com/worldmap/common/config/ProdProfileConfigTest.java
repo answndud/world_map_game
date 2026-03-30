@@ -20,7 +20,7 @@ class ProdProfileConfigTest {
 		assertThat(asString(properties, "spring.docker.compose.enabled")).isEqualTo("false");
 		assertThat(asString(properties, "spring.thymeleaf.cache")).isEqualTo("true");
 		assertThat(asString(properties, "spring.lifecycle.timeout-per-shutdown-phase")).isEqualTo("20s");
-		assertThat(asString(properties, "spring.jpa.hibernate.ddl-auto")).isEqualTo("update");
+		assertThat(asString(properties, "spring.jpa.hibernate.ddl-auto")).isEqualTo("validate");
 		assertThat(asString(properties, "spring.sql.init.mode")).isEqualTo("never");
 		assertThat(asString(properties, "server.forward-headers-strategy")).isEqualTo("native");
 		assertThat(asString(properties, "server.shutdown")).isEqualTo("graceful");
@@ -33,9 +33,10 @@ class ProdProfileConfigTest {
 		assertThat(asString(properties, "management.endpoint.health.group.liveness.include"))
 			.isEqualTo("livenessState,ping");
 		assertThat(asString(properties, "management.endpoint.health.group.readiness.include"))
-			.isEqualTo("readinessState,db,ping");
+			.isEqualTo("readinessState,db,redis,ping");
 		assertThat(asString(properties, "management.health.livenessstate.enabled")).isEqualTo("true");
 		assertThat(asString(properties, "management.health.readinessstate.enabled")).isEqualTo("true");
+		assertThat(asString(properties, "worldmap.legacy.rollback.enabled")).isEqualTo("false");
 		assertThat(asString(properties, "worldmap.demo.bootstrap.enabled")).isEqualTo("false");
 		assertThat(asString(properties, "worldmap.ranking.key-prefix"))
 			.isEqualTo("${WORLDMAP_RANKING_KEY_PREFIX:leaderboard}");
