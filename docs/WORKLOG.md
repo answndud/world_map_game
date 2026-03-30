@@ -34,6 +34,38 @@
 - 면접용 30초 요약:
 ```
 
+## 2026-03-30 - 남은 4개 게임오버 모달에도 같은 keyboard focus scope를 적용
+
+- 단계: 11. 신규 게임 확장 보조 접근성 정리
+- 목적: 직전 조각에서 `population-battle`만 게임오버 모달의 focus scope를 바로잡았고, `location / population / capital / flag`는 여전히 dialog가 떠도 뒤쪽 화면으로 tab이 빠질 수 있었다. 이번 조각은 다섯 게임의 terminal modal 규칙을 같은 수준으로 맞추는 데 집중했다.
+- 변경 파일:
+  - `src/main/resources/templates/location-game/play.html`
+  - `src/main/resources/templates/population-game/play.html`
+  - `src/main/resources/templates/capital-game/play.html`
+  - `src/main/resources/templates/flag-game/play.html`
+  - `src/main/resources/static/js/location-game.js`
+  - `src/main/resources/static/js/population-game.js`
+  - `src/main/resources/static/js/capital-game.js`
+  - `src/main/resources/static/js/flag-game.js`
+  - `src/main/resources/static/css/site.css`
+  - `src/test/java/com/worldmap/game/location/LocationGameFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/game/population/PopulationGameFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/game/capital/CapitalGameFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/game/flag/FlagGameFlowIntegrationTest.java`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/106-extend-keyboard-game-over-modal-focus-rules-to-all-games.md`
+- 요청 흐름: 각 게임의 흐름은 그대로 `POST /api/games/.../sessions/{sessionId}/answer -> GAME_OVER 응답 -> play.js의 showGameOverModal()`이다. 이번에 바뀐 점은 `showGameOverModal()`이 이제 공통적으로 modal panel에 focus를 넣고 `.page-shell`을 `inert` 처리하며 `keydown`에서 `Tab / Shift+Tab / Escape`를 잡는다는 것이다. `restartCurrentSession()`이 성공한 뒤에는 location은 `globe-stage` anchor로, population/capital/flag는 첫 번째 enabled option input으로 focus를 되돌린다.
+- 데이터 / 상태 변화: 게임 세션, stage, attempt, 점수 정책은 바뀌지 않았다. 이번 조각의 상태 변화는 순수하게 브라우저 표현 계층에 있다. `GAME_OVER` modal open/close 시점에 focus 범위와 배경 화면의 interactability만 달라졌다.
+- 핵심 도메인 개념: terminal modal은 단순 안내 레이어가 아니라 “다음 행동을 고를 때까지 현재 흐름을 붙잡는 UI 상태”다. 그래서 서버 도메인은 그대로 두더라도, 브라우저 계층이 그 상태를 실제 focus scope로 표현해야 의미가 맞는다. 이 책임은 컨트롤러가 아니라 SSR 템플릿과 페이지별 JS에 있다.
+- 예외 / 엣지 케이스: `Escape`는 다섯 게임 모두 modal을 닫지 않는다. 이 modal은 dismissible helper가 아니라 restart/home 선택을 요구하는 terminal modal이기 때문이다. location은 지구본 자체가 아직 키보드 조작형 게임은 아니어서, restart 후 focus를 `globe-stage` anchor로만 돌린다. 즉 이번 조각은 “focus가 hidden modal에 남지 않게 한다” 수준까지 닫은 것이고, location game 전체 키보드 플레이 지원까지는 아니다.
+- 테스트: `git diff --check` 통과. `node --check src/main/resources/static/js/location-game.js` 통과. `node --check src/main/resources/static/js/population-game.js` 통과. `node --check src/main/resources/static/js/capital-game.js` 통과. `node --check src/main/resources/static/js/flag-game.js` 통과. `./gradlew test --tests com.worldmap.game.location.LocationGameFlowIntegrationTest.playPageRendersAccessibleGameOverDialogShell --tests com.worldmap.game.population.PopulationGameFlowIntegrationTest.playPageRendersAccessibleGameOverDialogShell --tests com.worldmap.game.capital.CapitalGameFlowIntegrationTest.playPageRendersAccessibleGameOverDialogShell --tests com.worldmap.game.flag.FlagGameFlowIntegrationTest.playPageRendersAccessibleGameOverDialogShell` 통과.
+- 배운 점: 같은 제품 안에서 modal 동작 규칙이 게임마다 달라지면, 설명도 QA도 같이 어려워진다. 이런 경우 공통 helper를 서두르기보다 먼저 각 화면의 동작 규칙을 같게 맞추고, 그다음 공통화 여부를 판단하는 편이 더 안전하다.
+- 아직 약한 부분: 지금은 다섯 게임이 같은 키보드 규칙을 가지지만, 브라우저에서 실제 `Tab/Shift+Tab`과 restart 후 focus 복귀를 확인하는 E2E는 없다. 또 로직이 각 게임 JS에 반복돼 있어, 다음 조각에서 helper 추출 여부를 다시 판단해야 한다.
+- 면접용 30초 요약: population-battle에서 먼저 잡은 게임오버 모달 포커스 규칙을 위치/인구수/수도/국기까지 확장했습니다. 다섯 게임 모두 modal이 뜨면 배경 화면을 `inert`로 막고, dialog 안에서만 tab이 돌고, restart가 끝나면 다시 플레이 가능한 surface로 focus가 돌아가도록 맞췄습니다. 서버 게임 로직은 그대로 두고, SSR 템플릿과 페이지 JS에서 terminal UI 상태를 실제 focus scope로 표현한 조각입니다.
+
 ## 2026-03-30 - 추천 만족도 입력과 population-battle 게임오버 모달의 키보드 접근성 1차 보강
 
 - 단계: 6. 설문 기반 추천 엔진 / 11. 신규 게임 확장 보조 접근성 정리

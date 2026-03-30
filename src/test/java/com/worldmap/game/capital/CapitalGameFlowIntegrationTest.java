@@ -138,6 +138,18 @@ class CapitalGameFlowIntegrationTest {
 	}
 
 	@Test
+	void playPageRendersAccessibleGameOverDialogShell() throws Exception {
+		MockHttpSession browserSession = new MockHttpSession();
+		String sessionId = startGame("capital-dialog", browserSession);
+
+		mockMvc.perform(get("/games/capital/play/{sessionId}", sessionId).session(browserSession))
+			.andExpect(status().isOk())
+			.andExpect(content().string(containsString("role=\"dialog\"")))
+			.andExpect(content().string(containsString("aria-describedby=\"capital-game-over-summary\"")))
+			.andExpect(content().string(containsString("tabindex=\"-1\"")));
+	}
+
+	@Test
 	void staleDuplicateWrongAnswerIsRejectedWithoutConsumingExtraLife() throws Exception {
 		MockHttpSession browserSession = new MockHttpSession();
 		UUID sessionId = UUID.fromString(startGame("stale-capital", browserSession));

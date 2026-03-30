@@ -124,6 +124,7 @@
 97. [5개 게임 기준으로 `/mypage` read model을 다시 정리하고 현재 순위를 바로잡기](./103-rebuild-mypage-read-model-for-all-five-games.md)
 98. [추천 피드백을 session token에 묶고 summary API를 admin 전용으로 닫기](./104-bind-recommendation-feedback-to-session-token-and-lock-summary-api.md)
 99. [추천 만족도와 게임오버 모달을 키보드로도 제대로 쓰게 만들기](./105-make-recommendation-feedback-and-game-over-modal-keyboard-accessible.md)
+100. [남은 4개 게임에도 같은 game over modal focus 규칙 적용하기](./106-extend-keyboard-game-over-modal-focus-rules-to-all-games.md)
 
 ### Part E. 테스트, 확장, 취업 패키징
 

@@ -883,13 +883,14 @@
 - 위치/인구수/수도/인구 비교/국기 게임은 정답 시 `획득 점수`만 잠깐 보여 준 뒤 자동으로 다음 Stage를 다시 로드하도록 공통 UX를 맞춤
 - 수도/인구수/인구 비교/국기 플레이 화면에서 `다음 Stage` 수동 버튼을 제거하고, 결과 페이지 중심이 아니라 플레이 연속성 중심으로 루프를 정리
 - 위치/인구수/수도/인구 비교/국기 게임은 오답 오버레이와 입력 잠금 해제도 약 `950ms` 리듬으로 맞춰, 정답/오답 템포가 게임마다 흔들리지 않게 정리
-- 공통 shell에 `focus-visible` 링을 추가하고, 인구 비교 퀵 배틀 게임오버 모달은 `aria-describedby + tabindex + inert + focus trap`으로 실제 focus scope를 갖게 정리해 키보드 접근성을 한 번 더 보강
+- 공통 shell에 `focus-visible` 링을 추가하고, 위치/인구수/수도/국기/인구 비교 퀵 배틀의 게임오버 모달은 `aria-describedby + tabindex + inert + focus trap`으로 실제 focus scope를 갖게 정리해 키보드 접근성을 한 번 더 보강
 
 다음 후속 개선 후보:
 
 - 국기 게임 세부 난이도(동일 대륙 고정 비율, 자산 36개 이후 확장 전략)를 더 넓힐지 결정
 - 신규 게임 3종이 모두 열린 상태에서 홈/랭킹/Stats 문구를 더 줄일지, 아니면 현재 그룹 구조로 유지할지 한 번 더 확인
-- 나머지 4개 게임오버 모달도 population-battle와 같은 focus 관리 규칙으로 공통화할지 결정
+- 실제 브라우저에서 `Tab / Shift+Tab / Escape / restart 후 focus 복귀`를 검증하는 E2E 계층을 붙일지 결정
+- 반복된 game-over modal focus 로직을 공용 helper로 올릴지, 지금처럼 게임별 script 안에 유지할지 결정
 
 반드시 이해할 것:
 

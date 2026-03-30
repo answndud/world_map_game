@@ -839,6 +839,7 @@ html[data-theme="light"] .history-item:hover {
 .field input:focus-visible,
 .option-card:has(input:focus-visible),
 .rating-score-option:focus-within,
+.globe-stage:focus-visible,
 .game-over-modal__panel:focus-visible {
     outline: 2px solid var(--accent-strong);
     outline-offset: 3px;

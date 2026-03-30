@@ -127,6 +127,18 @@ class FlagGameFlowIntegrationTest {
 	}
 
 	@Test
+	void playPageRendersAccessibleGameOverDialogShell() throws Exception {
+		MockHttpSession browserSession = new MockHttpSession();
+		String sessionId = startGame("flag-dialog", browserSession);
+
+		mockMvc.perform(get("/games/flag/play/{sessionId}", sessionId).session(browserSession))
+			.andExpect(status().isOk())
+			.andExpect(content().string(containsString("role=\"dialog\"")))
+			.andExpect(content().string(containsString("aria-describedby=\"flag-game-over-summary\"")))
+			.andExpect(content().string(containsString("tabindex=\"-1\"")));
+	}
+
+	@Test
 	void duplicateCorrectAnswerIsRejectedAfterStageAdvances() throws Exception {
 		MockHttpSession browserSession = new MockHttpSession();
 		UUID sessionId = UUID.fromString(startGame("flag-duplicate", browserSession));

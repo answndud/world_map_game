@@ -63,7 +63,10 @@ function initPlayPage() {
     const stageHint = document.getElementById("flag-stage-hint");
     const submitButton = document.getElementById("flag-submit-button");
     const gameOverModal = document.getElementById("flag-game-over-modal");
+    const gameOverPanel = gameOverModal?.querySelector(".game-over-modal__panel");
+    const gameOverSummary = document.getElementById("flag-game-over-summary");
     const restartButton = document.getElementById("flag-restart-button");
+    const pageShell = document.querySelector(".page-shell");
 
     let currentState = null;
     let interactionLocked = false;
@@ -153,7 +156,7 @@ function initPlayPage() {
 
             if (payload.outcome === "GAME_OVER") {
                 lockInteraction(true);
-                showGameOverModal();
+                showGameOverModal(payload);
                 return;
             }
 
@@ -222,6 +225,7 @@ function initPlayPage() {
             overlay.hidden = true;
             showFlagMessage(messageBox, "같은 세션을 Stage 1부터 다시 시작했습니다.", "success");
             await loadState();
+            focusFirstPlayableOption();
         } catch (error) {
             showFlagMessage(messageBox, error.message, "error");
         } finally {
@@ -354,12 +358,68 @@ function initPlayPage() {
         return Boolean(form.querySelector("input[name='flag-option']:checked"));
     }
 
-    function showGameOverModal() {
+    function showGameOverModal(payload) {
+        gameOverSummary.textContent = `Stage ${payload.stageNumber}에서 탈락했습니다. 현재 총점 ${payload.totalScore}점, 다시 시작하면 같은 세션으로 Stage 1부터 이어집니다.`;
         gameOverModal.hidden = false;
+        if (pageShell) {
+            pageShell.inert = true;
+        }
+        document.addEventListener("keydown", handleGameOverModalKeydown);
+        (restartButton || gameOverPanel)?.focus();
     }
 
     function hideGameOverModal() {
         gameOverModal.hidden = true;
+        if (pageShell) {
+            pageShell.inert = false;
+        }
+        document.removeEventListener("keydown", handleGameOverModalKeydown);
+    }
+
+    function focusFirstPlayableOption() {
+        optionsBox.querySelector("input[name='flag-option']:not([disabled])")?.focus();
+    }
+
+    function handleGameOverModalKeydown(event) {
+        if (gameOverModal?.hidden) {
+            return;
+        }
+
+        if (event.key === "Escape") {
+            event.preventDefault();
+            (restartButton || gameOverPanel)?.focus();
+            return;
+        }
+
+        if (event.key !== "Tab") {
+            return;
+        }
+
+        const focusableElements = getGameOverFocusableElements();
+        if (focusableElements.length === 0) {
+            event.preventDefault();
+            gameOverPanel?.focus();
+            return;
+        }
+
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (event.shiftKey && document.activeElement === firstElement) {
+            event.preventDefault();
+            lastElement.focus();
+            return;
+        }
+
+        if (!event.shiftKey && document.activeElement === lastElement) {
+            event.preventDefault();
+            firstElement.focus();
+        }
+    }
+
+    function getGameOverFocusableElements() {
+        return Array.from(gameOverModal.querySelectorAll("a[href], button:not([disabled]), [tabindex]:not([tabindex='-1'])"))
+            .filter((element) => !element.hidden);
     }
 }
 

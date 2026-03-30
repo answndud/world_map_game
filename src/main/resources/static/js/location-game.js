@@ -77,8 +77,10 @@ function initPlayPage() {
     const heroCopy = document.getElementById("location-hero-copy");
     const stageHint = document.getElementById("location-stage-hint");
     const gameOverModal = document.getElementById("location-game-over-modal");
+    const gameOverPanel = gameOverModal?.querySelector(".game-over-modal__panel");
     const gameOverSummary = document.getElementById("location-game-over-summary");
     const restartButton = document.getElementById("location-restart-button");
+    const pageShell = document.querySelector(".page-shell");
 
     let currentState = null;
     let selectedCountryIso3Code = null;
@@ -293,6 +295,7 @@ function initPlayPage() {
 
             hideGameOverModal();
             await loadState();
+            focusPrimaryPlaySurface();
         } catch (error) {
             showLocationMessage(messageBox, error.message, "error");
         } finally {
@@ -437,6 +440,11 @@ function initPlayPage() {
 
         gameOverSummary.textContent = `Stage ${payload.stageNumber}에서 하트를 모두 잃었습니다. 현재 점수는 ${payload.totalScore}점입니다. 홈으로 돌아가거나 바로 다시 시작할 수 있습니다.`;
         gameOverModal.hidden = false;
+        if (pageShell) {
+            pageShell.inert = true;
+        }
+        document.addEventListener("keydown", handleGameOverModalKeydown);
+        (restartButton || gameOverPanel)?.focus();
     }
 
     function hideGameOverModal() {
@@ -445,6 +453,56 @@ function initPlayPage() {
         }
 
         gameOverModal.hidden = true;
+        if (pageShell) {
+            pageShell.inert = false;
+        }
+        document.removeEventListener("keydown", handleGameOverModalKeydown);
+    }
+
+    function focusPrimaryPlaySurface() {
+        globeStage?.focus();
+    }
+
+    function handleGameOverModalKeydown(event) {
+        if (gameOverModal?.hidden) {
+            return;
+        }
+
+        if (event.key === "Escape") {
+            event.preventDefault();
+            (restartButton || gameOverPanel)?.focus();
+            return;
+        }
+
+        if (event.key !== "Tab") {
+            return;
+        }
+
+        const focusableElements = getGameOverFocusableElements();
+        if (focusableElements.length === 0) {
+            event.preventDefault();
+            gameOverPanel?.focus();
+            return;
+        }
+
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (event.shiftKey && document.activeElement === firstElement) {
+            event.preventDefault();
+            lastElement.focus();
+            return;
+        }
+
+        if (!event.shiftKey && document.activeElement === lastElement) {
+            event.preventDefault();
+            firstElement.focus();
+        }
+    }
+
+    function getGameOverFocusableElements() {
+        return Array.from(gameOverModal.querySelectorAll("a[href], button:not([disabled]), [tabindex]:not([tabindex='-1'])"))
+            .filter((element) => !element.hidden);
     }
 
     function syncGlobeSize() {

@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>수도 맞히기 플레이</title>
-    <link rel="stylesheet" th:href="@{/css/site.css(v='20260325-light-depth-10')}">
-    <script th:src="@{/js/capital-game.js(v='20260328-capital-feedback-rhythm-1')}" defer></script>
+    <link rel="stylesheet" th:href="@{/css/site.css(v='20260330-a11y-keyboard-2')}">
+    <script th:src="@{/js/capital-game.js(v='20260330-a11y-keyboard-2')}" defer></script>
 </head>
 <body data-page="capital-play" th:attr="data-session-id=${sessionId}">
 <div class="page-shell">
@@ -53,7 +53,12 @@
 </div>
 <div id="capital-game-over-modal" class="game-over-modal" hidden>
     <div class="game-over-modal__backdrop"></div>
-    <section class="game-over-modal__panel" role="dialog" aria-modal="true" aria-labelledby="capital-game-over-title">
+    <section class="game-over-modal__panel"
+             role="dialog"
+             aria-modal="true"
+             aria-labelledby="capital-game-over-title"
+             aria-describedby="capital-game-over-summary"
+             tabindex="-1">
         <p class="eyebrow">Capital Scan Failed</p>
         <h2 id="capital-game-over-title">탈락했습니다</h2>
         <p id="capital-game-over-summary" class="hero-copy">
