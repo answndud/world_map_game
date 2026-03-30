@@ -67,7 +67,7 @@
 - 계정 정보는 `닉네임 + 비밀번호` 수준으로 단순하게 유지
 - 게임 세션 조회 / 답안 제출 / 재시작 / 결과 확인은 현재 브라우저 세션의 ownership(`memberId` 또는 `guestSessionKey`)과 맞는 경우에만 허용
 - 게임 결과는 `GAME_OVER` 또는 `FINISHED`가 된 뒤에만 열리는 terminal resource로 취급
-- 현재는 9단계 rollback 기준으로 `member`, `guestSessionKey`, 게임 세션 / 랭킹 레코드 ownership 필드, 닉네임 + 비밀번호 기반 회원가입 / 로그인 / 로그아웃, 로그인 직후 현재 브라우저의 guest 기록 귀속, `/mypage` 기록 허브, raw stage 기반 플레이 성향 요약, `/dashboard/**` 접근 제어, 환경변수 기반 bootstrap admin provisioning, Dashboard 운영 수치 카드, 공개 `/stats` 화면, local demo 계정 / 샘플 run bootstrap, 현재 survey/engine 버전 추천 피드백 샘플 bootstrap, 홈 첫 화면 계정 진입 CTA, 수도 맞히기 Level 1 vertical slice, 인구 비교 퀵 배틀 Level 1 vertical slice, 국기 보고 나라 맞히기 Level 1 vertical slice와 공개 `/ranking` / `/stats` / 홈 연동까지 연결했다. 위치/인구수 Level 2 실험은 현재 product scope에서 제거했고, internal Level 2 enum/정책/read model도 함께 걷어냈다. startup `GameLevelRollbackInitializer`는 legacy DB에 `game_level` 컬럼이 실제로 남아 있을 때만 예전 `LEVEL_2` 세션 / Stage / Attempt / 랭킹 row와 Redis `l2` 키를 정리한다.
+- 현재는 9단계 rollback 기준으로 `member`, `guestSessionKey`, 게임 세션 / 랭킹 레코드 ownership 필드, 닉네임 + 비밀번호 기반 회원가입 / 로그인 / 로그아웃, 로그인 직후 현재 브라우저의 5개 게임 guest 기록 귀속, `/mypage` 기록 허브, raw stage 기반 플레이 성향 요약, `/dashboard/**` 접근 제어, 환경변수 기반 bootstrap admin provisioning, Dashboard 운영 수치 카드, 공개 `/stats` 화면, local demo 계정 / 샘플 run bootstrap, 현재 survey/engine 버전 추천 피드백 샘플 bootstrap, 홈 첫 화면 계정 진입 CTA, 수도 맞히기 Level 1 vertical slice, 인구 비교 퀵 배틀 Level 1 vertical slice, 국기 보고 나라 맞히기 Level 1 vertical slice와 공개 `/ranking` / `/stats` / 홈 연동까지 연결했다. 위치/인구수 Level 2 실험은 현재 product scope에서 제거했고, internal Level 2 enum/정책/read model도 함께 걷어냈다. startup `GameLevelRollbackInitializer`는 legacy DB에 `game_level` 컬럼이 실제로 남아 있을 때만 예전 `LEVEL_2` 세션 / Stage / Attempt / 랭킹 row와 Redis `l2` 키를 정리한다.
 
 ### 이후 확장
 
@@ -297,7 +297,7 @@
 - 8단계 계정 구조는 `게스트 세션 유지 + 로그인 시 현재 브라우저 세션 기록 귀속`을 기본 원칙으로 설계한다.
 - 8단계 1차 구현으로 `member` 엔티티, `GuestSessionKeyManager`, 게임 세션 / 랭킹 레코드의 `memberId`, `guestSessionKey` 기반 ownership 저장 구조를 먼저 추가했다.
 - 8단계 2차 구현으로 `/signup`, `/login`, `/logout`과 BCrypt 기반 비밀번호 해시, 단순 세션 로그인, 로그인 사용자의 새 게임 시작 시 `memberId` ownership 저장을 추가했다.
-- 8단계 3차 구현으로 회원가입 / 로그인 직후 현재 브라우저의 `guestSessionKey` 기록을 계정 ownership으로 귀속하는 서비스를 추가했다.
+- 8단계 3차 구현으로 회원가입 / 로그인 직후 현재 브라우저의 `guestSessionKey` 기록을 계정 ownership으로 귀속하는 서비스를 추가했고, 현재는 위치/인구수뿐 아니라 수도/국기/인구 비교 퀵 배틀까지 포함한 5개 게임 세션과 랭킹 레코드를 같은 규칙으로 claim한다.
 - 8단계 보안 보강으로 게임 `play / state / answer / restart / result` 경로는 현재 `memberId` 또는 같은 브라우저의 `guestSessionKey` ownership이 맞는 세션만 열리게 바꿨다.
 - 결과는 terminal resource로 취급해 `READY`, `IN_PROGRESS` 상태에서는 `/result` API와 결과 페이지가 404를 돌리도록 닫았다. 즉 진행 중 세션의 정답과 시도 이력은 더 이상 먼저 노출되지 않는다.
 - 로그인 / 회원가입 성공 시 `MemberSessionManager`가 `changeSessionId()`를 호출해 session fixation 위험을 줄였다.

@@ -588,12 +588,13 @@
 - 회원가입/로그인 시 현재 브라우저 세션의 guest 기록만 계정으로 귀속하는 흐름 설계
 - `member`, `MemberRole`, `MemberRepository`를 추가해 단순 계정 도메인 뼈대를 먼저 만들었다
 - `GuestSessionKeyManager`가 같은 브라우저 세션 안에서 공통 `guestSessionKey`를 발급/유지하도록 연결했다
-- 위치/인구수 게임 세션과 `leaderboard_record`가 모두 `memberId` 또는 `guestSessionKey`로 소유자를 저장하도록 ownership 필드를 추가했다
-- 같은 브라우저 세션으로 위치/인구수 게임을 시작하면 동일 `guestSessionKey`를 공유하고, 게스트 게임 종료 시 랭킹 레코드도 같은 ownership을 유지하는 테스트를 고정했다
+- 위치/인구수/수도/국기/인구 비교 퀵 배틀 게임 세션과 `leaderboard_record`가 모두 `memberId` 또는 `guestSessionKey`로 소유자를 저장하도록 ownership 필드를 추가했다
+- 같은 브라우저 세션으로 다섯 게임을 시작하면 동일 `guestSessionKey`를 공유하고, 게스트 게임 종료 시 랭킹 레코드도 같은 ownership을 유지하는 테스트를 고정했다
 - BCrypt 기반 `MemberPasswordHasher`, `MemberAuthService`, `MemberSessionManager`를 추가해 `닉네임 + 비밀번호` 단순 계정의 세션 로그인 흐름을 만들었다
 - `/signup`, `/login`, `/logout` SSR 폼과 `/mypage`의 guest 유도 / 로그인 상태 shell 분기를 추가했다
-- 로그인 사용자가 새로 시작하는 위치/인구수 게임은 request nickname 대신 계정 닉네임을 사용하고, 세션/랭킹 기록을 `memberId` ownership으로 저장하도록 연결했다
+- 로그인 사용자가 새로 시작하는 다섯 게임은 request nickname 대신 계정 닉네임을 사용하고, 세션/랭킹 기록을 `memberId` ownership으로 저장하도록 연결했다
 - `GuestProgressClaimService`를 추가해 회원가입/로그인 직후 현재 브라우저의 `guestSessionKey` 기록을 계정 ownership으로 귀속하도록 연결했다
+- claim 범위는 현재 위치/인구수/수도/국기/인구 비교 퀵 배틀 5개 게임 세션과 `leaderboard_record` 전체다. signup/login 통합 테스트로 같은 브라우저에서 시작한 모든 guest 세션이 한 번에 같은 `memberId`로 귀속되는지 고정했다
 - guest로 저장됐던 게임 세션 / 랭킹 레코드는 claim 시 `memberId`를 채우고 `guestSessionKey`는 비워 ownership을 단일화한다
 - `GameSessionAccessContext`, `GameSessionAccessContextResolver`를 추가해 게임 `play / state / answer / restart / result` 요청이 현재 `memberId` 또는 같은 브라우저의 `guestSessionKey` ownership과 일치하는 세션만 읽도록 묶었다
 - access context는 `memberId`와 `guestSessionKey`를 함께 들고 간다. 그래서 로그인 직후 아직 claim되지 않은 same-browser guest 세션도 이어서 접근할 수 있고, 다른 브라우저에서 `sessionId`만 알아도 열 수는 없게 된다
@@ -645,7 +646,6 @@
   - 실패 run 포함 정확도
   - 시즌/기간 필터
 - restart 후 늦게 도착한 오래된 answer packet까지 완전히 막기 위한 `run generation token` 또는 restart nonce 설계
-- guest 기록 귀속 범위를 수도 / 국기 / 인구 비교 퀵 배틀까지 확장
 - `/mypage` read model을 현재 5개 게임 기준으로 다시 정리
 - prod/local profile, startup initializer, readiness 기준을 운영 안전성 관점에서 재점검
 - admin 운영 도구 확장

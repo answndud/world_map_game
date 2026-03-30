@@ -155,6 +155,7 @@
 92. [현재 브라우저에만 게임 세션을 열고 결과는 종료 후에만 노출하기](./99-protect-game-session-access-and-terminal-results.md)
 93. [게임 write를 직렬화하고 stale submit을 막아 무결성 1차 닫기](./100-serialize-game-session-writes-and-stale-submit-guard.md)
 94. [prod 설정을 더 안전하게 만들고 startup rollback 범위를 local/test로 제한하기](./101-harden-prod-config-with-schema-validation-and-safer-startup.md)
+95. [guest 기록 귀속 범위를 5개 게임 전체로 확장하기](./102-extend-guest-progress-claim-to-all-five-games.md)
 
 ### Part E. 확장과 포트폴리오 정리
 

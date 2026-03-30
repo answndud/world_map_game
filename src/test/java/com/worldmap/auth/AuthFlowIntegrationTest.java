@@ -14,10 +14,18 @@ import com.worldmap.auth.domain.MemberRepository;
 import com.worldmap.auth.domain.MemberRole;
 import com.worldmap.auth.application.MemberPasswordHasher;
 import com.worldmap.country.domain.CountryRepository;
+import com.worldmap.game.capital.domain.CapitalGameSession;
+import com.worldmap.game.capital.domain.CapitalGameSessionRepository;
+import com.worldmap.game.flag.domain.FlagGameSession;
+import com.worldmap.game.flag.domain.FlagGameSessionRepository;
 import com.worldmap.game.location.domain.LocationGameSession;
 import com.worldmap.game.location.domain.LocationGameSessionRepository;
 import com.worldmap.game.location.domain.LocationGameStage;
 import com.worldmap.game.location.domain.LocationGameStageRepository;
+import com.worldmap.game.population.domain.PopulationGameSession;
+import com.worldmap.game.population.domain.PopulationGameSessionRepository;
+import com.worldmap.game.populationbattle.domain.PopulationBattleGameSession;
+import com.worldmap.game.populationbattle.domain.PopulationBattleGameSessionRepository;
 import com.worldmap.ranking.domain.LeaderboardRecord;
 import com.worldmap.ranking.domain.LeaderboardRecordRepository;
 import java.util.UUID;
@@ -49,6 +57,18 @@ class AuthFlowIntegrationTest {
 
 	@Autowired
 	private LocationGameStageRepository locationGameStageRepository;
+
+	@Autowired
+	private PopulationGameSessionRepository populationGameSessionRepository;
+
+	@Autowired
+	private CapitalGameSessionRepository capitalGameSessionRepository;
+
+	@Autowired
+	private FlagGameSessionRepository flagGameSessionRepository;
+
+	@Autowired
+	private PopulationBattleGameSessionRepository populationBattleGameSessionRepository;
 
 	@Autowired
 	private LeaderboardRecordRepository leaderboardRecordRepository;
@@ -136,6 +156,10 @@ class AuthFlowIntegrationTest {
 	void signupClaimsCurrentGuestRecordsIntoMemberOwnership() throws Exception {
 		MockHttpSession browserSession = new MockHttpSession();
 		UUID guestSessionId = UUID.fromString(startLocationGame("guest_runner", browserSession));
+		UUID populationSessionId = UUID.fromString(startPopulationGame("guest_population", browserSession));
+		UUID capitalSessionId = UUID.fromString(startCapitalGame("guest_capital", browserSession));
+		UUID flagSessionId = UUID.fromString(startFlagGame("guest_flag", browserSession));
+		UUID populationBattleSessionId = UUID.fromString(startPopulationBattleGame("guest_battle", browserSession));
 		LocationGameSession guestSession = locationGameSessionRepository.findById(guestSessionId).orElseThrow();
 		String guestSessionKey = guestSession.getGuestSessionKey();
 		assertThat(guestSessionKey).isNotBlank();
@@ -174,11 +198,29 @@ class AuthFlowIntegrationTest {
 
 		Member member = memberRepository.findByNicknameIgnoreCase("claimed_runner").orElseThrow();
 		LocationGameSession claimedSession = locationGameSessionRepository.findById(guestSessionId).orElseThrow();
+		PopulationGameSession claimedPopulationSession = populationGameSessionRepository.findById(populationSessionId)
+			.orElseThrow();
+		CapitalGameSession claimedCapitalSession = capitalGameSessionRepository.findById(capitalSessionId).orElseThrow();
+		FlagGameSession claimedFlagSession = flagGameSessionRepository.findById(flagSessionId).orElseThrow();
+		PopulationBattleGameSession claimedPopulationBattleSession =
+			populationBattleGameSessionRepository.findById(populationBattleSessionId).orElseThrow();
 		LeaderboardRecord claimedRecord = leaderboardRecordRepository.findAll().getFirst();
 
 		assertThat(claimedSession.getMemberId()).isEqualTo(member.getId());
 		assertThat(claimedSession.getGuestSessionKey()).isNull();
 		assertThat(claimedSession.getPlayerNickname()).isEqualTo("guest_runner");
+		assertThat(claimedPopulationSession.getMemberId()).isEqualTo(member.getId());
+		assertThat(claimedPopulationSession.getGuestSessionKey()).isNull();
+		assertThat(claimedPopulationSession.getPlayerNickname()).isEqualTo("guest_population");
+		assertThat(claimedCapitalSession.getMemberId()).isEqualTo(member.getId());
+		assertThat(claimedCapitalSession.getGuestSessionKey()).isNull();
+		assertThat(claimedCapitalSession.getPlayerNickname()).isEqualTo("guest_capital");
+		assertThat(claimedFlagSession.getMemberId()).isEqualTo(member.getId());
+		assertThat(claimedFlagSession.getGuestSessionKey()).isNull();
+		assertThat(claimedFlagSession.getPlayerNickname()).isEqualTo("guest_flag");
+		assertThat(claimedPopulationBattleSession.getMemberId()).isEqualTo(member.getId());
+		assertThat(claimedPopulationBattleSession.getGuestSessionKey()).isNull();
+		assertThat(claimedPopulationBattleSession.getPlayerNickname()).isEqualTo("guest_battle");
 
 		assertThat(claimedRecord.getMemberId()).isEqualTo(member.getId());
 		assertThat(claimedRecord.getGuestSessionKey()).isNull();
@@ -194,11 +236,136 @@ class AuthFlowIntegrationTest {
 			.andExpect(content().string(containsString("#1")));
 	}
 
+	@Test
+	void loginClaimsCurrentGuestRecordsIntoMemberOwnership() throws Exception {
+		memberRepository.save(
+			Member.create(
+				"claimed_runner",
+				memberPasswordHasher.hash("secret1234"),
+				MemberRole.USER
+			)
+		);
+
+		MockHttpSession browserSession = new MockHttpSession();
+		UUID locationSessionId = UUID.fromString(startLocationGame("guest_runner", browserSession));
+		UUID populationSessionId = UUID.fromString(startPopulationGame("guest_population", browserSession));
+		UUID capitalSessionId = UUID.fromString(startCapitalGame("guest_capital", browserSession));
+		UUID flagSessionId = UUID.fromString(startFlagGame("guest_flag", browserSession));
+		UUID populationBattleSessionId = UUID.fromString(startPopulationBattleGame("guest_battle", browserSession));
+
+		mockMvc.perform(
+			post("/login")
+				.session(browserSession)
+				.param("nickname", "claimed_runner")
+				.param("password", "secret1234")
+		)
+			.andExpect(status().is3xxRedirection())
+			.andExpect(redirectedUrl("/mypage"));
+
+		Member member = memberRepository.findByNicknameIgnoreCase("claimed_runner").orElseThrow();
+		LocationGameSession claimedLocationSession = locationGameSessionRepository.findById(locationSessionId)
+			.orElseThrow();
+		PopulationGameSession claimedPopulationSession = populationGameSessionRepository.findById(populationSessionId)
+			.orElseThrow();
+		CapitalGameSession claimedCapitalSession = capitalGameSessionRepository.findById(capitalSessionId).orElseThrow();
+		FlagGameSession claimedFlagSession = flagGameSessionRepository.findById(flagSessionId).orElseThrow();
+		PopulationBattleGameSession claimedPopulationBattleSession =
+			populationBattleGameSessionRepository.findById(populationBattleSessionId).orElseThrow();
+
+		assertThat(claimedLocationSession.getMemberId()).isEqualTo(member.getId());
+		assertThat(claimedLocationSession.getGuestSessionKey()).isNull();
+		assertThat(claimedLocationSession.getPlayerNickname()).isEqualTo("guest_runner");
+		assertThat(claimedPopulationSession.getMemberId()).isEqualTo(member.getId());
+		assertThat(claimedPopulationSession.getGuestSessionKey()).isNull();
+		assertThat(claimedPopulationSession.getPlayerNickname()).isEqualTo("guest_population");
+		assertThat(claimedCapitalSession.getMemberId()).isEqualTo(member.getId());
+		assertThat(claimedCapitalSession.getGuestSessionKey()).isNull();
+		assertThat(claimedCapitalSession.getPlayerNickname()).isEqualTo("guest_capital");
+		assertThat(claimedFlagSession.getMemberId()).isEqualTo(member.getId());
+		assertThat(claimedFlagSession.getGuestSessionKey()).isNull();
+		assertThat(claimedFlagSession.getPlayerNickname()).isEqualTo("guest_flag");
+		assertThat(claimedPopulationBattleSession.getMemberId()).isEqualTo(member.getId());
+		assertThat(claimedPopulationBattleSession.getGuestSessionKey()).isNull();
+		assertThat(claimedPopulationBattleSession.getPlayerNickname()).isEqualTo("guest_battle");
+	}
+
 	private String startLocationGame(String nickname, MockHttpSession browserSession) throws Exception {
 		return com.fasterxml.jackson.databind.json.JsonMapper.builder().build()
 			.readTree(
 				mockMvc.perform(
 					post("/api/games/location/sessions")
+						.session(browserSession)
+						.contentType("application/json")
+						.content("{\"nickname\":\"" + nickname + "\"}")
+				)
+					.andExpect(status().isCreated())
+					.andReturn()
+					.getResponse()
+					.getContentAsString()
+			)
+			.get("sessionId")
+			.asText();
+	}
+
+	private String startPopulationGame(String nickname, MockHttpSession browserSession) throws Exception {
+		return com.fasterxml.jackson.databind.json.JsonMapper.builder().build()
+			.readTree(
+				mockMvc.perform(
+					post("/api/games/population/sessions")
+						.session(browserSession)
+						.contentType("application/json")
+						.content("{\"nickname\":\"" + nickname + "\"}")
+				)
+					.andExpect(status().isCreated())
+					.andReturn()
+					.getResponse()
+					.getContentAsString()
+			)
+			.get("sessionId")
+			.asText();
+	}
+
+	private String startCapitalGame(String nickname, MockHttpSession browserSession) throws Exception {
+		return com.fasterxml.jackson.databind.json.JsonMapper.builder().build()
+			.readTree(
+				mockMvc.perform(
+					post("/api/games/capital/sessions")
+						.session(browserSession)
+						.contentType("application/json")
+						.content("{\"nickname\":\"" + nickname + "\"}")
+				)
+					.andExpect(status().isCreated())
+					.andReturn()
+					.getResponse()
+					.getContentAsString()
+			)
+			.get("sessionId")
+			.asText();
+	}
+
+	private String startFlagGame(String nickname, MockHttpSession browserSession) throws Exception {
+		return com.fasterxml.jackson.databind.json.JsonMapper.builder().build()
+			.readTree(
+				mockMvc.perform(
+					post("/api/games/flag/sessions")
+						.session(browserSession)
+						.contentType("application/json")
+						.content("{\"nickname\":\"" + nickname + "\"}")
+				)
+					.andExpect(status().isCreated())
+					.andReturn()
+					.getResponse()
+					.getContentAsString()
+			)
+			.get("sessionId")
+			.asText();
+	}
+
+	private String startPopulationBattleGame(String nickname, MockHttpSession browserSession) throws Exception {
+		return com.fasterxml.jackson.databind.json.JsonMapper.builder().build()
+			.readTree(
+				mockMvc.perform(
+					post("/api/games/population-battle/sessions")
 						.session(browserSession)
 						.contentType("application/json")
 						.content("{\"nickname\":\"" + nickname + "\"}")

@@ -34,6 +34,29 @@
 - 면접용 30초 요약:
 ```
 
+## 2026-03-30 - guest 기록 귀속 범위를 5개 게임 전체로 확장
+
+- 단계: 8. 인증, 전적, 마이페이지
+- 목적: 수도/국기/인구 비교 퀵 배틀이 들어온 뒤에도 `GuestProgressClaimService`는 여전히 위치/인구수만 claim하고 있었다. 그래서 같은 브라우저에서 새 게임 3종을 guest로 시작한 뒤 회원가입/로그인을 하면, 일부 세션만 member 소유로 바뀌고 나머지는 guest로 남는 불일치가 생길 수 있었다. 이번 조각은 ownership 전환 규칙을 5개 게임 전체로 맞추는 데 집중했다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/auth/application/GuestProgressClaimService.java`
+  - `src/test/java/com/worldmap/auth/AuthFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/auth/GuestSessionOwnershipIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/102-extend-guest-progress-claim-to-all-five-games.md`
+- 요청 흐름: `POST /signup` 또는 `POST /login`은 `AuthPageController`에서 시작한다. 인증이 성공하면 컨트롤러가 현재 브라우저의 `guestSessionKey`를 읽고 `GuestProgressClaimService.claimGuestRecords(memberId, guestSessionKey)`를 호출한다. 이제 이 서비스는 위치/인구수뿐 아니라 수도/국기/인구 비교 퀵 배틀 repository까지 함께 조회해 아직 `memberId`가 없는 세션을 모두 `claimOwnership(memberId)`로 전환한다. 마지막에 `MemberSessionManager`가 로그인 세션을 유지한다.
+- 데이터 / 상태 변화: claim 전에는 각 게임 세션이 `memberId = null`, `guestSessionKey = 현재 브라우저 키` 상태다. claim 후에는 다섯 게임 세션과 `leaderboard_record`가 모두 `memberId = 로그인 사용자`, `guestSessionKey = null`로 바뀐다. `playerNickname` snapshot은 그대로 유지되므로 과거 플레이 당시 이름은 바뀌지 않는다.
+- 핵심 도메인 개념: guest 기록 귀속은 특정 게임 컨트롤러의 예외 처리 로직이 아니라 “ownership 전환 규칙”이다. 그래서 `AuthPageController`는 guest key를 읽고 서비스를 호출만 하고, 실제로 어떤 레코드를 어떤 규칙으로 member 소유로 바꾸는지는 `GuestProgressClaimService`와 각 엔티티의 `claimOwnership()`이 맡는다.
+- 예외 / 엣지 케이스: guest key가 없거나 비어 있으면 claim은 no-op다. 이미 `memberId`가 채워진 세션은 다시 건드리지 않는다. 현재도 귀속 범위는 “현재 브라우저 세션의 guest 기록만”이며, 다른 브라우저나 과거 세션 복구까지 하지는 않는다.
+- 테스트: `git diff --check` 통과. `./gradlew test --tests com.worldmap.auth.GuestSessionOwnershipIntegrationTest --tests com.worldmap.auth.AuthFlowIntegrationTest` 통과.
+- 배운 점: 계정 기능은 로그인 폼만 붙인다고 닫히지 않는다. 새 게임을 추가할 때 ownership 전환 규칙도 같은 범위로 확장하지 않으면, `/mypage`와 기록 귀속에서 제품 범위가 서로 어긋날 수 있다.
+- 아직 약한 부분: 이번 조각은 세션 ownership claim까지만 닫았다. `/mypage` read model은 아직 새 게임 3종의 최근 플레이와 성향 지표를 충분히 보여주지 못하므로, 다음 조각에서 읽기 모델을 제품 범위와 다시 맞춰야 한다.
+- 면접용 30초 요약: 단순 계정 구조에서 guest 기록 귀속은 현재 브라우저의 `guestSessionKey`를 기준으로 일어납니다. 그런데 새 게임 3종을 추가한 뒤 claim 서비스가 여전히 위치/인구수만 보고 있어서, 회원가입이나 로그인 후 일부 게임 세션만 계정 소유로 바뀌는 틈이 남아 있었습니다. 그래서 `GuestProgressClaimService`를 5개 게임 전체 repository로 확장하고, signup/login 통합 테스트로 같은 브라우저에서 시작한 모든 guest 세션이 한 번에 같은 `memberId`로 귀속되는지 고정했습니다.
+
 ## 2026-03-30 - prod 설정 안전화와 legacy rollback startup 범위 제한
 
 - 단계: 10. 포트폴리오 정리와 발표 준비 보조 운영 안정화

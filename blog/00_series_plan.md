@@ -120,6 +120,7 @@
 93. [GitHub Actions에서 sample task definition을 렌더링해 ECS에 배포하기](./98-add-github-actions-ecs-deploy-workflow-from-template.md)
 94. [게임 write를 직렬화하고 stale submit을 막아 무결성 1차 닫기](./100-serialize-game-session-writes-and-stale-submit-guard.md)
 95. [prod 설정을 더 안전하게 만들고 startup rollback 범위를 local/test로 제한하기](./101-harden-prod-config-with-schema-validation-and-safer-startup.md)
+96. [guest 기록 귀속 범위를 5개 게임 전체로 확장하기](./102-extend-guest-progress-claim-to-all-five-games.md)
 
 ### Part E. 테스트, 확장, 취업 패키징
 
