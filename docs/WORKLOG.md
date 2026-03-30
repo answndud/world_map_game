@@ -63,6 +63,28 @@
 - 아직 약한 부분: `/ranking` 첫 SSR은 여전히 10개 보드를 전부 렌더링한다. 즉 주기적 갱신 비용은 줄였지만, 초기 HTML/모델 적재 비용까지 줄인 것은 아니다. 브라우저 네트워크 fan-out은 정리했지만, initial render를 on-demand로 더 줄일지는 실제 측정값을 보고 다음 조각에서 판단해야 한다.
 - 면접용 30초 요약: 랭킹 페이지는 한 번에 보드 하나만 보여주는데도 15초마다 숨겨진 9개 보드까지 전부 다시 불러오고 있었습니다. 이번에는 서버 API를 건드리지 않고 `ranking.js`만 바꿔서 현재 보고 있는 active board만 자동 갱신하게 만들고, 모드/범위 전환 직후에는 그 보드만 즉시 fetch하도록 정리했습니다. 또 일간 랭킹 설명의 기준 날짜도 polling 응답의 `targetDate`로 다시 맞춰서 row와 상단 카피가 서로 다른 날짜를 가리키는 문제를 같이 막았습니다.
 
+## 2026-03-30 - flag 화면이 정의되지 않은 soft surface 토큰에 의존하지 않도록 fallback 정리
+
+- 단계: 11. 신규 게임 확장 보조 화면 polish
+- 목적: `flag-display-card`, `flag-display-image`는 공통 CSS에서 실제로 정의되지 않은 `--line-soft`, `--surface-soft`, `--surface-strong` 토큰을 직접 참조하고 있었다. 이 상태에서는 테마 토큰이 정리된 뒤에도 flag 화면만 배경/테두리 표면이 깨질 수 있었다. 이번 조각은 flag play/result가 공통 panel 토큰으로 안전하게 fallback하도록 만들고, 두 페이지가 새 CSS 버전을 확실히 읽게 맞추는 데 집중했다.
+- 변경 파일:
+  - `src/main/resources/static/css/site.css`
+  - `src/main/resources/templates/flag-game/play.html`
+  - `src/main/resources/templates/flag-game/result.html`
+  - `src/test/java/com/worldmap/game/flag/FlagGameFlowIntegrationTest.java`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 요청 자체는 바뀌지 않았다. `GET /games/flag/play/{sessionId}`와 `GET /games/flag/result/{sessionId}`가 기존처럼 SSR 템플릿을 렌더링하고, 브라우저는 공통 `site.css`를 읽는다. 이번에 바뀐 점은 flag display 영역이 soft token이 비어 있어도 `var(--line, ...)`, `var(--nested-panel-surface, ...)`, `var(--panel-strong, ...)` 계열 fallback을 따라가도록 CSS가 바뀌었다는 것이다.
+- 데이터 / 상태 변화: 게임 세션, 시도, 점수, 랭킹 데이터는 바뀌지 않았다. 이번 조각의 상태 변화는 표현 계층에만 있다. flag play/result의 국기 표시 카드가 토큰 부재 상황에서도 비어 보이거나 잘못된 대비로 무너지는 대신, 공통 panel surface 위계로 안전하게 렌더링된다.
+- 핵심 도메인 개념: 이 조각의 핵심은 “화면별 예외 surface도 공통 theme contract를 어기지 않아야 한다”는 것이다. flag 전용 카드가 독립 토큰을 새로 만들기보다, 이미 있는 panel line/surface로 fallback하는 편이 현재 테마 구조와 설명 모델에 더 맞는다.
+- 예외 / 엣지 케이스: soft token이 나중에 다시 정식 정의되더라도 현재 fallback은 첫 번째 값을 그대로 우선 사용하므로 충돌하지 않는다. play/result 둘 다 새 CSS 버전을 읽어야 해서 두 템플릿의 asset query string도 함께 올렸다.
+- 테스트:
+  - `./gradlew test --tests com.worldmap.game.flag.FlagGameFlowIntegrationTest.playPageRendersAccessibleGameOverDialogShell --tests com.worldmap.game.flag.FlagGameFlowIntegrationTest.resultPageUsesCurrentSiteCssAssetVersionAfterGameOver`
+  - `git diff --check`
+- 블로그 반영 여부: 생략. 이번 조각은 request flow나 도메인 규칙이 바뀐 feature slice가 아니라, 정의되지 않은 CSS 토큰 의존과 asset cache만 정리한 작은 residual bug fix다.
+- 배운 점: 공통 theme를 오래 다루다 보면 “정의됐다고 가정한 토큰”이 화면 하나에만 남아 있는 경우가 있다. 이런 문제는 새 색을 더 만드는 것보다, 기존 contract 안에서 fallback 경로를 분명히 하는 편이 설명도 유지보수도 쉽다.
+- 아직 약한 부분: 이 검증은 SSR 페이지가 새 CSS 버전을 읽는지와 HTML 회귀까지만 잡는다. 실제 브라우저에서 light/dark 전환 시 flag card 대비가 의도대로 보이는지는 시각 확인이 한 번 더 필요하다.
+- 면접용 30초 요약: flag 게임 화면은 공통 테마에 없는 soft 토큰을 직접 잡고 있어서, 테마 정리 후에 표면이 깨질 위험이 있었습니다. 그래서 `site.css`에서 flag display가 공통 panel 토큰으로 fallback하도록 바꾸고, play/result 템플릿이 새 CSS 버전을 읽게 맞췄습니다. 게임 로직은 건드리지 않고 화면 contract만 안정화한 작은 residual bug 조각입니다.
+
 ## 2026-03-30 - 남은 4개 게임오버 모달에도 같은 keyboard focus scope를 적용
 
 - 단계: 11. 신규 게임 확장 보조 접근성 정리

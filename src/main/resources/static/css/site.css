@@ -1542,16 +1542,16 @@ button:disabled {
     align-items: center;
     min-height: 12rem;
     padding: 1rem;
-    border: 1px solid var(--line-soft);
-    background: var(--surface-soft);
+    border: 1px solid var(--line-soft, var(--line));
+    background: var(--surface-soft, var(--nested-panel-surface));
 }
 
 .flag-display-image {
     width: min(100%, 22rem);
     aspect-ratio: 4 / 3;
     object-fit: contain;
-    border: 1px solid var(--line-soft);
-    background: color-mix(in srgb, var(--surface-strong) 84%, white 16%);
+    border: 1px solid var(--line-soft, var(--line));
+    background: color-mix(in srgb, var(--surface-strong, var(--panel-strong)) 84%, white 16%);
 }
 
 .flag-display-image--result {

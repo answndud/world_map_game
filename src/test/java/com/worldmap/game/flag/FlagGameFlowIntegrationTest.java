@@ -133,6 +133,7 @@ class FlagGameFlowIntegrationTest {
 
 		mockMvc.perform(get("/games/flag/play/{sessionId}", sessionId).session(browserSession))
 			.andExpect(status().isOk())
+			.andExpect(content().string(containsString("/css/site.css?v=20260330-ranking-active-board-2")))
 			.andExpect(content().string(containsString("role=\"dialog\"")))
 			.andExpect(content().string(containsString("aria-describedby=\"flag-game-over-summary\"")))
 			.andExpect(content().string(containsString("tabindex=\"-1\"")));
@@ -360,6 +361,30 @@ class FlagGameFlowIntegrationTest {
 			.andExpect(content().string(not(containsString(wrongCountryName))))
 			.andExpect(content().string(not(containsString(correctCountryName))))
 			.andExpect(content().string(not(containsString("정답 국가"))));
+	}
+
+	@Test
+	void resultPageUsesCurrentSiteCssAssetVersionAfterGameOver() throws Exception {
+		MockHttpSession browserSession = new MockHttpSession();
+		UUID sessionId = UUID.fromString(startGame("flag-result-css", browserSession));
+		FlagGameStage firstStage = flagGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
+			.orElseThrow();
+		int wrongOptionNumber = findWrongOptionNumber(firstStage.getCorrectOptionNumber());
+
+		for (int attempt = 1; attempt <= 3; attempt++) {
+			mockMvc.perform(
+				post("/api/games/flag/sessions/{sessionId}/answer", sessionId)
+					.session(browserSession)
+					.contentType("application/json")
+					.content(answerPayload(1, wrongOptionNumber))
+			)
+				.andExpect(status().isOk());
+		}
+
+		mockMvc.perform(get("/games/flag/result/{sessionId}", sessionId).session(browserSession))
+			.andExpect(status().isOk())
+			.andExpect(content().string(containsString("/css/site.css?v=20260330-ranking-active-board-2")))
+			.andExpect(content().string(containsString("flag-display-image--result")));
 	}
 
 	private String startGame(String nickname, MockHttpSession browserSession) throws Exception {
