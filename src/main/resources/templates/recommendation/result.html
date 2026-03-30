@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>나에게 어울리는 국가 찾기 결과</title>
-    <link rel="stylesheet" th:href="@{/css/site.css(v='20260325-light-depth-10')}">
-    <script th:src="@{/js/recommendation-feedback.js(v='20260324-feedback-1')}" defer></script>
+    <link rel="stylesheet" th:href="@{/css/site.css(v='20260330-a11y-keyboard-1')}">
+    <script th:src="@{/js/recommendation-feedback.js(v='20260330-a11y-keyboard-1')}" defer></script>
 </head>
 <body>
 <div class="page-shell">
@@ -78,22 +78,38 @@
 
             <form id="recommendation-feedback-form" class="game-form">
                 <input type="hidden" name="feedbackToken" th:value="${feedbackToken}">
-                <input id="recommendation-satisfaction-score" type="hidden" name="satisfactionScore" value="">
-
-                <div class="rating-button-row" role="radiogroup" aria-label="추천 만족도 선택">
-                    <button class="secondary-button rating-score-button" type="button" data-score="1">1점</button>
-                    <button class="secondary-button rating-score-button" type="button" data-score="2">2점</button>
-                    <button class="secondary-button rating-score-button" type="button" data-score="3">3점</button>
-                    <button class="secondary-button rating-score-button" type="button" data-score="4">4점</button>
-                    <button class="secondary-button rating-score-button" type="button" data-score="5">5점</button>
-                </div>
+                <fieldset class="rating-fieldset">
+                    <legend class="sr-only">추천 만족도 선택</legend>
+                    <div class="rating-button-row">
+                        <label class="rating-score-option">
+                            <input class="rating-score-input" type="radio" name="satisfactionScore" value="1">
+                            <span>1점</span>
+                        </label>
+                        <label class="rating-score-option">
+                            <input class="rating-score-input" type="radio" name="satisfactionScore" value="2">
+                            <span>2점</span>
+                        </label>
+                        <label class="rating-score-option">
+                            <input class="rating-score-input" type="radio" name="satisfactionScore" value="3">
+                            <span>3점</span>
+                        </label>
+                        <label class="rating-score-option">
+                            <input class="rating-score-input" type="radio" name="satisfactionScore" value="4">
+                            <span>4점</span>
+                        </label>
+                        <label class="rating-score-option">
+                            <input class="rating-score-input" type="radio" name="satisfactionScore" value="5">
+                            <span>5점</span>
+                        </label>
+                    </div>
+                </fieldset>
 
                 <div class="page-actions">
                     <button id="recommendation-feedback-submit" class="primary-button" type="submit" disabled>만족도 보내기</button>
                 </div>
             </form>
 
-            <div id="recommendation-feedback-message" class="feedback-inline-message" hidden></div>
+            <div id="recommendation-feedback-message" class="feedback-inline-message" role="status" aria-live="polite" aria-atomic="true" hidden></div>
         </section>
     </main>
 </div>

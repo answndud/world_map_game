@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>인구 비교 퀵 배틀 플레이</title>
-    <link rel="stylesheet" th:href="@{/css/site.css(v='20260325-light-depth-10')}">
-    <script th:src="@{/js/population-battle-game.js(v='20260328-population-battle-feedback-rhythm-1')}" defer></script>
+    <link rel="stylesheet" th:href="@{/css/site.css(v='20260330-a11y-keyboard-1')}">
+    <script th:src="@{/js/population-battle-game.js(v='20260330-a11y-keyboard-1')}" defer></script>
 </head>
 <body data-page="population-battle-play" th:attr="data-session-id=${sessionId}">
 <div class="page-shell">
@@ -53,7 +53,12 @@
 </div>
 <div id="population-battle-game-over-modal" class="game-over-modal" hidden>
     <div class="game-over-modal__backdrop"></div>
-    <section class="game-over-modal__panel" role="dialog" aria-modal="true" aria-labelledby="population-battle-game-over-title">
+    <section class="game-over-modal__panel"
+             role="dialog"
+             aria-modal="true"
+             aria-labelledby="population-battle-game-over-title"
+             aria-describedby="population-battle-game-over-summary"
+             tabindex="-1">
         <p class="eyebrow">Population Battle Failed</p>
         <h2 id="population-battle-game-over-title">탈락했습니다</h2>
         <p id="population-battle-game-over-summary" class="hero-copy">

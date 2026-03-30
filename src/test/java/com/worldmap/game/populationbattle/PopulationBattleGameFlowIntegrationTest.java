@@ -114,6 +114,18 @@ class PopulationBattleGameFlowIntegrationTest {
 	}
 
 	@Test
+	void playPageRendersAccessibleGameOverDialogShell() throws Exception {
+		MockHttpSession browserSession = new MockHttpSession();
+		String sessionId = startGame("battle-dialog", browserSession);
+
+		mockMvc.perform(get("/games/population-battle/play/{sessionId}", sessionId).session(browserSession))
+			.andExpect(status().isOk())
+			.andExpect(content().string(containsString("role=\"dialog\"")))
+			.andExpect(content().string(containsString("aria-describedby=\"population-battle-game-over-summary\"")))
+			.andExpect(content().string(containsString("tabindex=\"-1\"")));
+	}
+
+	@Test
 	void staleDuplicateWrongAnswerIsRejectedWithoutConsumingExtraLife() throws Exception {
 		MockHttpSession browserSession = new MockHttpSession();
 		UUID sessionId = UUID.fromString(startGame("stale-battle", browserSession));
@@ -226,7 +238,7 @@ class PopulationBattleGameFlowIntegrationTest {
 			.orElseThrow();
 		int wrongOptionNumber = findWrongOptionNumber(firstStage.getCorrectOptionNumber());
 
-		for (int attempt = 1; attempt <= 3; attempt++) {
+		for (int attempt = 1; attempt <= 2; attempt++) {
 			mockMvc.perform(
 				post("/api/games/population-battle/sessions/{sessionId}/answer", sessionId)
 					.session(browserSession)

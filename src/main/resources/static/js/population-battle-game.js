@@ -60,8 +60,10 @@ function initPopulationBattlePlayPage() {
     const stageHint = document.getElementById("population-battle-stage-hint");
     const submitButton = document.getElementById("population-battle-submit-button");
     const gameOverModal = document.getElementById("population-battle-game-over-modal");
+    const gameOverPanel = gameOverModal?.querySelector(".game-over-modal__panel");
     const gameOverSummary = document.getElementById("population-battle-game-over-summary");
     const restartButton = document.getElementById("population-battle-restart-button");
+    const pageShell = document.querySelector(".page-shell");
 
     let currentState = null;
     let interactionLocked = false;
@@ -215,6 +217,7 @@ function initPopulationBattlePlayPage() {
             overlay.hidden = true;
             showPopulationBattleMessage(messageBox, "같은 세션을 Stage 1부터 다시 시작했습니다.", "success");
             await loadState();
+            focusFirstPlayableOption();
         } catch (error) {
             showPopulationBattleMessage(messageBox, error.message, "error");
         } finally {
@@ -348,16 +351,71 @@ function initPopulationBattlePlayPage() {
     function showGameOverModal(payload) {
         gameOverSummary.textContent = `하트를 모두 잃었습니다. 최종 점수 ${payload.totalScore}점으로 종료되었습니다.`;
         gameOverModal.hidden = false;
+        if (pageShell) {
+            pageShell.inert = true;
+        }
+        document.addEventListener("keydown", handleGameOverModalKeydown);
+        (restartButton || gameOverPanel)?.focus();
     }
 
     function hideGameOverModal() {
         if (gameOverModal) {
             gameOverModal.hidden = true;
         }
+        if (pageShell) {
+            pageShell.inert = false;
+        }
+        document.removeEventListener("keydown", handleGameOverModalKeydown);
     }
 
     function hasCurrentSelection() {
         return Boolean(form.querySelector("input[name='population-battle-option']:checked"));
+    }
+
+    function focusFirstPlayableOption() {
+        optionsBox.querySelector("input[name='population-battle-option']:not([disabled])")?.focus();
+    }
+
+    function handleGameOverModalKeydown(event) {
+        if (gameOverModal?.hidden) {
+            return;
+        }
+
+        if (event.key === "Escape") {
+            event.preventDefault();
+            (restartButton || gameOverPanel)?.focus();
+            return;
+        }
+
+        if (event.key !== "Tab") {
+            return;
+        }
+
+        const focusableElements = getGameOverFocusableElements();
+        if (focusableElements.length === 0) {
+            event.preventDefault();
+            gameOverPanel?.focus();
+            return;
+        }
+
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (event.shiftKey && document.activeElement === firstElement) {
+            event.preventDefault();
+            lastElement.focus();
+            return;
+        }
+
+        if (!event.shiftKey && document.activeElement === lastElement) {
+            event.preventDefault();
+            firstElement.focus();
+        }
+    }
+
+    function getGameOverFocusableElements() {
+        return Array.from(gameOverModal.querySelectorAll("a[href], button:not([disabled]), [tabindex]:not([tabindex='-1'])"))
+            .filter((element) => !element.hidden);
     }
 }
 

@@ -34,6 +34,32 @@
 - 면접용 30초 요약:
 ```
 
+## 2026-03-30 - 추천 만족도 입력과 population-battle 게임오버 모달의 키보드 접근성 1차 보강
+
+- 단계: 6. 설문 기반 추천 엔진 / 11. 신규 게임 확장 보조 접근성 정리
+- 목적: 추천 결과 화면의 만족도 입력은 `radiogroup`처럼 보여도 실제로는 `button + aria-pressed` 묶음이라 스크린리더 문맥과 키보드 이동이 어색했고, population-battle 게임오버 모달은 열려도 focus가 들어가지 않고 뒤쪽 header/nav로 tab이 빠질 수 있었다. 이번 조각은 “키보드와 보조기술에서도 지금 UI가 실제 입력/모달처럼 동작하는가”를 바로잡는 데 집중했다.
+- 변경 파일:
+  - `src/main/resources/templates/recommendation/result.html`
+  - `src/main/resources/static/js/recommendation-feedback.js`
+  - `src/main/resources/templates/population-battle-game/play.html`
+  - `src/main/resources/static/js/population-battle-game.js`
+  - `src/main/resources/static/css/site.css`
+  - `src/test/java/com/worldmap/recommendation/RecommendationPageIntegrationTest.java`
+  - `src/test/java/com/worldmap/game/populationbattle/PopulationBattleGameFlowIntegrationTest.java`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/105-make-recommendation-feedback-and-game-over-modal-keyboard-accessible.md`
+- 요청 흐름: 추천 결과는 여전히 `POST /recommendation/survey -> RecommendationPageController -> recommendation/result.html`로 렌더링된다. 바뀐 점은 결과 페이지가 만족도 입력을 hidden score + button click 상태로 처리하지 않고, `fieldset + radio`를 서버가 그대로 렌더링한다는 것이다. 브라우저의 `recommendation-feedback.js`는 radio change를 받아 submit 활성화와 선택 스타일만 맞춘다. population-battle는 `POST /api/games/population-battle/sessions/{sessionId}/answer` 결과가 `GAME_OVER`일 때 `showGameOverModal()`이 열리며, 이제 이 시점에 modal로 focus를 이동시키고 `.page-shell`을 `inert` 처리해 focus 범위를 dialog 안으로 한정한다.
+- 데이터 / 상태 변화: 추천 만족도 저장 API나 recommendation feedback 도메인 모델은 바뀌지 않았다. 서버에 저장되는 것은 여전히 `feedbackToken + satisfactionScore` 기반 피드백이고, 이번 조각에서 바뀐 것은 브라우저 쪽 입력 semantics와 메시지 공지 방식이다. population-battle도 게임 상태 전이 규칙은 그대로고, `GAME_OVER` UI 상태가 실제 포커스 스코프를 갖는 표현 계층 규칙만 추가됐다.
+- 핵심 도메인 개념: 이번 조각은 서버 판정 로직이 아니라 “표현 계층도 도메인 의미를 거짓말하지 말아야 한다”는 규칙이다. 만족도는 실제로 단일 선택 점수 입력이므로 radio가 맞고, 게임오버 모달은 실제로 다음 행동을 강제하는 terminal UI이므로 focus scope를 직접 가져야 한다. 그래서 컨트롤러나 서비스가 아니라 SSR 템플릿과 브라우저 JS에서 semantics와 포커스 흐름을 책임지게 했다.
+- 예외 / 엣지 케이스: 만족도 점수를 고르지 않고 submit하면 기존처럼 막되, 이제 메시지는 live region으로 공지된다. population-battle 게임오버 모달은 `Escape`로 닫히지 않는다. 이 상태는 terminal action 선택이 필요한 모달이기 때문이다. 다만 이번 턴은 population-battle만 고쳤고, location/capital/flag/population의 게임오버 모달은 같은 규칙으로 아직 공통화하지 않았다.
+- 테스트: `git diff --check` 통과. `node --check src/main/resources/static/js/recommendation-feedback.js` 통과. `node --check src/main/resources/static/js/population-battle-game.js` 통과. `./gradlew test --tests com.worldmap.recommendation.RecommendationPageIntegrationTest --tests com.worldmap.game.populationbattle.PopulationBattleGameFlowIntegrationTest.playPageRendersAccessibleGameOverDialogShell` 통과. 참고로 `PopulationBattleGameFlowIntegrationTest` 전체 클래스에는 이번 조각과 무관한 기존 restart/result 기대 불일치가 남아 있어 이번 턴 검증 범위에서 제외했다.
+- 배운 점: 다크/라이트 색을 아무리 다듬어도, 입력이 실제 semantics를 못 가지면 “보이는 UI”와 “동작하는 UI”가 서로 어긋난다. 특히 별점처럼 보이는 점수 입력은 커스텀 버튼보다 네이티브 radio를 쓰는 편이 구현도 더 단순하고 설명도 쉽다.
+- 아직 약한 부분: 이번에는 population-battle 하나만 모달 focus를 고쳤다. 다른 4개 게임도 같은 패턴이라 공통 helper로 묶을지, 각 게임 JS 안에서 같은 규칙을 반복할지 다음 조각에서 정리해야 한다. 또 브라우저 포커스 동작은 현재 통합 테스트 대신 HTML 회귀 + JS syntax check로만 보고 있으므로, 실제 키보드 E2E가 붙어 있지는 않다.
+- 면접용 30초 요약: 추천 만족도 입력은 화면상으로는 단일 선택인데 실제 구현은 토글 버튼 묶음이어서 접근성이 어긋나고 있었습니다. 그래서 결과 페이지를 `fieldset + radio`로 바꾸고, 메시지는 live region으로 공지되게 정리했습니다. 또 population-battle 게임오버 모달은 열렸을 때 `inert`와 focus trap을 걸어 뒤쪽 화면으로 tab이 빠지지 않게 했습니다. 서버 도메인 규칙은 그대로 두고, SSR 템플릿과 브라우저 JS에서 입력 semantics와 focus scope만 바로잡은 조각입니다.
+
 ## 2026-03-30 - 추천 피드백 문맥을 session token으로 묶고 summary API를 admin 전용으로 제한
 
 - 단계: 6. 설문 기반 추천 엔진
