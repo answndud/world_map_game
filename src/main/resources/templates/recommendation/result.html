@@ -77,29 +77,8 @@
             </div>
 
             <form id="recommendation-feedback-form" class="game-form">
-                <input type="hidden" name="surveyVersion" th:value="${result.feedbackPayload.surveyVersion}">
-                <input type="hidden" name="engineVersion" th:value="${result.feedbackPayload.engineVersion}">
+                <input type="hidden" name="feedbackToken" th:value="${feedbackToken}">
                 <input id="recommendation-satisfaction-score" type="hidden" name="satisfactionScore" value="">
-                <input type="hidden" name="climatePreference" th:value="${result.feedbackPayload.climatePreference}">
-                <input type="hidden" name="seasonStylePreference" th:value="${result.feedbackPayload.seasonStylePreference}">
-                <input type="hidden" name="seasonTolerance" th:value="${result.feedbackPayload.seasonTolerance}">
-                <input type="hidden" name="pacePreference" th:value="${result.feedbackPayload.pacePreference}">
-                <input type="hidden" name="crowdPreference" th:value="${result.feedbackPayload.crowdPreference}">
-                <input type="hidden" name="costQualityPreference" th:value="${result.feedbackPayload.costQualityPreference}">
-                <input type="hidden" name="housingPreference" th:value="${result.feedbackPayload.housingPreference}">
-                <input type="hidden" name="environmentPreference" th:value="${result.feedbackPayload.environmentPreference}">
-                <input type="hidden" name="mobilityPreference" th:value="${result.feedbackPayload.mobilityPreference}">
-                <input type="hidden" name="englishSupportNeed" th:value="${result.feedbackPayload.englishSupportNeed}">
-                <input type="hidden" name="newcomerSupportNeed" th:value="${result.feedbackPayload.newcomerSupportNeed}">
-                <input type="hidden" name="safetyPriority" th:value="${result.feedbackPayload.safetyPriority}">
-                <input type="hidden" name="publicServicePriority" th:value="${result.feedbackPayload.publicServicePriority}">
-                <input type="hidden" name="digitalConveniencePriority" th:value="${result.feedbackPayload.digitalConveniencePriority}">
-                <input type="hidden" name="foodImportance" th:value="${result.feedbackPayload.foodImportance}">
-                <input type="hidden" name="diversityImportance" th:value="${result.feedbackPayload.diversityImportance}">
-                <input type="hidden" name="cultureLeisureImportance" th:value="${result.feedbackPayload.cultureLeisureImportance}">
-                <input type="hidden" name="workLifePreference" th:value="${result.feedbackPayload.workLifePreference}">
-                <input type="hidden" name="settlementPreference" th:value="${result.feedbackPayload.settlementPreference}">
-                <input type="hidden" name="futureBasePreference" th:value="${result.feedbackPayload.futureBasePreference}">
 
                 <div class="rating-button-row" role="radiogroup" aria-label="추천 만족도 선택">
                     <button class="secondary-button rating-score-button" type="button" data-score="1">1점</button>

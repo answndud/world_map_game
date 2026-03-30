@@ -157,6 +157,7 @@
 94. [prod 설정을 더 안전하게 만들고 startup rollback 범위를 local/test로 제한하기](./101-harden-prod-config-with-schema-validation-and-safer-startup.md)
 95. [guest 기록 귀속 범위를 5개 게임 전체로 확장하기](./102-extend-guest-progress-claim-to-all-five-games.md)
 96. [5개 게임 기준으로 `/mypage` read model을 다시 정리하고 현재 순위를 바로잡기](./103-rebuild-mypage-read-model-for-all-five-games.md)
+97. [추천 피드백을 session token에 묶고 summary API를 admin 전용으로 닫기](./104-bind-recommendation-feedback-to-session-token-and-lock-summary-api.md)
 
 ### Part E. 확장과 포트폴리오 정리
 

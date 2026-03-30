@@ -258,8 +258,8 @@
 - 현재 점수식은 `정확 일치 보너스`, `비용 선호별 초과 물가 패널티`, `영어 지원 필요도 가중치`, `극단 기후 mismatch penalty`, `핵심 생활 조건 coherence bonus`를 포함하도록 다시 조정했다.
 - 정렬은 총점 우선이지만, 동점 구간에서는 `강한 신호 개수 -> 정확 일치 개수 -> 국가명` 순으로 보조 비교한다.
 - 결과 페이지는 서버가 계산한 매칭 점수와 핵심 이유 3개를 deterministic하게 보여준다.
-- 추천 결과 자체는 저장하지 않고, 결과 페이지에서 `1~5점 만족도 + surveyVersion + engineVersion + 사용자가 선택한 20개 답변`만 익명 피드백으로 수집한다.
-- `/dashboard/recommendation/feedback`와 `/api/recommendation/feedback/summary`에서 `surveyVersion + engineVersion` 기준 평균 점수, 응답 수, 1~5점 분포를 읽어 설문 개선 기준으로 사용한다.
+- 추천 결과 top 3 자체는 저장하지 않는다. 대신 결과 페이지마다 서버가 현재 세션에 `feedbackToken -> 추천 문맥(surveyVersion + engineVersion + 20개 답변)`을 잠깐 보관하고, 사용자는 `1~5점 만족도`만 보내면 서버가 그 문맥을 복원해 익명 피드백으로 저장한다.
+- `/dashboard/recommendation/feedback`와 admin session으로 보호된 `/api/recommendation/feedback/summary`에서 `surveyVersion + engineVersion` 기준 평균 점수, 응답 수, 1~5점 분포를 읽어 설문 개선 기준으로 사용한다.
 - `/dashboard/recommendation/feedback`는 현재 버전 만족도와 baseline anchor drift를 함께 읽어, 지금은 `피드백을 더 모을지`, `문구를 손볼지`, `rank drift를 줄일지`를 운영 메모로 바로 보여 준다.
 - `/dashboard/recommendation/persona-baseline`에서 18개 페르소나 baseline을 현재 엔진 결과로 다시 계산해 weak scenario, 1위 anchor drift, active-signal 비교 시나리오를 운영 화면으로 확인한다.
 - 오프라인 baseline과 snapshot은 현재 `survey-v4 / engine-v20` 기준으로 다시 고정했다.

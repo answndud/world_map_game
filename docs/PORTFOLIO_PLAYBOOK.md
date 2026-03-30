@@ -420,8 +420,8 @@
 - 단순 취향 체크 대신 `기후 방향`, `사계절 변화`, `기후 적응 성향`, `집 크기 vs 중심 접근성`, `초기 적응 친화도`, `디지털 생활 편의`, `문화·여가`, `장기 기반`까지 묻는 20문항 구조로 재설계하고, 피드백 스냅샷도 20개 답변 기준으로 확장
 - `/recommendation/survey` 설문 페이지와 `/recommendation/survey` POST 결과 페이지 SSR 흐름 추가
 - 결과 페이지에서 설문 입력 요약, top 3 국가, 서버 계산 이유 3개 노출
-- 결과 페이지에서 추천 결과 자체는 저장하지 않고, `1~5점 만족도 + surveyVersion + engineVersion + 선택한 20개 답변`만 익명 피드백으로 수집
-- `/dashboard/recommendation/feedback` SSR 페이지와 `/api/recommendation/feedback/summary` API로 버전 조합별 평균 점수, 응답 수, 점수 분포 조회 추가
+- 추천 결과 top 3 자체는 저장하지 않고, 결과 페이지마다 서버 세션에 `feedbackToken -> 추천 문맥(surveyVersion + engineVersion + 선택한 20개 답변)`을 잠깐 저장한 뒤 `1~5점 만족도`만 익명 피드백으로 수집
+- `/dashboard/recommendation/feedback` SSR 페이지와 admin session으로 보호된 `/api/recommendation/feedback/summary` API로 버전 조합별 평균 점수, 응답 수, 점수 분포 조회 추가
 - 추천 기능을 홈 화면과 공통 헤더 내비게이션에 연결
 - 공통 CSS에서 버튼, 패널, 입력창, 모달, 테이블 셸, 배지의 모서리를 완전한 사각형으로 통일하고, 스타일 버전 쿼리까지 적용해 실제 반영 경로를 함께 정리
 - 공통 shell에 dark/light theme toggle을 추가하고, `html[data-theme] + CSS 변수 + localStorage` 조합으로 테마 상태를 사이트 전체에서 유지

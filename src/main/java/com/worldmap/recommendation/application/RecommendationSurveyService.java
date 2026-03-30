@@ -114,30 +114,6 @@ public class RecommendationSurveyService {
 		return new RecommendationSurveyResultView(
 			SURVEY_VERSION,
 			ENGINE_VERSION,
-			new RecommendationFeedbackPayloadView(
-				SURVEY_VERSION,
-				ENGINE_VERSION,
-				answers.climatePreference().name(),
-				answers.seasonStylePreference().name(),
-				answers.seasonTolerance().name(),
-				answers.pacePreference().name(),
-				answers.crowdPreference().name(),
-				answers.costQualityPreference().name(),
-				answers.housingPreference().name(),
-				answers.environmentPreference().name(),
-				answers.mobilityPreference().name(),
-				answers.englishSupportNeed().name(),
-				answers.newcomerSupportNeed().name(),
-				answers.safetyPriority().name(),
-				answers.publicServicePriority().name(),
-				answers.digitalConveniencePriority().name(),
-				answers.foodImportance().name(),
-				answers.diversityImportance().name(),
-				answers.cultureLeisureImportance().name(),
-				answers.workLifePreference().name(),
-				answers.settlementPreference().name(),
-				answers.futureBasePreference().name()
-			),
 			questionCatalog.summariesOf(answers),
 			List.copyOf(rankedCandidates)
 		);

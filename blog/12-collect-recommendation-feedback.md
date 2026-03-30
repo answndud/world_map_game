@@ -10,6 +10,11 @@
 
 추천 결과 top 3 자체는 저장하지 않고, 대신 결과 페이지에서 `1~5점 만족도`, `surveyVersion`, `engineVersion`, 그리고 사용자가 고른 6개 답변만 익명으로 저장하는 구조를 붙였다.
 
+이 글은 hidden field payload를 쓰던 첫 버전 기록이다.
+현재 코드 기준으로는 hidden answer snapshot을 다시 보내지 않고,
+서버가 `feedbackToken -> 추천 문맥`을 세션에 저장한 뒤 점수만 받는다.
+이 후속 정리는 [104-bind-recommendation-feedback-to-session-token-and-lock-summary-api.md](./104-bind-recommendation-feedback-to-session-token-and-lock-summary-api.md)에서 설명한다.
+
 ## 왜 이 단계가 필요한가
 
 추천 결과를 저장하면 분석 포인트는 늘어나지만, 그만큼 저장 범위도 커진다.

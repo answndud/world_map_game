@@ -34,6 +34,37 @@
 - 면접용 30초 요약:
 ```
 
+## 2026-03-30 - 추천 피드백 문맥을 session token으로 묶고 summary API를 admin 전용으로 제한
+
+- 단계: 6. 설문 기반 추천 엔진
+- 목적: 추천 결과 페이지가 `surveyVersion`, `engineVersion`, 20개 답변 스냅샷을 hidden field로 그대로 내리고 있었고, `POST /api/recommendation/feedback`는 그 값을 다시 신뢰해 저장하고 있었다. 또 버전별 만족도 요약 API도 public으로 열려 있었다. 이번 조각은 “피드백은 결과 1회분에만 연결되고, 운영 집계는 admin만 본다”는 경계를 서버 쪽에서 고정하는 데 집중했다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationFeedbackContext.java`
+  - `src/main/java/com/worldmap/recommendation/web/RecommendationFeedbackSessionStore.java`
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationSurveyResultView.java`
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationSurveyService.java`
+  - `src/main/java/com/worldmap/recommendation/web/RecommendationPageController.java`
+  - `src/main/java/com/worldmap/recommendation/web/RecommendationFeedbackRequest.java`
+  - `src/main/java/com/worldmap/recommendation/web/RecommendationFeedbackApiController.java`
+  - `src/main/resources/templates/recommendation/result.html`
+  - `src/test/java/com/worldmap/recommendation/RecommendationPageIntegrationTest.java`
+  - `src/test/java/com/worldmap/recommendation/RecommendationFeedbackIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/12-collect-recommendation-feedback.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/104-bind-recommendation-feedback-to-session-token-and-lock-summary-api.md`
+- 요청 흐름 / 데이터 흐름: `POST /recommendation/survey`는 여전히 `RecommendationPageController -> RecommendationSurveyService.recommend()`로 추천 결과를 계산한다. 바뀐 점은 컨트롤러가 `RecommendationFeedbackSessionStore`에 `feedbackToken -> RecommendationFeedbackContext`를 현재 `HttpSession`에 저장하고, 결과 페이지에는 token만 hidden field로 내린다는 것이다. 사용자가 만족도를 보내면 `POST /api/recommendation/feedback`는 token과 점수만 받고, 서버가 세션에서 문맥을 꺼내 `RecommendationFeedbackSubmission`을 조립해 저장한다.
+- 데이터 / 상태 변화: 추천 결과 top 3는 여전히 저장하지 않는다. `recommendation_feedback`에 저장되는 값은 이전과 같은 `surveyVersion`, `engineVersion`, `satisfactionScore`, 20개 답변 스냅샷이지만, 이제 그 값의 source of truth는 클라이언트 hidden field가 아니라 서버 세션에 있는 `RecommendationFeedbackContext`다. 성공적으로 저장한 token은 세션에서 제거해 재사용되지 않게 했다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “피드백은 추천 결과 1회분의 서버 문맥에 연결된다”는 규칙이다. 그래서 컨트롤러는 설문 결과를 계산하고 token을 발급하는 입구만 맡고, 실제로 어떤 문맥을 어떻게 소비해 저장할지는 `RecommendationFeedbackSessionStore`와 `RecommendationFeedbackService` 경계에서 처리한다. 운영 요약은 같은 서비스 집계를 쓰되, `/api/recommendation/feedback/summary`는 admin session이 아니면 열리지 않게 막아 공개 surface와 운영 surface를 다시 분리했다.
+- 예외 / 엣지 케이스: token이 없거나 이미 사용됐거나 다른 세션에서 가져온 값이면 `400`으로 거절한다. 만족도 점수 `1~5` validation은 기존처럼 request 계층에서 먼저 막는다. 진짜 “당시 보여준 top 3”까지 감사 로그처럼 남기고 싶다면 별도 결과 snapshot 저장소가 더 필요하지만, 이번 조각에서는 저장 범위를 늘리지 않았다.
+- 테스트: `git diff --check` 통과. `./gradlew test --tests com.worldmap.recommendation.RecommendationPageIntegrationTest --tests com.worldmap.recommendation.RecommendationFeedbackIntegrationTest --tests com.worldmap.admin.AdminPageIntegrationTest` 통과.
+- 배운 점: “추천 결과는 저장하지 않는다”와 “클라이언트가 결과 문맥을 다시 보내도 된다”는 다른 문제다. 결과 자체를 DB에 남기지 않더라도, 피드백이 어떤 설문/엔진 문맥에서 나온 것인지는 서버가 한 번 더 붙잡고 있어야 무결성이 생긴다.
+- 아직 약한 부분: 지금은 결과 문맥을 `HttpSession`에만 보관하므로, 세션이 만료되면 오래된 탭의 피드백은 거절된다. 이게 현재 제품 범위에는 맞지만, 나중에 추천 결과 공유나 결과 재방문 기능이 생기면 별도 persistent result token 설계를 다시 해야 한다.
+- 면접용 30초 요약: 추천 결과는 여전히 저장하지 않지만, 피드백 저장에 필요한 문맥은 이제 클라이언트 hidden field가 아니라 서버 세션이 들고 있습니다. 설문 제출 직후 서버가 `feedbackToken`과 함께 `surveyVersion`, `engineVersion`, 답변 스냅샷을 세션에 보관하고, 피드백 API는 token과 점수만 받아 그 문맥을 복원해 저장합니다. 또 버전별 만족도 요약 API도 admin session으로 제한해 public surface와 운영 surface의 경계를 다시 맞췄습니다.
+
 ## 2026-03-30 - `/mypage` read model을 5개 게임 기준으로 재정렬하고 rank 의미를 바로잡기
 
 - 단계: 8. 인증, 전적, 마이페이지
