@@ -34,34 +34,38 @@
 - 면접용 30초 요약:
 ```
 
-## 2026-03-30 - 랭킹 자동 갱신을 active board 1개 기준으로 줄이고 일간 카피 stale을 같이 정리
+## 2026-03-30 - 랭킹 자동 갱신을 active board 1개 기준으로 줄이고 국기 카드 surface fallback을 같이 정리
 
-- 단계: 5. Redis 랭킹 시스템 보완
-- 목적: `/ranking`은 화면에 보이는 보드가 1개뿐인데도 15초마다 숨겨진 9개 보드까지 전부 다시 호출하고 있었다. 게다가 일간 보드 설명 문구의 `기준 날짜`는 SSR 시점 값에 머물러, polling으로 rows는 갱신돼도 상단 설명이 stale해질 수 있었다. 이번 조각은 API/서비스 계약은 그대로 둔 채, 브라우저가 정말 필요한 active board만 다시 읽게 만들고 daily metadata drift를 같이 막는 데 집중했다.
+- 단계: 5. Redis 랭킹 시스템 보완 / 11. 신규 게임 확장 보조 UI 정리
+- 목적: `/ranking`은 화면에 보이는 보드가 1개뿐인데도 15초마다 숨겨진 9개 보드까지 전부 다시 호출하고 있었다. 게다가 일간 보드 설명 문구의 `기준 날짜`는 SSR 시점 값에 머물러, polling으로 rows는 갱신돼도 상단 설명이 stale해질 수 있었다. 여기에 더해 국기 플레이/결과 화면은 정의되지 않은 CSS 토큰을 참조해 카드 프레임이 테마에 따라 무테두리처럼 보일 수 있었다. 이번 조각은 브라우저가 정말 필요한 active board만 다시 읽게 만들고, 남아 있던 국기 카드 surface 버그까지 같이 닫는 데 집중했다.
 - 변경 파일:
   - `src/main/resources/static/js/ranking.js`
   - `src/main/resources/templates/ranking/index.html`
+  - `src/main/resources/static/css/site.css`
+  - `src/main/resources/templates/flag-game/play.html`
+  - `src/main/resources/templates/flag-game/result.html`
   - `src/test/java/com/worldmap/ranking/LeaderboardIntegrationTest.java`
   - `docs/PORTFOLIO_PLAYBOOK.md`
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
   - `blog/107-refresh-only-the-active-ranking-board-and-keep-daily-copy-fresh.md`
-- 요청 흐름: 요청 시작점은 그대로 `GET /ranking` SSR이다. 서버는 여전히 다섯 게임의 전체/일간 보드를 렌더링하고, 브라우저의 `ranking.js`가 이후 갱신 타이밍을 맡는다. 바뀐 점은 `setInterval -> queueRefresh(currentBoardKey()) -> GET /api/rankings/{gameMode}?scope={scope}&limit=10 -> renderLeaderboardRows()` 흐름이 이제 현재 보드 1개에만 적용된다는 것이다. 사용자가 모드/범위를 바꾸면 `switchMode/switchScope`가 즉시 새 active board를 fetch하고, 응답의 `targetDate`로 daily panel의 `data-copy`까지 다시 맞춘다.
-- 데이터 / 상태 변화: DB, Redis, `leaderboard_record` 상태는 바뀌지 않았다. 바뀐 것은 브라우저 메모리 안의 랭킹 read state다. 페이지는 board key별 마지막 갱신 시각을 따로 기억하고, auto-refresh 상태도 “전체 polling”이 아니라 “현재 보드 polling”으로 바뀌었다. 호출량 관점에서는 visible tab 기준 `15초마다 10회`에서 `15초마다 1회` 수준으로 줄었다.
+- 요청 흐름: 요청 시작점은 그대로 `GET /ranking` SSR이다. 서버는 여전히 다섯 게임의 전체/일간 보드를 렌더링하고, 브라우저의 `ranking.js`가 이후 갱신 타이밍을 맡는다. 바뀐 점은 `setInterval -> queueRefresh(currentBoardKey()) -> GET /api/rankings/{gameMode}?scope={scope}&limit=10 -> renderLeaderboardRows()` 흐름이 이제 현재 보드 1개에만 적용된다는 것이다. 사용자가 모드/범위를 바꾸면 `switchMode/switchScope`가 즉시 새 active board를 fetch하고, 응답의 `targetDate`로 daily panel의 `data-copy`까지 다시 맞춘다. 국기 화면은 `flag-game/play.html`, `flag-game/result.html`이 새 CSS 버전을 로드하고, `site.css`의 fallback token으로 카드 프레임을 안정적으로 계산한다.
+- 데이터 / 상태 변화: DB, Redis, `leaderboard_record` 상태는 바뀌지 않았다. 바뀐 것은 브라우저 메모리 안의 랭킹 read state와 국기 카드의 계산된 surface 스타일이다. 페이지는 board key별 마지막 갱신 시각을 따로 기억하고, auto-refresh 상태도 “전체 polling”이 아니라 “현재 보드 polling”으로 바뀌었다. 호출량 관점에서는 visible tab 기준 `15초마다 10회`에서 `15초마다 1회` 수준으로 줄었다. 국기 카드 쪽은 undefined token이어도 `line`, `nested-panel-surface`, `panel-strong` fallback으로 border/background가 유지된다.
 - 핵심 도메인 개념: 이번 조각의 핵심은 “active board read model”이다. 랭킹 정렬 규칙과 집계는 계속 서버가 맡고, 프런트는 필터 상태가 가리키는 read target 하나만 갱신한다. 즉, 컨트롤러/서비스를 새로 쪼개지 않고도, 표현 계층이 어떤 read model을 지금 보여주고 있는지 분명히 하면 fan-out을 크게 줄일 수 있다.
 - 예외 / 엣지 케이스:
   - 새 보드로 전환하는 동안 이전 fetch가 아직 끝나지 않았으면 `queuedRefresh`로 다음 active board 갱신을 이어서 처리한다.
   - 서버가 non-JSON 오류 응답을 주더라도 `response.json()` parser error를 그대로 터뜨리지 않고, 사용자에게는 일반 새로고침 오류 문구만 보여준다.
   - daily board는 row뿐 아니라 설명 카피의 `기준 날짜`도 polling 응답의 `targetDate`로 다시 맞춘다.
+  - 국기 카드 surface는 공통 토큰이 비어 있더라도 local fallback으로 테마별 배경과 테두리를 잃지 않는다.
 - 테스트:
   - `node --check src/main/resources/static/js/ranking.js`
-  - `./gradlew test --tests com.worldmap.ranking.LeaderboardIntegrationTest.gameOverRecordsLocationLeaderboardAndRendersRankingPage`
+  - `./gradlew test --tests com.worldmap.ranking.LeaderboardIntegrationTest --tests com.worldmap.game.flag.FlagGameFlowIntegrationTest.playPageRendersAccessibleGameOverDialogShell`
   - `git diff --check`
-- 블로그 반영 여부: 반영. 이 조각은 단순 문구 수정이 아니라 ranking polling 전략과 화면 메타데이터 동기화 규칙을 바꾼 feature slice라서, 왜 API를 안 바꾸고 JS active-board 갱신으로 닫았는지 설명 가치가 충분하다.
+- 블로그 반영 여부: 반영. 이 조각의 중심은 ranking polling 전략과 화면 메타데이터 동기화 규칙이고, 국기 카드 fallback은 같은 글에서 “같이 닫은 작은 잔여 버그”로만 다뤘다.
 - 배운 점: “폴링을 쓴다”와 “비효율적인 폴링을 그대로 둔다”는 다른 문제다. 실시간 전달을 당장 SSE로 바꾸지 않더라도, 현재 화면이 실제로 어떤 read target 하나만 보고 있는지 분명하면 프런트 쪽 fan-out만으로도 비용을 크게 줄일 수 있다.
 - 아직 약한 부분: `/ranking` 첫 SSR은 여전히 10개 보드를 전부 렌더링한다. 즉 주기적 갱신 비용은 줄였지만, 초기 HTML/모델 적재 비용까지 줄인 것은 아니다. 브라우저 네트워크 fan-out은 정리했지만, initial render를 on-demand로 더 줄일지는 실제 측정값을 보고 다음 조각에서 판단해야 한다.
-- 면접용 30초 요약: 랭킹 페이지는 한 번에 보드 하나만 보여주는데도 15초마다 숨겨진 9개 보드까지 전부 다시 불러오고 있었습니다. 이번에는 서버 API를 건드리지 않고 `ranking.js`만 바꿔서 현재 보고 있는 active board만 자동 갱신하게 만들고, 모드/범위 전환 직후에는 그 보드만 즉시 fetch하도록 정리했습니다. 또 일간 랭킹 설명의 기준 날짜도 polling 응답의 `targetDate`로 다시 맞춰서 row와 상단 카피가 서로 다른 날짜를 가리키는 문제를 같이 막았습니다.
+- 면접용 30초 요약: 랭킹 페이지는 한 번에 보드 하나만 보여주는데도 15초마다 숨겨진 9개 보드까지 전부 다시 불러오고 있었습니다. 이번에는 서버 API를 건드리지 않고 `ranking.js`만 바꿔서 현재 보고 있는 active board만 자동 갱신하게 만들고, 모드/범위 전환 직후에는 그 보드만 즉시 fetch하도록 정리했습니다. 또 일간 랭킹 설명의 기준 날짜도 polling 응답의 `targetDate`로 다시 맞추고, 국기 카드가 테마에 따라 무테두리처럼 깨지던 CSS token 버그도 fallback으로 같이 닫았습니다.
 
 ## 2026-03-30 - flag 화면이 정의되지 않은 soft surface 토큰에 의존하지 않도록 fallback 정리
 

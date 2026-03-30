@@ -35,6 +35,9 @@
 
 - [ranking.js](/Users/alex/project/worldmap/src/main/resources/static/js/ranking.js)
 - [index.html](/Users/alex/project/worldmap/src/main/resources/templates/ranking/index.html)
+- [site.css](/Users/alex/project/worldmap/src/main/resources/static/css/site.css)
+- [flag-game/play.html](/Users/alex/project/worldmap/src/main/resources/templates/flag-game/play.html)
+- [flag-game/result.html](/Users/alex/project/worldmap/src/main/resources/templates/flag-game/result.html)
 - [LeaderboardIntegrationTest.java](/Users/alex/project/worldmap/src/test/java/com/worldmap/ranking/LeaderboardIntegrationTest.java)
 
 ## 1. 모든 보드를 polling하지 않고 현재 보드만 갱신한다
@@ -172,6 +175,39 @@ async function readJsonSafely(response) {
 그래서 오류 시에는 구현 세부 대신
 `랭킹을 새로고침하지 못했습니다.` 같은 사용자 메시지로 닫힙니다.
 
+## 6. 같이 닫은 작은 잔여 버그: 국기 카드 surface token fallback
+
+이번 턴에는 랭킹만 만진 것이 아니라,
+국기 플레이/결과 화면의 작은 시각 버그도 같이 닫았습니다.
+
+[site.css](/Users/alex/project/worldmap/src/main/resources/static/css/site.css)에서
+`.flag-display-card`, `.flag-display-image`가
+`--line-soft`, `--surface-soft`, `--surface-strong`를 참조하고 있었는데,
+이 토큰은 실제 정의가 없었습니다.
+
+CSS custom property는 값이 없으면 그 선언 전체가 무효가 됩니다.
+
+즉, 국기 카드와 이미지 프레임은 테마에 따라
+border/background가 빠져 보일 수 있었습니다.
+
+이번에는 전역 토큰을 새로 넓히지 않고
+로컬 fallback으로만 닫았습니다.
+
+```css
+.flag-display-card {
+    border: 1px solid var(--line-soft, var(--line));
+    background: var(--surface-soft, var(--nested-panel-surface));
+}
+
+.flag-display-image {
+    border: 1px solid var(--line-soft, var(--line));
+    background: color-mix(in srgb, var(--surface-strong, var(--panel-strong)) 84%, white 16%);
+}
+```
+
+이렇게 하면 공통 토큰 이름을 더 늘리지 않고도,
+다크/라이트 테마 둘 다에서 카드 프레임이 안정적으로 유지됩니다.
+
 ## 요청 흐름은 어떻게 설명하면 되나
 
 ```mermaid
@@ -232,7 +268,7 @@ sequenceDiagram
 이번에는 아래 검증을 돌렸습니다.
 
 - `node --check src/main/resources/static/js/ranking.js`
-- `./gradlew test --tests com.worldmap.ranking.LeaderboardIntegrationTest.gameOverRecordsLocationLeaderboardAndRendersRankingPage`
+- `./gradlew test --tests com.worldmap.ranking.LeaderboardIntegrationTest --tests com.worldmap.game.flag.FlagGameFlowIntegrationTest.playPageRendersAccessibleGameOverDialogShell`
 - `git diff --check`
 
 `LeaderboardIntegrationTest`는

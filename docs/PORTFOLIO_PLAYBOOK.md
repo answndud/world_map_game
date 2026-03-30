@@ -887,6 +887,7 @@
 - 수도/인구수/인구 비교/국기 플레이 화면에서 `다음 Stage` 수동 버튼을 제거하고, 결과 페이지 중심이 아니라 플레이 연속성 중심으로 루프를 정리
 - 위치/인구수/수도/인구 비교/국기 게임은 오답 오버레이와 입력 잠금 해제도 약 `950ms` 리듬으로 맞춰, 정답/오답 템포가 게임마다 흔들리지 않게 정리
 - 공통 shell에 `focus-visible` 링을 추가하고, 위치/인구수/수도/국기/인구 비교 퀵 배틀의 게임오버 모달은 `aria-describedby + tabindex + inert + focus trap`으로 실제 focus scope를 갖게 정리해 키보드 접근성을 한 번 더 보강
+- 국기 플레이/결과 화면의 카드 프레임이 정의되지 않은 CSS 토큰 때문에 무테두리처럼 깨지지 않도록, `flag-display-card`와 `flag-display-image`에 공통 surface/border fallback token을 적용
 
 다음 후속 개선 후보:
 
