@@ -1,6 +1,7 @@
 package com.worldmap.auth.application;
 
 import com.worldmap.auth.domain.MemberRole;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.stereotype.Component;
 
@@ -19,6 +20,22 @@ public class AdminAccessGuard {
 		}
 
 		var currentMember = currentMemberAccessService.currentMember(httpSession);
+		if (currentMember.isEmpty()) {
+			return AdminAccessStatus.UNAUTHENTICATED;
+		}
+		if (currentMember.get().role() != MemberRole.ADMIN) {
+			return AdminAccessStatus.FORBIDDEN;
+		}
+
+		return AdminAccessStatus.ALLOWED;
+	}
+
+	public AdminAccessStatus authorize(HttpServletRequest request) {
+		if (request == null) {
+			return AdminAccessStatus.UNAUTHENTICATED;
+		}
+
+		var currentMember = currentMemberAccessService.currentMember(request);
 		if (currentMember.isEmpty()) {
 			return AdminAccessStatus.UNAUTHENTICATED;
 		}

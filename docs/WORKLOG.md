@@ -34,6 +34,54 @@
 - 면접용 30초 요약:
 ```
 
+## 2026-03-30 - current member 재검증을 request당 한 번만 하도록 정리하기
+
+- 단계: 8. 인증, 전적, 마이페이지
+- 목적: 직전 조각으로 `CurrentMemberAccessService`를 public/auth SSR과 게임 시작 경로의 공통 source로 올렸지만, 같은 request 안에서 `SiteHeaderModelAdvice`, auth 컨트롤러, `GameSessionAccessContextResolver`, `AdminAccessInterceptor`, 운영 summary API가 현재 회원을 두 번 이상 다시 읽는 경로가 남아 있었다. 규칙은 맞지만 `/login`, `/signup`, `/dashboard`, 게임 play/result SSR, 일부 API에서 세션 파싱과 `member_account` 재조회가 request당 중복될 수 있었다. 이번 조각은 “현재 회원 재검증은 유지하되, 같은 HTTP request 안에서는 한 번만 푼다”는 경계 정리에 집중했다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/auth/application/CurrentMemberAccessService.java`
+  - `src/main/java/com/worldmap/auth/application/AdminAccessGuard.java`
+  - `src/main/java/com/worldmap/auth/application/GameSessionAccessContextResolver.java`
+  - `src/main/java/com/worldmap/auth/web/AuthPageController.java`
+  - `src/main/java/com/worldmap/admin/web/AdminAccessInterceptor.java`
+  - `src/main/java/com/worldmap/recommendation/web/RecommendationFeedbackApiController.java`
+  - `src/main/java/com/worldmap/web/SiteHeaderModelAdvice.java`
+  - `src/main/java/com/worldmap/game/location/web/LocationGameApiController.java`
+  - `src/main/java/com/worldmap/game/population/web/PopulationGameApiController.java`
+  - `src/main/java/com/worldmap/game/capital/web/CapitalGameApiController.java`
+  - `src/main/java/com/worldmap/game/flag/web/FlagGameApiController.java`
+  - `src/main/java/com/worldmap/game/populationbattle/web/PopulationBattleGameApiController.java`
+  - `src/test/java/com/worldmap/auth/application/CurrentMemberAccessServiceTest.java`
+  - `src/test/java/com/worldmap/auth/application/AdminAccessGuardTest.java`
+  - `src/test/java/com/worldmap/auth/application/GameSessionAccessContextResolverTest.java`
+  - `src/test/java/com/worldmap/web/HomeControllerTest.java`
+  - `src/test/java/com/worldmap/web/MyPageControllerTest.java`
+  - `src/test/java/com/worldmap/stats/StatsPageControllerTest.java`
+  - `src/test/java/com/worldmap/ranking/LeaderboardPageControllerTest.java`
+  - `src/test/java/com/worldmap/auth/AuthFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/admin/AdminPageIntegrationTest.java`
+  - `src/test/java/com/worldmap/recommendation/RecommendationFeedbackIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/112-cache-current-member-resolution-per-request.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+- 요청 흐름: 이제 `CurrentMemberAccessService.currentMember(HttpServletRequest)`가 request attribute를 먼저 보고, 없을 때만 `session -> MemberRepository.findById()` 경로를 탄다. `SiteHeaderModelAdvice`, `/login`·`/signup` GET, 5개 게임 세션 시작 API, `GameSessionAccessContextResolver`, `AdminAccessInterceptor`, `/api/recommendation/feedback/summary`는 모두 이 request 오버로드를 공유한다. 즉 `GET /dashboard`에서는 interceptor가 current member를 한 번 풀고, 뒤이어 advice가 헤더용 `currentMember/showDashboardLink`를 만들 때 같은 request cache를 재사용한다. `GET /games/location/play/{sessionId}` 같은 SSR page도 advice와 access context resolver가 같은 resolved member를 같이 쓴다.
+- 데이터 / 상태 변화: 새 테이블이나 세션 필드는 없다. 바뀐 것은 “현재 회원을 어디에 잠시 기억하는가”이다. 세션은 여전히 identity hint이고, 현재 회원의 source of truth는 DB row다. 다만 같은 request 안에서는 request attribute cache를 써서 이미 확인한 `AuthenticatedMemberSession` 또는 “없음” sentinel을 다시 쓴다. 그래서 삭제된 회원/강등된 admin을 막는 규칙은 유지하면서도 같은 request의 중복 DB read는 줄었다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 `session cache`와 `request cache`를 구분하는 것이다. 세션에 남아 있는 값은 오래된 힌트일 수 있어서 매 request마다 DB와 대조해야 한다. 반면 같은 request 안에서 이미 대조가 끝난 current member는 다시 DB를 읽을 필요가 없다. 즉 source of truth는 여전히 DB지만, request 범위에서는 확인된 identity를 공유하는 게 맞다.
+- 예외 / 엣지 케이스:
+  - 비로그인 request는 `request.getSession(false)` 기준으로 empty가 캐시되므로, advice/interceptor/controller가 같은 request에서 여러 번 current member를 물어도 세션을 새로 만들지 않는다.
+  - 삭제된 회원이나 malformed role 세션은 첫 current member 해석 시 세션이 비워지고, 같은 request 안의 나머지 계층은 cached empty를 그대로 받는다.
+  - admin 경로도 `AdminAccessGuard.authorize(request)`를 통해 request cache를 쓰므로, interceptor와 SSR advice가 같은 request에서 서로 다른 current member 결과를 만들 여지가 줄었다.
+- 테스트:
+  - `./gradlew test --tests com.worldmap.auth.application.CurrentMemberAccessServiceTest --tests com.worldmap.auth.application.GameSessionAccessContextResolverTest --tests com.worldmap.auth.application.AdminAccessGuardTest --tests com.worldmap.web.HomeControllerTest --tests com.worldmap.web.MyPageControllerTest --tests com.worldmap.stats.StatsPageControllerTest --tests com.worldmap.ranking.LeaderboardPageControllerTest --tests com.worldmap.auth.AuthFlowIntegrationTest --tests com.worldmap.admin.AdminPageIntegrationTest --tests com.worldmap.recommendation.RecommendationFeedbackIntegrationTest`
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이 조각은 UI copy 변경이 아니라 인증 경계의 request flow를 다듬는 구조 개선이고, “왜 DB 재검증은 유지하면서 request당 중복 조회는 줄일 수 있는가”를 설명할 가치가 있다.
+- 배운 점: current member를 DB에서 다시 읽는 규칙과, 같은 request에서 그 결과를 재사용하는 일은 충돌하지 않는다. 인증 source of truth는 DB에 두되, request 범위에서는 이미 확인된 identity를 공유해야 interceptor/advice/controller가 같은 사용자 상태를 같은 비용으로 본다.
+- 아직 약한 부분: 이 캐시는 HTTP request 경계 안에서만 유효하다. 이후 client-side polling이나 별도 fetch가 늘어나면, 그 요청들은 다시 current member를 확인해야 하고 그게 맞다. 어느 범위까지 같은 identity를 공유할지 기준을 계속 선명하게 유지해야 한다.
+- 면접용 30초 요약: stale 세션을 막으려고 current member를 매 request마다 DB로 다시 확인하게 바꿨지만, 그러면 같은 request 안에서 interceptor, advice, controller가 같은 회원을 반복 조회할 수 있습니다. 그래서 이번에는 `CurrentMemberAccessService`에 request-scope 캐시를 넣고, 이미 한 번 확인한 current member를 같은 HTTP request 안에서는 재사용하게 만들었습니다. source of truth는 계속 DB에 두면서도 중복 read를 줄여, `/dashboard`, auth page, 게임 play/result SSR이 같은 사용자 상태를 더 일관되게 봅니다.
+
 ## 2026-03-30 - public/auth SSR과 게임 시작도 현재 회원 기준으로 stale 세션 UI를 정리하기
 
 - 단계: 8. 인증, 전적, 마이페이지

@@ -25,7 +25,7 @@ public class GameSessionAccessContextResolver {
 			return GameSessionAccessContext.anonymous();
 		}
 
-		Long memberId = currentMemberAccessService.currentMember(httpSession)
+		Long memberId = currentMemberAccessService.currentMember(request)
 			.map(AuthenticatedMemberSession::memberId)
 			.orElse(null);
 		String guestSessionKey = guestSessionKeyManager.currentGuestSessionKey(httpSession)

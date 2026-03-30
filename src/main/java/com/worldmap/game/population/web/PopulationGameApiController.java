@@ -9,7 +9,6 @@ import com.worldmap.game.population.application.PopulationGameSessionResultView;
 import com.worldmap.game.population.application.PopulationGameStartView;
 import com.worldmap.game.population.application.PopulationGameStateView;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -44,15 +43,15 @@ public class PopulationGameApiController {
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	public PopulationGameStartView start(@Valid @RequestBody StartPopulationGameRequest request, HttpSession httpSession) {
-		var currentMember = currentMemberAccessService.currentMember(httpSession).orElse(null);
+	public PopulationGameStartView start(@Valid @RequestBody StartPopulationGameRequest request, HttpServletRequest httpRequest) {
+		var currentMember = currentMemberAccessService.currentMember(httpRequest).orElse(null);
 		if (currentMember != null) {
 			return populationGameService.startMemberGame(currentMember.memberId(), currentMember.nickname());
 		}
 
 		return populationGameService.startGuestGame(
 			request.nickname(),
-			guestSessionKeyManager.ensureGuestSessionKey(httpSession)
+			guestSessionKeyManager.ensureGuestSessionKey(httpRequest.getSession())
 		);
 	}
 

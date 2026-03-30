@@ -13,6 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.worldmap.auth.application.AdminAccessGuard;
 import com.worldmap.auth.application.CurrentMemberAccessService;
+import jakarta.servlet.http.HttpServletRequest;
 import com.worldmap.ranking.application.LeaderboardEntryView;
 import com.worldmap.ranking.application.LeaderboardService;
 import com.worldmap.ranking.application.LeaderboardView;
@@ -46,7 +47,7 @@ class LeaderboardPageControllerTest {
 
 	@Test
 	void rankingPageLoadsOnlyInitialActiveBoardFromService() throws Exception {
-		given(currentMemberAccessService.currentMember(any())).willReturn(Optional.empty());
+		given(currentMemberAccessService.currentMember(any(HttpServletRequest.class))).willReturn(Optional.empty());
 		given(leaderboardService.getLeaderboard(LeaderboardGameMode.LOCATION, LeaderboardScope.ALL, 10)).willReturn(
 			new LeaderboardView(
 				LeaderboardGameMode.LOCATION,

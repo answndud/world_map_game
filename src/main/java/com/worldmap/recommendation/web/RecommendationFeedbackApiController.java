@@ -5,6 +5,7 @@ import com.worldmap.auth.application.AdminAccessGuard.AdminAccessStatus;
 import com.worldmap.recommendation.application.RecommendationFeedbackContext;
 import com.worldmap.recommendation.application.RecommendationFeedbackInsightsView;
 import com.worldmap.recommendation.application.RecommendationFeedbackService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -54,13 +55,13 @@ public class RecommendationFeedbackApiController {
 	}
 
 	@GetMapping("/feedback/summary")
-	public RecommendationFeedbackInsightsView feedbackSummary(HttpSession httpSession) {
-		requireAdmin(httpSession);
+	public RecommendationFeedbackInsightsView feedbackSummary(HttpServletRequest request) {
+		requireAdmin(request);
 		return recommendationFeedbackService.summarizeByVersion();
 	}
 
-	private void requireAdmin(HttpSession httpSession) {
-		if (adminAccessGuard.authorize(httpSession) != AdminAccessStatus.ALLOWED) {
+	private void requireAdmin(HttpServletRequest request) {
+		if (adminAccessGuard.authorize(request) != AdminAccessStatus.ALLOWED) {
 			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "관리자만 접근할 수 있습니다.");
 		}
 	}

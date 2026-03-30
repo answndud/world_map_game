@@ -22,6 +22,7 @@ import com.worldmap.mypage.application.MyPageService;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -46,7 +47,7 @@ class MyPageControllerTest {
 
 	@Test
 	void myPageShowsGuestPromptWhenNotLoggedIn() throws Exception {
-		given(currentMemberAccessService.currentMember(any())).willReturn(Optional.empty());
+		given(currentMemberAccessService.currentMember(any(HttpServletRequest.class))).willReturn(Optional.empty());
 
 		mockMvc.perform(get("/mypage"))
 			.andExpect(status().isOk())
@@ -61,7 +62,7 @@ class MyPageControllerTest {
 
 	@Test
 	void myPageShowsConnectedMemberStateWhenLoggedIn() throws Exception {
-		given(currentMemberAccessService.currentMember(any())).willReturn(Optional.of(
+		given(currentMemberAccessService.currentMember(any(HttpServletRequest.class))).willReturn(Optional.of(
 			new AuthenticatedMemberSession(1L, "orbit_runner", USER)
 		));
 		MockHttpSession session = new MockHttpSession();

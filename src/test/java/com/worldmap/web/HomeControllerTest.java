@@ -14,6 +14,7 @@ import com.worldmap.auth.application.AdminAccessGuard;
 import com.worldmap.auth.application.AuthenticatedMemberSession;
 import com.worldmap.auth.application.CurrentMemberAccessService;
 import com.worldmap.auth.domain.MemberRole;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,7 +37,7 @@ class HomeControllerTest {
 
 	@Test
 	void homePageRenders() throws Exception {
-		given(currentMemberAccessService.currentMember(any())).willReturn(Optional.empty());
+		given(currentMemberAccessService.currentMember(any(HttpServletRequest.class))).willReturn(Optional.empty());
 
 		mockMvc.perform(get("/"))
 			.andExpect(status().isOk())
@@ -77,7 +78,7 @@ class HomeControllerTest {
 
 	@Test
 	void homePageShowsDashboardLinkForAdminSession() throws Exception {
-		given(currentMemberAccessService.currentMember(any())).willReturn(Optional.of(
+		given(currentMemberAccessService.currentMember(any(HttpServletRequest.class))).willReturn(Optional.of(
 			new AuthenticatedMemberSession(1L, "worldmap_admin", MemberRole.ADMIN)
 		));
 		MockHttpSession session = new MockHttpSession();
@@ -91,7 +92,7 @@ class HomeControllerTest {
 
 	@Test
 	void homePageHidesDashboardLinkWhenCurrentMemberIsMissing() throws Exception {
-		given(currentMemberAccessService.currentMember(any())).willReturn(Optional.empty());
+		given(currentMemberAccessService.currentMember(any(HttpServletRequest.class))).willReturn(Optional.empty());
 		MockHttpSession session = new MockHttpSession();
 
 		mockMvc.perform(get("/").session(session))

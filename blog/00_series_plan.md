@@ -130,6 +130,7 @@
 103. [admin 운영 접근을 session role이 아니라 현재 DB role로 다시 검증하기](./109-revalidate-admin-access-against-current-member-role.md)
 104. [public 헤더의 Dashboard 링크도 현재 DB role 기준으로 맞추기](./110-align-public-dashboard-link-visibility-with-current-admin-role.md)
 105. [public/auth SSR과 게임 시작도 현재 회원 기준으로 stale 세션 UI를 정리하기](./111-use-current-member-state-for-public-auth-ssr.md)
+106. [current member 재검증을 request당 한 번만 하도록 정리하기](./112-cache-current-member-resolution-per-request.md)
 
 ### Part E. 테스트, 확장, 취업 패키징
 

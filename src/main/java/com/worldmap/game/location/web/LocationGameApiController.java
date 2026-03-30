@@ -9,7 +9,6 @@ import com.worldmap.game.location.application.LocationGameSessionResultView;
 import com.worldmap.game.location.application.LocationGameStartView;
 import com.worldmap.game.location.application.LocationGameStateView;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -44,15 +43,15 @@ public class LocationGameApiController {
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	public LocationGameStartView start(@Valid @RequestBody StartLocationGameRequest request, HttpSession httpSession) {
-		var currentMember = currentMemberAccessService.currentMember(httpSession).orElse(null);
+	public LocationGameStartView start(@Valid @RequestBody StartLocationGameRequest request, HttpServletRequest httpRequest) {
+		var currentMember = currentMemberAccessService.currentMember(httpRequest).orElse(null);
 		if (currentMember != null) {
 			return locationGameService.startMemberGame(currentMember.memberId(), currentMember.nickname());
 		}
 
 		return locationGameService.startGuestGame(
 			request.nickname(),
-			guestSessionKeyManager.ensureGuestSessionKey(httpSession)
+			guestSessionKeyManager.ensureGuestSessionKey(httpRequest.getSession())
 		);
 	}
 

@@ -27,7 +27,7 @@ public class AdminAccessInterceptor implements HandlerInterceptor {
 			return false;
 		}
 
-		AdminAccessStatus accessStatus = adminAccessGuard.authorize(httpSession);
+		AdminAccessStatus accessStatus = adminAccessGuard.authorize(request);
 		if (accessStatus == AdminAccessStatus.UNAUTHENTICATED) {
 			redirectToLogin(request, response);
 			return false;

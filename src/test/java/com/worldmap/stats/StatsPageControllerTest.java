@@ -14,6 +14,7 @@ import com.worldmap.auth.application.AdminAccessGuard;
 import com.worldmap.auth.application.AuthenticatedMemberSession;
 import com.worldmap.auth.application.CurrentMemberAccessService;
 import com.worldmap.auth.domain.MemberRole;
+import jakarta.servlet.http.HttpServletRequest;
 import com.worldmap.ranking.application.LeaderboardEntryView;
 import com.worldmap.ranking.application.LeaderboardService;
 import com.worldmap.ranking.application.LeaderboardView;
@@ -53,7 +54,7 @@ class StatsPageControllerTest {
 
 	@Test
 	void statsPageRendersPublicMetricsWithoutDashboardLinkForGuest() throws Exception {
-		given(currentMemberAccessService.currentMember(any())).willReturn(Optional.empty());
+		given(currentMemberAccessService.currentMember(any(HttpServletRequest.class))).willReturn(Optional.empty());
 		given(serviceActivityService.loadTodayActivity()).willReturn(
 			new ServiceActivityView(12, 3, 4, 9, 5, 3, 1, 0, 2, 2)
 		);
@@ -120,7 +121,7 @@ class StatsPageControllerTest {
 
 	@Test
 	void statsPageShowsDashboardLinkForAdminSession() throws Exception {
-		given(currentMemberAccessService.currentMember(any())).willReturn(Optional.of(
+		given(currentMemberAccessService.currentMember(any(HttpServletRequest.class))).willReturn(Optional.of(
 			new AuthenticatedMemberSession(1L, "worldmap_admin", MemberRole.ADMIN)
 		));
 		MockHttpSession session = new MockHttpSession();

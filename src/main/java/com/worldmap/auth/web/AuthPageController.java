@@ -41,8 +41,8 @@ public class AuthPageController {
 	}
 
 	@GetMapping("/signup")
-	public String signupPage(Model model, HttpSession httpSession) {
-		if (currentMemberAccessService.currentMember(httpSession).isPresent()) {
+	public String signupPage(Model model, HttpServletRequest request) {
+		if (currentMemberAccessService.currentMember(request).isPresent()) {
 			return "redirect:/mypage";
 		}
 		if (!model.containsAttribute("signupForm")) {
@@ -78,10 +78,10 @@ public class AuthPageController {
 	@GetMapping("/login")
 	public String loginPage(
 		Model model,
-		HttpSession httpSession,
+		HttpServletRequest request,
 		@RequestParam(required = false) String returnTo
 	) {
-		if (currentMemberAccessService.currentMember(httpSession).isPresent()) {
+		if (currentMemberAccessService.currentMember(request).isPresent()) {
 			return "redirect:/mypage";
 		}
 		if (!model.containsAttribute("loginForm")) {

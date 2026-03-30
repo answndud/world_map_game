@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -81,5 +82,32 @@ class CurrentMemberAccessServiceTest {
 		assertThat(httpSession.getAttribute(MemberSessionManager.MEMBER_ID_ATTRIBUTE)).isNull();
 		assertThat(httpSession.getAttribute(MemberSessionManager.MEMBER_NICKNAME_ATTRIBUTE)).isNull();
 		assertThat(httpSession.getAttribute(MemberSessionManager.MEMBER_ROLE_ATTRIBUTE)).isNull();
+	}
+
+	@Test
+	void currentMemberCachesResolvedMemberPerRequest() {
+		CurrentMemberAccessService currentMemberAccessService = new CurrentMemberAccessService(
+			memberSessionManager,
+			memberRepository
+		);
+		MockHttpServletRequest request = new MockHttpServletRequest();
+		MockHttpSession httpSession = new MockHttpSession();
+		request.setSession(httpSession);
+		httpSession.setAttribute(MemberSessionManager.MEMBER_ID_ATTRIBUTE, 42L);
+		httpSession.setAttribute(MemberSessionManager.MEMBER_NICKNAME_ATTRIBUTE, "old_runner");
+		httpSession.setAttribute(MemberSessionManager.MEMBER_ROLE_ATTRIBUTE, MemberRole.USER.name());
+
+		Member member = Member.create("orbit_runner", "hashed-password", MemberRole.ADMIN);
+		ReflectionTestUtils.setField(member, "id", 42L);
+		given(memberRepository.findById(42L)).willReturn(Optional.of(member));
+
+		assertThat(currentMemberAccessService.currentMember(request)).contains(
+			new AuthenticatedMemberSession(42L, "orbit_runner", MemberRole.ADMIN)
+		);
+		assertThat(currentMemberAccessService.currentMember(request)).contains(
+			new AuthenticatedMemberSession(42L, "orbit_runner", MemberRole.ADMIN)
+		);
+
+		verify(memberRepository).findById(42L);
 	}
 }

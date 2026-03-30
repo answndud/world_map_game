@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpSession;
 
 @ExtendWith(MockitoExtension.class)
@@ -47,5 +48,16 @@ class AdminAccessGuardTest {
 		given(currentMemberAccessService.currentMember(httpSession)).willReturn(Optional.empty());
 
 		assertThat(adminAccessGuard.authorize(httpSession)).isEqualTo(AdminAccessStatus.UNAUTHENTICATED);
+	}
+
+	@Test
+	void authorizeRequestReusesCurrentMemberFromRequestScope() {
+		AdminAccessGuard adminAccessGuard = new AdminAccessGuard(currentMemberAccessService);
+		MockHttpServletRequest request = new MockHttpServletRequest();
+		given(currentMemberAccessService.currentMember(request)).willReturn(Optional.of(
+			new AuthenticatedMemberSession(42L, "worldmap_admin", MemberRole.ADMIN)
+		));
+
+		assertThat(adminAccessGuard.authorize(request)).isEqualTo(AdminAccessStatus.ALLOWED);
 	}
 }

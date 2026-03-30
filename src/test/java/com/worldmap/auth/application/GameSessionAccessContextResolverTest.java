@@ -28,7 +28,7 @@ class GameSessionAccessContextResolverTest {
 		MockHttpServletRequest request = new MockHttpServletRequest();
 		MockHttpSession session = new MockHttpSession();
 		request.setSession(session);
-		given(currentMemberAccessService.currentMember(session)).willReturn(Optional.of(
+		given(currentMemberAccessService.currentMember(request)).willReturn(Optional.of(
 			new AuthenticatedMemberSession(42L, "member", MemberRole.USER)
 		));
 
@@ -46,7 +46,7 @@ class GameSessionAccessContextResolverTest {
 		MockHttpSession session = new MockHttpSession();
 		request.setSession(session);
 		String guestSessionKey = guestSessionKeyManager.ensureGuestSessionKey(session);
-		given(currentMemberAccessService.currentMember(session)).willReturn(Optional.empty());
+		given(currentMemberAccessService.currentMember(request)).willReturn(Optional.empty());
 
 		GameSessionAccessContext context = resolver.resolve(request);
 

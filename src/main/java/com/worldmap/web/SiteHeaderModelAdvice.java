@@ -19,7 +19,7 @@ public class SiteHeaderModelAdvice {
 
 	@ModelAttribute
 	public void populateCurrentMember(HttpServletRequest request, Model model) {
-		AuthenticatedMemberSession currentMember = currentMemberAccessService.currentMember(request.getSession(false))
+		AuthenticatedMemberSession currentMember = currentMemberAccessService.currentMember(request)
 			.orElse(null);
 		model.addAttribute("currentMember", currentMember);
 		model.addAttribute("isAuthenticated", currentMember != null);

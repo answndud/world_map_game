@@ -9,7 +9,6 @@ import com.worldmap.game.capital.application.CapitalGameSessionResultView;
 import com.worldmap.game.capital.application.CapitalGameStartView;
 import com.worldmap.game.capital.application.CapitalGameStateView;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -44,15 +43,15 @@ public class CapitalGameApiController {
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	public CapitalGameStartView start(@Valid @RequestBody StartCapitalGameRequest request, HttpSession httpSession) {
-		var currentMember = currentMemberAccessService.currentMember(httpSession).orElse(null);
+	public CapitalGameStartView start(@Valid @RequestBody StartCapitalGameRequest request, HttpServletRequest httpRequest) {
+		var currentMember = currentMemberAccessService.currentMember(httpRequest).orElse(null);
 		if (currentMember != null) {
 			return capitalGameService.startMemberGame(currentMember.memberId(), currentMember.nickname());
 		}
 
 		return capitalGameService.startGuestGame(
 			request.nickname(),
-			guestSessionKeyManager.ensureGuestSessionKey(httpSession)
+			guestSessionKeyManager.ensureGuestSessionKey(httpRequest.getSession())
 		);
 	}
 

@@ -9,7 +9,6 @@ import com.worldmap.game.flag.application.FlagGameSessionResultView;
 import com.worldmap.game.flag.application.FlagGameStartView;
 import com.worldmap.game.flag.application.FlagGameStateView;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -44,15 +43,15 @@ public class FlagGameApiController {
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	public FlagGameStartView start(@Valid @RequestBody StartFlagGameRequest request, HttpSession httpSession) {
-		var currentMember = currentMemberAccessService.currentMember(httpSession).orElse(null);
+	public FlagGameStartView start(@Valid @RequestBody StartFlagGameRequest request, HttpServletRequest httpRequest) {
+		var currentMember = currentMemberAccessService.currentMember(httpRequest).orElse(null);
 		if (currentMember != null) {
 			return flagGameService.startMemberGame(currentMember.memberId(), currentMember.nickname());
 		}
 
 		return flagGameService.startGuestGame(
 			request.nickname(),
-			guestSessionKeyManager.ensureGuestSessionKey(httpSession)
+			guestSessionKeyManager.ensureGuestSessionKey(httpRequest.getSession())
 		);
 	}
 
