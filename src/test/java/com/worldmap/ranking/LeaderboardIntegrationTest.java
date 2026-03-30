@@ -162,12 +162,21 @@ class LeaderboardIntegrationTest {
 				.andExpect(content().string(containsString("동점 처리")))
 				.andExpect(content().string(containsString("현재 보드를 15초마다 갱신")))
 				.andExpect(content().string(containsString("data-copy-base=\"오늘 기준 위치 찾기 랭킹입니다.\"")))
+				.andExpect(content().string(containsString("data-initial-rendered=\"false\"")))
+				.andExpect(content().string(containsString("이 보드를 열면 최신 랭킹을 불러옵니다.")))
 				.andExpect(content().string(not(containsString("Redis Leaderboard"))))
 			.andExpect(model().attributeExists("locationAll"))
-			.andExpect(model().attributeExists("capitalAll"))
-			.andExpect(model().attributeExists("flagAll"))
-			.andExpect(model().attributeExists("populationBattleAll"))
-			.andExpect(model().attributeExists("populationAll"));
+			.andExpect(model().attributeDoesNotExist(
+				"capitalAll",
+				"flagAll",
+				"populationAll",
+				"populationBattleAll",
+				"locationDaily",
+				"capitalDaily",
+				"flagDaily",
+				"populationDaily",
+				"populationBattleDaily"
+			));
 
 		assertThat(leaderboardRecordRepository.count()).isEqualTo(1);
 		assertThat(stringRedisTemplate.opsForZSet().zCard(TEST_PREFIX + ":all:location")).isEqualTo(1L);
@@ -200,8 +209,6 @@ class LeaderboardIntegrationTest {
 
 		mockMvc.perform(get("/ranking"))
 			.andExpect(status().isOk())
-			.andExpect(model().attributeExists("capitalAll"))
-			.andExpect(model().attributeExists("capitalDaily"))
 			.andExpect(content().string(containsString("ranking-mode-capital")))
 			.andExpect(content().string(containsString("ranking-capital-all-body")));
 
@@ -233,8 +240,6 @@ class LeaderboardIntegrationTest {
 
 		mockMvc.perform(get("/ranking"))
 			.andExpect(status().isOk())
-			.andExpect(model().attributeExists("flagAll"))
-			.andExpect(model().attributeExists("flagDaily"))
 			.andExpect(content().string(containsString("ranking-mode-flag")))
 			.andExpect(content().string(containsString("ranking-flag-all-body")));
 
@@ -266,8 +271,6 @@ class LeaderboardIntegrationTest {
 
 		mockMvc.perform(get("/ranking"))
 			.andExpect(status().isOk())
-			.andExpect(model().attributeExists("populationBattleAll"))
-			.andExpect(model().attributeExists("populationBattleDaily"))
 			.andExpect(content().string(containsString("ranking-mode-population-battle")))
 			.andExpect(content().string(containsString("ranking-population-battle-all-body")));
 

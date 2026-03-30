@@ -34,6 +34,37 @@
 - 면접용 30초 요약:
 ```
 
+## 2026-03-30 - `/ranking` 첫 SSR을 기본 보드 1개만 읽는 구조로 줄이기
+
+- 단계: 5. Redis 랭킹 시스템 보완
+- 목적: 직전 조각에서 polling fan-out은 active board 1개로 줄였지만, `GET /ranking` 자체는 여전히 전체/일간 10개 보드를 모두 서비스에서 읽고 있었다. 즉 브라우저 주기 비용은 줄였어도, 첫 진입 TTFB와 SSR 모델 적재 비용은 그대로 남아 있었다. 이번 조각은 초기 랭킹 화면이 기본 보드 `location:ALL` 하나만 먼저 렌더링하고, 나머지는 첫 전환 시 가져오도록 줄이는 데 집중했다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/ranking/web/LeaderboardPageController.java`
+  - `src/main/resources/templates/ranking/index.html`
+  - `src/main/resources/static/js/ranking.js`
+  - `src/test/java/com/worldmap/ranking/LeaderboardPageControllerTest.java`
+  - `src/test/java/com/worldmap/ranking/LeaderboardIntegrationTest.java`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/108-defer-non-active-ranking-boards-on-initial-ssr.md`
+- 요청 흐름: 시작점은 그대로 `GET /ranking`이다. 다만 `LeaderboardPageController`는 이제 `leaderboardService.getLeaderboard(LOCATION, ALL, 10)` 한 번만 호출하고, 템플릿은 `location:ALL`만 실제 row를 SSR로 렌더링한다. capital/flag/population/population-battle와 모든 daily 보드는 placeholder 행과 `data-initial-rendered="false"`로만 내려가고, 브라우저의 `ranking.js`가 사용자가 그 보드를 처음 열었을 때 기존 `/api/rankings/{gameMode}`를 호출해 실제 row를 채운다.
+- 데이터 / 상태 변화: `leaderboard_record`, Redis Sorted Set, 정렬 규칙은 바뀌지 않았다. 바뀐 것은 `/ranking` SSR이 들고 있는 초기 read model 범위다. `boardRefreshMeta`도 이제 모든 보드를 무조건 `SSR 초기 로드`로 취급하지 않고, 기본 보드만 그 상태로 두고 나머지는 `아직 불러오지 않음` 상태에서 시작한다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “기본 보드 SSR, 나머지 보드는 defer”라는 read model 전략이다. 랭킹 계산은 여전히 서버 책임이고, 컨트롤러는 첫 화면에서 어떤 board snapshot을 바로 보여줄지만 결정한다. 즉, 컨트롤러는 source of truth를 바꾸지 않고도 SSR cost를 줄일 수 있고, 브라우저 JS는 그 이후의 board hydration만 맡는다.
+- 예외 / 엣지 케이스:
+  - 사용자가 non-default 보드를 처음 열면 `lastUpdated`는 일단 `아직 불러오지 않음`을 보이고, fetch가 끝난 뒤 실제 갱신 시각으로 바뀐다.
+  - JS가 비활성화돼도 기본 보드 `location:ALL`은 그대로 읽을 수 있고, 다른 보드 버튼은 원래도 동작하지 않았기 때문에 no-JS baseline을 크게 해치지 않는다.
+  - daily 보드는 SSR 시점 `targetDate`를 더 이상 갖고 있지 않으므로, 첫 fetch 전 copy는 generic 문구이고 fetch 후에만 실제 기준 날짜를 붙인다.
+- 테스트:
+  - `node --check src/main/resources/static/js/ranking.js`
+  - `./gradlew test --tests com.worldmap.ranking.LeaderboardPageControllerTest --tests com.worldmap.ranking.LeaderboardIntegrationTest`
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이 조각은 단순 렌더링 미세 조정이 아니라 `/ranking` 첫 SSR request flow와 controller 책임을 실제로 바꾼 slice라서, 왜 “전체 SSR” 대신 “기본 보드 SSR + defer load”로 나눴는지 설명 가치가 충분하다.
+- 배운 점: polling fan-out을 줄였다고 해서 첫 화면 비용까지 자동으로 줄어들지는 않는다. SSR 페이지에서는 “초기 HTML에 꼭 필요한 snapshot이 무엇인가”를 다시 정의해야 하고, 그 판단이 controller 모델 적재 수를 직접 줄인다.
+- 아직 약한 부분: 지금은 기본 보드를 `location:ALL`로 고정하고 있다. 나중에 제품 기본 보드가 바뀌면 controller와 템플릿의 초기 active key를 함께 수정해야 한다. 이 값을 완전히 설정화할지까지는 이번 턴에 닫지 않았다.
+- 면접용 30초 요약: 랭킹 페이지는 active board polling으로 주기 비용은 줄였지만, 첫 SSR은 여전히 10개 보드를 다 읽고 있었습니다. 그래서 이번에는 컨트롤러가 기본 보드 `location:ALL` 한 번만 읽고, 나머지 보드는 placeholder만 내려보낸 뒤 첫 전환 시 기존 랭킹 API로 채우도록 바꿨습니다. 서버 정렬 규칙은 그대로 두고, SSR snapshot 범위만 줄여 초기 진입 비용을 낮춘 조각입니다.
+
 ## 2026-03-30 - 랭킹 자동 갱신을 active board 1개 기준으로 줄이고 국기 카드 surface fallback을 같이 정리
 
 - 단계: 5. Redis 랭킹 시스템 보완 / 11. 신규 게임 확장 보조 UI 정리

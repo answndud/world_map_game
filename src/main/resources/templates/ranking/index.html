@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>실시간 랭킹</title>
     <link rel="stylesheet" th:href="@{/css/site.css(v='20260330-ranking-active-board-2')}">
-    <script th:src="@{/js/ranking.js(v='20260330-ranking-active-board-2')}" defer></script>
+    <script th:src="@{/js/ranking.js(v='20260330-ranking-initial-ssr-3')}" defer></script>
 </head>
 <body data-page="ranking">
 <div class="page-shell">
@@ -122,7 +122,8 @@
                 <article class="panel ranking-board-panel"
                          data-ranking-panel="location:ALL"
                          data-title="위치 찾기 · 전체 Top 10"
-                         data-copy="현재 운영 중인 기본 모드 기준 위치 찾기 전체 누적 랭킹입니다.">
+                         data-copy="현재 운영 중인 기본 모드 기준 위치 찾기 전체 누적 랭킹입니다."
+                         data-initial-rendered="true">
                     <div class="table-shell">
                         <table class="result-table">
                             <thead>
@@ -154,6 +155,7 @@
                          data-ranking-panel="capital:ALL"
                          data-title="수도 맞히기 · 전체 Top 10"
                          data-copy="현재 운영 중인 수도 맞히기 전체 누적 랭킹입니다."
+                         data-initial-rendered="false"
                          hidden>
                     <div class="table-shell">
                         <table class="result-table">
@@ -167,15 +169,8 @@
                             </tr>
                             </thead>
                             <tbody id="ranking-capital-all-body" data-game-mode="capital" data-scope="ALL">
-                            <tr th:each="entry : ${capitalAll.entries}">
-                                <td th:text="${entry.rank}">1</td>
-                                <td th:text="${entry.playerNickname}">Guest</td>
-                                <td th:text="${entry.totalScore}">420</td>
-                                <td th:text="${entry.clearedStageCount}">5</td>
-                                <td th:text="${entry.totalAttemptCount}">7</td>
-                            </tr>
-                            <tr th:if="${#lists.isEmpty(capitalAll.entries)}">
-                                <td colspan="5">아직 기록이 없습니다.</td>
+                            <tr>
+                                <td colspan="5">이 보드를 열면 최신 랭킹을 불러옵니다.</td>
                             </tr>
                             </tbody>
                         </table>
@@ -186,6 +181,7 @@
                          data-ranking-panel="flag:ALL"
                          data-title="국기 보고 나라 맞히기 · 전체 Top 10"
                          data-copy="현재 운영 중인 국기 퀴즈 전체 누적 랭킹입니다."
+                         data-initial-rendered="false"
                          hidden>
                     <div class="table-shell">
                         <table class="result-table">
@@ -199,15 +195,8 @@
                             </tr>
                             </thead>
                             <tbody id="ranking-flag-all-body" data-game-mode="flag" data-scope="ALL">
-                            <tr th:each="entry : ${flagAll.entries}">
-                                <td th:text="${entry.rank}">1</td>
-                                <td th:text="${entry.playerNickname}">Guest</td>
-                                <td th:text="${entry.totalScore}">420</td>
-                                <td th:text="${entry.clearedStageCount}">5</td>
-                                <td th:text="${entry.totalAttemptCount}">7</td>
-                            </tr>
-                            <tr th:if="${#lists.isEmpty(flagAll.entries)}">
-                                <td colspan="5">아직 기록이 없습니다.</td>
+                            <tr>
+                                <td colspan="5">이 보드를 열면 최신 랭킹을 불러옵니다.</td>
                             </tr>
                             </tbody>
                         </table>
@@ -218,6 +207,7 @@
                          data-ranking-panel="population:ALL"
                          data-title="인구수 맞추기 · 전체 Top 10"
                          data-copy="현재 운영 중인 기본 모드 기준 인구수 맞추기 전체 누적 랭킹입니다."
+                         data-initial-rendered="false"
                          hidden>
                     <div class="table-shell">
                         <table class="result-table">
@@ -231,15 +221,8 @@
                             </tr>
                             </thead>
                             <tbody id="ranking-population-all-body" data-game-mode="population" data-scope="ALL">
-                            <tr th:each="entry : ${populationAll.entries}">
-                                <td th:text="${entry.rank}">1</td>
-                                <td th:text="${entry.playerNickname}">Guest</td>
-                                <td th:text="${entry.totalScore}">420</td>
-                                <td th:text="${entry.clearedStageCount}">5</td>
-                                <td th:text="${entry.totalAttemptCount}">7</td>
-                            </tr>
-                            <tr th:if="${#lists.isEmpty(populationAll.entries)}">
-                                <td colspan="5">아직 기록이 없습니다.</td>
+                            <tr>
+                                <td colspan="5">이 보드를 열면 최신 랭킹을 불러옵니다.</td>
                             </tr>
                             </tbody>
                         </table>
@@ -250,6 +233,7 @@
                          data-ranking-panel="population-battle:ALL"
                          data-title="인구 비교 퀵 배틀 · 전체 Top 10"
                          data-copy="현재 운영 중인 인구 비교 퀵 배틀 전체 누적 랭킹입니다."
+                         data-initial-rendered="false"
                          hidden>
                     <div class="table-shell">
                         <table class="result-table">
@@ -263,15 +247,8 @@
                             </tr>
                             </thead>
                             <tbody id="ranking-population-battle-all-body" data-game-mode="population-battle" data-scope="ALL">
-                            <tr th:each="entry : ${populationBattleAll.entries}">
-                                <td th:text="${entry.rank}">1</td>
-                                <td th:text="${entry.playerNickname}">Guest</td>
-                                <td th:text="${entry.totalScore}">420</td>
-                                <td th:text="${entry.clearedStageCount}">5</td>
-                                <td th:text="${entry.totalAttemptCount}">7</td>
-                            </tr>
-                            <tr th:if="${#lists.isEmpty(populationBattleAll.entries)}">
-                                <td colspan="5">아직 기록이 없습니다.</td>
+                            <tr>
+                                <td colspan="5">이 보드를 열면 최신 랭킹을 불러옵니다.</td>
                             </tr>
                             </tbody>
                         </table>
@@ -282,7 +259,8 @@
                          data-ranking-panel="location:DAILY"
                          data-title="위치 찾기 · 오늘 Top 10"
                          data-copy-base="오늘 기준 위치 찾기 랭킹입니다."
-                         th:data-copy="${'오늘 기준 위치 찾기 랭킹입니다. 기준 날짜: ' + locationDaily.targetDate}"
+                         data-copy="오늘 기준 위치 찾기 랭킹입니다. 이 보드를 열면 최신 기준 날짜를 불러옵니다."
+                         data-initial-rendered="false"
                          hidden>
                     <div class="table-shell">
                         <table class="result-table">
@@ -296,15 +274,8 @@
                             </tr>
                             </thead>
                             <tbody id="ranking-location-daily-body" data-game-mode="location" data-scope="DAILY">
-                            <tr th:each="entry : ${locationDaily.entries}">
-                                <td th:text="${entry.rank}">1</td>
-                                <td th:text="${entry.playerNickname}">Guest</td>
-                                <td th:text="${entry.totalScore}">420</td>
-                                <td th:text="${entry.clearedStageCount}">5</td>
-                                <td th:text="${entry.totalAttemptCount}">7</td>
-                            </tr>
-                            <tr th:if="${#lists.isEmpty(locationDaily.entries)}">
-                                <td colspan="5">아직 기록이 없습니다.</td>
+                            <tr>
+                                <td colspan="5">이 보드를 열면 최신 랭킹을 불러옵니다.</td>
                             </tr>
                             </tbody>
                         </table>
@@ -315,7 +286,8 @@
                          data-ranking-panel="capital:DAILY"
                          data-title="수도 맞히기 · 오늘 Top 10"
                          data-copy-base="오늘 기준 수도 맞히기 랭킹입니다."
-                         th:data-copy="${'오늘 기준 수도 맞히기 랭킹입니다. 기준 날짜: ' + capitalDaily.targetDate}"
+                         data-copy="오늘 기준 수도 맞히기 랭킹입니다. 이 보드를 열면 최신 기준 날짜를 불러옵니다."
+                         data-initial-rendered="false"
                          hidden>
                     <div class="table-shell">
                         <table class="result-table">
@@ -329,15 +301,8 @@
                             </tr>
                             </thead>
                             <tbody id="ranking-capital-daily-body" data-game-mode="capital" data-scope="DAILY">
-                            <tr th:each="entry : ${capitalDaily.entries}">
-                                <td th:text="${entry.rank}">1</td>
-                                <td th:text="${entry.playerNickname}">Guest</td>
-                                <td th:text="${entry.totalScore}">420</td>
-                                <td th:text="${entry.clearedStageCount}">5</td>
-                                <td th:text="${entry.totalAttemptCount}">7</td>
-                            </tr>
-                            <tr th:if="${#lists.isEmpty(capitalDaily.entries)}">
-                                <td colspan="5">아직 기록이 없습니다.</td>
+                            <tr>
+                                <td colspan="5">이 보드를 열면 최신 랭킹을 불러옵니다.</td>
                             </tr>
                             </tbody>
                         </table>
@@ -348,7 +313,8 @@
                          data-ranking-panel="flag:DAILY"
                          data-title="국기 보고 나라 맞히기 · 오늘 Top 10"
                          data-copy-base="오늘 기준 국기 퀴즈 랭킹입니다."
-                         th:data-copy="${'오늘 기준 국기 퀴즈 랭킹입니다. 기준 날짜: ' + flagDaily.targetDate}"
+                         data-copy="오늘 기준 국기 퀴즈 랭킹입니다. 이 보드를 열면 최신 기준 날짜를 불러옵니다."
+                         data-initial-rendered="false"
                          hidden>
                     <div class="table-shell">
                         <table class="result-table">
@@ -362,15 +328,8 @@
                             </tr>
                             </thead>
                             <tbody id="ranking-flag-daily-body" data-game-mode="flag" data-scope="DAILY">
-                            <tr th:each="entry : ${flagDaily.entries}">
-                                <td th:text="${entry.rank}">1</td>
-                                <td th:text="${entry.playerNickname}">Guest</td>
-                                <td th:text="${entry.totalScore}">420</td>
-                                <td th:text="${entry.clearedStageCount}">5</td>
-                                <td th:text="${entry.totalAttemptCount}">7</td>
-                            </tr>
-                            <tr th:if="${#lists.isEmpty(flagDaily.entries)}">
-                                <td colspan="5">아직 기록이 없습니다.</td>
+                            <tr>
+                                <td colspan="5">이 보드를 열면 최신 랭킹을 불러옵니다.</td>
                             </tr>
                             </tbody>
                         </table>
@@ -381,7 +340,8 @@
                          data-ranking-panel="population-battle:DAILY"
                          data-title="인구 비교 퀵 배틀 · 오늘 Top 10"
                          data-copy-base="오늘 기준 인구 비교 퀵 배틀 랭킹입니다."
-                         th:data-copy="${'오늘 기준 인구 비교 퀵 배틀 랭킹입니다. 기준 날짜: ' + populationBattleDaily.targetDate}"
+                         data-copy="오늘 기준 인구 비교 퀵 배틀 랭킹입니다. 이 보드를 열면 최신 기준 날짜를 불러옵니다."
+                         data-initial-rendered="false"
                          hidden>
                     <div class="table-shell">
                         <table class="result-table">
@@ -395,15 +355,8 @@
                             </tr>
                             </thead>
                             <tbody id="ranking-population-battle-daily-body" data-game-mode="population-battle" data-scope="DAILY">
-                            <tr th:each="entry : ${populationBattleDaily.entries}">
-                                <td th:text="${entry.rank}">1</td>
-                                <td th:text="${entry.playerNickname}">Guest</td>
-                                <td th:text="${entry.totalScore}">420</td>
-                                <td th:text="${entry.clearedStageCount}">5</td>
-                                <td th:text="${entry.totalAttemptCount}">7</td>
-                            </tr>
-                            <tr th:if="${#lists.isEmpty(populationBattleDaily.entries)}">
-                                <td colspan="5">아직 기록이 없습니다.</td>
+                            <tr>
+                                <td colspan="5">이 보드를 열면 최신 랭킹을 불러옵니다.</td>
                             </tr>
                             </tbody>
                         </table>
@@ -414,7 +367,8 @@
                          data-ranking-panel="population:DAILY"
                          data-title="인구수 맞추기 · 오늘 Top 10"
                          data-copy-base="오늘 기준 인구수 맞추기 랭킹입니다."
-                         th:data-copy="${'오늘 기준 인구수 맞추기 랭킹입니다. 기준 날짜: ' + populationDaily.targetDate}"
+                         data-copy="오늘 기준 인구수 맞추기 랭킹입니다. 이 보드를 열면 최신 기준 날짜를 불러옵니다."
+                         data-initial-rendered="false"
                          hidden>
                     <div class="table-shell">
                         <table class="result-table">
@@ -428,15 +382,8 @@
                             </tr>
                             </thead>
                             <tbody id="ranking-population-daily-body" data-game-mode="population" data-scope="DAILY">
-                            <tr th:each="entry : ${populationDaily.entries}">
-                                <td th:text="${entry.rank}">1</td>
-                                <td th:text="${entry.playerNickname}">Guest</td>
-                                <td th:text="${entry.totalScore}">420</td>
-                                <td th:text="${entry.clearedStageCount}">5</td>
-                                <td th:text="${entry.totalAttemptCount}">7</td>
-                            </tr>
-                            <tr th:if="${#lists.isEmpty(populationDaily.entries)}">
-                                <td colspan="5">아직 기록이 없습니다.</td>
+                            <tr>
+                                <td colspan="5">이 보드를 열면 최신 랭킹을 불러옵니다.</td>
                             </tr>
                             </tbody>
                         </table>

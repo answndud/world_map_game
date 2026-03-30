@@ -31,7 +31,12 @@
     let queuedRefresh = null;
 
     rankingPanels.forEach((panel) => {
-        boardRefreshMeta.set(panel.dataset.rankingPanel, {date: initialRenderedAt, prefix: "SSR 초기 로드"});
+        boardRefreshMeta.set(
+            panel.dataset.rankingPanel,
+            panel.dataset.initialRendered === "true"
+                ? {date: initialRenderedAt, prefix: "SSR 초기 로드"}
+                : {date: null, prefix: "아직 불러오지 않음"}
+        );
     });
 
     refreshButton?.addEventListener("click", () => queueRefresh(currentBoardKey(), true));
@@ -199,6 +204,11 @@
 
     function setLastUpdated(date, prefix) {
         if (lastUpdatedBox) {
+            if (!date) {
+                lastUpdatedBox.textContent = prefix;
+                return;
+            }
+
             lastUpdatedBox.textContent = `${prefix} · ${date.toLocaleTimeString("ko-KR", {hour12: false})}`;
         }
     }

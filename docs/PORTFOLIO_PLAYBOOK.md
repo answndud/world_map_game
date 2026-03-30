@@ -358,9 +358,11 @@
 - `/ranking` 화면에서 15초 간격 폴링과 수동 새로고침으로 갱신 체감 추가
 - `/ranking` 화면에서 `위치/인구수`, `전체/일간` 필터 전환으로 active 보드만 크게 보는 UI 적용
 - `/ranking` 화면 자동 갱신을 "숨겨진 10개 보드 fan-out"이 아니라 "현재 보고 있는 active 보드 1개 갱신"으로 줄이고, 모드/범위 전환 직후에는 새 active 보드만 즉시 fetch하도록 정리
+- `GET /ranking` 첫 SSR은 기본 active 보드인 `location:ALL`만 실제로 읽고, 나머지 9개 보드는 placeholder 행과 `data-initial-rendered="false"` 상태로 defer render한 뒤 첫 전환 시 fetch하도록 정리
 - 일간 보드 설명 카피의 기준 날짜가 SSR 시점에 멈추지 않도록, polling 응답의 `targetDate`로 `data-copy`를 다시 동기화
 - 동점 처리 규칙을 화면에 명시하고, 현재 보드 제목/설명도 필터 상태에 맞게 갱신
 - 랭킹 통합 테스트 통과
+- `LeaderboardPageControllerTest`로 `/ranking` 첫 진입이 `LeaderboardService.getLeaderboard(LOCATION, ALL, 10)` 한 번만 호출되는지 고정
 
 이 단계에서 남은 일:
 
@@ -368,7 +370,7 @@
 
 - SSE / WebSocket 업그레이드는 `9단계 실시간성 고도화`에서 판단하고 구현한다.
 - 닉네임 외 식별자 정책은 `8단계 인증, 전적, 마이페이지`와 함께 정리한다.
-- `/ranking` 첫 SSR에서 10개 보드를 모두 eager render하는 비용을 더 줄일지, 지금의 "SSR 전체 + active board polling" 조합으로 충분한지 실측 후 판단한다.
+- 지금의 `기본 보드 SSR 1개 + active board polling + defer board first-load` 조합이 실제 TTFB와 사용자 체감 기준으로 충분한지 실측 후 판단한다.
 
 반드시 이해할 것:
 
