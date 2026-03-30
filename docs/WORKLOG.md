@@ -34,6 +34,36 @@
 - 면접용 30초 요약:
 ```
 
+## 2026-03-30 - browser smoke를 local Redis 없이도 뜨는 profile로 분리하기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 직전 조각으로 Playwright 기반 browser smoke 레일은 생겼지만, 실제로는 `application-test.yml`의 `worldmap.legacy.rollback.enabled=true` 때문에 startup에서 `GameLevelRollbackInitializer`가 Redis를 건드리고 있었다. 즉 이 머신에서는 Redis가 살아 있어서 지나갔지만, 깨끗한 환경에서 truly self-contained한 브라우저 smoke라고 말하기 어려웠다. 이번 조각은 browser smoke가 현재 범위의 `home / capital / recommendation` 흐름만큼은 local Redis 없이도 뜨는 profile 경계를 만드는 데 집중했다.
+- 변경 파일:
+  - `src/main/resources/application-browser-smoke.yml`
+  - `src/test/java/com/worldmap/e2e/BrowserSmokeE2ETest.java`
+  - `src/test/java/com/worldmap/common/config/BrowserSmokeProfileConfigTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/114-make-browser-smoke-tests-independent-from-local-redis.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+- 요청 흐름: `./gradlew browserSmokeTest`는 그대로 `BrowserSmokeE2ETest`를 실행하지만, 이제 테스트 클래스는 `@ActiveProfiles({"test", "browser-smoke"})`를 사용한다. `application-browser-smoke.yml`은 `worldmap.legacy.rollback.enabled=false`로 startup rollback initializer bean 자체를 비활성화하고, Redis는 의도적으로 비어 있는 `127.0.0.1:6390`으로 돌린다. 그래서 `GET /`, `GET /games/capital/start -> POST /api/games/capital/sessions -> GET /games/capital/play/{sessionId}`, `GET /recommendation/survey -> POST /recommendation/survey` 흐름이 통과하면, 적어도 현재 smoke 범위는 local Redis 6379에 기대지 않는다는 뜻이 된다.
+- 데이터 / 상태 변화: 운영 DB/Redis 스키마 변화는 없다. 바뀐 것은 브라우저 smoke의 runtime profile이다. browser smoke는 여전히 H2 기반 test DB에서만 임시 세션과 추천 결과를 만들고 끝난다. 차이는 이제 startup 시점에 legacy rollback이 Redis `keys/delete`를 치지 않고, Redis host/port도 의도적으로 실제 개발 포트와 분리된다는 점이다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “테스트 레일도 자신이 검증하지 않는 외부 의존은 명시적으로 끊어야 한다”는 점이다. browser smoke의 목적은 public user flow 검증이지 legacy Level 2 rollback이나 leaderboard Redis 동작 검증이 아니다. 그래서 이 의존을 같은 `test` profile에 섞어 두기보다 `browser-smoke` profile로 분리해, 브라우저 레일이 무엇을 전제로 하는지 코드에서 드러내는 편이 더 설명 가능하다.
+- 예외 / 엣지 케이스:
+  - 이번 조각은 `/stats`, `/ranking`을 해결한 것은 아니다. 그 경로는 여전히 `LeaderboardService`가 Redis를 직접 읽으므로, browser smoke에 넣으려면 별도 후속 조각이 필요하다.
+  - Redis를 `127.0.0.1:6390`으로 돌렸기 때문에, browser smoke 안에서 의도치 않게 leaderboard 경로를 호출하면 바로 실패한다. 지금은 이것이 오히려 “현재 smoke 범위가 정말 Redis-free인가”를 확인하는 안전장치다.
+  - `GameLevelRollbackInitializerIntegrationTest`는 여전히 `worldmap.legacy.rollback.enabled=true`를 명시해 rollback 동작 자체를 별도로 검증한다. 즉 기능을 없앤 것이 아니라, browser smoke에서만 비활성화한 것이다.
+- 테스트:
+  - `./gradlew compileTestJava`
+  - `./gradlew test --tests com.worldmap.common.config.BrowserSmokeProfileConfigTest`
+  - `./gradlew browserSmokeTest --tests com.worldmap.e2e.BrowserSmokeE2ETest`
+- 블로그 반영 여부: 반영. 이번 조각은 단순 설정값 수정이 아니라 “왜 브라우저 smoke는 자기 범위 밖 Redis startup 의존을 끊어야 하는가”를 설명할 가치가 있다.
+- 배운 점: browser smoke는 존재 자체보다도 “어떤 외부 의존을 일부러 끊었는가”가 중요했다. 브라우저 테스트가 한 번 통과하는 것보다, 그 테스트가 무엇에 의존하지 않도록 설계됐는지를 남겨야 production-ready 품질 설명이 선명해진다.
+- 아직 약한 부분: `/stats`, `/ranking` browser smoke는 여전히 남아 있다. 이쪽은 Redis read model을 실제로 쓰는 public 화면이라, 다음 조각에서 fake leaderboard source를 둘지, ephemeral Redis를 테스트 레일에 얹을지 판단해야 한다.
+- 면접용 30초 요약: Playwright smoke를 붙인 것만으로는 충분하지 않았습니다. 기존 test profile은 startup rollback initializer가 Redis를 건드려서, 로컬 Redis가 살아 있어서 통과하는 상태였기 때문입니다. 그래서 이번에는 `browser-smoke` profile을 따로 만들고 legacy rollback을 끄고, Redis를 일부러 비어 있는 `127.0.0.1:6390`으로 돌렸습니다. 덕분에 현재 home, 수도 게임 start -> play, 추천 설문 -> 결과 브라우저 smoke는 local Redis 없이도 뜨는 self-contained 레일이 됐습니다.
+
 ## 2026-03-30 - public 핵심 흐름용 브라우저 스모크 테스트 레일 추가하기
 
 - 단계: 10. 포트폴리오 정리와 발표 준비

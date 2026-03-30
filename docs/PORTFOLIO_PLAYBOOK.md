@@ -896,12 +896,14 @@
 - 국기 플레이/결과 화면의 카드 프레임이 정의되지 않은 CSS 토큰 때문에 무테두리처럼 깨지지 않도록, `flag-display-card`와 `flag-display-image`에 공통 surface/border fallback token을 적용
 - `build.gradle`에 `browserSmokeTest` verification task를 추가하고, `BrowserSmokeE2ETest`로 `home` SSR shell, `capital start -> play`, `recommendation survey -> result`를 실제 headless Chromium에서 검증하는 Playwright 브라우저 스모크 레일을 붙였다
 - 기본 `test` task는 `browser-smoke` tag를 제외해 빠른 피드백을 유지하고, 브라우저 레일만 별도 실행하게 분리했다
+- `application-browser-smoke.yml`로 browser smoke 전용 profile을 추가해 `worldmap.legacy.rollback.enabled=false`를 강제하고, Redis는 의도적으로 빈 `127.0.0.1:6390`으로 돌려 local Redis 6379에 기대지 않는 현재 smoke 범위를 확인하게 했다
+- `BrowserSmokeProfileConfigTest`로 이 profile의 rollback off / Redis override를 고정했다
 
 다음 후속 개선 후보:
 
 - 국기 게임 세부 난이도(동일 대륙 고정 비율, 자산 36개 이후 확장 전략)를 더 넓힐지 결정
 - 신규 게임 3종이 모두 열린 상태에서 홈/랭킹/Stats 문구를 더 줄일지, 아니면 현재 그룹 구조로 유지할지 한 번 더 확인
-- test profile에서 Redis 의존을 떼고 `/stats`, `/ranking`, 모달 키보드 흐름까지 브라우저 스모크 범위를 더 넓힐지 결정
+- `/stats`, `/ranking`처럼 Redis를 읽는 public read model까지 browser smoke 범위를 넓힐지, 아니면 별도 fake/no-op leaderboard lane을 둘지 결정
 - 반복된 game-over modal focus 로직을 공용 helper로 올릴지, 지금처럼 게임별 script 안에 유지할지 결정
 
 반드시 이해할 것:
