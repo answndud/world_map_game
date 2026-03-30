@@ -302,11 +302,13 @@
 - 결과는 terminal resource로 취급해 `READY`, `IN_PROGRESS` 상태에서는 `/result` API와 결과 페이지가 404를 돌리도록 닫았다. 즉 진행 중 세션의 정답과 시도 이력은 더 이상 먼저 노출되지 않는다.
 - 로그인 / 회원가입 성공 시 `MemberSessionManager`가 `changeSessionId()`를 호출해 session fixation 위험을 줄였다.
 - 8단계 4차 구현으로 `/mypage`가 `leaderboard_record`를 읽어 총 완료 플레이 수, 모드별 최고 점수, 최고 랭킹, 최근 플레이 10개를 보여주는 실제 기록 대시보드로 바뀌었다.
-- `/mypage`는 원본 게임 세션 전체가 아니라 완료된 run이 이미 정규화된 `leaderboard_record`를 먼저 읽는다. 그래서 모드별 최고 기록, 최근 완료 이력, 당시 랭킹 위치를 한 번에 설명하기 쉽다.
+- `/mypage`는 원본 게임 세션 전체가 아니라 완료된 run이 이미 정규화된 `leaderboard_record`를 먼저 읽는다. 그래서 모드별 최고 기록, 최근 완료 이력, 현재 전체 순위를 한 번에 설명하기 쉽다.
 - 8단계 5차 구현으로 운영 라우트는 `AdminAccessInterceptor`가 보호하고, 비로그인 사용자는 `/login?returnTo=...`로 보내며, 로그인한 일반 사용자는 `403`으로 막는다.
 - 운영 화면 접근 제어는 컨트롤러마다 복붙하지 않고 인터셉터로 묶었다. dashboard 진입 정책은 도메인 상태 변경보다 라우트 입구의 공통 규칙에 가깝기 때문이다.
 - 8단계 6차 구현으로 `/mypage`는 finished session에 속한 stage를 다시 읽어 모드별 `클리어 Stage 수`, `1트 클리어율`, `평균 시도 수`까지 보여주기 시작했다.
 - `/mypage`는 이제 `leaderboard_record` 기반 완료 run 요약과, raw stage 기반 플레이 성향 요약을 함께 가진다. 즉, “무슨 결과를 냈는가”와 “어떤 방식으로 플레이하는가”를 분리해서 보여준다.
+- 8단계 후속 정리로 `/mypage` read model은 고정 2개 필드가 아니라 per-mode 리스트로 바뀌었고, 현재는 위치/수도/국기/인구 비교/인구수 5개 게임 모두의 최고 기록 카드와 성향 요약을 같은 구조로 렌더링한다.
+- 최근 플레이와 최고 기록의 rank는 저장된 “당시 순위”가 아니라 `leaderboard_record`를 현재 보드 기준으로 다시 계산한 현재 전체 순위로 설명을 맞췄다.
 - 8단계 7차 구현으로 `AdminBootstrapProperties`, `AdminBootstrapService`, `AdminBootstrapInitializer`를 추가해 서버 시작 시 `WORLDMAP_ADMIN_BOOTSTRAP_ENABLED`, `WORLDMAP_ADMIN_BOOTSTRAP_NICKNAME`, `WORLDMAP_ADMIN_BOOTSTRAP_PASSWORD` 기준으로 운영용 admin 계정을 자동 생성하거나 기존 계정을 `ADMIN`으로 승격하게 했다.
 - bootstrap admin 생성은 signup UI가 아니라 startup runner에서 처리한다. 운영자 계정은 공개 회원가입 흐름이 아니라 배포 환경 설정으로 여는 편이 더 단순하고, 일반 사용자에게 admin 경로를 노출하지 않아도 되기 때문이다.
 - 8단계 8차 구현으로 운영 화면 진입 주소를 `/admin`에서 `/dashboard`로 바꿨다. `ADMIN` 로그인 사용자에게만 public 헤더에 `Dashboard` 버튼을 노출하고, 기존 `/admin/**`는 임시 redirect로만 남겨 북마크 호환성을 유지한다.

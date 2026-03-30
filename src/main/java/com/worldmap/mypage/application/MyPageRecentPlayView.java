@@ -7,7 +7,7 @@ public record MyPageRecentPlayView(
 	Integer totalScore,
 	Integer clearedStageCount,
 	Integer totalAttemptCount,
-	Integer rankAtRecordTime,
+	Integer currentRank,
 	LocalDateTime finishedAt,
 	String nicknameSnapshot
 ) {

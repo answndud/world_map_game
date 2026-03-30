@@ -12,6 +12,10 @@
 
 그래서 `/mypage`를 단순 placeholder 화면에서 실제 기록 대시보드로 바꿨다.
 
+이 글은 위치/인구수 두 게임만 있던 시점의 첫 `/mypage` 버전을 설명한다.
+현재 5개 게임 기준 확장과 `현재 전체 순위` 라벨 정리는
+[103-rebuild-mypage-read-model-for-all-five-games.md](./103-rebuild-mypage-read-model-for-all-five-games.md)에서 이어진다.
+
 핵심 선택은 하나다.
 
 `/mypage` 첫 버전은 raw 게임 세션을 직접 다시 읽지 않고, 이미 완료된 run이 정리되어 있는 `leaderboard_record`를 읽는다.
@@ -113,7 +117,7 @@ GET /mypage
   - 모드
   - 종료 시각
   - 총점
-  - 당시 랭킹
+  - 현재 전체 순위
   - 클리어 Stage
   - 총 시도 수
 

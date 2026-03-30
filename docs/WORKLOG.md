@@ -34,6 +34,34 @@
 - 면접용 30초 요약:
 ```
 
+## 2026-03-30 - `/mypage` read model을 5개 게임 기준으로 재정렬하고 rank 의미를 바로잡기
+
+- 단계: 8. 인증, 전적, 마이페이지
+- 목적: guest claim을 5개 게임 전체로 확장한 뒤에도 `/mypage`는 여전히 위치/인구수 두 게임만 `best/performance`를 보여주고 있었다. 게다가 최근 플레이의 `rankAtRecordTime`은 이름과 달리 저장된 당시 순위가 아니라 read 시점에 다시 계산한 현재 순위였다. 이번 조각은 `/mypage`를 현재 제품 범위와 맞추고, 잘못된 랭크 의미를 정리하는 데 집중했다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/mypage/application/MyPageDashboardView.java`
+  - `src/main/java/com/worldmap/mypage/application/MyPageBestRunView.java`
+  - `src/main/java/com/worldmap/mypage/application/MyPageRecentPlayView.java`
+  - `src/main/java/com/worldmap/mypage/application/MyPageService.java`
+  - `src/main/resources/templates/mypage.html`
+  - `src/test/java/com/worldmap/mypage/MyPageServiceIntegrationTest.java`
+  - `src/test/java/com/worldmap/web/MyPageControllerTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/26-build-mypage-from-member-leaderboard-runs.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/103-rebuild-mypage-read-model-for-all-five-games.md`
+- 요청 흐름 / 데이터 흐름: `GET /mypage`는 그대로 `MyPageController -> MyPageService.loadDashboard(memberId)`에서 시작한다. 바뀐 점은 서비스가 고정 필드 `locationBest/populationBest`를 만들지 않고, `leaderboard_record`에서 5개 게임의 `bestRuns`와 `recentPlays`를 리스트로 만들고, 각 게임의 finished stage 집계에서 `modePerformances`도 같은 리스트 구조로 만든다는 점이다. 템플릿은 이 리스트를 iteration으로 렌더링한다.
+- 데이터 / 상태 변화: write model은 바뀌지 않았다. `leaderboard_record`에 새 컬럼을 추가하지도 않았다. 대신 `/mypage` read model이 위치/수도/국기/인구 비교/인구수 5개 게임을 모두 읽게 되었고, 최근 플레이/베스트 카드의 rank도 “저장된 당시 순위”가 아니라 read 시점에 다시 계산한 현재 전체 순위라는 의미로 이름과 카피를 맞췄다.
+- 핵심 도메인 개념: `/mypage`는 여전히 두 층 read model이다. 결과 요약은 `leaderboard_record`, 플레이 성향은 raw stage 집계에서 나온다. 이번 조각에서 중요한 건 이 두 층을 유지한 채 고정 2모드 필드를 per-mode 리스트로 일반화했다는 점이다. 그래야 새 게임을 추가해도 템플릿 분기와 DTO 필드를 계속 복붙하지 않고 서비스의 source of truth에서 제품 범위를 설명할 수 있다.
+- 예외 / 엣지 케이스: 완료 run이 없는 사용자는 `bestRuns`, `modePerformances`, `recentPlays`가 빈 리스트가 될 수 있으므로, 템플릿은 empty-state 메시지를 계속 보여 준다. rank는 현재 전체 순위를 다시 계산하므로 과거 run의 숫자가 시간이 지나며 바뀔 수 있다. 진짜 “당시 순위”가 필요하면 `leaderboard_record`에 별도 snapshot을 저장하는 write model 확장이 필요하다.
+- 테스트: `git diff --check` 통과. `./gradlew test --tests com.worldmap.mypage.MyPageServiceIntegrationTest --tests com.worldmap.web.MyPageControllerTest --tests com.worldmap.auth.AuthFlowIntegrationTest` 통과.
+- 배운 점: 새 게임을 추가한 뒤 read model을 같이 확장하지 않으면, write path와 계정 귀속이 맞아도 사용자가 보는 기록 허브는 계속 옛 제품 범위에 머무른다. 또 DTO 필드 이름 하나가 실제 도메인 의미와 다르면 문서/면접 설명까지 같이 틀어지므로, 이번처럼 read model 의미를 바로잡는 작업이 꼭 필요했다.
+- 아직 약한 부분: 지금은 현재 전체 순위를 read 시점에 다시 계산하므로 데이터가 많아지면 비용이 커질 수 있다. 진짜로 record-time rank snapshot을 남길지, 현재처럼 read-time 계산으로 둘지, 그리고 일간/전체를 함께 보여 줄지 다음 조각에서 판단이 더 필요하다.
+- 면접용 30초 요약: `/mypage`가 새 게임 3종 추가 뒤에도 위치/인구수 두 게임만 요약하던 상태라, 제품 범위와 기록 허브가 어긋나고 있었습니다. 그래서 `MyPageDashboardView`를 고정 필드 대신 per-mode 리스트 구조로 바꾸고, `leaderboard_record` 기반 최고 기록/최근 플레이와 raw stage 기반 성향 요약을 5개 게임 전체로 일반화했습니다. 또 recent rank는 저장된 당시 순위가 아니라 현재 전체 순위라는 실제 동작에 맞춰 이름과 카피를 정리했습니다.
+
 ## 2026-03-30 - guest 기록 귀속 범위를 5개 게임 전체로 확장
 
 - 단계: 8. 인증, 전적, 마이페이지
