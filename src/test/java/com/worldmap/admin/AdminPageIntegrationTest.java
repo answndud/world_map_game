@@ -5,6 +5,7 @@ import static com.worldmap.auth.application.MemberSessionManager.MEMBER_NICKNAME
 import static com.worldmap.auth.application.MemberSessionManager.MEMBER_ROLE_ATTRIBUTE;
 import static com.worldmap.auth.domain.MemberRole.ADMIN;
 import static com.worldmap.auth.domain.MemberRole.USER;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -127,7 +128,7 @@ class AdminPageIntegrationTest {
 			.andExpect(content().string(containsString("운영 Dashboard")))
 			.andExpect(content().string(containsString("서비스 활동 요약")))
 			.andExpect(content().string(containsString("TOTAL MEMBERS")))
-			.andExpect(content().string(containsString(">2<")))
+			.andExpect(content().string(containsString(">3<")))
 			.andExpect(content().string(containsString("TODAY ACTIVE MEMBERS")))
 			.andExpect(content().string(containsString("TODAY ACTIVE GUESTS")))
 			.andExpect(content().string(containsString("TODAY COMPLETED RUNS")))
@@ -135,7 +136,7 @@ class AdminPageIntegrationTest {
 			.andExpect(content().string(containsString("추천 운영 상태")))
 			.andExpect(content().string(containsString("survey-v4")))
 			.andExpect(content().string(containsString(RecommendationSurveyService.ENGINE_VERSION)))
-			.andExpect(content().string(containsString("Dashboard 화면은 `ADMIN` role 세션으로만 접근 가능하게 보호한다.")));
+			.andExpect(content().string(containsString("Dashboard 화면은 세션 memberId로 현재 회원 role을 다시 조회해 `ADMIN` 접근을 재검증한다.")));
 	}
 
 	@Test
@@ -186,6 +187,20 @@ class AdminPageIntegrationTest {
 	}
 
 	@Test
+	void adminRoutesRejectSessionsWhoseCurrentRoleWasRevoked() throws Exception {
+		Member adminMember = memberRepository.save(Member.create("worldmap_admin", "hash", ADMIN));
+		MockHttpSession session = sessionFor(adminMember);
+
+		adminMember.provisionUser("hash");
+		memberRepository.save(adminMember);
+
+		mockMvc.perform(get("/dashboard").session(session))
+			.andExpect(status().isForbidden());
+
+		assertThat(session.getAttribute(MEMBER_ROLE_ATTRIBUTE)).isEqualTo(USER.name());
+	}
+
+	@Test
 	void legacyAdminRouteRedirectsAdminSessionToDashboard() throws Exception {
 		mockMvc.perform(get("/admin").session(adminSession()))
 			.andExpect(status().is3xxRedirection())
@@ -225,18 +240,18 @@ class AdminPageIntegrationTest {
 	}
 
 	private MockHttpSession adminSession() {
-		MockHttpSession session = new MockHttpSession();
-		session.setAttribute(MEMBER_ID_ATTRIBUTE, 1L);
-		session.setAttribute(MEMBER_NICKNAME_ATTRIBUTE, "worldmap_admin");
-		session.setAttribute(MEMBER_ROLE_ATTRIBUTE, ADMIN.name());
-		return session;
+		return sessionFor(memberRepository.save(Member.create("worldmap_admin", "hash", ADMIN)));
 	}
 
 	private MockHttpSession userSession() {
+		return sessionFor(memberRepository.save(Member.create("orbit_runner", "hash", USER)));
+	}
+
+	private MockHttpSession sessionFor(Member member) {
 		MockHttpSession session = new MockHttpSession();
-		session.setAttribute(MEMBER_ID_ATTRIBUTE, 2L);
-		session.setAttribute(MEMBER_NICKNAME_ATTRIBUTE, "orbit_runner");
-		session.setAttribute(MEMBER_ROLE_ATTRIBUTE, USER.name());
+		session.setAttribute(MEMBER_ID_ATTRIBUTE, member.getId());
+		session.setAttribute(MEMBER_NICKNAME_ATTRIBUTE, member.getNickname());
+		session.setAttribute(MEMBER_ROLE_ATTRIBUTE, member.getRole().name());
 		return session;
 	}
 }

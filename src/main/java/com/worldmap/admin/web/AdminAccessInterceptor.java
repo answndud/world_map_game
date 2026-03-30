@@ -1,7 +1,7 @@
 package com.worldmap.admin.web;
 
-import com.worldmap.auth.application.MemberSessionManager;
-import com.worldmap.auth.domain.MemberRole;
+import com.worldmap.auth.application.AdminAccessGuard;
+import com.worldmap.auth.application.AdminAccessGuard.AdminAccessStatus;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -13,10 +13,10 @@ import org.springframework.web.util.UriUtils;
 @Component
 public class AdminAccessInterceptor implements HandlerInterceptor {
 
-	private final MemberSessionManager memberSessionManager;
+	private final AdminAccessGuard adminAccessGuard;
 
-	public AdminAccessInterceptor(MemberSessionManager memberSessionManager) {
-		this.memberSessionManager = memberSessionManager;
+	public AdminAccessInterceptor(AdminAccessGuard adminAccessGuard) {
+		this.adminAccessGuard = adminAccessGuard;
 	}
 
 	@Override
@@ -27,13 +27,12 @@ public class AdminAccessInterceptor implements HandlerInterceptor {
 			return false;
 		}
 
-		var currentMember = memberSessionManager.currentMember(httpSession);
-		if (currentMember.isEmpty()) {
+		AdminAccessStatus accessStatus = adminAccessGuard.authorize(httpSession);
+		if (accessStatus == AdminAccessStatus.UNAUTHENTICATED) {
 			redirectToLogin(request, response);
 			return false;
 		}
-
-		if (currentMember.get().role() != MemberRole.ADMIN) {
+		if (accessStatus == AdminAccessStatus.FORBIDDEN) {
 			response.sendError(HttpServletResponse.SC_FORBIDDEN);
 			return false;
 		}

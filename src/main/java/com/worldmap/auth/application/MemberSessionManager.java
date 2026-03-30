@@ -17,6 +17,10 @@ public class MemberSessionManager {
 	public void signIn(HttpServletRequest request, Member member) {
 		request.changeSessionId();
 		HttpSession httpSession = request.getSession();
+		syncMember(httpSession, member);
+	}
+
+	public void syncMember(HttpSession httpSession, Member member) {
 		httpSession.setAttribute(MEMBER_ID_ATTRIBUTE, member.getId());
 		httpSession.setAttribute(MEMBER_NICKNAME_ATTRIBUTE, member.getNickname());
 		httpSession.setAttribute(MEMBER_ROLE_ATTRIBUTE, member.getRole().name());

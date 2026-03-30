@@ -14,6 +14,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.worldmap.auth.domain.Member;
+import com.worldmap.auth.domain.MemberRepository;
 import com.worldmap.recommendation.application.RecommendationSurveyService;
 import com.worldmap.recommendation.domain.RecommendationFeedback;
 import com.worldmap.recommendation.domain.RecommendationFeedbackRepository;
@@ -40,9 +42,13 @@ class RecommendationFeedbackIntegrationTest {
 	@Autowired
 	private RecommendationFeedbackRepository recommendationFeedbackRepository;
 
+	@Autowired
+	private MemberRepository memberRepository;
+
 	@BeforeEach
 	void setUp() {
 		recommendationFeedbackRepository.deleteAll();
+		memberRepository.deleteAll();
 	}
 
 	@Test
@@ -142,6 +148,20 @@ class RecommendationFeedbackIntegrationTest {
 	}
 
 	@Test
+	void feedbackSummaryApiRejectsRevokedAdminSessionUsingCurrentMemberRole() throws Exception {
+		Member adminMember = memberRepository.save(Member.create("worldmap_admin", "hash", ADMIN));
+		MockHttpSession session = sessionFor(adminMember);
+
+		adminMember.provisionUser("hash");
+		memberRepository.save(adminMember);
+
+		mockMvc.perform(get("/api/recommendation/feedback/summary").session(session))
+			.andExpect(status().isForbidden());
+
+		assertThat(session.getAttribute(MEMBER_ROLE_ATTRIBUTE)).isEqualTo(USER.name());
+	}
+
+	@Test
 	void legacyFeedbackInsightsRouteRedirectsToDashboardRecommendationFeedbackPage() throws Exception {
 		mockMvc.perform(get("/recommendation/feedback-insights"))
 			.andExpect(status().is3xxRedirection())
@@ -215,18 +235,18 @@ class RecommendationFeedbackIntegrationTest {
 	}
 
 	private MockHttpSession adminSession() {
-		MockHttpSession session = new MockHttpSession();
-		session.setAttribute(MEMBER_ID_ATTRIBUTE, 1L);
-		session.setAttribute(MEMBER_NICKNAME_ATTRIBUTE, "worldmap_admin");
-		session.setAttribute(MEMBER_ROLE_ATTRIBUTE, ADMIN.name());
-		return session;
+		return sessionFor(memberRepository.save(Member.create("worldmap_admin", "hash", ADMIN)));
 	}
 
 	private MockHttpSession userSession() {
+		return sessionFor(memberRepository.save(Member.create("orbit_runner", "hash", USER)));
+	}
+
+	private MockHttpSession sessionFor(Member member) {
 		MockHttpSession session = new MockHttpSession();
-		session.setAttribute(MEMBER_ID_ATTRIBUTE, 2L);
-		session.setAttribute(MEMBER_NICKNAME_ATTRIBUTE, "orbit_runner");
-		session.setAttribute(MEMBER_ROLE_ATTRIBUTE, USER.name());
+		session.setAttribute(MEMBER_ID_ATTRIBUTE, member.getId());
+		session.setAttribute(MEMBER_NICKNAME_ATTRIBUTE, member.getNickname());
+		session.setAttribute(MEMBER_ROLE_ATTRIBUTE, member.getRole().name());
 		return session;
 	}
 }

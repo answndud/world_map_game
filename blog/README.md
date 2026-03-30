@@ -162,6 +162,7 @@
 99. [남은 4개 게임에도 같은 game over modal focus 규칙 적용하기](./106-extend-keyboard-game-over-modal-focus-rules-to-all-games.md)
 100. [랭킹 화면은 active board만 갱신하고 일간 카피도 같이 맞추기](./107-refresh-only-the-active-ranking-board-and-keep-daily-copy-fresh.md)
 101. [`/ranking` 첫 SSR은 기본 보드만 그리고 나머지는 지연 로드하기](./108-defer-non-active-ranking-boards-on-initial-ssr.md)
+102. [admin 운영 접근을 session role이 아니라 현재 DB role로 다시 검증하기](./109-revalidate-admin-access-against-current-member-role.md)
 
 ### Part E. 확장과 포트폴리오 정리
 

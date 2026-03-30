@@ -34,6 +34,40 @@
 - 면접용 30초 요약:
 ```
 
+## 2026-03-30 - admin 운영 접근을 현재 DB role로 다시 검증하기
+
+- 단계: 8. 인증, 전적, 마이페이지
+- 목적: 남아 있던 보안 리스크는 admin 권한이 세션 문자열에만 고정돼 있다는 점이었다. 한 번 `ADMIN`으로 로그인한 세션은 DB에서 권한이 `USER`로 내려가도 살아 있는 동안 계속 `/dashboard`와 추천 운영 summary API에 접근할 수 있었다. 이번 조각은 “admin 허용 여부는 매 요청마다 현재 회원 role을 다시 본다”는 규칙을 작게 추가하는 데 집중했다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/auth/application/AdminAccessGuard.java`
+  - `src/main/java/com/worldmap/auth/application/MemberSessionManager.java`
+  - `src/main/java/com/worldmap/admin/web/AdminAccessInterceptor.java`
+  - `src/main/java/com/worldmap/recommendation/web/RecommendationFeedbackApiController.java`
+  - `src/main/resources/templates/admin/index.html`
+  - `src/test/java/com/worldmap/admin/AdminPageIntegrationTest.java`
+  - `src/test/java/com/worldmap/recommendation/RecommendationFeedbackIntegrationTest.java`
+  - `src/test/java/com/worldmap/auth/application/MemberSessionManagerTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/109-revalidate-admin-access-against-current-member-role.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+- 요청 흐름: `GET /dashboard`와 `GET /api/recommendation/feedback/summary`는 이제 먼저 `AdminAccessGuard.authorize(session)`를 지난다. guard는 `MemberSessionManager.currentMember()`로 세션의 `memberId`를 읽고, `MemberRepository.findById()`로 현재 회원을 다시 조회한다. 회원이 사라졌으면 세션을 비우고 비로그인으로 처리하고, 회원이 남아 있으면 세션 닉네임/role을 현재 DB 값으로 다시 맞춘 뒤 `ADMIN`일 때만 통과시킨다.
+- 데이터 / 상태 변화: 새로운 엔티티나 테이블은 없다. 대신 admin 경로를 치는 순간 session의 `WORLDMAP_MEMBER_NICKNAME`, `WORLDMAP_MEMBER_ROLE`이 현재 `member_account` 값으로 동기화된다. 즉 role이 `ADMIN -> USER`로 바뀐 뒤 예전 세션이 남아 있어도 다음 admin 요청에서 바로 `403`이 나고, 세션 role 캐시도 `USER`로 덮인다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “세션은 identity 힌트이고, admin authorization의 source of truth는 현재 member row”라는 점이다. 컨트롤러는 여전히 진입점만 맡고, 실제 권한 판정은 `AdminAccessGuard`가 맡는다. 이 로직이 인터셉터/컨트롤러 안에 흩어지면 admin 페이지와 운영 API가 서로 다른 기준으로 열릴 수 있기 때문이다.
+- 예외 / 엣지 케이스:
+  - 세션에는 memberId가 있지만 DB row가 이미 삭제된 경우, guard는 세션을 지우고 비로그인처럼 취급한다.
+  - 세션 role이 여전히 `ADMIN`이어도 DB role이 `USER`면 `/dashboard/**`와 `/api/recommendation/feedback/summary`는 둘 다 막힌다.
+  - 공개 화면 헤더의 `Dashboard` 링크 노출은 아직 session role 문자열을 보고 있어, 권한 회수 직후 admin 경로를 한 번 치기 전까지는 stale link가 보일 수 있다. 실제 접근은 이번 조각에서 막았지만, 전역 표시 일관성은 후속 polish 대상이다.
+- 테스트:
+  - `./gradlew test --tests com.worldmap.admin.AdminPageIntegrationTest --tests com.worldmap.recommendation.RecommendationFeedbackIntegrationTest --tests com.worldmap.auth.application.MemberSessionManagerTest`
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이 조각은 admin 요청 흐름과 권한 source of truth를 실제로 바꾸는 auth slice라서, 왜 session role만 믿지 않고 DB role을 다시 보는지 설명 가치가 충분하다.
+- 배운 점: 세션에 `role`을 넣는 건 화면 렌더링과 간단한 분기에는 편하지만, 운영 권한처럼 회수 가능성이 있는 값은 그대로 권한 source of truth가 되면 안 된다. identity 캐시와 authorization source를 분리해야 뒤늦은 role 변경도 안전하게 먹힌다.
+- 아직 약한 부분: 이번 조각은 admin 경로와 운영 summary API까지만 current role 재검증을 붙였다. 전역 SSR shell까지 완전히 같은 기준으로 맞추려면 현재 member resolver를 더 넓게 쓸지, 헤더 표시만 별도 모델로 분리할지 한 번 더 정리해야 한다.
+- 면접용 30초 요약: 운영 권한을 세션 문자열만 믿으면 role이 회수된 뒤에도 기존 세션이 계속 admin처럼 동작할 수 있습니다. 그래서 이번에는 `AdminAccessGuard`를 두고, `/dashboard`와 추천 운영 summary API가 들어올 때마다 session의 memberId로 현재 회원을 다시 조회하도록 바꿨습니다. DB role이 `ADMIN`일 때만 통과시키고, 아니면 바로 `403`을 내리면서 세션 role 캐시도 현재 값으로 덮어써 권한 회수 반영을 즉시 맞췄습니다.
+
 ## 2026-03-30 - `/ranking` 첫 SSR을 기본 보드 1개만 읽는 구조로 줄이기
 
 - 단계: 5. Redis 랭킹 시스템 보완

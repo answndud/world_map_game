@@ -304,6 +304,7 @@
 - 8단계 4차 구현으로 `/mypage`가 `leaderboard_record`를 읽어 총 완료 플레이 수, 모드별 최고 점수, 최고 랭킹, 최근 플레이 10개를 보여주는 실제 기록 대시보드로 바뀌었다.
 - `/mypage`는 원본 게임 세션 전체가 아니라 완료된 run이 이미 정규화된 `leaderboard_record`를 먼저 읽는다. 그래서 모드별 최고 기록, 최근 완료 이력, 현재 전체 순위를 한 번에 설명하기 쉽다.
 - 8단계 5차 구현으로 운영 라우트는 `AdminAccessInterceptor`가 보호하고, 비로그인 사용자는 `/login?returnTo=...`로 보내며, 로그인한 일반 사용자는 `403`으로 막는다.
+- admin 접근은 세션에 저장된 role 문자열만 믿지 않고, `AdminAccessGuard`가 session `memberId`로 현재 `member_account.role`을 다시 조회해 `/dashboard/**`와 운영 summary API 접근을 재검증한다.
 - 운영 화면 접근 제어는 컨트롤러마다 복붙하지 않고 인터셉터로 묶었다. dashboard 진입 정책은 도메인 상태 변경보다 라우트 입구의 공통 규칙에 가깝기 때문이다.
 - 8단계 6차 구현으로 `/mypage`는 finished session에 속한 stage를 다시 읽어 모드별 `클리어 Stage 수`, `1트 클리어율`, `평균 시도 수`까지 보여주기 시작했다.
 - `/mypage`는 이제 `leaderboard_record` 기반 완료 run 요약과, raw stage 기반 플레이 성향 요약을 함께 가진다. 즉, “무슨 결과를 냈는가”와 “어떤 방식으로 플레이하는가”를 분리해서 보여준다.

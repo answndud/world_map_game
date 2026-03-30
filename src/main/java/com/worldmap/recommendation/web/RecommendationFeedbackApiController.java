@@ -1,10 +1,10 @@
 package com.worldmap.recommendation.web;
 
-import com.worldmap.auth.application.MemberSessionManager;
-import com.worldmap.auth.domain.MemberRole;
+import com.worldmap.auth.application.AdminAccessGuard;
+import com.worldmap.auth.application.AdminAccessGuard.AdminAccessStatus;
 import com.worldmap.recommendation.application.RecommendationFeedbackContext;
-import com.worldmap.recommendation.application.RecommendationFeedbackService;
 import com.worldmap.recommendation.application.RecommendationFeedbackInsightsView;
+import com.worldmap.recommendation.application.RecommendationFeedbackService;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -22,16 +22,16 @@ public class RecommendationFeedbackApiController {
 
 	private final RecommendationFeedbackService recommendationFeedbackService;
 	private final RecommendationFeedbackSessionStore recommendationFeedbackSessionStore;
-	private final MemberSessionManager memberSessionManager;
+	private final AdminAccessGuard adminAccessGuard;
 
 	public RecommendationFeedbackApiController(
 		RecommendationFeedbackService recommendationFeedbackService,
 		RecommendationFeedbackSessionStore recommendationFeedbackSessionStore,
-		MemberSessionManager memberSessionManager
+		AdminAccessGuard adminAccessGuard
 	) {
 		this.recommendationFeedbackService = recommendationFeedbackService;
 		this.recommendationFeedbackSessionStore = recommendationFeedbackSessionStore;
-		this.memberSessionManager = memberSessionManager;
+		this.adminAccessGuard = adminAccessGuard;
 	}
 
 	@PostMapping("/feedback")
@@ -60,9 +60,7 @@ public class RecommendationFeedbackApiController {
 	}
 
 	private void requireAdmin(HttpSession httpSession) {
-		var currentMember = memberSessionManager.currentMember(httpSession)
-			.orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "관리자만 접근할 수 있습니다."));
-		if (currentMember.role() != MemberRole.ADMIN) {
+		if (adminAccessGuard.authorize(httpSession) != AdminAccessStatus.ALLOWED) {
 			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "관리자만 접근할 수 있습니다.");
 		}
 	}

@@ -27,4 +27,17 @@ class MemberSessionManagerTest {
 		assertThat(request.getSession().getAttribute(MemberSessionManager.MEMBER_NICKNAME_ATTRIBUTE)).isEqualTo("orbit_runner");
 		assertThat(request.getSession().getAttribute(MemberSessionManager.MEMBER_ROLE_ATTRIBUTE)).isEqualTo(MemberRole.USER.name());
 	}
+
+	@Test
+	void syncMemberOverwritesSessionAttributesWithPersistedMemberState() {
+		MockHttpServletRequest request = new MockHttpServletRequest();
+		Member member = Member.create("worldmap_admin", "hashed-password", MemberRole.ADMIN);
+		ReflectionTestUtils.setField(member, "id", 7L);
+
+		memberSessionManager.syncMember(request.getSession(), member);
+
+		assertThat(request.getSession().getAttribute(MemberSessionManager.MEMBER_ID_ATTRIBUTE)).isEqualTo(7L);
+		assertThat(request.getSession().getAttribute(MemberSessionManager.MEMBER_NICKNAME_ATTRIBUTE)).isEqualTo("worldmap_admin");
+		assertThat(request.getSession().getAttribute(MemberSessionManager.MEMBER_ROLE_ATTRIBUTE)).isEqualTo(MemberRole.ADMIN.name());
+	}
 }

@@ -124,7 +124,7 @@
                 <ol class="roadmap">
                     <li>public 화면과 운영 화면의 정보 구조를 분리했다.</li>
                     <li>추천 만족도 집계를 `/dashboard/recommendation/feedback`으로 옮겼다.</li>
-                    <li>Dashboard 화면은 `ADMIN` role 세션으로만 접근 가능하게 보호한다.</li>
+                    <li>Dashboard 화면은 세션 memberId로 현재 회원 role을 다시 조회해 `ADMIN` 접근을 재검증한다.</li>
                 </ol>
             </article>
         </section>
