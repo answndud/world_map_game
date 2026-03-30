@@ -320,6 +320,9 @@
 - 8단계 13차 구현으로 게임 세션 API와 `play/result` 페이지는 현재 브라우저가 소유한 세션만 열 수 있게 바꿨다. 세션 조회 / 답안 제출 / 재시작 / 결과 확인은 `memberId` 또는 `guestSessionKey` ownership을 현재 요청의 access context와 비교해 통과시킨다.
 - 같은 조각에서 결과 화면은 종료된 run에만 존재하는 리소스로 재정의했다. 그래서 `READY`나 `IN_PROGRESS` 상태에서는 `/result` API와 페이지가 404를 반환하고, 플레이 중간 치팅으로 정답을 미리 읽을 수 없게 했다.
 - 회원가입과 로그인 성공 시에는 `changeSessionId()`로 세션 ID를 회전시켜 기존 단순 세션 구조 안에서도 session fixation을 줄였다.
+- 8단계 무결성 1차 구현으로 각 게임의 `submitAnswer`와 `restartGame`은 session row를 `findByIdForUpdate()`로 잠근 뒤 처리한다. 그래서 같은 `sessionId`에 대한 write가 직렬화되고, 더블클릭이나 중복 요청이 와도 attempt / next stage / restart가 서로 엉키지 않게 된다.
+- 같은 조각에서 public 플레이 화면은 현재 Stage의 `stageId`와 `expectedAttemptNumber`를 함께 받고, 답안을 보낼 때 그 값을 다시 돌려보낸다. 서버는 stale token이면 `409`로 끊어, 같은 오답 payload가 재전송돼도 life가 두 번 줄지 않게 했다.
+- 랭킹 저장은 여전히 `runSignature`를 idempotency key로 쓰되, terminal submit race에서 DB unique 충돌이 나면 no-op로 삼아 500 대신 “이미 반영된 run”으로 처리한다.
 - 현재 8단계 핵심 범위는 닫혔고, 이후 고도화 포인트는 `/mypage` 기간별 누적 통계, season/기간 필터, 더 세밀한 운영 도구 확장이다.
 - 이 피드백은 설문 문항과 가중치를 계속 개선하기 위한 신호로 사용하고, 오프라인 AI-assisted 평가 루프는 `docs/recommendation/OFFLINE_AI_SURVEY_IMPROVEMENT.md`와 `docs/recommendation/PERSONA_EVAL_SET.md`에서 관리한다.
 - `RecommendationOfflinePersonaCoverageTest`로 18개 페르소나 baseline을 자동 평가하고, 현재 엔진이 최소 15개 시나리오에서 기대 후보 1개 이상을 top 3에 포함하는지를 품질 하한으로 고정했다.

@@ -118,6 +118,7 @@
 91. [ECS task definition sample로 secrets 주입 기준 고정하기](./96-add-ecs-task-definition-sample-for-secrets-manager-and-ssm.md)
 92. [prod에서만 Spring Session Redis를 켜서 멀티태스크 준비하기](./97-enable-prod-only-spring-session-redis-for-fargate-scale-out.md)
 93. [GitHub Actions에서 sample task definition을 렌더링해 ECS에 배포하기](./98-add-github-actions-ecs-deploy-workflow-from-template.md)
+94. [게임 write를 직렬화하고 stale submit을 막아 무결성 1차 닫기](./100-serialize-game-session-writes-and-stale-submit-guard.md)
 
 ### Part E. 테스트, 확장, 취업 패키징
 

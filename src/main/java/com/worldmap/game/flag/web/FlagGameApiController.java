@@ -81,6 +81,8 @@ public class FlagGameApiController {
 		return flagGameService.submitAnswer(
 			sessionId,
 			request.stageNumber(),
+			request.stageId(),
+			request.expectedAttemptNumber(),
 			request.selectedOptionNumber(),
 			gameSessionAccessContextResolver.resolve(httpRequest)
 		);

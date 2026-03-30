@@ -81,6 +81,8 @@ public class LocationGameApiController {
 		return locationGameService.submitAnswer(
 			sessionId,
 			request.stageNumber(),
+			request.stageId(),
+			request.expectedAttemptNumber(),
 			request.selectedCountryIso3Code(),
 			gameSessionAccessContextResolver.resolve(httpRequest)
 		);

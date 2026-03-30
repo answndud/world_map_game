@@ -7,6 +7,8 @@ import java.util.UUID;
 public record CapitalGameStateView(
 	UUID sessionId,
 	Integer stageNumber,
+	Long stageId,
+	Integer expectedAttemptNumber,
 	String difficultyLabel,
 	Integer clearedStageCount,
 	Integer totalScore,

@@ -34,6 +34,50 @@
 - 면접용 30초 요약:
 ```
 
+## 2026-03-30 - 게임 write 직렬화와 stale submit 방어
+
+- 단계: 8. 인증, 전적, 마이페이지
+- 목적: 세션 ownership을 막은 뒤에도 같은 Stage에 대한 중복 submit과 duplicate restart가 남아 있었다. 특히 같은 오답 payload가 다시 오면 life가 두 번 줄 수 있고, terminal submit race에서는 leaderboard unique 충돌이 500으로 번질 수 있었다. 이번 조각은 `submit / restart / leaderboard 기록`을 한 번만 반영되게 만드는 무결성 1차에 집중했다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/game/common/application/GameSubmissionGuard.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameService.java`
+  - `src/main/java/com/worldmap/game/capital/application/CapitalGameService.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationGameService.java`
+  - `src/main/java/com/worldmap/game/flag/application/FlagGameService.java`
+  - `src/main/java/com/worldmap/game/populationbattle/application/PopulationBattleGameService.java`
+  - `src/main/java/com/worldmap/game/location/domain/LocationGameSessionRepository.java`
+  - `src/main/java/com/worldmap/game/capital/domain/CapitalGameSessionRepository.java`
+  - `src/main/java/com/worldmap/game/population/domain/PopulationGameSessionRepository.java`
+  - `src/main/java/com/worldmap/game/flag/domain/FlagGameSessionRepository.java`
+  - `src/main/java/com/worldmap/game/populationbattle/domain/PopulationBattleGameSessionRepository.java`
+  - 각 게임의 `*StateView`, `Submit*AnswerRequest`, `*ApiController`
+  - `src/main/java/com/worldmap/ranking/application/LeaderboardService.java`
+  - `src/main/resources/static/js/location-game.js`
+  - `src/main/resources/static/js/capital-game.js`
+  - `src/main/resources/static/js/population-game.js`
+  - `src/main/resources/static/js/flag-game.js`
+  - `src/main/resources/static/js/population-battle-game.js`
+  - `src/test/java/com/worldmap/game/location/LocationGameFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/game/capital/CapitalGameFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/game/population/PopulationGameFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/game/flag/FlagGameFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/game/populationbattle/PopulationBattleGameFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/ranking/LeaderboardIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/100-serialize-game-session-writes-and-stale-submit-guard.md`
+- 요청 흐름: 플레이 화면은 먼저 `GET /state`로 `stageId`, `expectedAttemptNumber`까지 받은 뒤, `POST /answer`에서 그 값을 같이 보낸다. 컨트롤러는 request를 서비스로 넘기고, 서비스는 `findByIdForUpdate()`로 session row를 잠근 뒤 현재 stage와 토큰을 비교한다. 토큰이 stale이면 `409`, fresh하면 attempt 저장 -> 상태 전이 -> 종료 시 leaderboard 반영 순서로 진행한다.
+- 데이터 / 상태 변화: DB 스키마는 그대로 두고, write path의 순서와 해석만 바꿨다. session row lock이 같은 `sessionId`의 write를 직렬화하고, stage는 현재 `nextAttemptNumber`와 클라이언트가 보낸 `expectedAttemptNumber`가 일치할 때만 진행된다. leaderboard는 `runSignature` unique 충돌을 “이미 반영된 종료 run”으로 해석해 no-op 처리한다.
+- 핵심 도메인 개념: `sessionId` ownership 검사만으로는 충분하지 않다. 게임은 같은 session 안에서도 `어느 Stage의 몇 번째 시도인가`가 맞아야 안전하다. 그래서 이번 조각의 핵심은 `session row lock + stage token(stageId, expectedAttemptNumber)` 조합으로 현재 write가 최신 게임 상태와 맞는지 확인하는 것이다. 이 검사는 컨트롤러보다 서비스에 있어야 한다. 실제 상태 전이와 attempt 번호 계산이 서비스/도메인에 있기 때문이다.
+- 예외 / 엣지 케이스: 같은 오답 payload가 다시 오면 이제 stale submit으로 `409`가 반환되고, life는 한 번만 줄어든다. terminal 상태의 duplicate submit은 leaderboard unique 충돌이 나더라도 no-op로 끝난다. 아직 restart 직후 늦게 도착한 오래된 packet을 완전히 구분하는 run generation token은 없다. 이번 조각은 그 전 단계로 write 직렬화와 stale stage token까지만 넣었다.
+- 테스트: `./gradlew compileJava` 통과. `./gradlew compileTestJava` 통과. `node --check src/main/resources/static/js/location-game.js && node --check src/main/resources/static/js/capital-game.js && node --check src/main/resources/static/js/population-game.js && node --check src/main/resources/static/js/flag-game.js && node --check src/main/resources/static/js/population-battle-game.js` 통과. `git diff --check` 통과. `./gradlew test --tests com.worldmap.game.location.LocationGameFlowIntegrationTest.staleDuplicateWrongAnswerIsRejectedWithoutConsumingExtraLife --tests com.worldmap.game.capital.CapitalGameFlowIntegrationTest.staleDuplicateWrongAnswerIsRejectedWithoutConsumingExtraLife --tests com.worldmap.game.population.PopulationGameFlowIntegrationTest.staleDuplicateWrongAnswerIsRejectedWithoutConsumingExtraLife --tests com.worldmap.game.flag.FlagGameFlowIntegrationTest.staleDuplicateWrongAnswerIsRejectedWithoutConsumingExtraLife --tests com.worldmap.game.populationbattle.PopulationBattleGameFlowIntegrationTest.staleDuplicateWrongAnswerIsRejectedWithoutConsumingExtraLife --tests com.worldmap.game.location.LocationGameFlowIntegrationTest.duplicateCorrectAnswerIsRejectedAfterStageAdvances --tests com.worldmap.game.capital.CapitalGameFlowIntegrationTest.duplicateCorrectAnswerIsRejectedAfterStageAdvances --tests com.worldmap.game.population.PopulationGameFlowIntegrationTest.duplicateCorrectAnswerIsRejectedAfterStageAdvances --tests com.worldmap.game.flag.FlagGameFlowIntegrationTest.duplicateCorrectAnswerIsRejectedAfterStageAdvances --tests com.worldmap.game.populationbattle.PopulationBattleGameFlowIntegrationTest.duplicateCorrectAnswerIsRejectedAfterStageAdvances --tests com.worldmap.ranking.LeaderboardIntegrationTest.gameOverRecordsLocationLeaderboardAndRendersRankingPage` 통과.
+- 배운 점: 게임의 중복 요청 방어는 “한 번 더 if문 체크”로 끝나지 않는다. 현재 Stage와 시도 번호를 서버가 source of truth로 들고 있고, 같은 session의 write를 한 줄로 세워야 제대로 설명 가능한 무결성이 나온다.
+- 아직 약한 부분: 이번 조각은 stale submit과 terminal duplicate submit까지는 막았지만, restart 뒤에 늦게 도착한 오래된 packet을 완전히 식별하는 run generation token은 아직 없다. 또 진짜 멀티스레드 동시성 재현 테스트를 서비스 계층에서 직접 붙이지는 못했다.
+- 면접용 30초 요약: 게임 무결성 1차에서는 각 게임의 `submitAnswer`와 `restartGame`이 session row를 잠근 뒤 처리되게 바꿨고, 플레이 화면이 받은 `stageId`와 `expectedAttemptNumber`를 답안 제출 때 다시 보내도록 만들었습니다. 서버는 이 토큰이 stale면 `409`로 끊어 같은 오답 payload가 재전송돼도 life가 두 번 줄지 않게 했고, terminal submit race에서 leaderboard unique 충돌이 나도 no-op로 처리해 기록이 한 번만 남도록 정리했습니다.
+
 ## 2026-03-30 - 게임 세션 접근 보호와 조기 결과 노출 차단
 
 - 단계: 8. 인증, 전적, 마이페이지

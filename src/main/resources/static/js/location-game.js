@@ -125,6 +125,8 @@ function initPlayPage() {
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify({
                     stageNumber: currentState.stageNumber,
+                    stageId: currentState.stageId,
+                    expectedAttemptNumber: currentState.expectedAttemptNumber,
                     selectedCountryIso3Code
                 })
             });

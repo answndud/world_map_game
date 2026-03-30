@@ -153,6 +153,7 @@
 90. [prod에서만 Spring Session Redis를 켜서 멀티태스크 준비하기](./97-enable-prod-only-spring-session-redis-for-fargate-scale-out.md)
 91. [GitHub Actions에서 sample task definition을 렌더링해 ECS에 배포하기](./98-add-github-actions-ecs-deploy-workflow-from-template.md)
 92. [현재 브라우저에만 게임 세션을 열고 결과는 종료 후에만 노출하기](./99-protect-game-session-access-and-terminal-results.md)
+93. [게임 write를 직렬화하고 stale submit을 막아 무결성 1차 닫기](./100-serialize-game-session-writes-and-stale-submit-guard.md)
 
 ### Part E. 확장과 포트폴리오 정리
 

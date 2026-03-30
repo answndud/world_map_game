@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations.TypedTuple;
 import org.springframework.stereotype.Service;
@@ -201,21 +202,27 @@ public class LeaderboardService {
 		}
 
 		long rankingScore = leaderboardRankingPolicy.rankingScore(totalScore, clearedStageCount, totalAttemptCount);
-		LeaderboardRecord record = leaderboardRecordRepository.saveAndFlush(
-			LeaderboardRecord.create(
-				runSignature,
-				sessionId,
-				gameMode,
-				playerNickname,
-				memberId,
-				guestSessionKey,
-				totalScore,
-				rankingScore,
-				clearedStageCount,
-				totalAttemptCount,
-				finishedAt
-			)
-		);
+		LeaderboardRecord record;
+		try {
+			record = leaderboardRecordRepository.saveAndFlush(
+				LeaderboardRecord.create(
+					runSignature,
+					sessionId,
+					gameMode,
+					playerNickname,
+					memberId,
+					guestSessionKey,
+					totalScore,
+					rankingScore,
+					clearedStageCount,
+					totalAttemptCount,
+					finishedAt
+				)
+			);
+		} catch (DataIntegrityViolationException ex) {
+			log.debug("Leaderboard run {} was already recorded by another request", runSignature, ex);
+			return;
+		}
 
 		runAfterCommit(() -> {
 			try {

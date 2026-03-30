@@ -7,6 +7,8 @@ import java.util.UUID;
 public record PopulationGameStateView(
 	UUID sessionId,
 	Integer stageNumber,
+	Long stageId,
+	Integer expectedAttemptNumber,
 	String difficultyLabel,
 	Integer clearedStageCount,
 	Integer totalScore,

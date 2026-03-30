@@ -81,6 +81,8 @@ public class CapitalGameApiController {
 		return capitalGameService.submitAnswer(
 			sessionId,
 			request.stageNumber(),
+			request.stageId(),
+			request.expectedAttemptNumber(),
 			request.selectedOptionNumber(),
 			gameSessionAccessContextResolver.resolve(httpRequest)
 		);

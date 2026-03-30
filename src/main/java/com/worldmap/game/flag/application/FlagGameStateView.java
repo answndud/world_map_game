@@ -7,6 +7,8 @@ import java.util.UUID;
 public record FlagGameStateView(
 	UUID sessionId,
 	Integer stageNumber,
+	Long stageId,
+	Integer expectedAttemptNumber,
 	String difficultyLabel,
 	String difficultyGuide,
 	Integer clearedStageCount,

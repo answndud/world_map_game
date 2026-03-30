@@ -231,6 +231,8 @@ function initPopulationBattlePlayPage() {
 
         return {
             stageNumber: currentState.stageNumber,
+            stageId: currentState.stageId,
+            expectedAttemptNumber: currentState.expectedAttemptNumber,
             selectedOptionNumber: Number(selectedOption.value)
         };
     }

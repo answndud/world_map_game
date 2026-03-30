@@ -84,6 +84,8 @@ public class PopulationBattleGameApiController {
 		return populationBattleGameService.submitAnswer(
 			sessionId,
 			request.stageNumber(),
+			request.stageId(),
+			request.expectedAttemptNumber(),
 			request.selectedOptionNumber(),
 			gameSessionAccessContextResolver.resolve(httpRequest)
 		);

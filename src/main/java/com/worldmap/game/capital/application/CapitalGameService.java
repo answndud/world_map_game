@@ -4,6 +4,7 @@ import com.worldmap.common.exception.ResourceNotFoundException;
 import com.worldmap.country.domain.Country;
 import com.worldmap.country.domain.CountryRepository;
 import com.worldmap.game.common.application.GameSessionAccessContext;
+import com.worldmap.game.common.application.GameSubmissionGuard;
 import com.worldmap.game.capital.domain.CapitalGameAttempt;
 import com.worldmap.game.capital.domain.CapitalGameAttemptRepository;
 import com.worldmap.game.capital.domain.CapitalGameSession;
@@ -110,6 +111,8 @@ public class CapitalGameService {
 		return new CapitalGameStateView(
 			session.getId(),
 			stage.getStageNumber(),
+			stage.getId(),
+			stage.nextAttemptNumber(),
 			difficultyPlan.label(),
 			session.getClearedStageCount(),
 			session.getTotalScore(),
@@ -122,7 +125,7 @@ public class CapitalGameService {
 
 	@Transactional
 	public CapitalGameStartView restartGame(UUID sessionId, GameSessionAccessContext accessContext) {
-		CapitalGameSession session = getSession(sessionId, accessContext);
+		CapitalGameSession session = getSessionForUpdate(sessionId, accessContext);
 
 		if (session.getStatus() != GameSessionStatus.GAME_OVER && session.getStatus() != GameSessionStatus.FINISHED) {
 			throw new IllegalStateException("종료된 게임만 다시 시작할 수 있습니다.");
@@ -159,11 +162,23 @@ public class CapitalGameService {
 		Integer selectedOptionNumber,
 		GameSessionAccessContext accessContext
 	) {
+		return submitAnswer(sessionId, stageNumber, null, null, selectedOptionNumber, accessContext);
+	}
+
+	@Transactional
+	public CapitalGameAnswerView submitAnswer(
+		UUID sessionId,
+		Integer stageNumber,
+		Long stageId,
+		Integer expectedAttemptNumber,
+		Integer selectedOptionNumber,
+		GameSessionAccessContext accessContext
+	) {
 		if (selectedOptionNumber == null || selectedOptionNumber < 1 || selectedOptionNumber > 4) {
 			throw new IllegalArgumentException("보기 번호를 선택해야 합니다.");
 		}
 
-		CapitalGameSession session = getSession(sessionId, accessContext);
+		CapitalGameSession session = getSessionForUpdate(sessionId, accessContext);
 		if (session.getStatus() != GameSessionStatus.IN_PROGRESS) {
 			throw new IllegalStateException("진행 중인 게임만 답안을 제출할 수 있습니다.");
 		}
@@ -173,6 +188,12 @@ public class CapitalGameService {
 		}
 
 		CapitalGameStage stage = getStage(sessionId, stageNumber);
+		GameSubmissionGuard.assertFreshSubmission(
+			stage.getId(),
+			stageId,
+			stage.nextAttemptNumber(),
+			expectedAttemptNumber
+		);
 		int attemptNumber = stage.nextAttemptNumber();
 		LocalDateTime attemptedAt = LocalDateTime.now();
 		CapitalAnswerJudgement judgement = capitalGameScoringPolicy.judge(
@@ -312,6 +333,13 @@ public class CapitalGameService {
 
 	private CapitalGameSession getSession(UUID sessionId, GameSessionAccessContext accessContext) {
 		CapitalGameSession session = getSession(sessionId);
+		accessContext.assertCanAccess(session);
+		return session;
+	}
+
+	private CapitalGameSession getSessionForUpdate(UUID sessionId, GameSessionAccessContext accessContext) {
+		CapitalGameSession session = capitalGameSessionRepository.findByIdForUpdate(sessionId)
+			.orElseThrow(() -> new ResourceNotFoundException("게임 세션을 찾을 수 없습니다: " + sessionId));
 		accessContext.assertCanAccess(session);
 		return session;
 	}

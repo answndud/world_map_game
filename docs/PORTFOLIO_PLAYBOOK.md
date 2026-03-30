@@ -599,6 +599,9 @@
 - access context는 `memberId`와 `guestSessionKey`를 함께 들고 간다. 그래서 로그인 직후 아직 claim되지 않은 same-browser guest 세션도 이어서 접근할 수 있고, 다른 브라우저에서 `sessionId`만 알아도 열 수는 없게 된다
 - 게임 결과는 terminal resource로 다시 정의했다. `READY`, `IN_PROGRESS` 상태에서는 `/result` API와 결과 페이지가 404를 돌려 진행 중 정답과 시도 이력이 먼저 노출되지 않는다
 - `MemberSessionManager.signIn()`은 로그인 / 회원가입 성공 시 `changeSessionId()`를 호출해 session fixation 위험을 줄인다
+- 무결성 1차로 각 게임 session repository에 write 전용 `findByIdForUpdate()`를 추가하고, `submitAnswer` / `restartGame`는 session row를 잠근 뒤 처리하도록 바꿨다. 같은 `sessionId`의 write가 직렬화되므로 attempt 번호 계산, 다음 stage 생성, restart reset이 서로 충돌해 500으로 번지는 위험을 먼저 줄였다
+- public 플레이 화면은 state 응답에서 `stageId`, `expectedAttemptNumber`를 함께 받고, 답안 제출 시 그대로 돌려보낸다. 서버는 현재 stage/attempt와 다르면 stale submit으로 보고 `409`를 반환하므로, 같은 오답 payload 재전송이 life를 두 번 깎는 문제를 막을 수 있다
+- `LeaderboardService`는 `runSignature` unique 충돌을 no-op로 삼도록 바뀌어, terminal 상태 중복 submit이 들어와도 같은 run의 leaderboard row를 한 번만 남긴다
 - `MyPageService`를 추가해 `/mypage`가 로그인 사용자의 `leaderboard_record`를 읽어 총 완료 플레이 수, 모드별 최고 점수, 최고 랭킹, 최근 플레이 10개를 보여주도록 연결했다
 - `/mypage`는 raw game session 전체보다 먼저 `leaderboard_record`를 읽는다. 완료된 run 단위가 이미 정규화돼 있어 최고 기록과 최근 기록을 설명하기 쉽고, 당시 랭킹 위치도 바로 연결할 수 있기 때문이다
 - guest로 한 판 끝낸 뒤 회원가입하면, 귀속된 `leaderboard_record`가 즉시 `/mypage` 최근 플레이와 최고 기록에 반영되는 통합 테스트를 고정했다
@@ -641,6 +644,7 @@
   - 모드별 누적 플레이 시간
   - 실패 run 포함 정확도
   - 시즌/기간 필터
+- restart 후 늦게 도착한 오래된 answer packet까지 완전히 막기 위한 `run generation token` 또는 restart nonce 설계
 - guest 기록 귀속 범위를 수도 / 국기 / 인구 비교 퀵 배틀까지 확장
 - `/mypage` read model을 현재 5개 게임 기준으로 다시 정리
 - prod/local profile, startup initializer, readiness 기준을 운영 안전성 관점에서 재점검

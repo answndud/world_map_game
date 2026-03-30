@@ -4,6 +4,7 @@ import com.worldmap.common.exception.ResourceNotFoundException;
 import com.worldmap.country.domain.Country;
 import com.worldmap.country.domain.CountryRepository;
 import com.worldmap.game.common.application.GameSessionAccessContext;
+import com.worldmap.game.common.application.GameSubmissionGuard;
 import com.worldmap.game.common.domain.GameSessionStatus;
 import com.worldmap.game.location.domain.LocationGameAttempt;
 import com.worldmap.game.location.domain.LocationGameAttemptRepository;
@@ -108,6 +109,8 @@ public class LocationGameService {
 		return new LocationGameStateView(
 			session.getId(),
 			stage.getStageNumber(),
+			stage.getId(),
+			stage.nextAttemptNumber(),
 			difficultyPlan.label(),
 			session.getClearedStageCount(),
 			session.getTotalScore(),
@@ -119,7 +122,7 @@ public class LocationGameService {
 
 	@Transactional
 	public LocationGameStartView restartGame(UUID sessionId, GameSessionAccessContext accessContext) {
-		LocationGameSession session = getSession(sessionId, accessContext);
+		LocationGameSession session = getSessionForUpdate(sessionId, accessContext);
 
 		if (session.getStatus() != GameSessionStatus.GAME_OVER && session.getStatus() != GameSessionStatus.FINISHED) {
 			throw new IllegalStateException("종료된 게임만 다시 시작할 수 있습니다.");
@@ -156,7 +159,19 @@ public class LocationGameService {
 		String selectedCountryIso3Code,
 		GameSessionAccessContext accessContext
 	) {
-		LocationGameSession session = getSession(sessionId, accessContext);
+		return submitAnswer(sessionId, stageNumber, null, null, selectedCountryIso3Code, accessContext);
+	}
+
+	@Transactional
+	public LocationGameAnswerView submitAnswer(
+		UUID sessionId,
+		Integer stageNumber,
+		Long stageId,
+		Integer expectedAttemptNumber,
+		String selectedCountryIso3Code,
+		GameSessionAccessContext accessContext
+	) {
+		LocationGameSession session = getSessionForUpdate(sessionId, accessContext);
 
 		if (session.getStatus() != GameSessionStatus.IN_PROGRESS) {
 			throw new IllegalStateException("진행 중인 게임만 답안을 제출할 수 있습니다.");
@@ -167,6 +182,12 @@ public class LocationGameService {
 		}
 
 		LocationGameStage stage = getStage(sessionId, stageNumber);
+		GameSubmissionGuard.assertFreshSubmission(
+			stage.getId(),
+			stageId,
+			stage.nextAttemptNumber(),
+			expectedAttemptNumber
+		);
 		Country selectedCountry = countryRepository.findByIso3CodeIgnoreCase(normalizeCountryCode(selectedCountryIso3Code))
 			.orElseThrow(() -> new IllegalArgumentException("지원하지 않는 국가입니다: " + selectedCountryIso3Code));
 		int attemptNumber = stage.nextAttemptNumber();
@@ -309,6 +330,13 @@ public class LocationGameService {
 
 	private LocationGameSession getSession(UUID sessionId, GameSessionAccessContext accessContext) {
 		LocationGameSession session = getSession(sessionId);
+		accessContext.assertCanAccess(session);
+		return session;
+	}
+
+	private LocationGameSession getSessionForUpdate(UUID sessionId, GameSessionAccessContext accessContext) {
+		LocationGameSession session = locationGameSessionRepository.findByIdForUpdate(sessionId)
+			.orElseThrow(() -> new ResourceNotFoundException("게임 세션을 찾을 수 없습니다: " + sessionId));
 		accessContext.assertCanAccess(session);
 		return session;
 	}
