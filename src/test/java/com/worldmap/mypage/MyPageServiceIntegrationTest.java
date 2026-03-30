@@ -6,6 +6,7 @@ import com.worldmap.auth.domain.Member;
 import com.worldmap.auth.domain.MemberRepository;
 import com.worldmap.auth.domain.MemberRole;
 import com.worldmap.country.domain.CountryRepository;
+import com.worldmap.game.common.application.GameSessionAccessContext;
 import com.worldmap.game.location.application.LocationGameService;
 import com.worldmap.game.location.domain.LocationGameStage;
 import com.worldmap.game.location.domain.LocationGameStageRepository;
@@ -59,6 +60,7 @@ class MyPageServiceIntegrationTest {
 	@Test
 	void loadDashboardIncludesRawStagePerformanceByMode() {
 		Member member = memberRepository.save(Member.create("stats_runner", "hash", MemberRole.USER));
+		GameSessionAccessContext accessContext = GameSessionAccessContext.forMember(member.getId());
 
 		UUID locationSessionId = locationGameService.startMemberGame(member.getId(), member.getNickname()).sessionId();
 		LocationGameStage locationStageOne = locationGameStageRepository.findBySessionIdAndStageNumber(locationSessionId, 1)
@@ -69,12 +71,12 @@ class MyPageServiceIntegrationTest {
 			.findFirst()
 			.orElseThrow();
 
-		locationGameService.submitAnswer(locationSessionId, 1, wrongLocationIso3Code);
-		locationGameService.submitAnswer(locationSessionId, 1, locationStageOne.getTargetCountryIso3Code());
+		locationGameService.submitAnswer(locationSessionId, 1, wrongLocationIso3Code, accessContext);
+		locationGameService.submitAnswer(locationSessionId, 1, locationStageOne.getTargetCountryIso3Code(), accessContext);
 
 		LocationGameStage locationStageTwo = locationGameStageRepository.findBySessionIdAndStageNumber(locationSessionId, 2)
 			.orElseThrow();
-		locationGameService.submitAnswer(locationSessionId, 2, locationStageTwo.getTargetCountryIso3Code());
+		locationGameService.submitAnswer(locationSessionId, 2, locationStageTwo.getTargetCountryIso3Code(), accessContext);
 
 		LocationGameStage locationStageThree = locationGameStageRepository.findBySessionIdAndStageNumber(locationSessionId, 3)
 			.orElseThrow();
@@ -83,20 +85,20 @@ class MyPageServiceIntegrationTest {
 			.filter(iso3Code -> !iso3Code.equals(locationStageThree.getTargetCountryIso3Code()))
 			.findFirst()
 			.orElseThrow();
-		locationGameService.submitAnswer(locationSessionId, 3, secondWrongLocationIso3Code);
-		locationGameService.submitAnswer(locationSessionId, 3, secondWrongLocationIso3Code);
+		locationGameService.submitAnswer(locationSessionId, 3, secondWrongLocationIso3Code, accessContext);
+		locationGameService.submitAnswer(locationSessionId, 3, secondWrongLocationIso3Code, accessContext);
 
 		UUID populationSessionId = populationGameService.startMemberGame(member.getId(), member.getNickname()).sessionId();
 		PopulationGameStage populationStageOne = populationGameStageRepository.findBySessionIdAndStageNumber(populationSessionId, 1)
 			.orElseThrow();
-		populationGameService.submitAnswer(populationSessionId, 1, populationStageOne.getCorrectOptionNumber());
+		populationGameService.submitAnswer(populationSessionId, 1, populationStageOne.getCorrectOptionNumber(), accessContext);
 
 		PopulationGameStage populationStageTwo = populationGameStageRepository.findBySessionIdAndStageNumber(populationSessionId, 2)
 			.orElseThrow();
 		int wrongPopulationOption = populationStageTwo.getCorrectOptionNumber() == 1 ? 2 : 1;
-		populationGameService.submitAnswer(populationSessionId, 2, wrongPopulationOption);
-		populationGameService.submitAnswer(populationSessionId, 2, wrongPopulationOption);
-		populationGameService.submitAnswer(populationSessionId, 2, wrongPopulationOption);
+		populationGameService.submitAnswer(populationSessionId, 2, wrongPopulationOption, accessContext);
+		populationGameService.submitAnswer(populationSessionId, 2, wrongPopulationOption, accessContext);
+		populationGameService.submitAnswer(populationSessionId, 2, wrongPopulationOption, accessContext);
 
 		MyPageDashboardView dashboard = myPageService.loadDashboard(member.getId());
 

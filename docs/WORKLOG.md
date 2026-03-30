@@ -34,6 +34,57 @@
 - 면접용 30초 요약:
 ```
 
+## 2026-03-30 - 게임 세션 접근 보호와 조기 결과 노출 차단
+
+- 단계: 8. 인증, 전적, 마이페이지
+- 목적: 게임 세션이 `sessionId`만 알면 다른 브라우저에서도 조회/답안 제출/재시작/결과 확인이 가능했고, 진행 중인 세션도 `/result`로 정답과 시도 기록을 읽을 수 있었다. 이번 조각은 현재 브라우저 ownership만 허용하고, 결과는 종료된 run에만 존재하는 리소스로 다시 정의해 치팅과 세션 탈취형 오남용을 먼저 막는 데 집중했다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/auth/application/GuestSessionKeyManager.java`
+  - `src/main/java/com/worldmap/auth/application/GameSessionAccessContextResolver.java`
+  - `src/main/java/com/worldmap/auth/application/MemberSessionManager.java`
+  - `src/main/java/com/worldmap/auth/web/AuthPageController.java`
+  - `src/main/java/com/worldmap/common/exception/GlobalApiExceptionHandler.java`
+  - `src/main/java/com/worldmap/common/exception/SessionAccessDeniedException.java`
+  - `src/main/java/com/worldmap/game/common/application/GameSessionAccessContext.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameService.java`
+  - `src/main/java/com/worldmap/game/capital/application/CapitalGameService.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationGameService.java`
+  - `src/main/java/com/worldmap/game/flag/application/FlagGameService.java`
+  - `src/main/java/com/worldmap/game/populationbattle/application/PopulationBattleGameService.java`
+  - `src/main/java/com/worldmap/game/location/web/LocationGameApiController.java`
+  - `src/main/java/com/worldmap/game/capital/web/CapitalGameApiController.java`
+  - `src/main/java/com/worldmap/game/population/web/PopulationGameApiController.java`
+  - `src/main/java/com/worldmap/game/flag/web/FlagGameApiController.java`
+  - `src/main/java/com/worldmap/game/populationbattle/web/PopulationBattleGameApiController.java`
+  - `src/main/java/com/worldmap/game/location/web/LocationGamePageController.java`
+  - `src/main/java/com/worldmap/game/capital/web/CapitalGamePageController.java`
+  - `src/main/java/com/worldmap/game/population/web/PopulationGamePageController.java`
+  - `src/main/java/com/worldmap/game/flag/web/FlagGamePageController.java`
+  - `src/main/java/com/worldmap/game/populationbattle/web/PopulationBattleGamePageController.java`
+  - `src/test/java/com/worldmap/auth/AuthFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/auth/application/MemberSessionManagerTest.java`
+  - `src/test/java/com/worldmap/auth/application/GameSessionAccessContextResolverTest.java`
+  - `src/test/java/com/worldmap/game/common/application/GameSessionAccessContextTest.java`
+  - `src/test/java/com/worldmap/game/location/LocationGameFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/game/capital/CapitalGameFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/game/population/PopulationGameFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/game/flag/FlagGameFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/game/populationbattle/PopulationBattleGameFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/mypage/MyPageServiceIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/99-protect-game-session-access-and-terminal-results.md`
+- 요청 흐름: 보호 대상 요청은 이제 `HttpServletRequest -> GameSessionAccessContextResolver -> *GameApiController / *GamePageController -> *GameService` 순서로 흐른다. 서비스는 `memberId` 또는 `guestSessionKey` ownership이 현재 브라우저의 access context와 맞는지 확인한 뒤에만 state / answer / restart / result 로직을 수행한다.
+- 데이터 / 상태 변화: DB 스키마를 추가로 바꾸지는 않았다. 대신 이미 저장돼 있던 `memberId`, `guestSessionKey` ownership 필드를 읽는 방식이 바뀌었고, `READY`나 `IN_PROGRESS` 상태의 세션은 결과 리소스를 아직 가지지 않는 것으로 해석한다. 회원가입/로그인 성공 시에는 같은 세션 객체 안에서 session id만 회전한다.
+- 핵심 도메인 개념: `sessionId`는 리소스 식별자일 뿐 접근 권한이 아니다. 실제 소유자는 `memberId` 또는 `guestSessionKey`이고, 현재 요청은 그것을 대표하는 access context를 가진다. 또 `result`는 단순 상태 조회가 아니라 “종료된 run 요약”이므로 terminal 상태에서만 열리는 리소스로 보는 편이 더 자연스럽다.
+- 예외 / 엣지 케이스: 세션이 없거나 다른 브라우저의 `guestSessionKey`로 들어오면 `403`을 반환한다. 진행 중 세션의 `/result` API와 결과 페이지는 `404`로 막아 결과 리소스 존재 자체를 숨긴다. 단순 세션 로그인 구조를 유지하고 있기 때문에 로그인/회원가입 성공 순간 `changeSessionId()`를 호출해 session fixation 위험을 줄였다.
+- 테스트: `./gradlew compileJava compileTestJava --rerun-tasks` 통과. `./gradlew test --tests com.worldmap.game.common.application.GameSessionAccessContextTest --tests com.worldmap.auth.application.MemberSessionManagerTest --tests com.worldmap.auth.application.GameSessionAccessContextResolverTest` 통과. `AuthFlowIntegrationTest`, 각 게임 flow integration test는 로컬 Redis가 없어 실행 실패했다. 현재 테스트 profile이 `localhost:6379` Redis에 의존한다는 점도 같이 확인했다.
+- 배운 점: guest 플레이를 허용하는 구조에서도 “현재 브라우저가 이 세션의 owner인가”를 따로 확인해야 한다. 식별자와 권한을 분리하지 않으면 UUID를 알기만 해도 타인의 세션을 건드릴 수 있다.
+- 아직 약한 부분: 이번 조각은 대표 흐름과 unit test는 고정했지만, Redis 없는 환경에서 전체 통합 테스트를 자동으로 돌릴 수 있게 만들지는 못했다. 다음 운영 안정화 조각에서 test Redis 의존도도 같이 정리해야 한다.
+- 면접용 30초 요약: 게임 세션은 `sessionId`만으로 열리면 안 되기 때문에, 현재 브라우저의 `memberId` 또는 `guestSessionKey`를 access context로 만든 뒤 서비스 진입 시 ownership을 다시 검사하도록 바꿨습니다. 또 `/result`는 종료된 run에만 존재하는 리소스로 재정의해 진행 중 세션에서 정답이 노출되던 치팅 경로를 닫았고, 로그인과 회원가입 성공 시에는 `changeSessionId()`로 session fixation 위험도 함께 줄였습니다.
+
 ## 2026-03-25 - 라이트 테마 입체감 보강
 
 - 단계: 6. 설문 기반 추천 엔진 보조 UI 조각

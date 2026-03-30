@@ -1,6 +1,7 @@
 package com.worldmap.game.population.web;
 
 import com.worldmap.auth.application.AuthenticatedMemberSession;
+import com.worldmap.auth.application.GameSessionAccessContextResolver;
 import com.worldmap.auth.application.GuestSessionKeyManager;
 import com.worldmap.auth.application.MemberSessionManager;
 import com.worldmap.game.population.application.PopulationGameAnswerView;
@@ -8,6 +9,7 @@ import com.worldmap.game.population.application.PopulationGameService;
 import com.worldmap.game.population.application.PopulationGameSessionResultView;
 import com.worldmap.game.population.application.PopulationGameStartView;
 import com.worldmap.game.population.application.PopulationGameStateView;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import java.util.UUID;
@@ -27,15 +29,18 @@ public class PopulationGameApiController {
 	private final PopulationGameService populationGameService;
 	private final GuestSessionKeyManager guestSessionKeyManager;
 	private final MemberSessionManager memberSessionManager;
+	private final GameSessionAccessContextResolver gameSessionAccessContextResolver;
 
 	public PopulationGameApiController(
 		PopulationGameService populationGameService,
 		GuestSessionKeyManager guestSessionKeyManager,
-		MemberSessionManager memberSessionManager
+		MemberSessionManager memberSessionManager,
+		GameSessionAccessContextResolver gameSessionAccessContextResolver
 	) {
 		this.populationGameService = populationGameService;
 		this.guestSessionKeyManager = guestSessionKeyManager;
 		this.memberSessionManager = memberSessionManager;
+		this.gameSessionAccessContextResolver = gameSessionAccessContextResolver;
 	}
 
 	@PostMapping
@@ -53,34 +58,36 @@ public class PopulationGameApiController {
 	}
 
 	@GetMapping("/{sessionId}/state")
-	public PopulationGameStateView currentState(@PathVariable UUID sessionId) {
-		return populationGameService.getCurrentState(sessionId);
+	public PopulationGameStateView currentState(@PathVariable UUID sessionId, HttpServletRequest request) {
+		return populationGameService.getCurrentState(sessionId, gameSessionAccessContextResolver.resolve(request));
 	}
 
 	@GetMapping("/{sessionId}/round")
-	public PopulationGameStateView currentRoundAlias(@PathVariable UUID sessionId) {
-		return populationGameService.getCurrentState(sessionId);
+	public PopulationGameStateView currentRoundAlias(@PathVariable UUID sessionId, HttpServletRequest request) {
+		return populationGameService.getCurrentState(sessionId, gameSessionAccessContextResolver.resolve(request));
 	}
 
 	@PostMapping("/{sessionId}/restart")
-	public PopulationGameStartView restart(@PathVariable UUID sessionId) {
-		return populationGameService.restartGame(sessionId);
+	public PopulationGameStartView restart(@PathVariable UUID sessionId, HttpServletRequest request) {
+		return populationGameService.restartGame(sessionId, gameSessionAccessContextResolver.resolve(request));
 	}
 
 	@PostMapping("/{sessionId}/answer")
 	public PopulationGameAnswerView answer(
 		@PathVariable UUID sessionId,
-		@Valid @RequestBody SubmitPopulationAnswerRequest request
+		@Valid @RequestBody SubmitPopulationAnswerRequest request,
+		HttpServletRequest httpRequest
 	) {
 		return populationGameService.submitAnswer(
 			sessionId,
 			request.stageNumber(),
-			request.selectedOptionNumber()
+			request.selectedOptionNumber(),
+			gameSessionAccessContextResolver.resolve(httpRequest)
 		);
 	}
 
 	@GetMapping("/{sessionId}")
-	public PopulationGameSessionResultView sessionResult(@PathVariable UUID sessionId) {
-		return populationGameService.getSessionResult(sessionId);
+	public PopulationGameSessionResultView sessionResult(@PathVariable UUID sessionId, HttpServletRequest request) {
+		return populationGameService.getSessionResult(sessionId, gameSessionAccessContextResolver.resolve(request));
 	}
 }

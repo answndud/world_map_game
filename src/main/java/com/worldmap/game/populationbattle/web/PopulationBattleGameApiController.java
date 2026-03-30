@@ -1,6 +1,7 @@
 package com.worldmap.game.populationbattle.web;
 
 import com.worldmap.auth.application.AuthenticatedMemberSession;
+import com.worldmap.auth.application.GameSessionAccessContextResolver;
 import com.worldmap.auth.application.GuestSessionKeyManager;
 import com.worldmap.auth.application.MemberSessionManager;
 import com.worldmap.game.populationbattle.application.PopulationBattleGameAnswerView;
@@ -8,6 +9,7 @@ import com.worldmap.game.populationbattle.application.PopulationBattleGameServic
 import com.worldmap.game.populationbattle.application.PopulationBattleGameSessionResultView;
 import com.worldmap.game.populationbattle.application.PopulationBattleGameStartView;
 import com.worldmap.game.populationbattle.application.PopulationBattleGameStateView;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import java.util.UUID;
@@ -27,15 +29,18 @@ public class PopulationBattleGameApiController {
 	private final PopulationBattleGameService populationBattleGameService;
 	private final GuestSessionKeyManager guestSessionKeyManager;
 	private final MemberSessionManager memberSessionManager;
+	private final GameSessionAccessContextResolver gameSessionAccessContextResolver;
 
 	public PopulationBattleGameApiController(
 		PopulationBattleGameService populationBattleGameService,
 		GuestSessionKeyManager guestSessionKeyManager,
-		MemberSessionManager memberSessionManager
+		MemberSessionManager memberSessionManager,
+		GameSessionAccessContextResolver gameSessionAccessContextResolver
 	) {
 		this.populationBattleGameService = populationBattleGameService;
 		this.guestSessionKeyManager = guestSessionKeyManager;
 		this.memberSessionManager = memberSessionManager;
+		this.gameSessionAccessContextResolver = gameSessionAccessContextResolver;
 	}
 
 	@PostMapping
@@ -56,34 +61,36 @@ public class PopulationBattleGameApiController {
 	}
 
 	@GetMapping("/{sessionId}/state")
-	public PopulationBattleGameStateView currentState(@PathVariable UUID sessionId) {
-		return populationBattleGameService.getCurrentState(sessionId);
+	public PopulationBattleGameStateView currentState(@PathVariable UUID sessionId, HttpServletRequest request) {
+		return populationBattleGameService.getCurrentState(sessionId, gameSessionAccessContextResolver.resolve(request));
 	}
 
 	@GetMapping("/{sessionId}/round")
-	public PopulationBattleGameStateView currentRoundAlias(@PathVariable UUID sessionId) {
-		return populationBattleGameService.getCurrentState(sessionId);
+	public PopulationBattleGameStateView currentRoundAlias(@PathVariable UUID sessionId, HttpServletRequest request) {
+		return populationBattleGameService.getCurrentState(sessionId, gameSessionAccessContextResolver.resolve(request));
 	}
 
 	@PostMapping("/{sessionId}/restart")
-	public PopulationBattleGameStartView restart(@PathVariable UUID sessionId) {
-		return populationBattleGameService.restartGame(sessionId);
+	public PopulationBattleGameStartView restart(@PathVariable UUID sessionId, HttpServletRequest request) {
+		return populationBattleGameService.restartGame(sessionId, gameSessionAccessContextResolver.resolve(request));
 	}
 
 	@PostMapping("/{sessionId}/answer")
 	public PopulationBattleGameAnswerView answer(
 		@PathVariable UUID sessionId,
-		@Valid @RequestBody SubmitPopulationBattleAnswerRequest request
+		@Valid @RequestBody SubmitPopulationBattleAnswerRequest request,
+		HttpServletRequest httpRequest
 	) {
 		return populationBattleGameService.submitAnswer(
 			sessionId,
 			request.stageNumber(),
-			request.selectedOptionNumber()
+			request.selectedOptionNumber(),
+			gameSessionAccessContextResolver.resolve(httpRequest)
 		);
 	}
 
 	@GetMapping("/{sessionId}")
-	public PopulationBattleGameSessionResultView sessionResult(@PathVariable UUID sessionId) {
-		return populationBattleGameService.getSessionResult(sessionId);
+	public PopulationBattleGameSessionResultView sessionResult(@PathVariable UUID sessionId, HttpServletRequest request) {
+		return populationBattleGameService.getSessionResult(sessionId, gameSessionAccessContextResolver.resolve(request));
 	}
 }

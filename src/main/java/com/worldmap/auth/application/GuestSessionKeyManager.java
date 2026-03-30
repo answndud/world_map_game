@@ -22,6 +22,10 @@ public class GuestSessionKeyManager {
 	}
 
 	public Optional<String> currentGuestSessionKey(HttpSession httpSession) {
+		if (httpSession == null) {
+			return Optional.empty();
+		}
+
 		Object existingValue = httpSession.getAttribute(GUEST_SESSION_KEY_ATTRIBUTE);
 		if (existingValue instanceof String guestSessionKey && !guestSessionKey.isBlank()) {
 			return Optional.of(guestSessionKey);

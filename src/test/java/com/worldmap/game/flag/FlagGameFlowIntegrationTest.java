@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -47,10 +48,11 @@ class FlagGameFlowIntegrationTest {
 
 	@Test
 	void flagGameContinuesBeyondFiveStages() throws Exception {
-		UUID sessionId = UUID.fromString(startGame("flag-player"));
+		MockHttpSession browserSession = new MockHttpSession();
+		UUID sessionId = UUID.fromString(startGame("flag-player", browserSession));
 
 		for (int stageNumber = 1; stageNumber <= 7; stageNumber++) {
-			MvcResult stateResult = mockMvc.perform(get("/api/games/flag/sessions/{sessionId}/state", sessionId))
+			MvcResult stateResult = mockMvc.perform(get("/api/games/flag/sessions/{sessionId}/state", sessionId).session(browserSession))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.stageNumber").value(stageNumber))
 				.andExpect(jsonPath("$.options.length()").value(4))
@@ -67,6 +69,7 @@ class FlagGameFlowIntegrationTest {
 
 			MvcResult answerResult = mockMvc.perform(
 				post("/api/games/flag/sessions/{sessionId}/answer", sessionId)
+					.session(browserSession)
 					.contentType("application/json")
 					.content(answerPayload(stageNumber, stage.getCorrectOptionNumber()))
 			)
@@ -83,18 +86,14 @@ class FlagGameFlowIntegrationTest {
 			assertThat(answerJson.get("nextDifficultyGuide").asText()).isNotBlank();
 		}
 
-		mockMvc.perform(get("/api/games/flag/sessions/{sessionId}", sessionId))
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.status").value("IN_PROGRESS"))
-			.andExpect(jsonPath("$.clearedStageCount").value(7))
-			.andExpect(jsonPath("$.totalAttemptCount").value(7))
-			.andExpect(jsonPath("$.firstTryClearCount").value(7))
-			.andExpect(jsonPath("$.stages.length()").value(8));
+		mockMvc.perform(get("/api/games/flag/sessions/{sessionId}", sessionId).session(browserSession))
+			.andExpect(status().isNotFound());
 	}
 
 	@Test
 	void earlyRoundTargetsStayWithinContinentsThatHaveEnoughSameContinentDistractors() throws Exception {
-		UUID sessionId = UUID.fromString(startGame("flag-continent"));
+		MockHttpSession browserSession = new MockHttpSession();
+		UUID sessionId = UUID.fromString(startGame("flag-continent", browserSession));
 		FlagGameStage firstStage = flagGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
 			.orElseThrow();
 
@@ -107,12 +106,14 @@ class FlagGameFlowIntegrationTest {
 
 	@Test
 	void flagGameReturnsKoreanCountryNamesInAnswerPayload() throws Exception {
-		UUID sessionId = UUID.fromString(startGame("flag-korean"));
+		MockHttpSession browserSession = new MockHttpSession();
+		UUID sessionId = UUID.fromString(startGame("flag-korean", browserSession));
 		FlagGameStage firstStage = flagGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
 			.orElseThrow();
 
 		MvcResult answerResult = mockMvc.perform(
 			post("/api/games/flag/sessions/{sessionId}/answer", sessionId)
+				.session(browserSession)
 				.contentType("application/json")
 				.content(answerPayload(1, firstStage.getCorrectOptionNumber()))
 		)
@@ -127,13 +128,15 @@ class FlagGameFlowIntegrationTest {
 
 	@Test
 	void wrongAnswerConsumesLifeAndKeepsSameStage() throws Exception {
-		UUID sessionId = UUID.fromString(startGame("flag-life"));
+		MockHttpSession browserSession = new MockHttpSession();
+		UUID sessionId = UUID.fromString(startGame("flag-life", browserSession));
 		FlagGameStage firstStage = flagGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
 			.orElseThrow();
 		int wrongOptionNumber = findWrongOptionNumber(firstStage.getCorrectOptionNumber());
 
 		mockMvc.perform(
 			post("/api/games/flag/sessions/{sessionId}/answer", sessionId)
+				.session(browserSession)
 				.contentType("application/json")
 				.content(answerPayload(1, wrongOptionNumber))
 		)
@@ -144,7 +147,7 @@ class FlagGameFlowIntegrationTest {
 			.andExpect(jsonPath("$.nextStageNumber").value(1))
 			.andExpect(jsonPath("$.clearedStageCount").value(0));
 
-		mockMvc.perform(get("/api/games/flag/sessions/{sessionId}/state", sessionId))
+		mockMvc.perform(get("/api/games/flag/sessions/{sessionId}/state", sessionId).session(browserSession))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.stageNumber").value(1))
 			.andExpect(jsonPath("$.livesRemaining").value(2));
@@ -155,7 +158,8 @@ class FlagGameFlowIntegrationTest {
 
 	@Test
 	void threeWrongAnswersLeadToGameOver() throws Exception {
-		UUID sessionId = UUID.fromString(startGame("flag-game-over"));
+		MockHttpSession browserSession = new MockHttpSession();
+		UUID sessionId = UUID.fromString(startGame("flag-game-over", browserSession));
 		FlagGameStage firstStage = flagGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
 			.orElseThrow();
 		int wrongOptionNumber = findWrongOptionNumber(firstStage.getCorrectOptionNumber());
@@ -163,6 +167,7 @@ class FlagGameFlowIntegrationTest {
 		for (int attempt = 1; attempt <= 2; attempt++) {
 			mockMvc.perform(
 				post("/api/games/flag/sessions/{sessionId}/answer", sessionId)
+					.session(browserSession)
 					.contentType("application/json")
 					.content(answerPayload(1, wrongOptionNumber))
 			)
@@ -172,6 +177,7 @@ class FlagGameFlowIntegrationTest {
 
 		mockMvc.perform(
 			post("/api/games/flag/sessions/{sessionId}/answer", sessionId)
+				.session(browserSession)
 				.contentType("application/json")
 				.content(answerPayload(1, wrongOptionNumber))
 		)
@@ -181,7 +187,7 @@ class FlagGameFlowIntegrationTest {
 			.andExpect(jsonPath("$.livesRemaining").value(0))
 			.andExpect(jsonPath("$.nextStageNumber").doesNotExist());
 
-		mockMvc.perform(get("/api/games/flag/sessions/{sessionId}", sessionId))
+		mockMvc.perform(get("/api/games/flag/sessions/{sessionId}", sessionId).session(browserSession))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.status").value("GAME_OVER"))
 			.andExpect(jsonPath("$.livesRemaining").value(0))
@@ -191,7 +197,8 @@ class FlagGameFlowIntegrationTest {
 
 	@Test
 	void restartReusesSameSessionAndResetsProgress() throws Exception {
-		UUID sessionId = UUID.fromString(startGame("flag-restart"));
+		MockHttpSession browserSession = new MockHttpSession();
+		UUID sessionId = UUID.fromString(startGame("flag-restart", browserSession));
 		FlagGameStage firstStage = flagGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
 			.orElseThrow();
 		int wrongOptionNumber = findWrongOptionNumber(firstStage.getCorrectOptionNumber());
@@ -199,13 +206,14 @@ class FlagGameFlowIntegrationTest {
 		for (int attempt = 1; attempt <= 3; attempt++) {
 			mockMvc.perform(
 				post("/api/games/flag/sessions/{sessionId}/answer", sessionId)
+					.session(browserSession)
 					.contentType("application/json")
 					.content(answerPayload(1, wrongOptionNumber))
 			)
 				.andExpect(status().isOk());
 		}
 
-		mockMvc.perform(post("/api/games/flag/sessions/{sessionId}/restart", sessionId))
+		mockMvc.perform(post("/api/games/flag/sessions/{sessionId}/restart", sessionId).session(browserSession))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.sessionId").value(sessionId.toString()))
 			.andExpect(jsonPath("$.status").value("IN_PROGRESS"))
@@ -213,7 +221,7 @@ class FlagGameFlowIntegrationTest {
 			.andExpect(jsonPath("$.totalStages").value(1))
 			.andExpect(jsonPath("$.playPageUrl").value("/games/flag/play/" + sessionId));
 
-		mockMvc.perform(get("/api/games/flag/sessions/{sessionId}/state", sessionId))
+		mockMvc.perform(get("/api/games/flag/sessions/{sessionId}/state", sessionId).session(browserSession))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.stageNumber").value(1))
 			.andExpect(jsonPath("$.livesRemaining").value(3))
@@ -228,7 +236,8 @@ class FlagGameFlowIntegrationTest {
 
 	@Test
 	void resultPageHidesSelectionAndAnswerDetailsForClearedStage() throws Exception {
-		UUID sessionId = UUID.fromString(startGame("flag-result-hide"));
+		MockHttpSession browserSession = new MockHttpSession();
+		UUID sessionId = UUID.fromString(startGame("flag-result-hide", browserSession));
 		FlagGameStage firstStage = flagGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
 			.orElseThrow();
 		int wrongOptionNumber = findWrongOptionNumber(firstStage.getCorrectOptionNumber());
@@ -237,6 +246,7 @@ class FlagGameFlowIntegrationTest {
 
 		mockMvc.perform(
 			post("/api/games/flag/sessions/{sessionId}/answer", sessionId)
+				.session(browserSession)
 				.contentType("application/json")
 				.content(answerPayload(1, wrongOptionNumber))
 		)
@@ -244,12 +254,26 @@ class FlagGameFlowIntegrationTest {
 
 		mockMvc.perform(
 			post("/api/games/flag/sessions/{sessionId}/answer", sessionId)
+				.session(browserSession)
 				.contentType("application/json")
 				.content(answerPayload(1, firstStage.getCorrectOptionNumber()))
 		)
 			.andExpect(status().isOk());
 
-		mockMvc.perform(get("/games/flag/result/{sessionId}", sessionId))
+		FlagGameStage secondStage = flagGameStageRepository.findBySessionIdAndStageNumber(sessionId, 2)
+			.orElseThrow();
+		int secondStageWrongOptionNumber = findWrongOptionNumber(secondStage.getCorrectOptionNumber());
+		for (int attempt = 1; attempt <= 3; attempt++) {
+			mockMvc.perform(
+				post("/api/games/flag/sessions/{sessionId}/answer", sessionId)
+					.session(browserSession)
+					.contentType("application/json")
+					.content(answerPayload(2, secondStageWrongOptionNumber))
+			)
+				.andExpect(status().isOk());
+		}
+
+		mockMvc.perform(get("/games/flag/result/{sessionId}", sessionId).session(browserSession))
 			.andExpect(status().isOk())
 			.andExpect(content().string(containsString("구간")))
 			.andExpect(content().string(containsString("기본 라운드")))
@@ -260,9 +284,10 @@ class FlagGameFlowIntegrationTest {
 			.andExpect(content().string(not(containsString("정답 국가"))));
 	}
 
-	private String startGame(String nickname) throws Exception {
+	private String startGame(String nickname, MockHttpSession browserSession) throws Exception {
 		MvcResult result = mockMvc.perform(
 			post("/api/games/flag/sessions")
+				.session(browserSession)
 				.contentType("application/json")
 				.content("{\"nickname\":\"" + nickname + "\"}")
 		)

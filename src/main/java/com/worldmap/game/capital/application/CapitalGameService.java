@@ -3,6 +3,7 @@ package com.worldmap.game.capital.application;
 import com.worldmap.common.exception.ResourceNotFoundException;
 import com.worldmap.country.domain.Country;
 import com.worldmap.country.domain.CountryRepository;
+import com.worldmap.game.common.application.GameSessionAccessContext;
 import com.worldmap.game.capital.domain.CapitalGameAttempt;
 import com.worldmap.game.capital.domain.CapitalGameAttemptRepository;
 import com.worldmap.game.capital.domain.CapitalGameSession;
@@ -96,8 +97,8 @@ public class CapitalGameService {
 	}
 
 	@Transactional(readOnly = true)
-	public CapitalGameStateView getCurrentState(UUID sessionId) {
-		CapitalGameSession session = getSession(sessionId);
+	public CapitalGameStateView getCurrentState(UUID sessionId, GameSessionAccessContext accessContext) {
+		CapitalGameSession session = getSession(sessionId, accessContext);
 
 		if (session.getStatus() != GameSessionStatus.IN_PROGRESS) {
 			throw new IllegalStateException("이미 종료된 게임입니다.");
@@ -120,8 +121,8 @@ public class CapitalGameService {
 	}
 
 	@Transactional
-	public CapitalGameStartView restartGame(UUID sessionId) {
-		CapitalGameSession session = getSession(sessionId);
+	public CapitalGameStartView restartGame(UUID sessionId, GameSessionAccessContext accessContext) {
+		CapitalGameSession session = getSession(sessionId, accessContext);
 
 		if (session.getStatus() != GameSessionStatus.GAME_OVER && session.getStatus() != GameSessionStatus.FINISHED) {
 			throw new IllegalStateException("종료된 게임만 다시 시작할 수 있습니다.");
@@ -152,12 +153,17 @@ public class CapitalGameService {
 	}
 
 	@Transactional
-	public CapitalGameAnswerView submitAnswer(UUID sessionId, Integer stageNumber, Integer selectedOptionNumber) {
+	public CapitalGameAnswerView submitAnswer(
+		UUID sessionId,
+		Integer stageNumber,
+		Integer selectedOptionNumber,
+		GameSessionAccessContext accessContext
+	) {
 		if (selectedOptionNumber == null || selectedOptionNumber < 1 || selectedOptionNumber > 4) {
 			throw new IllegalArgumentException("보기 번호를 선택해야 합니다.");
 		}
 
-		CapitalGameSession session = getSession(sessionId);
+		CapitalGameSession session = getSession(sessionId, accessContext);
 		if (session.getStatus() != GameSessionStatus.IN_PROGRESS) {
 			throw new IllegalStateException("진행 중인 게임만 답안을 제출할 수 있습니다.");
 		}
@@ -240,8 +246,9 @@ public class CapitalGameService {
 	}
 
 	@Transactional(readOnly = true)
-	public CapitalGameSessionResultView getSessionResult(UUID sessionId) {
-		CapitalGameSession session = getSession(sessionId);
+	public CapitalGameSessionResultView getSessionResult(UUID sessionId, GameSessionAccessContext accessContext) {
+		CapitalGameSession session = getSession(sessionId, accessContext);
+		assertResultAccessible(session);
 		Map<Long, List<CapitalGameAttemptResultView>> attemptsByStageId = new LinkedHashMap<>();
 
 		capitalGameAttemptRepository.findAllByStageSessionIdOrderByStageStageNumberAscAttemptNumberAsc(sessionId)
@@ -293,14 +300,31 @@ public class CapitalGameService {
 		);
 	}
 
+	@Transactional(readOnly = true)
+	public void assertSessionAccessible(UUID sessionId, GameSessionAccessContext accessContext) {
+		getSession(sessionId, accessContext);
+	}
+
 	private CapitalGameSession getSession(UUID sessionId) {
 		return capitalGameSessionRepository.findById(sessionId)
 			.orElseThrow(() -> new ResourceNotFoundException("게임 세션을 찾을 수 없습니다: " + sessionId));
 	}
 
+	private CapitalGameSession getSession(UUID sessionId, GameSessionAccessContext accessContext) {
+		CapitalGameSession session = getSession(sessionId);
+		accessContext.assertCanAccess(session);
+		return session;
+	}
+
 	private CapitalGameStage getStage(UUID sessionId, Integer stageNumber) {
 		return capitalGameStageRepository.findBySessionIdAndStageNumber(sessionId, stageNumber)
 			.orElseThrow(() -> new ResourceNotFoundException("게임 Stage를 찾을 수 없습니다."));
+	}
+
+	private void assertResultAccessible(CapitalGameSession session) {
+		if (session.getStatus() == GameSessionStatus.READY || session.getStatus() == GameSessionStatus.IN_PROGRESS) {
+			throw new ResourceNotFoundException("게임 결과를 찾을 수 없습니다: " + session.getId());
+		}
 	}
 
 	private String normalizeNickname(String nickname) {

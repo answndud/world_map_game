@@ -2,6 +2,7 @@ package com.worldmap.game.flag.application;
 
 import com.worldmap.common.exception.ResourceNotFoundException;
 import com.worldmap.country.domain.Continent;
+import com.worldmap.game.common.application.GameSessionAccessContext;
 import com.worldmap.game.common.domain.GameSessionStatus;
 import com.worldmap.game.flag.domain.FlagGameAttempt;
 import com.worldmap.game.flag.domain.FlagGameAttemptRepository;
@@ -96,8 +97,8 @@ public class FlagGameService {
 	}
 
 	@Transactional(readOnly = true)
-	public FlagGameStateView getCurrentState(UUID sessionId) {
-		FlagGameSession session = getSession(sessionId);
+	public FlagGameStateView getCurrentState(UUID sessionId, GameSessionAccessContext accessContext) {
+		FlagGameSession session = getSession(sessionId, accessContext);
 
 		if (session.getStatus() != GameSessionStatus.IN_PROGRESS) {
 			throw new IllegalStateException("이미 종료된 게임입니다.");
@@ -121,8 +122,8 @@ public class FlagGameService {
 	}
 
 	@Transactional
-	public FlagGameStartView restartGame(UUID sessionId) {
-		FlagGameSession session = getSession(sessionId);
+	public FlagGameStartView restartGame(UUID sessionId, GameSessionAccessContext accessContext) {
+		FlagGameSession session = getSession(sessionId, accessContext);
 
 		if (session.getStatus() != GameSessionStatus.GAME_OVER && session.getStatus() != GameSessionStatus.FINISHED) {
 			throw new IllegalStateException("종료된 게임만 다시 시작할 수 있습니다.");
@@ -153,12 +154,17 @@ public class FlagGameService {
 	}
 
 	@Transactional
-	public FlagGameAnswerView submitAnswer(UUID sessionId, Integer stageNumber, Integer selectedOptionNumber) {
+	public FlagGameAnswerView submitAnswer(
+		UUID sessionId,
+		Integer stageNumber,
+		Integer selectedOptionNumber,
+		GameSessionAccessContext accessContext
+	) {
 		if (selectedOptionNumber == null || selectedOptionNumber < 1 || selectedOptionNumber > 4) {
 			throw new IllegalArgumentException("보기 번호를 선택해야 합니다.");
 		}
 
-		FlagGameSession session = getSession(sessionId);
+		FlagGameSession session = getSession(sessionId, accessContext);
 		if (session.getStatus() != GameSessionStatus.IN_PROGRESS) {
 			throw new IllegalStateException("진행 중인 게임만 답안을 제출할 수 있습니다.");
 		}
@@ -242,8 +248,9 @@ public class FlagGameService {
 	}
 
 	@Transactional(readOnly = true)
-	public FlagGameSessionResultView getSessionResult(UUID sessionId) {
-		FlagGameSession session = getSession(sessionId);
+	public FlagGameSessionResultView getSessionResult(UUID sessionId, GameSessionAccessContext accessContext) {
+		FlagGameSession session = getSession(sessionId, accessContext);
+		assertResultAccessible(session);
 		Map<Long, List<FlagGameAttemptResultView>> attemptsByStageId = new LinkedHashMap<>();
 
 		flagGameAttemptRepository.findAllByStageSessionIdOrderByStageStageNumberAscAttemptNumberAsc(sessionId)
@@ -295,14 +302,31 @@ public class FlagGameService {
 		);
 	}
 
+	@Transactional(readOnly = true)
+	public void assertSessionAccessible(UUID sessionId, GameSessionAccessContext accessContext) {
+		getSession(sessionId, accessContext);
+	}
+
 	private FlagGameSession getSession(UUID sessionId) {
 		return flagGameSessionRepository.findById(sessionId)
 			.orElseThrow(() -> new ResourceNotFoundException("게임 세션을 찾을 수 없습니다: " + sessionId));
 	}
 
+	private FlagGameSession getSession(UUID sessionId, GameSessionAccessContext accessContext) {
+		FlagGameSession session = getSession(sessionId);
+		accessContext.assertCanAccess(session);
+		return session;
+	}
+
 	private FlagGameStage getStage(UUID sessionId, Integer stageNumber) {
 		return flagGameStageRepository.findBySessionIdAndStageNumber(sessionId, stageNumber)
 			.orElseThrow(() -> new ResourceNotFoundException("게임 Stage를 찾을 수 없습니다."));
+	}
+
+	private void assertResultAccessible(FlagGameSession session) {
+		if (session.getStatus() == GameSessionStatus.READY || session.getStatus() == GameSessionStatus.IN_PROGRESS) {
+			throw new ResourceNotFoundException("게임 결과를 찾을 수 없습니다: " + session.getId());
+		}
 	}
 
 	private String normalizeNickname(String nickname) {

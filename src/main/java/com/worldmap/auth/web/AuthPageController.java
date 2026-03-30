@@ -5,6 +5,7 @@ import com.worldmap.auth.application.GuestProgressClaimService;
 import com.worldmap.auth.application.MemberAuthService;
 import com.worldmap.auth.application.MemberSessionManager;
 import com.worldmap.auth.domain.Member;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
@@ -50,6 +51,7 @@ public class AuthPageController {
 	public String signUp(
 		@Valid @ModelAttribute("signupForm") SignupForm signupForm,
 		BindingResult bindingResult,
+		HttpServletRequest request,
 		HttpSession httpSession,
 		Model model
 	) {
@@ -61,7 +63,7 @@ public class AuthPageController {
 			Member member = memberAuthService.signUp(signupForm.getNickname(), signupForm.getPassword());
 			guestSessionKeyManager.currentGuestSessionKey(httpSession)
 				.ifPresent(guestSessionKey -> guestProgressClaimService.claimGuestRecords(member.getId(), guestSessionKey));
-			memberSessionManager.signIn(httpSession, member);
+			memberSessionManager.signIn(request, member);
 			return "redirect:/mypage";
 		} catch (IllegalArgumentException | IllegalStateException ex) {
 			model.addAttribute("authErrorMessage", ex.getMessage());
@@ -89,6 +91,7 @@ public class AuthPageController {
 	public String login(
 		@Valid @ModelAttribute("loginForm") LoginForm loginForm,
 		BindingResult bindingResult,
+		HttpServletRequest request,
 		HttpSession httpSession,
 		Model model,
 		@RequestParam(required = false) String returnTo
@@ -102,7 +105,7 @@ public class AuthPageController {
 			Member member = memberAuthService.login(loginForm.getNickname(), loginForm.getPassword());
 			guestSessionKeyManager.currentGuestSessionKey(httpSession)
 				.ifPresent(guestSessionKey -> guestProgressClaimService.claimGuestRecords(member.getId(), guestSessionKey));
-			memberSessionManager.signIn(httpSession, member);
+			memberSessionManager.signIn(request, member);
 			return "redirect:" + resolvePostLoginRedirect(returnTo);
 		} catch (IllegalArgumentException | IllegalStateException ex) {
 			model.addAttribute("authErrorMessage", ex.getMessage());

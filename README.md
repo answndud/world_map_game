@@ -65,6 +65,8 @@
 - 비회원은 지금처럼 세션 기반으로 바로 플레이
 - 로그인하면 내 계정에 기록과 랭킹 이력이 누적
 - 계정 정보는 `닉네임 + 비밀번호` 수준으로 단순하게 유지
+- 게임 세션 조회 / 답안 제출 / 재시작 / 결과 확인은 현재 브라우저 세션의 ownership(`memberId` 또는 `guestSessionKey`)과 맞는 경우에만 허용
+- 게임 결과는 `GAME_OVER` 또는 `FINISHED`가 된 뒤에만 열리는 terminal resource로 취급
 - 현재는 9단계 rollback 기준으로 `member`, `guestSessionKey`, 게임 세션 / 랭킹 레코드 ownership 필드, 닉네임 + 비밀번호 기반 회원가입 / 로그인 / 로그아웃, 로그인 직후 현재 브라우저의 guest 기록 귀속, `/mypage` 기록 허브, raw stage 기반 플레이 성향 요약, `/dashboard/**` 접근 제어, 환경변수 기반 bootstrap admin provisioning, Dashboard 운영 수치 카드, 공개 `/stats` 화면, local demo 계정 / 샘플 run bootstrap, 현재 survey/engine 버전 추천 피드백 샘플 bootstrap, 홈 첫 화면 계정 진입 CTA, 수도 맞히기 Level 1 vertical slice, 인구 비교 퀵 배틀 Level 1 vertical slice, 국기 보고 나라 맞히기 Level 1 vertical slice와 공개 `/ranking` / `/stats` / 홈 연동까지 연결했다. 위치/인구수 Level 2 실험은 현재 product scope에서 제거했고, internal Level 2 enum/정책/read model도 함께 걷어냈다. startup `GameLevelRollbackInitializer`는 legacy DB에 `game_level` 컬럼이 실제로 남아 있을 때만 예전 `LEVEL_2` 세션 / Stage / Attempt / 랭킹 row와 Redis `l2` 키를 정리한다.
 
 ### 이후 확장
@@ -296,6 +298,9 @@
 - 8단계 1차 구현으로 `member` 엔티티, `GuestSessionKeyManager`, 게임 세션 / 랭킹 레코드의 `memberId`, `guestSessionKey` 기반 ownership 저장 구조를 먼저 추가했다.
 - 8단계 2차 구현으로 `/signup`, `/login`, `/logout`과 BCrypt 기반 비밀번호 해시, 단순 세션 로그인, 로그인 사용자의 새 게임 시작 시 `memberId` ownership 저장을 추가했다.
 - 8단계 3차 구현으로 회원가입 / 로그인 직후 현재 브라우저의 `guestSessionKey` 기록을 계정 ownership으로 귀속하는 서비스를 추가했다.
+- 8단계 보안 보강으로 게임 `play / state / answer / restart / result` 경로는 현재 `memberId` 또는 같은 브라우저의 `guestSessionKey` ownership이 맞는 세션만 열리게 바꿨다.
+- 결과는 terminal resource로 취급해 `READY`, `IN_PROGRESS` 상태에서는 `/result` API와 결과 페이지가 404를 돌리도록 닫았다. 즉 진행 중 세션의 정답과 시도 이력은 더 이상 먼저 노출되지 않는다.
+- 로그인 / 회원가입 성공 시 `MemberSessionManager`가 `changeSessionId()`를 호출해 session fixation 위험을 줄였다.
 - 8단계 4차 구현으로 `/mypage`가 `leaderboard_record`를 읽어 총 완료 플레이 수, 모드별 최고 점수, 최고 랭킹, 최근 플레이 10개를 보여주는 실제 기록 대시보드로 바뀌었다.
 - `/mypage`는 원본 게임 세션 전체가 아니라 완료된 run이 이미 정규화된 `leaderboard_record`를 먼저 읽는다. 그래서 모드별 최고 기록, 최근 완료 이력, 당시 랭킹 위치를 한 번에 설명하기 쉽다.
 - 8단계 5차 구현으로 운영 라우트는 `AdminAccessInterceptor`가 보호하고, 비로그인 사용자는 `/login?returnTo=...`로 보내며, 로그인한 일반 사용자는 `403`으로 막는다.
@@ -312,6 +317,9 @@
 - 9단계 rollback 구현으로 위치/인구수 Level 2 실험은 product scope에서 제거했고, internal Level 2 호환 코드도 정리됐다. `GameLevelRollbackInitializer`는 앱 시작 시 legacy `game_level` 컬럼이 남아 있는 DB에서만 기존 `LEVEL_2` 세션 / 시도 / 랭킹 row와 Redis `l2` 키를 정리한다. 그래서 public `/ranking`, `/stats`, `/mypage`, 게임 시작 화면은 다시 Level 1-only 기준으로 단순해졌다.
 - 8단계 11차 구현으로 홈 첫 화면에서 guest는 `로그인 / 회원가입`, 로그인 사용자는 `My Page / 로그아웃`을 바로 볼 수 있게 정리했다. 계정 기능은 그대로 두고, 홈에서 기록 유지 진입점을 더 짧게 만든 조각이다.
 - 8단계 12차 구현으로 홈 첫 화면은 hero에서 개별 게임 CTA를 반복하지 않고, 실제 모드 선택은 `지금 플레이할 모드` 카드 영역 한 곳에서만 하도록 다시 정리했다. hero는 서비스 소개, 계정 연결, 공개 `Stats` 진입만 맡고, 모드 설명 중복을 줄여 첫 진입 구조를 단순화했다.
+- 8단계 13차 구현으로 게임 세션 API와 `play/result` 페이지는 현재 브라우저가 소유한 세션만 열 수 있게 바꿨다. 세션 조회 / 답안 제출 / 재시작 / 결과 확인은 `memberId` 또는 `guestSessionKey` ownership을 현재 요청의 access context와 비교해 통과시킨다.
+- 같은 조각에서 결과 화면은 종료된 run에만 존재하는 리소스로 재정의했다. 그래서 `READY`나 `IN_PROGRESS` 상태에서는 `/result` API와 페이지가 404를 반환하고, 플레이 중간 치팅으로 정답을 미리 읽을 수 없게 했다.
+- 회원가입과 로그인 성공 시에는 `changeSessionId()`로 세션 ID를 회전시켜 기존 단순 세션 구조 안에서도 session fixation을 줄였다.
 - 현재 8단계 핵심 범위는 닫혔고, 이후 고도화 포인트는 `/mypage` 기간별 누적 통계, season/기간 필터, 더 세밀한 운영 도구 확장이다.
 - 이 피드백은 설문 문항과 가중치를 계속 개선하기 위한 신호로 사용하고, 오프라인 AI-assisted 평가 루프는 `docs/recommendation/OFFLINE_AI_SURVEY_IMPROVEMENT.md`와 `docs/recommendation/PERSONA_EVAL_SET.md`에서 관리한다.
 - `RecommendationOfflinePersonaCoverageTest`로 18개 페르소나 baseline을 자동 평가하고, 현재 엔진이 최소 15개 시나리오에서 기대 후보 1개 이상을 top 3에 포함하는지를 품질 하한으로 고정했다.

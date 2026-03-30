@@ -17,12 +17,12 @@ import com.worldmap.game.location.domain.LocationGameAttemptRepository;
 import com.worldmap.game.location.domain.LocationGameStage;
 import com.worldmap.game.location.domain.LocationGameStageRepository;
 import com.worldmap.game.location.domain.LocationGameSessionRepository;
-import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -52,10 +52,11 @@ class LocationGameFlowIntegrationTest {
 
 	@Test
 	void locationGameContinuesBeyondFiveStages() throws Exception {
-		UUID sessionId = UUID.fromString(startGame("geo-player"));
+		MockHttpSession browserSession = new MockHttpSession();
+		UUID sessionId = UUID.fromString(startGame("geo-player", browserSession));
 
 		for (int stageNumber = 1; stageNumber <= 7; stageNumber++) {
-			mockMvc.perform(get("/api/games/location/sessions/{sessionId}/state", sessionId))
+			mockMvc.perform(get("/api/games/location/sessions/{sessionId}/state", sessionId).session(browserSession))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.stageNumber").value(stageNumber))
 				.andExpect(jsonPath("$.livesRemaining").value(3))
@@ -66,6 +67,7 @@ class LocationGameFlowIntegrationTest {
 
 			MvcResult answerResult = mockMvc.perform(
 				post("/api/games/location/sessions/{sessionId}/answer", sessionId)
+					.session(browserSession)
 					.contentType("application/json")
 					.content(answerPayload(stageNumber, stage.getTargetCountryIso3Code()))
 			)
@@ -80,29 +82,26 @@ class LocationGameFlowIntegrationTest {
 			assertThat(answerJson.get("gameStatus").asText()).isEqualTo("IN_PROGRESS");
 		}
 
-		mockMvc.perform(get("/api/games/location/sessions/{sessionId}/state", sessionId))
+		mockMvc.perform(get("/api/games/location/sessions/{sessionId}/state", sessionId).session(browserSession))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.stageNumber").value(8))
 			.andExpect(jsonPath("$.clearedStageCount").value(7));
 
-		mockMvc.perform(get("/api/games/location/sessions/{sessionId}/result", sessionId))
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.status").value("IN_PROGRESS"))
-			.andExpect(jsonPath("$.clearedStageCount").value(7))
-			.andExpect(jsonPath("$.totalAttemptCount").value(7))
-			.andExpect(jsonPath("$.firstTryClearCount").value(7))
-			.andExpect(jsonPath("$.stages", hasSize(8)));
+		mockMvc.perform(get("/api/games/location/sessions/{sessionId}/result", sessionId).session(browserSession))
+			.andExpect(status().isNotFound());
 	}
 
 	@Test
 	void wrongAnswerConsumesLifeAndKeepsSameStage() throws Exception {
-		UUID sessionId = UUID.fromString(startGame("life-check"));
+		MockHttpSession browserSession = new MockHttpSession();
+		UUID sessionId = UUID.fromString(startGame("life-check", browserSession));
 		LocationGameStage firstStage = locationGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
 			.orElseThrow();
 		String wrongCountryIso3Code = findWrongCountryIso3Code(sessionId, firstStage.getTargetCountryIso3Code());
 
 		mockMvc.perform(
 			post("/api/games/location/sessions/{sessionId}/answer", sessionId)
+				.session(browserSession)
 				.contentType("application/json")
 				.content(answerPayload(1, wrongCountryIso3Code))
 		)
@@ -113,7 +112,7 @@ class LocationGameFlowIntegrationTest {
 			.andExpect(jsonPath("$.nextStageNumber").value(1))
 			.andExpect(jsonPath("$.clearedStageCount").value(0));
 
-		mockMvc.perform(get("/api/games/location/sessions/{sessionId}/state", sessionId))
+		mockMvc.perform(get("/api/games/location/sessions/{sessionId}/state", sessionId).session(browserSession))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.stageNumber").value(1))
 			.andExpect(jsonPath("$.livesRemaining").value(2));
@@ -124,7 +123,8 @@ class LocationGameFlowIntegrationTest {
 
 	@Test
 	void threeWrongAnswersLeadToGameOver() throws Exception {
-		UUID sessionId = UUID.fromString(startGame("game-over"));
+		MockHttpSession browserSession = new MockHttpSession();
+		UUID sessionId = UUID.fromString(startGame("game-over", browserSession));
 		LocationGameStage firstStage = locationGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
 			.orElseThrow();
 		String wrongCountryIso3Code = findWrongCountryIso3Code(sessionId, firstStage.getTargetCountryIso3Code());
@@ -132,6 +132,7 @@ class LocationGameFlowIntegrationTest {
 		for (int attempt = 1; attempt <= 2; attempt++) {
 			mockMvc.perform(
 				post("/api/games/location/sessions/{sessionId}/answer", sessionId)
+					.session(browserSession)
 					.contentType("application/json")
 					.content(answerPayload(1, wrongCountryIso3Code))
 			)
@@ -141,6 +142,7 @@ class LocationGameFlowIntegrationTest {
 
 		mockMvc.perform(
 			post("/api/games/location/sessions/{sessionId}/answer", sessionId)
+				.session(browserSession)
 				.contentType("application/json")
 				.content(answerPayload(1, wrongCountryIso3Code))
 		)
@@ -150,7 +152,7 @@ class LocationGameFlowIntegrationTest {
 			.andExpect(jsonPath("$.livesRemaining").value(0))
 			.andExpect(jsonPath("$.nextStageNumber").doesNotExist());
 
-		mockMvc.perform(get("/api/games/location/sessions/{sessionId}/result", sessionId))
+		mockMvc.perform(get("/api/games/location/sessions/{sessionId}/result", sessionId).session(browserSession))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.status").value("GAME_OVER"))
 			.andExpect(jsonPath("$.livesRemaining").value(0))
@@ -160,7 +162,8 @@ class LocationGameFlowIntegrationTest {
 
 	@Test
 	void restartReusesSameSessionAndResetsProgress() throws Exception {
-		UUID sessionId = UUID.fromString(startGame("restart-check"));
+		MockHttpSession browserSession = new MockHttpSession();
+		UUID sessionId = UUID.fromString(startGame("restart-check", browserSession));
 		LocationGameStage firstStage = locationGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
 			.orElseThrow();
 		String wrongCountryIso3Code = findWrongCountryIso3Code(sessionId, firstStage.getTargetCountryIso3Code());
@@ -168,13 +171,14 @@ class LocationGameFlowIntegrationTest {
 		for (int attempt = 1; attempt <= 3; attempt++) {
 			mockMvc.perform(
 				post("/api/games/location/sessions/{sessionId}/answer", sessionId)
+					.session(browserSession)
 					.contentType("application/json")
 					.content(answerPayload(1, wrongCountryIso3Code))
 			)
 				.andExpect(status().isOk());
 		}
 
-		mockMvc.perform(post("/api/games/location/sessions/{sessionId}/restart", sessionId))
+		mockMvc.perform(post("/api/games/location/sessions/{sessionId}/restart", sessionId).session(browserSession))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.sessionId").value(sessionId.toString()))
 			.andExpect(jsonPath("$.status").value("IN_PROGRESS"))
@@ -182,7 +186,7 @@ class LocationGameFlowIntegrationTest {
 			.andExpect(jsonPath("$.totalStages").value(1))
 			.andExpect(jsonPath("$.playPageUrl").value("/games/location/play/" + sessionId));
 
-		mockMvc.perform(get("/api/games/location/sessions/{sessionId}/state", sessionId))
+		mockMvc.perform(get("/api/games/location/sessions/{sessionId}/state", sessionId).session(browserSession))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.stageNumber").value(1))
 			.andExpect(jsonPath("$.livesRemaining").value(3))
@@ -197,7 +201,8 @@ class LocationGameFlowIntegrationTest {
 
 	@Test
 	void resultPageHidesSelectionAndAnswerDetailsForClearedStage() throws Exception {
-		UUID sessionId = UUID.fromString(startGame("location-result-hide"));
+		MockHttpSession browserSession = new MockHttpSession();
+		UUID sessionId = UUID.fromString(startGame("location-result-hide", browserSession));
 		LocationGameStage firstStage = locationGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
 			.orElseThrow();
 		String wrongCountryIso3Code = findWrongCountryIso3Code(sessionId, firstStage.getTargetCountryIso3Code());
@@ -207,6 +212,7 @@ class LocationGameFlowIntegrationTest {
 
 		mockMvc.perform(
 			post("/api/games/location/sessions/{sessionId}/answer", sessionId)
+				.session(browserSession)
 				.contentType("application/json")
 				.content(answerPayload(1, wrongCountryIso3Code))
 		)
@@ -214,12 +220,26 @@ class LocationGameFlowIntegrationTest {
 
 		mockMvc.perform(
 			post("/api/games/location/sessions/{sessionId}/answer", sessionId)
+				.session(browserSession)
 				.contentType("application/json")
 				.content(answerPayload(1, firstStage.getTargetCountryIso3Code()))
 		)
 			.andExpect(status().isOk());
 
-		mockMvc.perform(get("/games/location/result/{sessionId}", sessionId))
+		LocationGameStage secondStage = locationGameStageRepository.findBySessionIdAndStageNumber(sessionId, 2)
+			.orElseThrow();
+		String secondStageWrongCountryIso3Code = findWrongCountryIso3Code(sessionId, secondStage.getTargetCountryIso3Code());
+		for (int attempt = 1; attempt <= 3; attempt++) {
+			mockMvc.perform(
+				post("/api/games/location/sessions/{sessionId}/answer", sessionId)
+					.session(browserSession)
+					.contentType("application/json")
+					.content(answerPayload(2, secondStageWrongCountryIso3Code))
+			)
+				.andExpect(status().isOk());
+		}
+
+		mockMvc.perform(get("/games/location/result/{sessionId}", sessionId).session(browserSession))
 			.andExpect(status().isOk())
 			.andExpect(content().string(containsString("1차 오답 / 하트 2")))
 			.andExpect(content().string(containsString("2차 정답 / 점수 +")))
@@ -227,9 +247,34 @@ class LocationGameFlowIntegrationTest {
 			.andExpect(content().string(not(containsString(firstStage.getTargetCountryName()))));
 	}
 
-	private String startGame(String nickname) throws Exception {
+	@Test
+	void gameSessionRequestsAreBlockedFromOtherBrowserSessions() throws Exception {
+		MockHttpSession ownerSession = new MockHttpSession();
+		MockHttpSession intruderSession = new MockHttpSession();
+		UUID sessionId = UUID.fromString(startGame("owner-only", ownerSession));
+		LocationGameStage firstStage = locationGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
+			.orElseThrow();
+		String wrongCountryIso3Code = findWrongCountryIso3Code(sessionId, firstStage.getTargetCountryIso3Code());
+
+		mockMvc.perform(get("/api/games/location/sessions/{sessionId}/state", sessionId).session(intruderSession))
+			.andExpect(status().isForbidden());
+
+		mockMvc.perform(
+			post("/api/games/location/sessions/{sessionId}/answer", sessionId)
+				.session(intruderSession)
+				.contentType("application/json")
+				.content(answerPayload(1, wrongCountryIso3Code))
+		)
+			.andExpect(status().isForbidden());
+
+		mockMvc.perform(get("/games/location/play/{sessionId}", sessionId).session(intruderSession))
+			.andExpect(status().isForbidden());
+	}
+
+	private String startGame(String nickname, MockHttpSession browserSession) throws Exception {
 		MvcResult result = mockMvc.perform(
 			post("/api/games/location/sessions")
+				.session(browserSession)
 				.contentType("application/json")
 				.content("{\"nickname\":\"" + nickname + "\"}")
 		)

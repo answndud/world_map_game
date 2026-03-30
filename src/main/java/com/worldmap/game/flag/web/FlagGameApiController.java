@@ -1,6 +1,7 @@
 package com.worldmap.game.flag.web;
 
 import com.worldmap.auth.application.AuthenticatedMemberSession;
+import com.worldmap.auth.application.GameSessionAccessContextResolver;
 import com.worldmap.auth.application.GuestSessionKeyManager;
 import com.worldmap.auth.application.MemberSessionManager;
 import com.worldmap.game.flag.application.FlagGameAnswerView;
@@ -8,6 +9,7 @@ import com.worldmap.game.flag.application.FlagGameService;
 import com.worldmap.game.flag.application.FlagGameSessionResultView;
 import com.worldmap.game.flag.application.FlagGameStartView;
 import com.worldmap.game.flag.application.FlagGameStateView;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import java.util.UUID;
@@ -27,15 +29,18 @@ public class FlagGameApiController {
 	private final FlagGameService flagGameService;
 	private final GuestSessionKeyManager guestSessionKeyManager;
 	private final MemberSessionManager memberSessionManager;
+	private final GameSessionAccessContextResolver gameSessionAccessContextResolver;
 
 	public FlagGameApiController(
 		FlagGameService flagGameService,
 		GuestSessionKeyManager guestSessionKeyManager,
-		MemberSessionManager memberSessionManager
+		MemberSessionManager memberSessionManager,
+		GameSessionAccessContextResolver gameSessionAccessContextResolver
 	) {
 		this.flagGameService = flagGameService;
 		this.guestSessionKeyManager = guestSessionKeyManager;
 		this.memberSessionManager = memberSessionManager;
+		this.gameSessionAccessContextResolver = gameSessionAccessContextResolver;
 	}
 
 	@PostMapping
@@ -53,34 +58,36 @@ public class FlagGameApiController {
 	}
 
 	@GetMapping("/{sessionId}/state")
-	public FlagGameStateView currentState(@PathVariable UUID sessionId) {
-		return flagGameService.getCurrentState(sessionId);
+	public FlagGameStateView currentState(@PathVariable UUID sessionId, HttpServletRequest request) {
+		return flagGameService.getCurrentState(sessionId, gameSessionAccessContextResolver.resolve(request));
 	}
 
 	@GetMapping("/{sessionId}/round")
-	public FlagGameStateView currentRoundAlias(@PathVariable UUID sessionId) {
-		return flagGameService.getCurrentState(sessionId);
+	public FlagGameStateView currentRoundAlias(@PathVariable UUID sessionId, HttpServletRequest request) {
+		return flagGameService.getCurrentState(sessionId, gameSessionAccessContextResolver.resolve(request));
 	}
 
 	@PostMapping("/{sessionId}/restart")
-	public FlagGameStartView restart(@PathVariable UUID sessionId) {
-		return flagGameService.restartGame(sessionId);
+	public FlagGameStartView restart(@PathVariable UUID sessionId, HttpServletRequest request) {
+		return flagGameService.restartGame(sessionId, gameSessionAccessContextResolver.resolve(request));
 	}
 
 	@PostMapping("/{sessionId}/answer")
 	public FlagGameAnswerView answer(
 		@PathVariable UUID sessionId,
-		@Valid @RequestBody SubmitFlagAnswerRequest request
+		@Valid @RequestBody SubmitFlagAnswerRequest request,
+		HttpServletRequest httpRequest
 	) {
 		return flagGameService.submitAnswer(
 			sessionId,
 			request.stageNumber(),
-			request.selectedOptionNumber()
+			request.selectedOptionNumber(),
+			gameSessionAccessContextResolver.resolve(httpRequest)
 		);
 	}
 
 	@GetMapping("/{sessionId}")
-	public FlagGameSessionResultView sessionResult(@PathVariable UUID sessionId) {
-		return flagGameService.getSessionResult(sessionId);
+	public FlagGameSessionResultView sessionResult(@PathVariable UUID sessionId, HttpServletRequest request) {
+		return flagGameService.getSessionResult(sessionId, gameSessionAccessContextResolver.resolve(request));
 	}
 }

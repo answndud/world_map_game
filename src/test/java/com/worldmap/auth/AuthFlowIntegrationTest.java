@@ -65,6 +65,7 @@ class AuthFlowIntegrationTest {
 	@Test
 	void signupCreatesSimpleAccountAndKeepsMemberSession() throws Exception {
 		MockHttpSession browserSession = new MockHttpSession();
+		String previousSessionId = browserSession.getId();
 
 		mockMvc.perform(
 			post("/signup")
@@ -78,6 +79,7 @@ class AuthFlowIntegrationTest {
 		Member member = memberRepository.findByNicknameIgnoreCase("orbit_runner").orElseThrow();
 		assertThat(member.getPasswordHash()).isNotEqualTo("secret1234");
 		assertThat(member.getLastLoginAt()).isNotNull();
+		assertThat(browserSession.getId()).isNotEqualTo(previousSessionId);
 
 		mockMvc.perform(get("/mypage").session(browserSession))
 			.andExpect(status().isOk())
@@ -110,14 +112,24 @@ class AuthFlowIntegrationTest {
 			)
 		);
 
+		MockHttpSession browserSession = new MockHttpSession();
+		String previousSessionId = browserSession.getId();
+
 		mockMvc.perform(
 			post("/login")
+				.session(browserSession)
 				.param("nickname", "worldmap_admin")
 				.param("password", "secret123")
 				.param("returnTo", "/dashboard")
 		)
 			.andExpect(status().is3xxRedirection())
 			.andExpect(redirectedUrl("/dashboard"));
+
+		assertThat(browserSession.getId()).isNotEqualTo(previousSessionId);
+
+		mockMvc.perform(get("/dashboard").session(browserSession))
+			.andExpect(status().isOk())
+			.andExpect(view().name("admin/index"));
 	}
 
 	@Test

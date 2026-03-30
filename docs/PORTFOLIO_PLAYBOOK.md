@@ -595,6 +595,10 @@
 - 로그인 사용자가 새로 시작하는 위치/인구수 게임은 request nickname 대신 계정 닉네임을 사용하고, 세션/랭킹 기록을 `memberId` ownership으로 저장하도록 연결했다
 - `GuestProgressClaimService`를 추가해 회원가입/로그인 직후 현재 브라우저의 `guestSessionKey` 기록을 계정 ownership으로 귀속하도록 연결했다
 - guest로 저장됐던 게임 세션 / 랭킹 레코드는 claim 시 `memberId`를 채우고 `guestSessionKey`는 비워 ownership을 단일화한다
+- `GameSessionAccessContext`, `GameSessionAccessContextResolver`를 추가해 게임 `play / state / answer / restart / result` 요청이 현재 `memberId` 또는 같은 브라우저의 `guestSessionKey` ownership과 일치하는 세션만 읽도록 묶었다
+- access context는 `memberId`와 `guestSessionKey`를 함께 들고 간다. 그래서 로그인 직후 아직 claim되지 않은 same-browser guest 세션도 이어서 접근할 수 있고, 다른 브라우저에서 `sessionId`만 알아도 열 수는 없게 된다
+- 게임 결과는 terminal resource로 다시 정의했다. `READY`, `IN_PROGRESS` 상태에서는 `/result` API와 결과 페이지가 404를 돌려 진행 중 정답과 시도 이력이 먼저 노출되지 않는다
+- `MemberSessionManager.signIn()`은 로그인 / 회원가입 성공 시 `changeSessionId()`를 호출해 session fixation 위험을 줄인다
 - `MyPageService`를 추가해 `/mypage`가 로그인 사용자의 `leaderboard_record`를 읽어 총 완료 플레이 수, 모드별 최고 점수, 최고 랭킹, 최근 플레이 10개를 보여주도록 연결했다
 - `/mypage`는 raw game session 전체보다 먼저 `leaderboard_record`를 읽는다. 완료된 run 단위가 이미 정규화돼 있어 최고 기록과 최근 기록을 설명하기 쉽고, 당시 랭킹 위치도 바로 연결할 수 있기 때문이다
 - guest로 한 판 끝낸 뒤 회원가입하면, 귀속된 `leaderboard_record`가 즉시 `/mypage` 최근 플레이와 최고 기록에 반영되는 통합 테스트를 고정했다
@@ -626,6 +630,9 @@
 - hero는 서비스 소개, 계정 연결, 공개 `Stats` 진입만 맡고, 각 모드별 직접 이동은 본문 카드와 `My Page`/`Stats` 흐름으로만 연결해 첫 진입 구조를 단순화했다
 - 최근 디자인 패스 이후 public 화면 테스트를 새 카피와 레이아웃 기준으로 다시 맞추고, 홈 / 추천 / 랭킹 / Stats / My Page의 공통 shell 안정화 여부를 먼저 확인하는 작은 안정화 조각을 별도로 두었다
 - `DemoBootstrapIntegrationTest`, `StatsPageControllerTest`로 local dummy data bootstrap과 public stats 렌더링을 고정했다
+- 게임 세션 API와 `play/result` 페이지는 현재 브라우저의 access context로 ownership을 다시 검사한다. 로그인 사용자는 `memberId`, 비회원은 `guestSessionKey`가 맞아야 세션 조회 / 답안 제출 / 재시작 / 결과 확인이 가능하다
+- 게임 결과는 terminal resource로 다시 정의했다. `READY`나 `IN_PROGRESS` 상태에서는 `/result` API와 결과 페이지를 404로 막아, 플레이 중간에 정답과 시도 기록을 먼저 읽는 치팅 경로를 닫았다
+- 회원가입 / 로그인 성공 시 `MemberSessionManager.signIn()`이 `changeSessionId()`를 호출해 기존 단순 세션 로그인 구조에서도 session fixation을 줄이도록 정리했다
 
 이후 고도화 아이디어:
 
@@ -634,6 +641,9 @@
   - 모드별 누적 플레이 시간
   - 실패 run 포함 정확도
   - 시즌/기간 필터
+- guest 기록 귀속 범위를 수도 / 국기 / 인구 비교 퀵 배틀까지 확장
+- `/mypage` read model을 현재 5개 게임 기준으로 다시 정리
+- prod/local profile, startup initializer, readiness 기준을 운영 안전성 관점에서 재점검
 - admin 운영 도구 확장
   - build 상태
   - 랭킹 캐시 점검
@@ -661,6 +671,9 @@
 - 왜 홈 hero에서 개별 모드 CTA를 반복하지 않고, 모드 선택을 카드 영역 한 곳으로 모으는 것이 더 자연스러운지
 - 왜 홈 hero는 서비스 소개와 계정/Stats 진입만 맡고, 실제 모드 선택은 본문으로 내리는 편이 구조적으로 더 깔끔한지
 - 왜 큰 디자인 패스 직후에는 기능 추가보다 먼저 컨트롤러/SSR 테스트를 새 카피 기준으로 다시 고정해야 하는지
+- 왜 게임 세션 접근 권한 검증은 컨트롤러 복붙이 아니라 서비스 진입 시점의 공통 access context 비교로 두는 편이 더 설명 가능한지
+- 왜 게임 결과는 “언제든 읽을 수 있는 세션 상태”가 아니라 “종료 후에만 생기는 결과 리소스”로 보는 편이 치팅 방지와 API 의미 모두에 더 맞는지
+- 왜 단순 세션 로그인 구조를 유지하더라도 로그인/회원가입 성공 순간에 세션 ID를 회전시켜야 하는지
 
 면접 포인트:
 
@@ -675,6 +688,9 @@
 - 왜 일반 사용자에게는 `/dashboard` 대신 공개 `/stats`를 별도로 열어 두었는가
 - DB가 비어도 local demo 계정과 샘플 run을 어떻게 다시 재현하는가
 - 왜 홈 첫 화면에서 정보 카드, 모드 목록, 직접 CTA를 중복 노출하지 않고 한 번씩만 보여 주는 편이 더 나은가
+- 왜 guest 플레이를 허용하는 구조에서도 현재 브라우저 ownership과 맞는 세션만 읽게 해야 하는가
+- 왜 `/result`를 `IN_PROGRESS` 때도 열어 두면 치팅 경로가 되는가
+- 왜 Spring Security 전체 도입 전에도 `changeSessionId()`와 ownership guard만으로 먼저 막아야 할 보안 구멍이 있는가
 
 완료 기준:
 

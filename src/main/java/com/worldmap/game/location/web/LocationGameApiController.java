@@ -1,6 +1,7 @@
 package com.worldmap.game.location.web;
 
 import com.worldmap.auth.application.AuthenticatedMemberSession;
+import com.worldmap.auth.application.GameSessionAccessContextResolver;
 import com.worldmap.auth.application.GuestSessionKeyManager;
 import com.worldmap.auth.application.MemberSessionManager;
 import com.worldmap.game.location.application.LocationGameAnswerView;
@@ -8,6 +9,7 @@ import com.worldmap.game.location.application.LocationGameService;
 import com.worldmap.game.location.application.LocationGameSessionResultView;
 import com.worldmap.game.location.application.LocationGameStartView;
 import com.worldmap.game.location.application.LocationGameStateView;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import java.util.UUID;
@@ -27,15 +29,18 @@ public class LocationGameApiController {
 	private final LocationGameService locationGameService;
 	private final GuestSessionKeyManager guestSessionKeyManager;
 	private final MemberSessionManager memberSessionManager;
+	private final GameSessionAccessContextResolver gameSessionAccessContextResolver;
 
 	public LocationGameApiController(
 		LocationGameService locationGameService,
 		GuestSessionKeyManager guestSessionKeyManager,
-		MemberSessionManager memberSessionManager
+		MemberSessionManager memberSessionManager,
+		GameSessionAccessContextResolver gameSessionAccessContextResolver
 	) {
 		this.locationGameService = locationGameService;
 		this.guestSessionKeyManager = guestSessionKeyManager;
 		this.memberSessionManager = memberSessionManager;
+		this.gameSessionAccessContextResolver = gameSessionAccessContextResolver;
 	}
 
 	@PostMapping
@@ -53,39 +58,41 @@ public class LocationGameApiController {
 	}
 
 	@GetMapping("/{sessionId}/state")
-	public LocationGameStateView currentState(@PathVariable UUID sessionId) {
-		return locationGameService.getCurrentState(sessionId);
+	public LocationGameStateView currentState(@PathVariable UUID sessionId, HttpServletRequest request) {
+		return locationGameService.getCurrentState(sessionId, gameSessionAccessContextResolver.resolve(request));
 	}
 
 	@GetMapping("/{sessionId}/round")
-	public LocationGameStateView currentRoundAlias(@PathVariable UUID sessionId) {
-		return locationGameService.getCurrentState(sessionId);
+	public LocationGameStateView currentRoundAlias(@PathVariable UUID sessionId, HttpServletRequest request) {
+		return locationGameService.getCurrentState(sessionId, gameSessionAccessContextResolver.resolve(request));
 	}
 
 	@PostMapping("/{sessionId}/restart")
-	public LocationGameStartView restart(@PathVariable UUID sessionId) {
-		return locationGameService.restartGame(sessionId);
+	public LocationGameStartView restart(@PathVariable UUID sessionId, HttpServletRequest request) {
+		return locationGameService.restartGame(sessionId, gameSessionAccessContextResolver.resolve(request));
 	}
 
 	@PostMapping("/{sessionId}/answer")
 	public LocationGameAnswerView answer(
 		@PathVariable UUID sessionId,
-		@Valid @RequestBody SubmitLocationAnswerRequest request
+		@Valid @RequestBody SubmitLocationAnswerRequest request,
+		HttpServletRequest httpRequest
 	) {
 		return locationGameService.submitAnswer(
 			sessionId,
 			request.stageNumber(),
-			request.selectedCountryIso3Code()
+			request.selectedCountryIso3Code(),
+			gameSessionAccessContextResolver.resolve(httpRequest)
 		);
 	}
 
 	@GetMapping("/{sessionId}/result")
-	public LocationGameSessionResultView sessionResult(@PathVariable UUID sessionId) {
-		return locationGameService.getSessionResult(sessionId);
+	public LocationGameSessionResultView sessionResult(@PathVariable UUID sessionId, HttpServletRequest request) {
+		return locationGameService.getSessionResult(sessionId, gameSessionAccessContextResolver.resolve(request));
 	}
 
 	@GetMapping("/{sessionId}")
-	public LocationGameSessionResultView sessionResultAlias(@PathVariable UUID sessionId) {
-		return locationGameService.getSessionResult(sessionId);
+	public LocationGameSessionResultView sessionResultAlias(@PathVariable UUID sessionId, HttpServletRequest request) {
+		return locationGameService.getSessionResult(sessionId, gameSessionAccessContextResolver.resolve(request));
 	}
 }
