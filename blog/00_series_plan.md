@@ -131,6 +131,7 @@
 104. [public 헤더의 Dashboard 링크도 현재 DB role 기준으로 맞추기](./110-align-public-dashboard-link-visibility-with-current-admin-role.md)
 105. [public/auth SSR과 게임 시작도 현재 회원 기준으로 stale 세션 UI를 정리하기](./111-use-current-member-state-for-public-auth-ssr.md)
 106. [current member 재검증을 request당 한 번만 하도록 정리하기](./112-cache-current-member-resolution-per-request.md)
+107. [Playwright로 public 핵심 흐름 브라우저 스모크 테스트 레일 추가하기](./113-add-a-playwright-browser-smoke-lane-for-public-flows.md)
 
 ### Part E. 테스트, 확장, 취업 패키징
 

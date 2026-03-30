@@ -29,11 +29,25 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
 	runtimeOnly 'org.postgresql:postgresql'
+	testImplementation 'com.microsoft.playwright:playwright:1.58.0'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'com.h2database:h2'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 tasks.named('test') {
-	useJUnitPlatform()
+	useJUnitPlatform {
+		excludeTags 'browser-smoke'
+	}
+}
+
+tasks.register('browserSmokeTest', Test) {
+	group = 'verification'
+	description = 'Runs browser-based smoke tests against a real Spring Boot server.'
+	testClassesDirs = sourceSets.test.output.classesDirs
+	classpath = sourceSets.test.runtimeClasspath
+	useJUnitPlatform {
+		includeTags 'browser-smoke'
+	}
+	shouldRunAfter(tasks.named('test'))
 }

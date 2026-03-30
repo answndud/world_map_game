@@ -34,6 +34,36 @@
 - 면접용 30초 요약:
 ```
 
+## 2026-03-30 - public 핵심 흐름용 브라우저 스모크 테스트 레일 추가하기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 지금까지의 테스트는 대부분 MockMvc와 서비스 통합 테스트라서, 실제 브라우저에서 public shell이 뜨고 JS start form이 세션을 열고 추천 설문이 제출되는 흐름까지는 자동으로 확인하지 못했다. production-ready 품질을 올리려면 “실제 Chromium에서 핵심 유저 경로가 한 번은 돈다”는 최소 smoke 레일이 필요했다. 이번 조각은 그 첫 범위를 `home`, `capital start -> play`, `recommendation survey -> result`로 좁혀 추가하는 데 집중했다.
+- 변경 파일:
+  - `build.gradle`
+  - `src/test/java/com/worldmap/e2e/BrowserSmokeE2ETest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/113-add-a-playwright-browser-smoke-lane-for-public-flows.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+- 요청 흐름: 브라우저 레일의 시작점은 `./gradlew browserSmokeTest`다. Gradle은 `browser-smoke` tag만 골라 별도 `Test` task에서 실행하고, `BrowserSmokeE2ETest`는 `@SpringBootTest(webEnvironment = RANDOM_PORT)`로 실제 서버를 띄운다. 그 위에서 Playwright Chromium이 `GET /` home shell을 연 뒤, 별도 테스트에서 `GET /games/capital/start -> POST /api/games/capital/sessions -> GET /games/capital/play/{sessionId}` 흐름과 `GET /recommendation/survey -> POST /recommendation/survey -> recommendation/result view` 흐름을 실제 브라우저 상호작용으로 밟는다.
+- 데이터 / 상태 변화: 운영 DB나 Redis 스키마는 바뀌지 않았다. 바뀐 것은 검증 레일이다. 브라우저 스모크는 test profile의 H2 위에서 임시 게임 세션 row와 추천 결과 view만 만들고 종료 시 함께 사라진다. `test` task는 여전히 빠른 단위/통합 피드백 레일로 남고, browser startup과 Playwright 브라우저 다운로드 비용은 `browserSmokeTest`에만 격리된다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “브라우저 검증도 verification lane으로 분리된 read model처럼 다뤄야 한다”는 점이다. public 제품의 핵심 위험은 서버 로직 자체뿐 아니라 `SSR + defer JS + form submit + redirect`가 실제 브라우저에서 이어지느냐에 있다. 하지만 이 비용을 모든 `test` 실행에 얹으면 피드백 루프가 무거워진다. 그래서 `build.gradle`이 `browser-smoke` tag만 별도 task로 실행하도록 분리하는 편이 설명 가능하다.
+- 예외 / 엣지 케이스:
+  - Playwright는 첫 실행에 브라우저 바이너리를 다운로드할 수 있으므로, 최초 `browserSmokeTest`는 일반 테스트보다 오래 걸릴 수 있다.
+  - 이번 첫 조각은 `/stats`, `/ranking`, location globe를 일부러 넣지 않았다. `stats/ranking`은 현재 test profile의 Redis 의존을 건드릴 수 있고, location은 WebGL/지구본 렌더 surface가 일반 퀴즈보다 더 flaky하다.
+  - 즉 이 레일은 “모든 public surface 전체”가 아니라 “가장 안전한 핵심 흐름 3개”부터 닫은 상태다.
+- 테스트:
+  - `./gradlew compileTestJava`
+  - `./gradlew browserSmokeTest --tests com.worldmap.e2e.BrowserSmokeE2ETest`
+  - `./gradlew test --tests com.worldmap.web.HomeControllerTest`
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이번 조각은 테스트 인프라 추가지만, 왜 `MockMvc`만으로는 부족했고 왜 브라우저 레일을 기본 `test`와 분리했는지 설명 가치가 있다.
+- 배운 점: production-ready 품질 개선은 무조건 큰 인프라 작업부터가 아니라, “실제 사용자 경로를 자동으로 한 번 밟는가”를 별도 레일로 고정하는 것부터 시작해도 된다. 특히 브라우저 테스트는 도입 자체보다 어디까지를 첫 smoke 범위로 잡을지가 더 중요했다.
+- 아직 약한 부분: 현재 `browserSmokeTest`는 이 머신에서 Redis가 살아 있어서 무리 없이 떴다. 하지만 `application-test.yml`의 Redis 의존을 완전히 떼지는 못했기 때문에, 깨끗한 CI/개발 환경에서 self-contained하게 돌리려면 다음 조각에서 test profile 격리를 더 해야 한다.
+- 면접용 30초 요약: MockMvc와 서비스 통합 테스트만으로는 실제 브라우저에서 SSR 화면, defer JS, form submit, redirect가 이어지는지까지는 확인하기 어렵습니다. 그래서 이번에는 `build.gradle`에 `browserSmokeTest`를 따로 만들고, `BrowserSmokeE2ETest`에서 headless Chromium으로 home, 수도 게임 start -> play, 추천 설문 -> 결과 흐름을 직접 밟게 했습니다. 핵심은 브라우저 검증을 추가하되, 기본 `test` 레일은 빠르게 유지하도록 분리했다는 점입니다.
+
 ## 2026-03-30 - current member 재검증을 request당 한 번만 하도록 정리하기
 
 - 단계: 8. 인증, 전적, 마이페이지

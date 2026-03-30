@@ -894,12 +894,14 @@
 - 위치/인구수/수도/인구 비교/국기 게임은 오답 오버레이와 입력 잠금 해제도 약 `950ms` 리듬으로 맞춰, 정답/오답 템포가 게임마다 흔들리지 않게 정리
 - 공통 shell에 `focus-visible` 링을 추가하고, 위치/인구수/수도/국기/인구 비교 퀵 배틀의 게임오버 모달은 `aria-describedby + tabindex + inert + focus trap`으로 실제 focus scope를 갖게 정리해 키보드 접근성을 한 번 더 보강
 - 국기 플레이/결과 화면의 카드 프레임이 정의되지 않은 CSS 토큰 때문에 무테두리처럼 깨지지 않도록, `flag-display-card`와 `flag-display-image`에 공통 surface/border fallback token을 적용
+- `build.gradle`에 `browserSmokeTest` verification task를 추가하고, `BrowserSmokeE2ETest`로 `home` SSR shell, `capital start -> play`, `recommendation survey -> result`를 실제 headless Chromium에서 검증하는 Playwright 브라우저 스모크 레일을 붙였다
+- 기본 `test` task는 `browser-smoke` tag를 제외해 빠른 피드백을 유지하고, 브라우저 레일만 별도 실행하게 분리했다
 
 다음 후속 개선 후보:
 
 - 국기 게임 세부 난이도(동일 대륙 고정 비율, 자산 36개 이후 확장 전략)를 더 넓힐지 결정
 - 신규 게임 3종이 모두 열린 상태에서 홈/랭킹/Stats 문구를 더 줄일지, 아니면 현재 그룹 구조로 유지할지 한 번 더 확인
-- 실제 브라우저에서 `Tab / Shift+Tab / Escape / restart 후 focus 복귀`를 검증하는 E2E 계층을 붙일지 결정
+- test profile에서 Redis 의존을 떼고 `/stats`, `/ranking`, 모달 키보드 흐름까지 브라우저 스모크 범위를 더 넓힐지 결정
 - 반복된 game-over modal focus 로직을 공용 helper로 올릴지, 지금처럼 게임별 script 안에 유지할지 결정
 
 반드시 이해할 것:
