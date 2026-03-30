@@ -28,6 +28,7 @@
 - `src/main/java/com/worldmap/admin/web/AdminAccessInterceptor.java`
 - `src/main/java/com/worldmap/recommendation/web/RecommendationFeedbackApiController.java`
 - `src/test/java/com/worldmap/admin/AdminPageIntegrationTest.java`
+- `src/test/java/com/worldmap/auth/application/AdminAccessGuardTest.java`
 - `src/test/java/com/worldmap/recommendation/RecommendationFeedbackIntegrationTest.java`
 - `src/test/java/com/worldmap/auth/application/MemberSessionManagerTest.java`
 
@@ -115,6 +116,7 @@ DB role이 `USER`로 바뀌었다면
 
 - `/dashboard`가 실제 DB role이 `USER`로 바뀐 세션을 `403`으로 막는가
 - `/api/recommendation/feedback/summary`도 같은 조건에서 `403`으로 막는가
+- malformed session role이 들어와도 guard가 세션을 비우고 `UNAUTHENTICATED`로 내리는가
 - `MemberSessionManager.syncMember()`가 현재 회원 상태로 세션 값을 다시 덮는가
 
 ## 아직 남아 있는 점

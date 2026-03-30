@@ -45,6 +45,7 @@
   - `src/main/java/com/worldmap/recommendation/web/RecommendationFeedbackApiController.java`
   - `src/main/resources/templates/admin/index.html`
   - `src/test/java/com/worldmap/admin/AdminPageIntegrationTest.java`
+  - `src/test/java/com/worldmap/auth/application/AdminAccessGuardTest.java`
   - `src/test/java/com/worldmap/recommendation/RecommendationFeedbackIntegrationTest.java`
   - `src/test/java/com/worldmap/auth/application/MemberSessionManagerTest.java`
   - `README.md`
@@ -59,9 +60,10 @@
 - 예외 / 엣지 케이스:
   - 세션에는 memberId가 있지만 DB row가 이미 삭제된 경우, guard는 세션을 지우고 비로그인처럼 취급한다.
   - 세션 role이 여전히 `ADMIN`이어도 DB role이 `USER`면 `/dashboard/**`와 `/api/recommendation/feedback/summary`는 둘 다 막힌다.
+  - 세션 role 문자열이 깨졌거나 enum으로 파싱할 수 없으면 guard가 세션을 비우고 비로그인처럼 처리한다. 즉 malformed session 때문에 admin 경로가 500으로 터지지 않게 막았다.
   - 공개 화면 헤더의 `Dashboard` 링크 노출은 아직 session role 문자열을 보고 있어, 권한 회수 직후 admin 경로를 한 번 치기 전까지는 stale link가 보일 수 있다. 실제 접근은 이번 조각에서 막았지만, 전역 표시 일관성은 후속 polish 대상이다.
 - 테스트:
-  - `./gradlew test --tests com.worldmap.admin.AdminPageIntegrationTest --tests com.worldmap.recommendation.RecommendationFeedbackIntegrationTest --tests com.worldmap.auth.application.MemberSessionManagerTest`
+  - `./gradlew test --tests com.worldmap.admin.AdminPageIntegrationTest --tests com.worldmap.recommendation.RecommendationFeedbackIntegrationTest --tests com.worldmap.auth.application.MemberSessionManagerTest --tests com.worldmap.auth.application.AdminAccessGuardTest`
   - `git diff --check`
 - 블로그 반영 여부: 반영. 이 조각은 admin 요청 흐름과 권한 source of truth를 실제로 바꾸는 auth slice라서, 왜 session role만 믿지 않고 DB role을 다시 보는지 설명 가치가 충분하다.
 - 배운 점: 세션에 `role`을 넣는 건 화면 렌더링과 간단한 분기에는 편하지만, 운영 권한처럼 회수 가능성이 있는 값은 그대로 권한 source of truth가 되면 안 된다. identity 캐시와 authorization source를 분리해야 뒤늦은 role 변경도 안전하게 먹힌다.
