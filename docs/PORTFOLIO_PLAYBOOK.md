@@ -909,6 +909,7 @@
 - 같은 방식으로 `population-battle` 대표 게임에도 game-over modal keyboard E2E를 추가해, 2-choice 게임에서도 `Tab / Shift+Tab / Escape / restart 후 focus return`이 실제 Chromium에서 유지되는지 고정했다
 - 같은 방식으로 `flag` 대표 게임에도 game-over modal keyboard E2E를 추가해, 이미지 기반 4-choice quiz shell에서도 `Tab / Shift+Tab / Escape / restart 후 focus return`이 실제 Chromium에서 유지되는지 고정했다
 - 이로써 public 게임 5종(location / capital / population / population-battle / flag)의 terminal modal keyboard contract를 모두 real-browser browser smoke로 설명할 수 있게 됐다
+- 이후 `game-over-modal.js` helper를 추가해, 다섯 게임 JS에 흩어져 있던 `inert + keydown trap + restart entry focus`를 한 곳으로 모았다. 각 게임은 summary 문구와 restart 뒤 primary play surface focus만 넘기고, modal keyboard contract 자체는 공통 helper가 맡는다
 - `.github/workflows/verify.yml`을 추가해 GitHub Actions에서 `test -> browser-smoke` 두 verification job을 분리해 돌리도록 했다. `test` job은 Redis service를 명시적으로 띄우고, `browser-smoke` job은 Playwright Chromium 설치 뒤 `./gradlew browserSmokeTest`를 실행한다
 - GitHub `main` 브랜치 protection에도 `test`, `browser-smoke`를 `strict=true` required status check로 연결해, production-ready 검증 레일이 실제 merge gate로 동작하도록 맞췄다
 - 이 과정에서 `RedisSessionConfigurationIntegrationTest`가 prod session config만 보도록 schema 생성 override를 추가했고, 여러 게임 flow test의 game-over/restart 기대값도 현재 하트 규칙에 맞게 정리해 CI green baseline을 다시 맞췄다
@@ -917,7 +918,6 @@
 
 - 국기 게임 세부 난이도(동일 대륙 고정 비율, 자산 36개 이후 확장 전략)를 더 넓힐지 결정
 - 신규 게임 3종이 모두 열린 상태에서 홈/랭킹/Stats 문구를 더 줄일지, 아니면 현재 그룹 구조로 유지할지 한 번 더 확인
-- 반복된 game-over modal focus 로직을 공용 helper로 올릴지, 지금처럼 게임별 script 안에 유지할지 결정
 
 반드시 이해할 것:
 

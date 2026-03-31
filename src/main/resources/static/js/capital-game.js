@@ -67,11 +67,20 @@ function initPlayPage() {
     const gameOverSummary = document.getElementById("capital-game-over-summary");
     const restartButton = document.getElementById("capital-restart-button");
     const pageShell = document.querySelector(".page-shell");
+    const gameOverModalController = window.createGameOverModalController({
+        modal: gameOverModal,
+        panel: gameOverPanel,
+        summaryTarget: gameOverSummary,
+        restartButton,
+        pageShell,
+        buildSummaryText: (payload) =>
+            `Stage ${payload.stageNumber}에서 탈락했습니다. 현재 총점 ${payload.totalScore}점, 다시 시작하면 같은 세션으로 Stage 1부터 이어집니다.`
+    });
 
     let currentState = null;
     let interactionLocked = false;
 
-    window.addEventListener("pageshow", hideGameOverModal);
+    window.addEventListener("pageshow", gameOverModalController.hide);
     restartButton?.addEventListener("click", restartCurrentSession);
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -370,21 +379,11 @@ function initPlayPage() {
     }
 
     function showGameOverModal(payload) {
-        gameOverSummary.textContent = `Stage ${payload.stageNumber}에서 탈락했습니다. 현재 총점 ${payload.totalScore}점, 다시 시작하면 같은 세션으로 Stage 1부터 이어집니다.`;
-        gameOverModal.hidden = false;
-        if (pageShell) {
-            pageShell.inert = true;
-        }
-        document.addEventListener("keydown", handleGameOverModalKeydown);
-        (restartButton || gameOverPanel)?.focus();
+        gameOverModalController.show(payload);
     }
 
     function hideGameOverModal() {
-        gameOverModal.hidden = true;
-        if (pageShell) {
-            pageShell.inert = false;
-        }
-        document.removeEventListener("keydown", handleGameOverModalKeydown);
+        gameOverModalController.hide();
     }
 
     function lockInteraction(locked) {
@@ -397,48 +396,6 @@ function initPlayPage() {
 
     function focusFirstPlayableOption() {
         optionsBox.querySelector("input[name='capital-option']:not([disabled])")?.focus();
-    }
-
-    function handleGameOverModalKeydown(event) {
-        if (gameOverModal?.hidden) {
-            return;
-        }
-
-        if (event.key === "Escape") {
-            event.preventDefault();
-            (restartButton || gameOverPanel)?.focus();
-            return;
-        }
-
-        if (event.key !== "Tab") {
-            return;
-        }
-
-        const focusableElements = getGameOverFocusableElements();
-        if (focusableElements.length === 0) {
-            event.preventDefault();
-            gameOverPanel?.focus();
-            return;
-        }
-
-        const firstElement = focusableElements[0];
-        const lastElement = focusableElements[focusableElements.length - 1];
-
-        if (event.shiftKey && document.activeElement === firstElement) {
-            event.preventDefault();
-            lastElement.focus();
-            return;
-        }
-
-        if (!event.shiftKey && document.activeElement === lastElement) {
-            event.preventDefault();
-            firstElement.focus();
-        }
-    }
-
-    function getGameOverFocusableElements() {
-        return Array.from(gameOverModal.querySelectorAll("a[href], button:not([disabled]), [tabindex]:not([tabindex='-1'])"))
-            .filter((element) => !element.hidden);
     }
 }
 

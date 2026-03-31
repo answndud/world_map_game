@@ -175,6 +175,7 @@
 112. [population 게임오버 모달 키보드 흐름도 실제 브라우저 E2E로 고정하기](./119-lock-population-game-over-modal-keyboard-flow-with-real-browser-e2e.md)
 113. [location 게임오버 모달 키보드 흐름도 실제 브라우저 E2E로 고정하기](./120-lock-location-game-over-modal-keyboard-flow-with-real-browser-e2e.md)
 114. [flag 게임오버 모달 키보드 흐름도 실제 브라우저 E2E로 고정하기](./121-lock-flag-game-over-modal-keyboard-flow-with-real-browser-e2e.md)
+115. [public 게임들의 게임오버 모달 focus 규칙을 공용 helper로 정리하기](./122-extract-shared-game-over-modal-focus-helper-for-public-games.md)
 
 ### Part E. 확장과 포트폴리오 정리
 

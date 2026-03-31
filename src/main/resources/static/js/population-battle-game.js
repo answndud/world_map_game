@@ -64,11 +64,20 @@ function initPopulationBattlePlayPage() {
     const gameOverSummary = document.getElementById("population-battle-game-over-summary");
     const restartButton = document.getElementById("population-battle-restart-button");
     const pageShell = document.querySelector(".page-shell");
+    const gameOverModalController = window.createGameOverModalController({
+        modal: gameOverModal,
+        panel: gameOverPanel,
+        summaryTarget: gameOverSummary,
+        restartButton,
+        pageShell,
+        buildSummaryText: (payload) =>
+            `하트를 모두 잃었습니다. 최종 점수 ${payload.totalScore}점으로 종료되었습니다.`
+    });
 
     let currentState = null;
     let interactionLocked = false;
 
-    window.addEventListener("pageshow", hideGameOverModal);
+    window.addEventListener("pageshow", gameOverModalController.hide);
     restartButton?.addEventListener("click", restartCurrentSession);
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -349,23 +358,11 @@ function initPopulationBattlePlayPage() {
     }
 
     function showGameOverModal(payload) {
-        gameOverSummary.textContent = `하트를 모두 잃었습니다. 최종 점수 ${payload.totalScore}점으로 종료되었습니다.`;
-        gameOverModal.hidden = false;
-        if (pageShell) {
-            pageShell.inert = true;
-        }
-        document.addEventListener("keydown", handleGameOverModalKeydown);
-        (restartButton || gameOverPanel)?.focus();
+        gameOverModalController.show(payload);
     }
 
     function hideGameOverModal() {
-        if (gameOverModal) {
-            gameOverModal.hidden = true;
-        }
-        if (pageShell) {
-            pageShell.inert = false;
-        }
-        document.removeEventListener("keydown", handleGameOverModalKeydown);
+        gameOverModalController.hide();
     }
 
     function hasCurrentSelection() {
@@ -374,48 +371,6 @@ function initPopulationBattlePlayPage() {
 
     function focusFirstPlayableOption() {
         optionsBox.querySelector("input[name='population-battle-option']:not([disabled])")?.focus();
-    }
-
-    function handleGameOverModalKeydown(event) {
-        if (gameOverModal?.hidden) {
-            return;
-        }
-
-        if (event.key === "Escape") {
-            event.preventDefault();
-            (restartButton || gameOverPanel)?.focus();
-            return;
-        }
-
-        if (event.key !== "Tab") {
-            return;
-        }
-
-        const focusableElements = getGameOverFocusableElements();
-        if (focusableElements.length === 0) {
-            event.preventDefault();
-            gameOverPanel?.focus();
-            return;
-        }
-
-        const firstElement = focusableElements[0];
-        const lastElement = focusableElements[focusableElements.length - 1];
-
-        if (event.shiftKey && document.activeElement === firstElement) {
-            event.preventDefault();
-            lastElement.focus();
-            return;
-        }
-
-        if (!event.shiftKey && document.activeElement === lastElement) {
-            event.preventDefault();
-            firstElement.focus();
-        }
-    }
-
-    function getGameOverFocusableElements() {
-        return Array.from(gameOverModal.querySelectorAll("a[href], button:not([disabled]), [tabindex]:not([tabindex='-1'])"))
-            .filter((element) => !element.hidden);
     }
 }
 

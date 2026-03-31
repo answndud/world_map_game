@@ -34,6 +34,54 @@
 - 면접용 30초 요약:
 ```
 
+## 2026-03-31 - 게임오버 모달 focus 규칙을 공용 helper로 정리하기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: public 게임 5종의 modal browser E2E를 모두 닫고 나니, `inert / Tab trap / Escape / restart entry focus` 로직이 다섯 게임 JS에 거의 같은 형태로 반복되고 있었다. production-ready 기준에서는 테스트가 있는 것만큼 “같은 규칙이 한 곳에 모여 있는가”도 중요하다. 이번 조각은 modal keyboard contract를 공용 helper 하나로 모아, 이후 수정이 한 군데에서 끝나게 만드는 데 집중했다.
+- 변경 파일:
+  - `src/main/resources/static/js/game-over-modal.js`
+  - `src/main/resources/static/js/capital-game.js`
+  - `src/main/resources/static/js/population-game.js`
+  - `src/main/resources/static/js/flag-game.js`
+  - `src/main/resources/static/js/population-battle-game.js`
+  - `src/main/resources/static/js/location-game.js`
+  - `src/main/resources/templates/capital-game/start.html`
+  - `src/main/resources/templates/capital-game/play.html`
+  - `src/main/resources/templates/population-game/start.html`
+  - `src/main/resources/templates/population-game/play.html`
+  - `src/main/resources/templates/flag-game/start.html`
+  - `src/main/resources/templates/flag-game/play.html`
+  - `src/main/resources/templates/population-battle-game/start.html`
+  - `src/main/resources/templates/population-battle-game/play.html`
+  - `src/main/resources/templates/location-game/start.html`
+  - `src/main/resources/templates/location-game/play.html`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/122-extract-shared-game-over-modal-focus-helper-for-public-games.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+- 요청 흐름: 런타임 흐름은 바뀌지 않는다. 여전히 각 게임 play page JS가 `POST /answer`에서 `GAME_OVER`를 받으면 modal을 연다. 바뀐 점은 브라우저 표현 계층 안에서, 각 게임 JS가 직접 keydown trap을 구현하지 않고 `window.createGameOverModalController(...)`를 호출해 `modal / panel / summary / restartButton / pageShell / buildSummaryText`를 넘긴다는 점이다. restart 성공 뒤 `focusFirstPlayableOption()`이나 `focusPrimaryPlaySurface()`는 각 게임이 계속 맡고, modal open/close와 keyboard trap 계약만 helper가 공통으로 처리한다.
+- 데이터 / 상태 변화: 서버 도메인 상태나 DB/Redis 스키마 변화는 없다. 바뀐 것은 브라우저 계층의 책임 분리다. 이전에는 다섯 게임 JS가 각각 `showGameOverModal`, `hideGameOverModal`, `handleGameOverModalKeydown`, `getGameOverFocusableElements`를 들고 있었고, 지금은 공통 helper가 그 규칙을 맡는다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “공용화는 테스트가 닫힌 뒤에 해야 설명 가능하다”는 점이다. 먼저 real-browser E2E로 modal contract를 고정했기 때문에, 이제 그 contract를 helper로 올려도 behavior regression을 바로 잡아낼 수 있다. 즉 추상화를 먼저 넣지 않고, 계약을 확인한 다음 공통 seam으로 올린 것이다.
+- 예외 / 엣지 케이스:
+  - helper는 summary 문구와 entry focus target만 각 게임에서 주입받고, restart 뒤 primary play surface focus는 각 게임이 그대로 맡는다. location은 `#globe-stage`, 나머지는 첫 playable option input으로 돌아가야 하기 때문이다.
+  - start page도 같은 JS 파일을 쓰기 때문에, play 템플릿뿐 아니라 start 템플릿의 asset version도 함께 올려 캐시를 끊었다.
+  - helper는 `game-over-modal.js`를 play 템플릿에서 game JS보다 먼저 로드한다. start 페이지는 helper를 로드하지 않지만, page guard 때문에 `initPlayPage()`가 실행되지 않아 문제가 없다.
+- 테스트:
+  - `node --check src/main/resources/static/js/game-over-modal.js`
+  - `node --check src/main/resources/static/js/capital-game.js`
+  - `node --check src/main/resources/static/js/population-game.js`
+  - `node --check src/main/resources/static/js/flag-game.js`
+  - `node --check src/main/resources/static/js/population-battle-game.js`
+  - `node --check src/main/resources/static/js/location-game.js`
+  - `./gradlew browserSmokeTest`
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이번 조각은 단순 중복 제거가 아니라, real-browser E2E로 고정한 modal 접근성 계약을 어떤 기준으로 helper seam으로 올렸는지 설명 가치가 있다.
+- 배운 점: 공용 helper는 빨리 만드는 것보다, “무엇이 공통 contract이고 무엇이 게임별 차이인가”가 먼저 선명해야 제대로 뽑힌다. 이번에는 modal open/close와 keyboard trap은 공통, summary 문구와 restart 뒤 focus surface는 게임별 차이라는 기준이 분명해진 뒤에 helper로 올렸기 때문에 설명하기 쉬워졌다.
+- 아직 약한 부분: 국기 게임 난이도/자산 전략과 홈/랭킹/Stats 문구 밀도는 아직 별도 판단이 남아 있다. 또한 이 helper는 public 게임 5종에만 적용했고, 다른 future modal까지 전역 규칙으로 일반화한 것은 아니다.
+- 면접용 30초 요약: public 게임 5종의 game-over modal keyboard 규칙을 `game-over-modal.js` helper로 공통화했습니다. 핵심은 먼저 Playwright로 `Tab / Shift+Tab / Escape / restart 후 focus return` 계약을 고정한 뒤, 그 계약이 확인된 부분만 helper로 올렸다는 점입니다. 그래서 이제는 모달 접근성 규칙을 한 곳에서 수정할 수 있고, summary 문구와 restart 뒤 focus target만 게임별로 다르게 유지한다고 설명할 수 있습니다.
+
 ## 2026-03-31 - GitHub verify 레일을 실제 required check로 강제하기
 
 - 단계: 10. 포트폴리오 정리와 발표 준비
