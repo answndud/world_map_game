@@ -285,6 +285,7 @@
 - 공통 shell과 홈, 추천, 랭킹, Stats, My Page는 최근 디자인 패스에서 다크/라이트 공통 톤과 각진 패널 레이아웃 기준으로 다시 정리했고, public 화면 테스트도 새 카피 기준으로 다시 고정했다.
 - public 게임 5종의 game-over modal focus 규칙은 브라우저 helper `game-over-modal.js`로 공통화해, `inert / Tab trap / Escape / restart 후 focus return` 계약이 게임마다 어긋나지 않게 유지한다.
 - production-ready 후속으로 `Playwright` 기반 `browserSmokeTest` 레일을 추가해, `home` SSR shell, `capital start -> play`, location / capital / population / population-battle / flag 게임오버 모달의 `Tab / Shift+Tab / Escape / restart 후 focus return`, `recommendation survey -> result`, `/ranking`, `/stats`를 실제 headless Chromium에서 검증한다. 기본 `test` task와 분리해 브라우저 기동 비용이 평소 단위/통합 테스트 피드백을 막지 않게 했고, `browser-smoke` profile은 legacy rollback initializer를 끄고 Redis를 비어 있는 `127.0.0.1:6390`으로 돌린다. 이때 public 랭킹 read path는 Redis read/write 실패를 `cache miss`처럼 다루고 RDB top run으로 fallback하므로, local Redis 없이도 `/ranking`과 `/stats`가 계속 열린다.
+- production-ready 마지막 조각으로 `publicUrlSmokeTest` 레일을 추가해, `WORLDMAP_PUBLIC_BASE_URL=https://... ./gradlew publicUrlSmokeTest` 한 번으로 `/`, `/stats`, `/ranking`, `/login`, `/signup`, `/recommendation/survey`, `/games/capital/start`의 status와 browser-side `TTFB(responseStart) / DOMContentLoaded / load`를 같은 Markdown report로 남길 수 있게 했다. URL을 주지 않으면 `test + browser-smoke` 내장 서버로 같은 레일을 먼저 검증하고, 결과는 `build/reports/public-url-smoke/public-url-smoke.md`에 쌓인다.
 - 신규 게임 3종이 들어온 뒤 public 정보 밀도가 다시 높아져, 홈은 `아케이드 러너 / 퀵 퀴즈와 추천` 두 구역으로 모드 카드를 재그룹핑했다. 위치 찾기, 인구 비교 퀵 배틀, 인구수 맞추기는 빠른 반복 플레이 축으로, 수도 맞히기, 국기 퀴즈, 나라 추천은 짧은 퀴즈/탐색 축으로 묶어 첫 진입 판단 비용을 낮췄다.
 - 공개 `/ranking`은 다섯 게임을 긴 라벨 대신 `위치 / 수도 / 국기 / 배틀 / 인구` 짧은 버튼으로 전환하게 바꿨다. 정렬과 집계 규칙은 그대로 서버가 맡고, public 표면에서는 필터 탐색 비용만 줄이는 방향으로 다듬었다.
 - 공개 `/stats`는 서비스 전체 지표와 게임별 완료 수를 분리하고, Top 보드도 `아케이드 상위 기록 / 퀵 퀴즈 상위 기록` 두 묶음으로 다시 정리했다. 즉, 운영 숫자를 더 늘리지 않고 “지금 서비스가 어떤 종류의 플레이를 담고 있는가”를 먼저 읽히게 하는 편을 택했다.
@@ -834,6 +835,11 @@ SSR을 쓰더라도 게임 진행 중에는 비동기 API가 필요하다.
   - `/ranking`, `/stats`, `/api/rankings/*`는 `LeaderboardService`가 Redis read 실패를 DB fallback으로 흡수하고, Redis warm/rebuild는 best-effort로만 시도한다
   - 기본 `./gradlew test`는 `browser-smoke` tag를 제외해 빠른 피드백을 유지하고, 브라우저 레일은 별도 verification task로 실행한다
   - 첫 실행에서는 Playwright 브라우저 바이너리 다운로드가 일어날 수 있다
+- 공개 URL smoke + 성능 측정
+  - `./gradlew publicUrlSmokeTest`는 공개 URL 또는 기본 내장 서버 기준으로 `/`, `/stats`, `/ranking`, `/login`, `/signup`, `/recommendation/survey`, `/games/capital/start`를 실제 Chromium으로 연다
+  - `WORLDMAP_PUBLIC_BASE_URL` 또는 `-Dworldmap.publicBaseUrl=https://...`를 주면 해당 URL을, 없으면 `test + browser-smoke` 내장 서버를 사용한다
+  - 각 페이지마다 HTTP status, title, 대표 heading, browser-side `TTFB(responseStart)`, `DOMContentLoaded`, `load`를 측정해 `build/reports/public-url-smoke/public-url-smoke.md`에 Markdown report를 남긴다
+  - 이 레일은 배포 URL을 찾았을 때 “실제 운영 주소에서 첫 진입이 얼마나 느린가”를 같은 형식으로 비교하기 위한 용도다
 - GitHub Actions 검증 레일
   - `.github/workflows/verify.yml`은 `test` job과 `browser-smoke` job을 분리해 실행한다
   - `test` job은 Redis service를 같이 띄워 현재 통합 테스트 전제를 충족시키고, `browser-smoke` job은 Playwright Chromium 설치 뒤 `./gradlew browserSmokeTest`를 실행한다

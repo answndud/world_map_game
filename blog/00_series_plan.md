@@ -141,6 +141,7 @@
 114. [location 게임오버 모달 키보드 흐름도 실제 브라우저 E2E로 고정하기](./120-lock-location-game-over-modal-keyboard-flow-with-real-browser-e2e.md)
 115. [flag 게임오버 모달 키보드 흐름도 실제 브라우저 E2E로 고정하기](./121-lock-flag-game-over-modal-keyboard-flow-with-real-browser-e2e.md)
 116. [public 게임들의 게임오버 모달 focus 규칙을 공용 helper로 정리하기](./122-extract-shared-game-over-modal-focus-helper-for-public-games.md)
+117. [공개 URL smoke와 초기 진입 수치를 같은 레일에서 재기](./123-add-a-public-url-smoke-lane-for-read-only-pages-and-navigation-timing.md)
 
 ### Part E. 테스트, 확장, 취업 패키징
 

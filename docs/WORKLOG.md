@@ -34,6 +34,35 @@
 - 면접용 30초 요약:
 ```
 
+## 2026-03-31 - 실제 공개 URL smoke와 초기 진입 수치를 재는 전용 레일 추가하기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: production-ready 마감에서 남은 핵심은 “실제 배포 URL에서 public 화면이 잘 뜨는가”와 “첫 진입이 어느 정도 빠른가”를 같은 형식으로 남기는 일이었다. 그런데 현재 저장소와 GitHub metadata에는 실제 공개 URL이 없어서, 곧바로 production을 찍는 것보다 먼저 측정 레일 자체를 코드로 고정하는 편이 맞았다. 이번 조각은 `publicUrlSmokeTest`를 추가해, URL만 주면 public read-only 화면의 상태와 browser-side `TTFB / DOMContentLoaded / load`를 바로 report로 남길 수 있게 만드는 데 집중했다.
+- 변경 파일:
+  - `build.gradle`
+  - `src/test/java/com/worldmap/e2e/PublicUrlSmokeE2ETest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/123-add-a-public-url-smoke-lane-for-read-only-pages-and-navigation-timing.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+- 요청 흐름: 이 조각의 시작점은 사용자 요청이나 게임 API가 아니라 `./gradlew publicUrlSmokeTest`다. task는 `public-url-smoke` tag만 실행하고, [PublicUrlSmokeE2ETest.java](/Users/alex/project/worldmap/src/test/java/com/worldmap/e2e/PublicUrlSmokeE2ETest)가 Playwright Chromium으로 `/`, `/stats`, `/ranking`, `/login`, `/signup`, `/recommendation/survey`, `/games/capital/start`를 차례로 연다. 실제 URL이 있으면 `WORLDMAP_PUBLIC_BASE_URL` 또는 `-Dworldmap.publicBaseUrl=...`를 쓰고, 없으면 `test + browser-smoke` 내장 서버의 random port를 기본값으로 쓴다. 각 페이지는 응답 status, title, 대표 `h1`, Navigation Timing의 `responseStart / domContentLoadedEventEnd / loadEventEnd`를 읽고, 마지막에 `build/reports/public-url-smoke/public-url-smoke.md`로 report를 남긴다.
+- 데이터 / 상태 변화: 운영 DB나 Redis 스키마 변화는 없다. 새로 생긴 것은 verification lane과 report 산출물이다. 이 레일은 read-only public 페이지만 연다. 실제 write path를 건드리지 않기 때문에 production에 붙여도 랭킹이나 추천 데이터를 오염시키지 않는다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “실제 측정 자체”보다 “측정을 반복 가능한 코드로 만든다”는 점이다. production-ready 품질은 한 번 체감으로 보는 것보다, 같은 경로와 같은 지표를 다시 잴 수 있어야 설명 가능하다. 그래서 public URL smoke는 ad-hoc curl 모음이 아니라 별도 Test task로 두고, 측정 대상도 public read-only surface로 한정했다.
+- 예외 / 엣지 케이스:
+  - 실제 공개 URL은 현재 저장소/GitHub metadata에서 찾지 못했다. `homepageUrl`은 비어 있고, GitHub deployment/environment도 없어서 production 실행까지는 아직 URL 입력이 필요하다.
+  - 그래서 이 레일은 URL이 없을 때 내장 `test + browser-smoke` 서버로 자동 fallback한다. 이번 검증에서 생성된 local report는 `Base URL: http://127.0.0.1:56776` 기준으로 `/` TTFB `309ms`, `/stats` `307ms`, `/ranking` `19ms`, `/login` `18ms`, `/signup` `9ms`, `/recommendation/survey` `14ms`, `/games/capital/start` `6ms`였다.
+  - metric 이름은 `TTFB`로 적었지만, 실제 값은 browser-side Navigation Timing `responseStart` 근사치다. 즉 server-only `curl time_starttransfer`와는 약간 다를 수 있다.
+- 테스트:
+  - `./gradlew compileTestJava`
+  - `./gradlew publicUrlSmokeTest --tests com.worldmap.e2e.PublicUrlSmokeE2ETest`
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이번 조각은 단순 문구 수정이 아니라 production-ready 후속 verification lane을 하나 더 추가한 것이고, request flow와 report 구조를 설명할 가치가 있다.
+- 배운 점: 배포 smoke는 “URL만 알면 그때 가서 수동으로 본다”가 아니라, URL이 생겼을 때 바로 재사용할 수 있는 측정 레일을 먼저 만들어 두는 편이 훨씬 설명 가능했다. 특히 TTFB와 체감 성능은 숫자와 경로가 함께 남아야 나중에 개선 전후 비교도 가능하다.
+- 아직 약한 부분: 실제 ECS/ALB 공개 URL로 이 레일을 한 번 돌린 report는 아직 없다. repository metadata에 배포 URL이나 deployment record가 없어서, 첫 production report는 URL을 확보한 뒤 한 번 더 남겨야 한다.
+- 면접용 30초 요약: 이번에는 공개 URL smoke와 초기 진입 수치를 재는 전용 레일을 추가했습니다. `publicUrlSmokeTest`를 실행하면 `/`, `/stats`, `/ranking`, `/login`, `/signup`, `/recommendation/survey`, `/games/capital/start`를 실제 Chromium으로 열고, 상태와 `TTFB(responseStart) / DOMContentLoaded / load`를 Markdown report로 남깁니다. 핵심은 production URL이 생기면 같은 명령으로 바로 실측을 남길 수 있게 한 점입니다.
+
 ## 2026-03-31 - 홈, 랭킹, Stats public shell 문구 밀도 줄이기
 
 - 단계: 10. 포트폴리오 정리와 발표 준비

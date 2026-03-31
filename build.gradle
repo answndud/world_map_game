@@ -38,6 +38,7 @@ dependencies {
 tasks.named('test') {
 	useJUnitPlatform {
 		excludeTags 'browser-smoke'
+		excludeTags 'public-url-smoke'
 	}
 }
 
@@ -50,4 +51,19 @@ tasks.register('browserSmokeTest', Test) {
 		includeTags 'browser-smoke'
 	}
 	shouldRunAfter(tasks.named('test'))
+}
+
+tasks.register('publicUrlSmokeTest', Test) {
+	group = 'verification'
+	description = 'Runs browser-based smoke and timing checks against a configured public base URL.'
+	testClassesDirs = sourceSets.test.output.classesDirs
+	classpath = sourceSets.test.runtimeClasspath
+	useJUnitPlatform {
+		includeTags 'public-url-smoke'
+	}
+	def publicBaseUrl = System.getProperty('worldmap.publicBaseUrl')
+	if (publicBaseUrl != null) {
+		systemProperty 'worldmap.publicBaseUrl', publicBaseUrl
+	}
+	shouldRunAfter(tasks.named('browserSmokeTest'))
 }
