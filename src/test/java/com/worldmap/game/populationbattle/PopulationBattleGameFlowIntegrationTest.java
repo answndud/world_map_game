@@ -238,7 +238,7 @@ class PopulationBattleGameFlowIntegrationTest {
 			.orElseThrow();
 		int wrongOptionNumber = findWrongOptionNumber(firstStage.getCorrectOptionNumber());
 
-		for (int attempt = 1; attempt <= 2; attempt++) {
+		for (int attempt = 1; attempt <= 3; attempt++) {
 			mockMvc.perform(
 				post("/api/games/population-battle/sessions/{sessionId}/answer", sessionId)
 					.session(browserSession)
@@ -298,7 +298,7 @@ class PopulationBattleGameFlowIntegrationTest {
 		PopulationBattleGameStage secondStage = populationBattleGameStageRepository.findBySessionIdAndStageNumber(sessionId, 2)
 			.orElseThrow();
 		int secondStageWrongOptionNumber = findWrongOptionNumber(secondStage.getCorrectOptionNumber());
-		for (int attempt = 1; attempt <= 3; attempt++) {
+		for (int attempt = 1; attempt <= 2; attempt++) {
 			mockMvc.perform(
 				post("/api/games/population-battle/sessions/{sessionId}/answer", sessionId)
 					.session(browserSession)

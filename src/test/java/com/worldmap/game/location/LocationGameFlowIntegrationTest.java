@@ -307,7 +307,7 @@ class LocationGameFlowIntegrationTest {
 		LocationGameStage secondStage = locationGameStageRepository.findBySessionIdAndStageNumber(sessionId, 2)
 			.orElseThrow();
 		String secondStageWrongCountryIso3Code = findWrongCountryIso3Code(sessionId, secondStage.getTargetCountryIso3Code());
-		for (int attempt = 1; attempt <= 3; attempt++) {
+		for (int attempt = 1; attempt <= 2; attempt++) {
 			mockMvc.perform(
 				post("/api/games/location/sessions/{sessionId}/answer", sessionId)
 					.session(browserSession)

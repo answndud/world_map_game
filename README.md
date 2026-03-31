@@ -833,6 +833,10 @@ SSR을 쓰더라도 게임 진행 중에는 비동기 API가 필요하다.
   - `/ranking`, `/stats`, `/api/rankings/*`는 `LeaderboardService`가 Redis read 실패를 DB fallback으로 흡수하고, Redis warm/rebuild는 best-effort로만 시도한다
   - 기본 `./gradlew test`는 `browser-smoke` tag를 제외해 빠른 피드백을 유지하고, 브라우저 레일은 별도 verification task로 실행한다
   - 첫 실행에서는 Playwright 브라우저 바이너리 다운로드가 일어날 수 있다
+- GitHub Actions 검증 레일
+  - `.github/workflows/verify.yml`은 `test` job과 `browser-smoke` job을 분리해 실행한다
+  - `test` job은 Redis service를 같이 띄워 현재 통합 테스트 전제를 충족시키고, `browser-smoke` job은 Playwright Chromium 설치 뒤 `./gradlew browserSmokeTest`를 실행한다
+  - 즉 CI도 로컬과 같은 계약을 따른다. 일반 테스트는 Redis-backed integration 전제를 명시적으로 갖고, browser smoke는 계속 Redis-free profile 위에서 돈다
 
 면접에서는 "어떤 테스트가 핵심 비즈니스 리스크를 막는가"를 설명할 수 있어야 한다.
 

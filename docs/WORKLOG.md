@@ -34,6 +34,41 @@
 - 면접용 30초 요약:
 ```
 
+## 2026-03-31 - GitHub Actions에 `test -> browserSmokeTest` verify 레일 올리기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: browser smoke와 일반 테스트 레일이 로컬에서는 설명 가능해졌지만, 아직 GitHub Actions에서 자동으로 막아 주는 verification workflow는 없었다. production-ready 품질을 한 단계 더 올리려면 PR이나 main push에서 `./gradlew test`와 `./gradlew browserSmokeTest`가 같은 계약으로 재현되어야 했다. 이번 조각은 verify workflow를 추가하고, 그 과정에서 드러난 self-contained하지 않은 테스트까지 같이 정리하는 데 집중했다.
+- 변경 파일:
+  - `.github/workflows/verify.yml`
+  - `src/test/java/com/worldmap/common/config/RedisSessionConfigurationIntegrationTest.java`
+  - `src/test/java/com/worldmap/game/location/LocationGameFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/game/capital/CapitalGameFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/game/population/PopulationGameFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/game/flag/FlagGameFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/game/populationbattle/PopulationBattleGameFlowIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/117-add-a-github-actions-verify-lane-for-tests-and-browser-smoke.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+- 요청 흐름: GitHub Actions의 시작점은 이제 `.github/workflows/verify.yml`이다. `test` job은 checkout 뒤 Java 25를 세팅하고 Redis service(`6379`)를 띄운 뒤 `./gradlew test`를 실행한다. `browser-smoke` job은 `needs: test` 뒤에 checkout, Java 25, Node 22, `npx playwright install --with-deps chromium`, `./gradlew browserSmokeTest` 순으로 간다. 즉 CI도 로컬과 같은 구조를 따라, 일반 통합 테스트는 Redis-backed 전제를 명시적으로 제공하고, browser smoke는 계속 `browser-smoke` profile 위에서 Redis-free로 돈다.
+- 데이터 / 상태 변화: 운영 DB/Redis 스키마 변화는 없다. GitHub Actions에서만 ephemeral Redis service가 `test` job 동안 살아 있고, browser smoke는 여전히 H2 + empty Redis 6390 설정으로 돈다. 테스트 코드 쪽에서는 `RedisSessionConfigurationIntegrationTest`가 prod session config만 보도록 schema 생성 override를 추가했고, 여러 게임 flow test는 현재 하트 규칙 기준으로 `game over`와 `restart` 기대값을 바로잡았다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “verification lane도 전제를 숨기지 말아야 한다”는 점이다. `test`는 실제로 Redis가 필요한 통합 테스트고, `browserSmokeTest`는 반대로 Redis-free browser lane이다. 이 둘을 한 workflow에 올리더라도 서로 다른 전제를 같은 job에서 얼버무리지 않고, job 경계와 service/profile로 명시하는 편이 더 설명 가능하다.
+- 예외 / 엣지 케이스:
+  - 처음에는 workflow만 추가하면 될 것 같았지만, `./gradlew test`를 CI 전제대로 다시 돌려 보니 `RedisSessionConfigurationIntegrationTest`가 prod schema validation까지 끌고 와 context가 뜨지 않는 문제와, 일부 game flow test가 현재 하트 규칙보다 예전 기대값을 들고 있는 문제가 함께 드러났다.
+  - 그래서 이번 조각은 workflow YAML만이 아니라 “CI에서 실제로 초록색이 되는 baseline”까지 닫는 범위로 마무리했다.
+  - browser smoke job은 Playwright Chromium 설치가 필요하므로 일반 test job보다 느리다. 그래서 `needs: test` 뒤로 배치해, core test가 깨졌을 때 브라우저 비용을 먼저 쓰지 않게 했다.
+- 테스트:
+  - `ruby -e 'require "yaml"; data = YAML.load_file(".github/workflows/verify.yml"); abort("missing jobs") unless data["jobs"]; puts data["jobs"].keys.join(",")'`
+  - `./gradlew test`
+  - `./gradlew browserSmokeTest`
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이번 조각은 단순 CI YAML 추가가 아니라 왜 `test`와 `browserSmokeTest`를 다른 전제로 분리해야 하는지, 그리고 workflow를 추가하면서 기존 테스트를 어떻게 self-contained하게 다시 맞췄는지 설명 가치가 있다.
+- 배운 점: CI는 “이미 맞는 테스트를 옮겨 담는 곳”이 아니라, 숨겨진 전제와 오래된 기대값을 드러내는 장치였다. 이번에는 Redis service가 필요한 통합 테스트와 Redis-free browser smoke를 분리하고, workflow를 만들면서 깨진 테스트까지 같이 정리해야 진짜 green baseline이 만들어졌다.
+- 아직 약한 부분: verify workflow는 생겼지만 아직 GitHub에서 required check로 묶지는 않았다. 또한 browser smoke는 대표 경로 중심이라, 다른 게임 modal keyboard E2E나 더 깊은 client interaction까지는 아직 포함하지 않는다.
+- 면접용 30초 요약: 이번에는 `test`와 `browserSmokeTest`를 GitHub Actions verify workflow로 올렸습니다. 핵심은 두 레일의 전제를 분리해, 일반 통합 테스트는 Redis service를 명시적으로 띄우고 browser smoke는 계속 Redis-free profile로 돌리게 한 점입니다. 그 과정에서 prod session config 테스트와 여러 게임 flow 테스트의 오래된 기대값도 같이 정리해서, CI에서 실제로 초록색이 되는 verification baseline을 만들었습니다.
+
 ## 2026-03-31 - capital 게임오버 모달 키보드 흐름을 실제 브라우저 E2E로 고정하기
 
 - 단계: 10. 포트폴리오 정리와 발표 준비

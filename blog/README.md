@@ -170,6 +170,7 @@
 107. [browser smoke를 local Redis 없이도 뜨는 profile로 분리하기](./114-make-browser-smoke-tests-independent-from-local-redis.md)
 108. [Redis가 없어도 `/ranking`, `/stats`는 DB fallback으로 계속 읽히게 만들기](./115-keep-ranking-and-stats-readable-with-db-fallback-when-redis-is-down.md)
 109. [capital 게임오버 모달 키보드 흐름을 실제 브라우저 E2E로 고정하기](./116-lock-capital-game-over-modal-keyboard-flow-with-real-browser-e2e.md)
+110. [GitHub Actions에 `test -> browserSmokeTest` verify 레일 올리기](./117-add-a-github-actions-verify-lane-for-tests-and-browser-smoke.md)
 
 ### Part E. 확장과 포트폴리오 정리
 
