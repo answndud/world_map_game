@@ -34,6 +34,31 @@
 - 면접용 30초 요약:
 ```
 
+## 2026-03-31 - GitHub verify 레일을 실제 required check로 강제하기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: browser smoke와 `test` 레일은 이미 코드와 workflow 파일 안에 있었지만, GitHub에서 실제 merge gate로 묶이지 않으면 production-ready라고 말하기 애매했다. 이번 조각의 목적은 `main` 브랜치 protection에 verify 레일을 실제 required status check로 걸어, 테스트 전략이 문서 설명이 아니라 운영 규칙으로 동작하게 만드는 것이다.
+- 변경 파일:
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 시작점은 로컬 코드가 아니라 GitHub 운영 설정이다. `gh repo view`로 기본 브랜치가 `main`인지 확인하고, `gh api repos/answndud/world_map_game/branches/main/protection`으로 현재 protection이 비어 있음을 확인한 뒤, 같은 REST endpoint에 `required_status_checks.strict=true`, `contexts=["test","browser-smoke"]`를 넣어 branch protection을 적용했다. 마지막에는 `gh api .../protection --jq '{strict,contexts}'`로 실제 적용 결과를 다시 읽었다.
+- 데이터 / 상태 변화: 애플리케이션 DB나 Redis에는 변화가 없다. 바뀐 것은 GitHub 저장소의 `main` 브랜치 protection 설정이다. 이제 `test`, `browser-smoke`가 초록이 아니면 main merge가 막히고, 브랜치 최신화도 `strict=true` 기준을 따른다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “verify workflow가 존재한다”와 “그 workflow가 실제 merge gate다”는 다른 말이라는 점이다. production-ready 품질을 설명하려면 테스트 레일을 만드는 것에서 끝나지 않고, 그 레일이 실제 배포 전 관문으로 동작해야 한다.
+- 예외 / 엣지 케이스:
+  - GitHub App connector는 collaborator permission 조회에서 `403 Resource not accessible by integration`이 나왔지만, owner 계정의 `gh` 토큰으로는 branch protection 변경이 가능했다. 즉 이번 조각은 connector보다 `gh api`가 더 맞는 범위였다.
+  - 현재 required check는 `main`에만 걸었다. 다른 장기 유지 브랜치가 생기면 별도 규칙이 필요하다.
+  - 이번 조각은 저장소 외부 설정 변경이라, 블로그는 생략했다. 코드/테스트 구조를 설명하는 글보다 WORKLOG와 PLAYBOOK에 운영 규칙만 정확히 남기는 편이 맞았다.
+- 테스트:
+  - `gh repo view answndud/world_map_game --json defaultBranchRef,nameWithOwner,isPrivate`
+  - `gh api repos/answndud/world_map_game/branches/main/protection`
+  - `gh api --method PUT repos/answndud/world_map_game/branches/main/protection ...`
+  - `gh api repos/answndud/world_map_game/branches/main/protection --jq '{strict:.required_status_checks.strict, contexts:.required_status_checks.contexts}'`
+- 블로그 반영 여부: 생략. 저장소 외부 GitHub 설정 변경이고, 새 코드나 테스트 구현이 없어서 구현 글로 풀기에는 설명 가치가 낮다.
+- 배운 점: CI는 workflow YAML을 만드는 순간 끝나는 게 아니었다. required check로 연결되지 않으면 실제 운영 규칙이 아니라 참고용 자동화에 가깝다. 이번에는 verification lane을 merge gate로 묶으면서, 테스트 전략이 코드 밖의 운영 정책까지 닿아야 production-ready라고 말할 수 있다는 점이 더 선명해졌다.
+- 아직 약한 부분: required check는 걸었지만, 반복된 modal focus 로직 공용화 여부나 국기 난이도/자산 확장 전략은 아직 남아 있다. 또한 브랜치 protection 전체 정책을 코드로 관리하는 Terraform 같은 수준은 아니다.
+- 면접용 30초 요약: verify workflow를 만든 뒤 `main` 브랜치 protection에 `test`, `browser-smoke`를 실제 required check로 걸었습니다. 핵심은 테스트 레일이 존재하는 것에서 끝나지 않고, production-ready 검증이 실제 merge gate로 동작하게 만든 점입니다. 이제는 브라우저 스모크와 통합 테스트가 초록이 아니면 main으로 합쳐지지 않는다고 설명할 수 있습니다.
+
 ## 2026-03-31 - flag 게임오버 모달 키보드 흐름도 실제 브라우저 E2E로 고정하기
 
 - 단계: 10. 포트폴리오 정리와 발표 준비

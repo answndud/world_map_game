@@ -837,6 +837,7 @@ SSR을 쓰더라도 게임 진행 중에는 비동기 API가 필요하다.
   - `.github/workflows/verify.yml`은 `test` job과 `browser-smoke` job을 분리해 실행한다
   - `test` job은 Redis service를 같이 띄워 현재 통합 테스트 전제를 충족시키고, `browser-smoke` job은 Playwright Chromium 설치 뒤 `./gradlew browserSmokeTest`를 실행한다
   - 즉 CI도 로컬과 같은 계약을 따른다. 일반 테스트는 Redis-backed integration 전제를 명시적으로 갖고, browser smoke는 계속 Redis-free profile 위에서 돈다
+  - `2026-03-31` 기준 GitHub `main` 브랜치 protection에는 `test`, `browser-smoke` 두 check context를 `strict=true` required status check로 걸어, verify 레일이 초록이 아니면 merge되지 않게 맞췄다
 
 면접에서는 "어떤 테스트가 핵심 비즈니스 리스크를 막는가"를 설명할 수 있어야 한다.
 
