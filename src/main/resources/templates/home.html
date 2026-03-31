@@ -14,15 +14,14 @@
             <p class="eyebrow">Explore The World</p>
             <h1>WorldMap Command</h1>
             <p class="hero-copy">
-                지구본 탐색 게임, 인구 퀴즈, 나에게 어울리는 국가 찾기, 실시간 랭킹을
-                한곳에서 이어서 즐길 수 있는 월드 플레이 허브입니다.
+                지구본 탐색, 퀴즈, 추천, 랭킹을 한곳에서 이어서 즐기는 월드 플레이 허브입니다.
             </p>
             <div class="home-hero-support">
                 <a class="ghost-link hero-support-link" th:href="@{/stats}">서비스 현황 보기</a>
                 <div class="hero-account-callout"
                      th:if="${currentMember == null}">
                     <p class="hero-account-copy">
-                        점수와 랭킹 기록을 계속 이어가고 싶다면 계정을 연결하세요.
+                        기록을 이어가려면 계정을 연결하세요.
                     </p>
                     <div class="page-actions">
                         <a class="secondary-button" th:href="@{/login}">로그인</a>
@@ -34,7 +33,7 @@
                      th:if="${currentMember != null}">
                     <p class="hero-account-copy">
                         <span class="account-chip" th:text="${currentMember.nickname}">orbit_runner</span>
-                        계정으로 기록을 이어서 남기고 있습니다.
+                        계정에 현재 기록이 연결되어 있습니다.
                     </p>
                     <div class="page-actions">
                         <a class="secondary-button" th:href="@{/mypage}">My Page</a>
@@ -50,12 +49,12 @@
     <main class="layout home-layout">
         <section class="panel home-mode-panel" id="home-modes">
             <div class="panel-head">
-                <h2>지금 플레이할 게임</h2>
-                <p>다섯 게임과 추천을 `아케이드`, `퀵 퀴즈`, `추천` 세 그룹으로 나눠 한 번에 읽히도록 정리했습니다.</p>
+                <h2>바로 시작할 게임</h2>
+                <p>아케이드, 퀴즈, 추천을 빠르게 고를 수 있게 정리했습니다.</p>
             </div>
             <div class="panel-head home-subhead">
-                <h3>아케이드 러너</h3>
-                <p>오래 버틸수록 점수가 쌓이는 기본 플레이 루프입니다.</p>
+                <h3>아케이드</h3>
+                <p>오래 버틸수록 점수가 쌓입니다.</p>
             </div>
             <div class="card-grid home-mode-grid">
                 <article class="mode-card" th:each="card : ${modeCards}" th:if="${card.group == 'arcade'}">
@@ -72,8 +71,8 @@
             </div>
 
             <div class="panel-head home-subhead">
-                <h3>퀵 퀴즈와 추천</h3>
-                <p>짧게 여러 판 돌리거나 설문형 추천으로 바로 넘어갈 수 있는 모드입니다.</p>
+                <h3>퀴즈·추천</h3>
+                <p>짧게 한 판 하거나 추천으로 넘어갈 수 있습니다.</p>
             </div>
             <div class="card-grid home-mode-grid">
                 <article class="mode-card" th:each="card : ${modeCards}" th:if="${card.group != 'arcade'}">
@@ -93,8 +92,8 @@
         <section class="split home-info-grid">
             <article class="panel home-info-panel">
                 <div class="panel-head">
-                    <h2>처음 시작한다면</h2>
-                    <p>복잡하게 비교하지 말고 가장 끌리는 게임 하나로 먼저 들어가면 됩니다.</p>
+                    <h2>처음이라면</h2>
+                    <p>끌리는 게임 하나만 고르면 됩니다.</p>
                 </div>
                 <ol class="roadmap">
                     <li th:each="step : ${entrySteps}" th:text="${step}">
@@ -105,8 +104,8 @@
 
             <article class="panel home-info-panel">
                 <div class="panel-head">
-                    <h2>기록은 이렇게 이어집니다</h2>
-                    <p>가볍게 시작하고 싶을 때는 guest, 계속 남기고 싶을 때는 계정으로 연결하면 됩니다.</p>
+                    <h2>기록 연결</h2>
+                    <p>게스트로 시작하고 필요할 때 계정으로 이어받으면 됩니다.</p>
                 </div>
                 <ul class="check-list">
                     <li th:each="note : ${accountNotes}" th:text="${note}">

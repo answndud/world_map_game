@@ -13,7 +13,7 @@
         <p class="eyebrow">Live Status</p>
         <h1>서비스 현황</h1>
         <p class="hero-copy">
-            지금 몇 명이 플레이 중인지, 오늘 어떤 게임이 많이 진행됐는지 공개 가능한 운영 수치만 따로 보여줍니다.
+            오늘의 공개 운영 지표와 게임별 상위 기록을 보여줍니다.
         </p>
     </header>
 
@@ -21,28 +21,28 @@
         <section class="panel game-panel">
             <div class="panel-head">
                 <h2>오늘의 활동</h2>
-                <p>공개 화면에서는 먼저 서비스 전체 흐름을, 그다음 게임별 완료 수를 보도록 두 층으로 나눴습니다.</p>
+                <p>서비스 흐름과 게임별 완료 수를 먼저 봅니다.</p>
             </div>
             <div class="stats-grid">
                 <article class="stat-card">
                     <span class="subtitle">REGISTERED PLAYERS</span>
                     <strong th:text="${activity.totalMemberCount}">0</strong>
-                    <p class="stat-card-copy">현재 계정으로 기록을 이어가는 전체 회원 수입니다.</p>
+                    <p class="stat-card-copy">기록을 이어가는 전체 회원 수입니다.</p>
                 </article>
                 <article class="stat-card">
                     <span class="subtitle">TODAY ACTIVE PLAYERS</span>
                     <strong th:text="${activity.todayActivePlayerCount}">0</strong>
-                    <p class="stat-card-copy">오늘 적어도 한 번 플레이한 사용자 수입니다.</p>
+                    <p class="stat-card-copy">오늘 한 번 이상 플레이한 사용자 수입니다.</p>
                 </article>
                 <article class="stat-card">
                     <span class="subtitle">TODAY STARTED SESSIONS</span>
                     <strong th:text="${activity.todayStartedSessionCount}">0</strong>
-                    <p class="stat-card-copy">오늘 시작된 전체 게임 세션 수입니다.</p>
+                    <p class="stat-card-copy">오늘 시작된 세션 수입니다.</p>
                 </article>
                 <article class="stat-card">
                     <span class="subtitle">TODAY COMPLETED RUNS</span>
                     <strong th:text="${activity.todayCompletedRunCount}">0</strong>
-                    <p class="stat-card-copy">오늘 끝까지 완료된 run 수입니다.</p>
+                    <p class="stat-card-copy">오늘 끝난 run 수입니다.</p>
                 </article>
             </div>
         </section>
@@ -50,7 +50,7 @@
         <section class="panel game-panel">
             <div class="panel-head">
                 <h2>게임별 완료 수</h2>
-                <p>다섯 게임이 각각 오늘 얼마나 플레이됐는지 빠르게 확인할 수 있습니다.</p>
+                <p>오늘 완료된 run 수입니다.</p>
             </div>
             <div class="stats-grid">
                 <article class="stat-card">
@@ -80,7 +80,7 @@
             <article class="panel">
                 <div class="panel-head">
                     <h2>아케이드 상위 기록</h2>
-                    <p>계속 이어지는 런 모드 두 게임의 오늘 기록을 먼저 묶어 보여줍니다.</p>
+                    <p>런 타입 2개를 함께 봅니다.</p>
                 </div>
                 <div class="table-shell">
                     <p class="subtitle">위치 찾기</p>
@@ -131,7 +131,7 @@
             <article class="panel">
                 <div class="panel-head">
                     <h2>퀵 퀴즈 상위 기록</h2>
-                    <p>짧게 여러 판 돌리는 세 게임은 한 묶음으로 보여서 비교 부담을 줄였습니다.</p>
+                    <p>짧은 3개 게임을 함께 봅니다.</p>
                 </div>
                 <div class="table-shell">
                     <p class="subtitle">수도 맞히기</p>
@@ -205,7 +205,7 @@
         <section class="panel">
             <div class="panel-head">
                 <h2>공개 기준</h2>
-                <p>내부 추천 버전, 만족도 집계, persona baseline 같은 운영 판단용 정보는 공개 Stats에서 숨기고 Dashboard에서만 봅니다.</p>
+                <p>운영 판단용 내부 지표는 Dashboard에서만 봅니다.</p>
             </div>
             <div class="page-actions">
                 <a class="primary-link" th:href="@{/ranking}">전체 랭킹 보기</a>

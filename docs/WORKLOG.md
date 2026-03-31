@@ -34,6 +34,37 @@
 - 면접용 30초 요약:
 ```
 
+## 2026-03-31 - 홈, 랭킹, Stats public shell 문구 밀도 줄이기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: verify 레일과 modal/browser smoke까지 닫고 나니, 남은 production-ready 과제는 구조보다는 “첫 화면에서 얼마나 빨리 읽히는가”에 가까워졌다. 홈, `/ranking`, `/stats`는 정보 구조는 괜찮았지만 같은 의미를 반복하는 설명 문장이 아직 길었다. 이번 조각은 서버 책임이나 화면 구조는 그대로 두고, public shell의 hero/panel/helper copy를 더 짧게 줄여 읽기 부담을 낮추는 데 집중했다.
+- 변경 파일:
+  - `src/main/resources/templates/home.html`
+  - `src/main/resources/templates/ranking/index.html`
+  - `src/main/resources/templates/stats/index.html`
+  - `src/main/java/com/worldmap/web/HomeController.java`
+  - `src/test/java/com/worldmap/web/HomeControllerTest.java`
+  - `src/test/java/com/worldmap/ranking/LeaderboardPageControllerTest.java`
+  - `src/test/java/com/worldmap/ranking/LeaderboardIntegrationTest.java`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 런타임 요청 경로는 바뀌지 않는다. 홈은 계속 `GET / -> HomeController -> home.html`, 랭킹은 `GET /ranking -> ranking/index.html + ranking.js`, Stats는 `GET /stats -> StatsPageController -> stats/index.html`로 간다. 이번 조각에서 바뀐 것은 이 요청 끝에서 브라우저가 읽는 SSR copy다. 홈은 `HomeController`가 내려 주는 게임 카드 설명과 입문/기록 메모를 더 짧게 만들고, `/ranking`, `/stats`는 템플릿 안의 hero/panel/helper 문구를 줄였다.
+- 데이터 / 상태 변화: DB, Redis, 세션 상태 변화는 없다. 바뀐 것은 public SSR shell이 화면에 노출하는 텍스트뿐이다. `/ranking`의 `data-copy`, placeholder, `/stats`의 stat-card-copy, 홈의 mode card description이 더 짧아졌지만, API 응답과 도메인 상태 전이는 그대로다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “설명은 충분하지만 반복은 줄인다”는 것이다. 서버 주도 게임 플랫폼이라는 제품 설명은 이미 충분히 남아 있으므로, public shell에서는 구조를 다시 바꾸기보다 한 번에 읽히는 밀도를 맞추는 편이 production-ready 마감에 더 적합했다. 홈 카드 설명처럼 여러 화면에서 재사용되는 카피는 여전히 `HomeController`가 source of truth를 갖고, `/ranking`과 `/stats`의 page-local 설명은 각 템플릿이 맡는다.
+- 예외 / 엣지 케이스:
+  - 홈 설명 문구를 줄이면서도 `게임`이라는 표현과 추천 이름 `나에게 어울리는 국가 찾기`는 유지했다. 이전 턴에서 정리한 정보 구조를 다시 흔들지 않기 위해서다.
+  - `/ranking` placeholder는 “최신 랭킹”과 “기준 날짜”를 반복 설명하던 문장을 `보드를 열면 랭킹을 불러옵니다.` 수준으로 줄였다. 실제 상세 정보는 활성 보드 제목과 scope 버튼이 이미 충분히 말해 주기 때문이다.
+  - 이번 조각은 UI copy polish라서 블로그는 생략했다. API, 도메인 모델, 테스트 전략 자체가 바뀐 기능 조각은 아니기 때문이다.
+- 테스트:
+  - `./gradlew test --tests com.worldmap.web.HomeControllerTest --tests com.worldmap.ranking.LeaderboardPageControllerTest --tests com.worldmap.stats.StatsPageControllerTest`
+  - `redis-server --save '' --appendonly no --port 6379`
+  - `./gradlew test --tests com.worldmap.ranking.LeaderboardIntegrationTest`
+  - `git diff --check`
+- 블로그 반영 여부: 생략. public shell 문구 밀도 조정은 구현 설명 글을 새로 쓸 만큼의 API/도메인 변화가 없어서, WORKLOG와 PLAYBOOK에만 반영했다.
+- 배운 점: production-ready 마감에서는 새로운 기능을 더하는 것보다, 이미 있는 구조가 “얼마나 빨리 읽히는가”를 다듬는 작업도 중요하다. 특히 홈/랭킹/Stats처럼 제품을 처음 설명하는 화면은 같은 뜻을 반복하는 한 문장만 줄여도 전체 인상이 꽤 달라진다.
+- 아직 약한 부분: public shell copy는 더 좋아졌지만, 실제 배포 URL 기준의 체감 성능과 TTFB를 수치로 남긴 것은 아니다. 또한 국기 게임 난이도/자산 확장 전략은 아직 제품 정책으로 더 정리할 여지가 있다.
+- 면접용 30초 요약: 이번에는 홈, 랭킹, Stats의 public shell 문구를 줄였습니다. 핵심은 구조나 서버 책임은 그대로 두고, 첫 화면에서 반복되던 설명 문장을 줄여 사용자와 면접관이 핵심을 더 빨리 읽게 만든 점입니다. 홈 카드 설명은 `HomeController`가 계속 관리하고, `/ranking`과 `/stats`는 템플릿 로컬 copy만 줄여서 요청 흐름이나 도메인 규칙은 건드리지 않았습니다.
+
 ## 2026-03-31 - 게임오버 모달 focus 규칙을 공용 helper로 정리하기
 
 - 단계: 10. 포트폴리오 정리와 발표 준비

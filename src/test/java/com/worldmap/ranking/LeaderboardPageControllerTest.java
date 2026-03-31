@@ -73,7 +73,7 @@ class LeaderboardPageControllerTest {
 				"populationBattleDaily"
 			))
 			.andExpect(content().string(containsString("orbit_runner")))
-			.andExpect(content().string(containsString("이 보드를 열면 최신 랭킹을 불러옵니다.")));
+			.andExpect(content().string(containsString("보드를 열면 랭킹을 불러옵니다.")));
 
 		verify(leaderboardService).getLeaderboard(LeaderboardGameMode.LOCATION, LeaderboardScope.ALL, 10);
 		verifyNoMoreInteractions(leaderboardService);

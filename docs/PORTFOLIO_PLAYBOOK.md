@@ -913,11 +913,12 @@
 - `.github/workflows/verify.yml`을 추가해 GitHub Actions에서 `test -> browser-smoke` 두 verification job을 분리해 돌리도록 했다. `test` job은 Redis service를 명시적으로 띄우고, `browser-smoke` job은 Playwright Chromium 설치 뒤 `./gradlew browserSmokeTest`를 실행한다
 - GitHub `main` 브랜치 protection에도 `test`, `browser-smoke`를 `strict=true` required status check로 연결해, production-ready 검증 레일이 실제 merge gate로 동작하도록 맞췄다
 - 이 과정에서 `RedisSessionConfigurationIntegrationTest`가 prod session config만 보도록 schema 생성 override를 추가했고, 여러 게임 flow test의 game-over/restart 기대값도 현재 하트 규칙에 맞게 정리해 CI green baseline을 다시 맞췄다
+- 홈 / `/ranking` / `/stats` public shell은 구조는 유지한 채 hero, panel, helper copy를 더 짧게 다듬어 읽기 부담을 줄였다. 게임 선택 / 공개 지표 / 랭킹 설명은 남기되, 같은 뜻을 반복하던 문장과 placeholder copy를 줄여 첫 화면에서 핵심만 먼저 읽히게 정리했다
 
 다음 후속 개선 후보:
 
 - 국기 게임 세부 난이도(동일 대륙 고정 비율, 자산 36개 이후 확장 전략)를 더 넓힐지 결정
-- 신규 게임 3종이 모두 열린 상태에서 홈/랭킹/Stats 문구를 더 줄일지, 아니면 현재 그룹 구조로 유지할지 한 번 더 확인
+- 실제 배포 URL 기준 smoke와 핵심 성능 수치(TTFB, 초기 진입 체감)를 한 번 더 확인
 
 반드시 이해할 것:
 
