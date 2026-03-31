@@ -355,6 +355,7 @@
 - `GET /api/rankings/{gameMode}` 조회 API 추가
 - `/ranking` SSR 화면 추가
 - Redis 키가 비어 있을 때 RDB 상위 기록으로 fallback 조회 후 Redis 재구성
+- Redis가 내려가 있거나 읽기/재구성에 실패해도 `/api/rankings/*`, `/ranking`, `/stats` public read path는 `LeaderboardService`가 DB top run fallback으로 계속 응답하고, Redis warm/rebuild는 best-effort로만 시도하게 정리
 - `/ranking` 화면에서 15초 간격 폴링과 수동 새로고침으로 갱신 체감 추가
 - `/ranking` 화면에서 `위치/인구수`, `전체/일간` 필터 전환으로 active 보드만 크게 보는 UI 적용
 - `/ranking` 화면 자동 갱신을 "숨겨진 10개 보드 fan-out"이 아니라 "현재 보고 있는 active 보드 1개 갱신"으로 줄이고, 모드/범위 전환 직후에는 새 active 보드만 즉시 fetch하도록 정리
@@ -898,12 +899,15 @@
 - 기본 `test` task는 `browser-smoke` tag를 제외해 빠른 피드백을 유지하고, 브라우저 레일만 별도 실행하게 분리했다
 - `application-browser-smoke.yml`로 browser smoke 전용 profile을 추가해 `worldmap.legacy.rollback.enabled=false`를 강제하고, Redis는 의도적으로 빈 `127.0.0.1:6390`으로 돌려 local Redis 6379에 기대지 않는 현재 smoke 범위를 확인하게 했다
 - `BrowserSmokeProfileConfigTest`로 이 profile의 rollback off / Redis override를 고정했다
+- `LeaderboardService` read path가 Redis `DataAccessException`을 `cache miss`처럼 처리하고 DB top run으로 fallback하도록 보강해, browser smoke가 `/ranking`, `/stats` 같은 public leaderboard read model까지 local Redis 없이 검증할 수 있게 했다
+- `RedisUnavailableLeaderboardFallbackIntegrationTest`와 `BrowserSmokeE2ETest`로 `/api/rankings/*`, `/ranking`, `/stats`가 실제 Redis unavailable 조건에서도 계속 뜨는지 고정했다
 
 다음 후속 개선 후보:
 
 - 국기 게임 세부 난이도(동일 대륙 고정 비율, 자산 36개 이후 확장 전략)를 더 넓힐지 결정
 - 신규 게임 3종이 모두 열린 상태에서 홈/랭킹/Stats 문구를 더 줄일지, 아니면 현재 그룹 구조로 유지할지 한 번 더 확인
-- `/stats`, `/ranking`처럼 Redis를 읽는 public read model까지 browser smoke 범위를 넓힐지, 아니면 별도 fake/no-op leaderboard lane을 둘지 결정
+- 모달 `Tab / Shift+Tab / Escape / focus return`까지 실제 브라우저 E2E 범위를 더 넓힐지 결정
+- `browserSmokeTest`를 CI verification job으로 올릴지 결정
 - 반복된 game-over modal focus 로직을 공용 helper로 올릴지, 지금처럼 게임별 script 안에 유지할지 결정
 
 반드시 이해할 것:

@@ -124,6 +124,27 @@ class BrowserSmokeE2ETest {
 		assertThat(page.locator("#recommendation-feedback-submit").isDisabled()).isTrue();
 	}
 
+	@Test
+	void rankingPageRendersInRealBrowserWithoutRedis() {
+		page.navigate(baseUrl() + "/ranking");
+
+		assertThat(page.title()).isEqualTo("실시간 랭킹");
+		assertThat(page.getAttribute("body", "data-page")).isEqualTo("ranking");
+		assertThat(page.locator("h1").textContent().trim()).isEqualTo("실시간 랭킹");
+		assertThat(page.locator("#ranking-active-title").textContent().trim()).contains("위치 찾기");
+		assertThat(page.locator("#ranking-location-all-body").count()).isEqualTo(1);
+	}
+
+	@Test
+	void statsPageRendersInRealBrowserWithoutRedis() {
+		page.navigate(baseUrl() + "/stats");
+
+		assertThat(page.title()).isEqualTo("Live Stats");
+		assertThat(page.locator("h1").textContent().trim()).isEqualTo("서비스 현황");
+		assertThat(page.locator(".stats-grid .stat-card").count()).isGreaterThan(0);
+		assertThat(page.locator("a.primary-link").textContent().trim()).isEqualTo("전체 랭킹 보기");
+	}
+
 	private String baseUrl() {
 		return "http://127.0.0.1:" + port;
 	}

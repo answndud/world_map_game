@@ -168,6 +168,7 @@
 105. [current member 재검증을 request당 한 번만 하도록 정리하기](./112-cache-current-member-resolution-per-request.md)
 106. [Playwright로 public 핵심 흐름 브라우저 스모크 테스트 레일 추가하기](./113-add-a-playwright-browser-smoke-lane-for-public-flows.md)
 107. [browser smoke를 local Redis 없이도 뜨는 profile로 분리하기](./114-make-browser-smoke-tests-independent-from-local-redis.md)
+108. [Redis가 없어도 `/ranking`, `/stats`는 DB fallback으로 계속 읽히게 만들기](./115-keep-ranking-and-stats-readable-with-db-fallback-when-redis-is-down.md)
 
 ### Part E. 확장과 포트폴리오 정리
 

@@ -34,6 +34,37 @@
 - 면접용 30초 요약:
 ```
 
+## 2026-03-31 - Redis가 없어도 `/ranking`, `/stats` public read path를 DB fallback으로 유지하기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 직전 조각으로 browser smoke는 local Redis 없이도 뜨는 profile을 얻었지만, `/ranking`, `/stats`, `/api/rankings/*`는 여전히 `LeaderboardService`가 Redis를 직접 읽다가 실패하면 500으로 번질 수 있었다. production-ready 품질을 올리려면 public leaderboard read path는 Redis 장애를 cache miss처럼 다루고, RDB top run fallback으로 계속 읽히게 만들어야 했다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/ranking/application/LeaderboardService.java`
+  - `src/test/java/com/worldmap/ranking/RedisUnavailableLeaderboardFallbackIntegrationTest.java`
+  - `src/test/java/com/worldmap/e2e/BrowserSmokeE2ETest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/115-keep-ranking-and-stats-readable-with-db-fallback-when-redis-is-down.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+- 요청 흐름: `GET /ranking`, `GET /stats`, `GET /api/rankings/{gameMode}`는 모두 `LeaderboardService.getLeaderboard(...)`를 거친다. 이제 이 서비스는 먼저 Redis ZSET에서 상위 record id를 읽되, 여기서 `DataAccessException`이 나면 즉시 빈 결과처럼 보고 `leaderboard_record`의 상위 run을 RDB에서 읽는다. 이후 Redis 재구성이나 warm-up도 계속 시도하지만, 그 단계 역시 best-effort로만 처리해 public 응답은 그대로 내려간다. 그래서 `browser-smoke` profile처럼 Redis가 일부러 비어 있는 `127.0.0.1:6390`이어도 `/ranking`, `/stats`와 랭킹 API는 계속 열린다.
+- 데이터 / 상태 변화: source of truth는 여전히 `leaderboard_record`다. 이번 조각은 새 테이블이나 컬럼을 만들지 않았다. 바뀐 것은 read path의 실패 처리다. Redis는 계속 leaderboard read model과 warm cache 역할을 맡지만, public read에서 Redis 장애는 이제 “캐시 miss + 재수화 실패”로 취급되고, DB fallback이 우선 응답을 책임진다.
+- 핵심 도메인 개념: 이 조각의 핵심은 “Redis leaderboard는 read model이지 유일한 진실이 아니다”라는 점을 public read 경로에서도 끝까지 지키는 것이다. Redis 읽기 실패를 컨트롤러마다 잡으면 `/ranking`, `/stats`, `/api/rankings/*`의 계약이 달라질 수 있다. 반면 `LeaderboardService`에서 Redis 경계를 감싸면, 어떤 public surface가 leaderboard를 읽더라도 같은 fallback 규칙을 쓴다.
+- 예외 / 엣지 케이스:
+  - `gameMode`, `scope`, `limit` 파싱 오류는 여전히 서비스 밖 검증 흐름을 타므로 400이어야 한다. 이번 조각은 `getLeaderboard(...)` 전체를 감싼 것이 아니라 Redis 접근 경계만 best-effort로 바꿨다.
+  - Redis read는 실패했지만 DB fallback은 성공할 수 있고, 반대로 DB fallback 뒤 Redis warm/rebuild가 또 실패할 수도 있다. 이번 조각은 두 경우 모두 public 응답은 살리고, 로그로만 남긴다.
+  - write path는 이전부터 DB 저장 뒤 Redis sync 실패를 무시하고 있었기 때문에, 이번 조각은 read path를 같은 철학으로 맞춘 셈이다.
+- 테스트:
+  - `./gradlew compileTestJava`
+  - `./gradlew test --tests com.worldmap.ranking.RedisUnavailableLeaderboardFallbackIntegrationTest`
+  - `./gradlew browserSmokeTest --tests com.worldmap.e2e.BrowserSmokeE2ETest`
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이번 조각은 단순 설정 변경이 아니라 public read model의 장애 계약을 바꾼 것이고, 왜 fallback 규칙이 컨트롤러가 아니라 `LeaderboardService`에 있어야 하는지 설명 가치가 있다.
+- 배운 점: “Redis를 쓴다”와 “Redis가 없으면 public 화면이 죽는다”는 같은 말이 아니다. source of truth가 RDB라면, 장애 시나리오에서도 그 철학이 read path에 그대로 드러나야 production-ready 설명이 선명해진다.
+- 아직 약한 부분: 이번에는 `/ranking`, `/stats`가 Redis 없이도 뜨는 것까지 닫았지만, 모달 키보드 흐름이나 더 깊은 상호작용은 아직 browser smoke가 아니라 통합 테스트 수준에 머물러 있다. 다음 production-ready 조각은 실제 브라우저 E2E 범위를 `Tab / Shift+Tab / Escape / focus return`까지 넓히거나, 이 browser smoke 레일을 CI verification job으로 올리는 쪽이 맞다.
+- 면접용 30초 요약: Redis를 랭킹 read model로 쓰고 있어도 public 화면이 Redis에만 매달리면 production-ready라고 보기 어렵습니다. 그래서 이번에는 `LeaderboardService`가 Redis read 실패를 cache miss처럼 보고 DB 상위 run으로 바로 fallback하도록 바꿨습니다. 덕분에 `/api/rankings`, `/ranking`, `/stats`가 Redis unavailable 상황에서도 계속 뜨고, Playwright browser smoke도 local Redis 없이 이 경로들까지 검증할 수 있게 됐습니다.
+
 ## 2026-03-30 - browser smoke를 local Redis 없이도 뜨는 profile로 분리하기
 
 - 단계: 10. 포트폴리오 정리와 발표 준비
