@@ -13,6 +13,10 @@ import com.worldmap.game.capital.domain.CapitalGameSessionRepository;
 import com.worldmap.game.capital.domain.CapitalGameStage;
 import com.worldmap.game.capital.domain.CapitalGameStageRepository;
 import com.worldmap.game.common.application.GameSessionAccessContext;
+import com.worldmap.game.population.application.PopulationGameService;
+import com.worldmap.game.population.domain.PopulationGameSessionRepository;
+import com.worldmap.game.population.domain.PopulationGameStage;
+import com.worldmap.game.population.domain.PopulationGameStageRepository;
 import com.worldmap.game.populationbattle.application.PopulationBattleGameService;
 import com.worldmap.game.populationbattle.domain.PopulationBattleGameSessionRepository;
 import com.worldmap.game.populationbattle.domain.PopulationBattleGameStage;
@@ -48,6 +52,15 @@ class BrowserSmokeE2ETest {
 
 	@Autowired
 	private CapitalGameService capitalGameService;
+
+	@Autowired
+	private PopulationGameStageRepository populationGameStageRepository;
+
+	@Autowired
+	private PopulationGameSessionRepository populationGameSessionRepository;
+
+	@Autowired
+	private PopulationGameService populationGameService;
 
 	@Autowired
 	private PopulationBattleGameStageRepository populationBattleGameStageRepository;
@@ -191,6 +204,56 @@ class BrowserSmokeE2ETest {
 	}
 
 	@Test
+	void populationGameOverModalSupportsKeyboardTrapAndRestartFocusReturn() {
+		startPopulationGameFromBrowser("browser-population-modal");
+
+		UUID sessionId = currentPopulationSessionId();
+		PopulationGameStage firstStage = populationGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
+			.orElseThrow();
+		int wrongOptionNumber = findWrongOptionNumber(firstStage.getCorrectOptionNumber());
+		String guestSessionKey = populationGameSessionRepository.findById(sessionId)
+			.orElseThrow()
+			.getGuestSessionKey();
+		GameSessionAccessContext accessContext = GameSessionAccessContext.forGuest(guestSessionKey);
+
+		populationGameService.submitAnswer(sessionId, 1, wrongOptionNumber, accessContext);
+		populationGameService.submitAnswer(sessionId, 1, wrongOptionNumber, accessContext);
+
+		page.reload();
+		waitForPopulationPlayReady();
+
+		page.locator("#population-options label.option-card[data-option-number='" + wrongOptionNumber + "']").click();
+		page.locator("#population-submit-button").click();
+
+		page.waitForFunction("() => !document.getElementById('population-game-over-modal').hidden");
+
+		assertThat(page.evaluate("() => document.activeElement?.id")).isEqualTo("population-restart-button");
+		assertThat(page.evaluate("() => document.querySelector('.page-shell')?.inert")).isEqualTo(true);
+
+		page.keyboard().press("Tab");
+		assertThat(page.evaluate("() => document.activeElement?.getAttribute('href')")).isEqualTo("/");
+
+		page.keyboard().press("Shift+Tab");
+		assertThat(page.evaluate("() => document.activeElement?.id")).isEqualTo("population-restart-button");
+
+		page.keyboard().press("Tab");
+		assertThat(page.evaluate("() => document.activeElement?.getAttribute('href')")).isEqualTo("/");
+
+		page.keyboard().press("Escape");
+		assertThat(page.evaluate("() => !document.getElementById('population-game-over-modal').hidden")).isEqualTo(true);
+		assertThat(page.evaluate("() => document.activeElement?.id")).isEqualTo("population-restart-button");
+
+		page.locator("#population-restart-button").click();
+		page.waitForFunction(
+			"() => document.getElementById('population-game-over-modal').hidden "
+				+ "&& document.activeElement?.matches('#population-options input[name=\"population-option\"]')"
+		);
+
+		assertThat(page.evaluate("() => document.querySelector('.page-shell')?.inert")).isEqualTo(false);
+		assertThat(page.evaluate("() => document.activeElement?.getAttribute('name')")).isEqualTo("population-option");
+	}
+
+	@Test
 	void populationBattleGameOverModalSupportsKeyboardTrapAndRestartFocusReturn() {
 		startPopulationBattleGameFromBrowser("browser-battle-modal");
 
@@ -295,6 +358,26 @@ class BrowserSmokeE2ETest {
 		waitForPopulationBattlePlayReady();
 	}
 
+	private void startPopulationGameFromBrowser(String nickname) {
+		page.navigate(baseUrl() + "/games/population/start");
+
+		assertThat(page.locator("h1").textContent().trim()).isEqualTo("국가 인구수 맞추기");
+
+		page.locator("#population-nickname").fill(nickname);
+		page.locator("#population-start-submit").click();
+		waitForPopulationPlayReady();
+	}
+
+	private void waitForPopulationPlayReady() {
+		page.waitForURL("**/games/population/play/*");
+		page.waitForFunction(
+			"() => document.body.dataset.page === 'population-play' "
+				+ "&& document.getElementById('population-target-country-name') "
+				+ "&& document.getElementById('population-target-country-name').textContent !== '문제를 불러오는 중...'"
+		);
+		page.waitForFunction("() => document.querySelectorAll('#population-game-status .stat-card').length > 0");
+	}
+
 	private void waitForPopulationBattlePlayReady() {
 		page.waitForURL("**/games/population-battle/play/*");
 		page.waitForFunction(
@@ -311,6 +394,11 @@ class BrowserSmokeE2ETest {
 	}
 
 	private UUID currentPopulationBattleSessionId() {
+		String sessionId = page.url().substring(page.url().lastIndexOf('/') + 1);
+		return UUID.fromString(sessionId);
+	}
+
+	private UUID currentPopulationSessionId() {
 		String sessionId = page.url().substring(page.url().lastIndexOf('/') + 1);
 		return UUID.fromString(sessionId);
 	}

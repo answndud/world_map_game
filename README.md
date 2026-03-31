@@ -283,7 +283,7 @@
 - 공통 shell은 다크/라이트 테마 토글을 제공하고, 사용자가 고른 테마는 `localStorage`의 `worldmap-theme`로 유지한다.
 - 홈, 추천, 랭킹 public 화면은 내부 구현 용어보다 플레이어가 바로 이해할 수 있는 제품 언어로 다시 정리했고, 버전/집계/로드맵 같은 내부 정보는 `/dashboard` 운영 화면으로 분리하는 방향으로 간다.
 - 공통 shell과 홈, 추천, 랭킹, Stats, My Page는 최근 디자인 패스에서 다크/라이트 공통 톤과 각진 패널 레이아웃 기준으로 다시 정리했고, public 화면 테스트도 새 카피 기준으로 다시 고정했다.
-- production-ready 후속으로 `Playwright` 기반 `browserSmokeTest` 레일을 추가해, `home` SSR shell, `capital start -> play`, capital / population-battle 게임오버 모달의 `Tab / Shift+Tab / Escape / restart 후 focus return`, `recommendation survey -> result`, `/ranking`, `/stats`를 실제 headless Chromium에서 검증한다. 기본 `test` task와 분리해 브라우저 기동 비용이 평소 단위/통합 테스트 피드백을 막지 않게 했고, `browser-smoke` profile은 legacy rollback initializer를 끄고 Redis를 비어 있는 `127.0.0.1:6390`으로 돌린다. 이때 public 랭킹 read path는 Redis read/write 실패를 `cache miss`처럼 다루고 RDB top run으로 fallback하므로, local Redis 없이도 `/ranking`과 `/stats`가 계속 열린다.
+- production-ready 후속으로 `Playwright` 기반 `browserSmokeTest` 레일을 추가해, `home` SSR shell, `capital start -> play`, capital / population / population-battle 게임오버 모달의 `Tab / Shift+Tab / Escape / restart 후 focus return`, `recommendation survey -> result`, `/ranking`, `/stats`를 실제 headless Chromium에서 검증한다. 기본 `test` task와 분리해 브라우저 기동 비용이 평소 단위/통합 테스트 피드백을 막지 않게 했고, `browser-smoke` profile은 legacy rollback initializer를 끄고 Redis를 비어 있는 `127.0.0.1:6390`으로 돌린다. 이때 public 랭킹 read path는 Redis read/write 실패를 `cache miss`처럼 다루고 RDB top run으로 fallback하므로, local Redis 없이도 `/ranking`과 `/stats`가 계속 열린다.
 - 신규 게임 3종이 들어온 뒤 public 정보 밀도가 다시 높아져, 홈은 `아케이드 러너 / 퀵 퀴즈와 추천` 두 구역으로 모드 카드를 재그룹핑했다. 위치 찾기, 인구 비교 퀵 배틀, 인구수 맞추기는 빠른 반복 플레이 축으로, 수도 맞히기, 국기 퀴즈, 나라 추천은 짧은 퀴즈/탐색 축으로 묶어 첫 진입 판단 비용을 낮췄다.
 - 공개 `/ranking`은 다섯 게임을 긴 라벨 대신 `위치 / 수도 / 국기 / 배틀 / 인구` 짧은 버튼으로 전환하게 바꿨다. 정렬과 집계 규칙은 그대로 서버가 맡고, public 표면에서는 필터 탐색 비용만 줄이는 방향으로 다듬었다.
 - 공개 `/stats`는 서비스 전체 지표와 게임별 완료 수를 분리하고, Top 보드도 `아케이드 상위 기록 / 퀵 퀴즈 상위 기록` 두 묶음으로 다시 정리했다. 즉, 운영 숫자를 더 늘리지 않고 “지금 서비스가 어떤 종류의 플레이를 담고 있는가”를 먼저 읽히게 하는 편을 택했다.
@@ -828,7 +828,7 @@ SSR을 쓰더라도 게임 진행 중에는 비동기 API가 필요하다.
 - 웹 테스트
   - 주요 페이지 응답, API 요청/응답 검증
 - 브라우저 스모크 테스트
-  - `./gradlew browserSmokeTest`로 `home`, `capital start -> play`, capital / population-battle 게임오버 모달의 `Tab / Shift+Tab / Escape / restart 후 focus return`, `recommendation survey -> result`, `/ranking`, `/stats`를 실제 Chromium에서 검증
+  - `./gradlew browserSmokeTest`로 `home`, `capital start -> play`, capital / population / population-battle 게임오버 모달의 `Tab / Shift+Tab / Escape / restart 후 focus return`, `recommendation survey -> result`, `/ranking`, `/stats`를 실제 Chromium에서 검증
   - 브라우저 스모크는 `test + browser-smoke` profile 조합을 써서 legacy rollback initializer를 끄고, Redis는 의도적으로 빈 `127.0.0.1:6390`으로 돌린다
   - `/ranking`, `/stats`, `/api/rankings/*`는 `LeaderboardService`가 Redis read 실패를 DB fallback으로 흡수하고, Redis warm/rebuild는 best-effort로만 시도한다
   - 기본 `./gradlew test`는 `browser-smoke` tag를 제외해 빠른 피드백을 유지하고, 브라우저 레일은 별도 verification task로 실행한다

@@ -137,6 +137,7 @@
 110. [capital 게임오버 모달 키보드 흐름을 실제 브라우저 E2E로 고정하기](./116-lock-capital-game-over-modal-keyboard-flow-with-real-browser-e2e.md)
 111. [GitHub Actions에 `test -> browserSmokeTest` verify 레일 올리기](./117-add-a-github-actions-verify-lane-for-tests-and-browser-smoke.md)
 112. [population-battle 게임오버 모달 키보드 흐름도 실제 브라우저 E2E로 고정하기](./118-lock-population-battle-game-over-modal-keyboard-flow-with-real-browser-e2e.md)
+113. [population 게임오버 모달 키보드 흐름도 실제 브라우저 E2E로 고정하기](./119-lock-population-game-over-modal-keyboard-flow-with-real-browser-e2e.md)
 
 ### Part E. 테스트, 확장, 취업 패키징
 
