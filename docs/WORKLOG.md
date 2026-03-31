@@ -34,6 +34,35 @@
 - 면접용 30초 요약:
 ```
 
+## 2026-03-31 - population-battle 게임오버 모달 키보드 흐름도 실제 브라우저 E2E로 고정하기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 직전 조각으로 capital 대표 게임의 game-over modal keyboard flow는 실제 Chromium에서 고정됐지만, 그건 4-choice quiz 계열 표본 하나뿐이었다. production-ready 설명을 더 탄탄하게 하려면 2-choice endless battle 계열에서도 같은 modal 규칙이 실제 브라우저에서 유지되는지 확인할 필요가 있었다. 이번 조각은 `population-battle` 하나를 더 붙여 browser smoke의 대표 표본을 넓히는 데 집중했다.
+- 변경 파일:
+  - `src/test/java/com/worldmap/e2e/BrowserSmokeE2ETest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/118-lock-population-battle-game-over-modal-keyboard-flow-with-real-browser-e2e.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+- 요청 흐름: 브라우저는 먼저 `GET /games/population-battle/start -> POST /api/games/population-battle/sessions -> GET /games/population-battle/play/{sessionId}`로 실제 배틀 세션을 연다. 이후 테스트는 같은 세션의 `guestSessionKey`를 읽어 서버 `PopulationBattleGameService.submitAnswer(...)`로 lives를 1개 남은 상태까지 줄인다. 그 다음 브라우저가 마지막 오답 1회를 실제로 제출해 `population-battle-game-over-modal`을 열고, Playwright가 `Tab`, `Shift+Tab`, `Escape`, `restart`를 보내 마지막에는 첫 번째 좌우 선택 input으로 focus가 돌아오는지 확인한다.
+- 데이터 / 상태 변화: 운영 DB/Redis 스키마 변화는 없다. test runtime 안에서 population-battle session / stage / attempt row가 생성되고, 서버 도메인 API 두 번 호출로 lives가 `3 -> 1`이 된다. 마지막 오답은 브라우저 submit으로 들어가 `GAME_OVER`와 modal open을 만들고, restart 후에는 같은 sessionId가 초기 state로 리셋된다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “modal keyboard E2E도 한 게임에서 끝내지 말고, 서로 다른 UI 패턴의 대표 표본을 몇 개 가져가야 한다”는 점이다. capital은 4-choice quiz, population-battle은 2-choice compare game이라 play shell 구조가 조금 다르지만, modal contract는 같다. 즉 같은 규칙이 다른 게임 셸에서도 유지되는지를 실제 브라우저에서 확인하는 게 목적이다.
+- 예외 / 엣지 케이스:
+  - 이번에도 앞부분의 반복 오답 전체를 브라우저로 밟지 않고, 서버 도메인 API로 lives 1 상태를 준비한 뒤 마지막 오답과 modal keyboard 흐름만 브라우저로 검증했다. 목표가 modal 품질이기 때문이다.
+  - `Escape`는 battle에서도 dismiss가 아니라 restart button focus return 규칙을 유지한다.
+  - 아직 location / population / flag modal은 browser E2E가 없다. 즉 modal keyboard 품질을 “서로 다른 두 표면”까지는 닫았지만 전 게임 전체는 아니다.
+- 테스트:
+  - `./gradlew compileTestJava`
+  - `./gradlew browserSmokeTest --tests com.worldmap.e2e.BrowserSmokeE2ETest.populationBattleGameOverModalSupportsKeyboardTrapAndRestartFocusReturn`
+  - `./gradlew browserSmokeTest`
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이번 조각은 새 기능보다 verification 확대지만, 왜 capital 하나로 멈추지 않고 battle 표본까지 추가했는지와 왜 서버 도메인 API로 state를 준비하는지 설명 가치가 있다.
+- 배운 점: browser E2E는 개수가 많다고 좋은 게 아니라, 어떤 UI 패턴을 대표하는 표본을 어떻게 고르느냐가 더 중요했다. capital과 population-battle까지 닫아 두면 4-choice quiz와 2-choice compare 두 축에서 modal focus 규칙을 설명하기가 훨씬 쉬워진다.
+- 아직 약한 부분: 아직 location / population / flag modal은 real-browser E2E가 없다. verify workflow는 이미 있지만 browser smoke 범위는 여전히 대표 경로 중심이라, 전 게임 modal까지 다 막아 주는 수준은 아니다.
+- 면접용 30초 요약: capital에 이어 population-battle도 game-over modal keyboard E2E를 붙였습니다. 브라우저가 세션을 만든 뒤 서버 도메인 API로 lives를 1개 남은 상태까지 준비하고, 마지막 오답과 `Tab / Shift+Tab / Escape / restart 후 focus return`만 실제 Chromium으로 검증하게 했습니다. 덕분에 4-choice quiz뿐 아니라 2-choice battle 셸에서도 같은 modal 접근성 규칙이 유지된다고 설명할 수 있게 됐습니다.
+
 ## 2026-03-31 - GitHub Actions에 `test -> browserSmokeTest` verify 레일 올리기
 
 - 단계: 10. 포트폴리오 정리와 발표 준비

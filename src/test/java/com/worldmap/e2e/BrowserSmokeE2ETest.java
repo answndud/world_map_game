@@ -13,6 +13,10 @@ import com.worldmap.game.capital.domain.CapitalGameSessionRepository;
 import com.worldmap.game.capital.domain.CapitalGameStage;
 import com.worldmap.game.capital.domain.CapitalGameStageRepository;
 import com.worldmap.game.common.application.GameSessionAccessContext;
+import com.worldmap.game.populationbattle.application.PopulationBattleGameService;
+import com.worldmap.game.populationbattle.domain.PopulationBattleGameSessionRepository;
+import com.worldmap.game.populationbattle.domain.PopulationBattleGameStage;
+import com.worldmap.game.populationbattle.domain.PopulationBattleGameStageRepository;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -44,6 +48,15 @@ class BrowserSmokeE2ETest {
 
 	@Autowired
 	private CapitalGameService capitalGameService;
+
+	@Autowired
+	private PopulationBattleGameStageRepository populationBattleGameStageRepository;
+
+	@Autowired
+	private PopulationBattleGameSessionRepository populationBattleGameSessionRepository;
+
+	@Autowired
+	private PopulationBattleGameService populationBattleGameService;
 
 	private BrowserContext browserContext;
 
@@ -178,6 +191,56 @@ class BrowserSmokeE2ETest {
 	}
 
 	@Test
+	void populationBattleGameOverModalSupportsKeyboardTrapAndRestartFocusReturn() {
+		startPopulationBattleGameFromBrowser("browser-battle-modal");
+
+		UUID sessionId = currentPopulationBattleSessionId();
+		PopulationBattleGameStage firstStage = populationBattleGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
+			.orElseThrow();
+		int wrongOptionNumber = findWrongOptionNumber(firstStage.getCorrectOptionNumber());
+		String guestSessionKey = populationBattleGameSessionRepository.findById(sessionId)
+			.orElseThrow()
+			.getGuestSessionKey();
+		GameSessionAccessContext accessContext = GameSessionAccessContext.forGuest(guestSessionKey);
+
+		populationBattleGameService.submitAnswer(sessionId, 1, wrongOptionNumber, accessContext);
+		populationBattleGameService.submitAnswer(sessionId, 1, wrongOptionNumber, accessContext);
+
+		page.reload();
+		waitForPopulationBattlePlayReady();
+
+		page.locator("#population-battle-options label.option-card[data-option-number='" + wrongOptionNumber + "']").click();
+		page.locator("#population-battle-submit-button").click();
+
+		page.waitForFunction("() => !document.getElementById('population-battle-game-over-modal').hidden");
+
+		assertThat(page.evaluate("() => document.activeElement?.id")).isEqualTo("population-battle-restart-button");
+		assertThat(page.evaluate("() => document.querySelector('.page-shell')?.inert")).isEqualTo(true);
+
+		page.keyboard().press("Tab");
+		assertThat(page.evaluate("() => document.activeElement?.getAttribute('href')")).isEqualTo("/");
+
+		page.keyboard().press("Shift+Tab");
+		assertThat(page.evaluate("() => document.activeElement?.id")).isEqualTo("population-battle-restart-button");
+
+		page.keyboard().press("Tab");
+		assertThat(page.evaluate("() => document.activeElement?.getAttribute('href')")).isEqualTo("/");
+
+		page.keyboard().press("Escape");
+		assertThat(page.evaluate("() => !document.getElementById('population-battle-game-over-modal').hidden")).isEqualTo(true);
+		assertThat(page.evaluate("() => document.activeElement?.id")).isEqualTo("population-battle-restart-button");
+
+		page.locator("#population-battle-restart-button").click();
+		page.waitForFunction(
+			"() => document.getElementById('population-battle-game-over-modal').hidden "
+				+ "&& document.activeElement?.matches('#population-battle-options input[name=\"population-battle-option\"]')"
+		);
+
+		assertThat(page.evaluate("() => document.querySelector('.page-shell')?.inert")).isEqualTo(false);
+		assertThat(page.evaluate("() => document.activeElement?.getAttribute('name')")).isEqualTo("population-battle-option");
+	}
+
+	@Test
 	void rankingPageRendersInRealBrowserWithoutRedis() {
 		page.navigate(baseUrl() + "/ranking");
 
@@ -222,7 +285,32 @@ class BrowserSmokeE2ETest {
 		page.waitForFunction("() => document.querySelectorAll('#capital-game-status .stat-card').length > 0");
 	}
 
+	private void startPopulationBattleGameFromBrowser(String nickname) {
+		page.navigate(baseUrl() + "/games/population-battle/start");
+
+		assertThat(page.locator("h1").textContent().trim()).isEqualTo("인구 비교 퀵 배틀");
+
+		page.locator("#population-battle-nickname").fill(nickname);
+		page.locator("#population-battle-start-submit").click();
+		waitForPopulationBattlePlayReady();
+	}
+
+	private void waitForPopulationBattlePlayReady() {
+		page.waitForURL("**/games/population-battle/play/*");
+		page.waitForFunction(
+			"() => document.body.dataset.page === 'population-battle-play' "
+				+ "&& document.getElementById('population-battle-stage-copy') "
+				+ "&& document.getElementById('population-battle-stage-copy').textContent !== '좌우 보기 두 개를 불러오는 중입니다.'"
+		);
+		page.waitForFunction("() => document.querySelectorAll('#population-battle-game-status .stat-card').length > 0");
+	}
+
 	private UUID currentCapitalSessionId() {
+		String sessionId = page.url().substring(page.url().lastIndexOf('/') + 1);
+		return UUID.fromString(sessionId);
+	}
+
+	private UUID currentPopulationBattleSessionId() {
 		String sessionId = page.url().substring(page.url().lastIndexOf('/') + 1);
 		return UUID.fromString(sessionId);
 	}
