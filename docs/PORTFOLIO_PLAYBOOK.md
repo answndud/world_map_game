@@ -903,6 +903,8 @@
 - `RedisUnavailableLeaderboardFallbackIntegrationTest`와 `BrowserSmokeE2ETest`로 `/api/rankings/*`, `/ranking`, `/stats`가 실제 Redis unavailable 조건에서도 계속 뜨는지 고정했다
 - `BrowserSmokeE2ETest`에 capital 대표 게임의 game-over modal keyboard flow를 추가해, 실제 Chromium에서 `Tab / Shift+Tab / Escape / restart 후 focus return`이 유지되는지 고정했다
 - 이 E2E는 브라우저가 세션을 만든 뒤 서버 도메인 API로 lives를 1개 남은 상태까지 먼저 줄이고, 마지막 오답 1회만 브라우저로 제출해 modal focus 규칙 자체를 안정적으로 검증하도록 정리했다
+- `location` 대표 게임에도 game-over modal keyboard E2E를 추가해, WebGL 지구본 셸에서도 `Tab / Shift+Tab / Escape / restart 후 focus return`이 실제 Chromium에서 유지되는지 고정했다
+- 이때 마지막 오답 선택은 좌표 클릭 대신 Playwright init script가 `window.Globe` 생성 시 polygon click handler를 잡아 브라우저 안에서 그대로 재사용하게 해, modal keyboard contract에 집중하면서도 3D 좌표 flaky함은 피했다
 - 같은 방식으로 `population` 대표 게임에도 game-over modal keyboard E2E를 추가해, endless 4-choice quiz shell에서도 `Tab / Shift+Tab / Escape / restart 후 focus return`이 실제 Chromium에서 유지되는지 고정했다
 - 같은 방식으로 `population-battle` 대표 게임에도 game-over modal keyboard E2E를 추가해, 2-choice 게임에서도 `Tab / Shift+Tab / Escape / restart 후 focus return`이 실제 Chromium에서 유지되는지 고정했다
 - `.github/workflows/verify.yml`을 추가해 GitHub Actions에서 `test -> browser-smoke` 두 verification job을 분리해 돌리도록 했다. `test` job은 Redis service를 명시적으로 띄우고, `browser-smoke` job은 Playwright Chromium 설치 뒤 `./gradlew browserSmokeTest`를 실행한다
@@ -912,7 +914,7 @@
 
 - 국기 게임 세부 난이도(동일 대륙 고정 비율, 자산 36개 이후 확장 전략)를 더 넓힐지 결정
 - 신규 게임 3종이 모두 열린 상태에서 홈/랭킹/Stats 문구를 더 줄일지, 아니면 현재 그룹 구조로 유지할지 한 번 더 확인
-- 같은 modal keyboard E2E를 location / flag까지 더 넓힐지 결정
+- 같은 modal keyboard E2E를 flag까지 더 넓힐지 결정
 - 반복된 game-over modal focus 로직을 공용 helper로 올릴지, 지금처럼 게임별 script 안에 유지할지 결정
 - verify workflow를 PR required check로 걸지, 일단 optional verification으로 둘지 결정
 

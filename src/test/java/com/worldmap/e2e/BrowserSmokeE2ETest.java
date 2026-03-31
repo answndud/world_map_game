@@ -13,6 +13,10 @@ import com.worldmap.game.capital.domain.CapitalGameSessionRepository;
 import com.worldmap.game.capital.domain.CapitalGameStage;
 import com.worldmap.game.capital.domain.CapitalGameStageRepository;
 import com.worldmap.game.common.application.GameSessionAccessContext;
+import com.worldmap.game.location.application.LocationGameService;
+import com.worldmap.game.location.domain.LocationGameSessionRepository;
+import com.worldmap.game.location.domain.LocationGameStage;
+import com.worldmap.game.location.domain.LocationGameStageRepository;
 import com.worldmap.game.population.application.PopulationGameService;
 import com.worldmap.game.population.domain.PopulationGameSessionRepository;
 import com.worldmap.game.population.domain.PopulationGameStage;
@@ -52,6 +56,15 @@ class BrowserSmokeE2ETest {
 
 	@Autowired
 	private CapitalGameService capitalGameService;
+
+	@Autowired
+	private LocationGameStageRepository locationGameStageRepository;
+
+	@Autowired
+	private LocationGameSessionRepository locationGameSessionRepository;
+
+	@Autowired
+	private LocationGameService locationGameService;
 
 	@Autowired
 	private PopulationGameStageRepository populationGameStageRepository;
@@ -201,6 +214,94 @@ class BrowserSmokeE2ETest {
 		assertThat(page.locator("h1").textContent().trim()).isEqualTo("추천 결과");
 		assertThat(page.locator("article.recommendation-country-card").count()).isEqualTo(3);
 		assertThat(page.locator("#recommendation-feedback-submit").isDisabled()).isTrue();
+	}
+
+	@Test
+	void locationGameOverModalSupportsKeyboardTrapAndRestartFocusReturn() {
+		startLocationGameFromBrowser("browser-location-modal");
+
+		UUID sessionId = currentLocationSessionId();
+		LocationGameStage firstStage = locationGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
+			.orElseThrow();
+		String wrongCountryIso3Code = (String) page.evaluate(
+			"""
+				targetCountryIso3Code => {
+					const globe = window.__worldmapBrowserSmoke?.locationGlobe;
+					const polygonFeatures = globe?.polygonsData?.() || [];
+					const wrongFeature = polygonFeatures.find((feature) =>
+						feature?.properties?.iso3Code
+						&& feature.properties.iso3Code !== targetCountryIso3Code
+					);
+					return wrongFeature?.properties?.iso3Code ?? null;
+				}
+			""",
+			firstStage.getTargetCountryIso3Code()
+		);
+		assertThat(wrongCountryIso3Code).isNotBlank();
+
+		String guestSessionKey = locationGameSessionRepository.findById(sessionId)
+			.orElseThrow()
+			.getGuestSessionKey();
+		GameSessionAccessContext accessContext = GameSessionAccessContext.forGuest(guestSessionKey);
+
+		locationGameService.submitAnswer(sessionId, 1, wrongCountryIso3Code, accessContext);
+		locationGameService.submitAnswer(sessionId, 1, wrongCountryIso3Code, accessContext);
+
+		page.reload();
+		waitForLocationPlayReady();
+
+		Boolean selectionApplied = (Boolean) page.evaluate(
+			"""
+				wrongCountryIso3Code => {
+					const hook = window.__worldmapBrowserSmoke || {};
+					const globe = hook.locationGlobe;
+					const polygonClickHandler = hook.locationPolygonClickHandler;
+					const polygonFeatures = globe?.polygonsData?.() || [];
+					const wrongFeature = polygonFeatures.find((feature) =>
+						feature?.properties?.iso3Code === wrongCountryIso3Code
+					);
+
+					if (!wrongFeature || typeof polygonClickHandler !== "function") {
+						return false;
+					}
+
+					polygonClickHandler(wrongFeature, null, null);
+					return true;
+				}
+			""",
+			wrongCountryIso3Code
+		);
+		assertThat(selectionApplied).isTrue();
+
+		page.waitForFunction("() => document.getElementById('location-submit-button') && !document.getElementById('location-submit-button').disabled");
+		page.locator("#location-submit-button").click();
+
+		page.waitForFunction("() => !document.getElementById('location-game-over-modal').hidden");
+
+		assertThat(page.evaluate("() => document.activeElement?.id")).isEqualTo("location-restart-button");
+		assertThat(page.evaluate("() => document.querySelector('.page-shell')?.inert")).isEqualTo(true);
+
+		page.keyboard().press("Tab");
+		assertThat(page.evaluate("() => document.activeElement?.getAttribute('href')")).isEqualTo("/");
+
+		page.keyboard().press("Shift+Tab");
+		assertThat(page.evaluate("() => document.activeElement?.id")).isEqualTo("location-restart-button");
+
+		page.keyboard().press("Tab");
+		assertThat(page.evaluate("() => document.activeElement?.getAttribute('href')")).isEqualTo("/");
+
+		page.keyboard().press("Escape");
+		assertThat(page.evaluate("() => !document.getElementById('location-game-over-modal').hidden")).isEqualTo(true);
+		assertThat(page.evaluate("() => document.activeElement?.id")).isEqualTo("location-restart-button");
+
+		page.locator("#location-restart-button").click();
+		page.waitForFunction(
+			"() => document.getElementById('location-game-over-modal').hidden "
+				+ "&& document.activeElement?.id === 'globe-stage'"
+		);
+
+		assertThat(page.evaluate("() => document.querySelector('.page-shell')?.inert")).isEqualTo(false);
+		assertThat(page.evaluate("() => document.activeElement?.id")).isEqualTo("globe-stage");
 	}
 
 	@Test
@@ -358,6 +459,17 @@ class BrowserSmokeE2ETest {
 		waitForPopulationBattlePlayReady();
 	}
 
+	private void startLocationGameFromBrowser(String nickname) {
+		installLocationGlobeHook();
+		page.navigate(baseUrl() + "/games/location/start");
+
+		assertThat(page.locator("h1").textContent().trim()).isEqualTo("국가 위치 찾기");
+
+		page.locator("#nickname").fill(nickname);
+		page.locator("#location-start-submit").click();
+		waitForLocationPlayReady();
+	}
+
 	private void startPopulationGameFromBrowser(String nickname) {
 		page.navigate(baseUrl() + "/games/population/start");
 
@@ -366,6 +478,20 @@ class BrowserSmokeE2ETest {
 		page.locator("#population-nickname").fill(nickname);
 		page.locator("#population-start-submit").click();
 		waitForPopulationPlayReady();
+	}
+
+	private void waitForLocationPlayReady() {
+		page.waitForURL("**/games/location/play/*");
+		page.waitForFunction(
+			"() => document.body.dataset.page === 'location-play' "
+				+ "&& document.getElementById('target-country-name') "
+				+ "&& document.getElementById('target-country-name').textContent !== '문제를 불러오는 중...'"
+		);
+		page.waitForFunction("() => document.querySelectorAll('#location-game-status .stat-card').length > 0");
+		page.waitForFunction(
+			"() => !!window.__worldmapBrowserSmoke?.locationGlobe "
+				+ "&& typeof window.__worldmapBrowserSmoke?.locationPolygonClickHandler === 'function'"
+		);
 	}
 
 	private void waitForPopulationPlayReady() {
@@ -398,9 +524,67 @@ class BrowserSmokeE2ETest {
 		return UUID.fromString(sessionId);
 	}
 
+	private UUID currentLocationSessionId() {
+		String sessionId = page.url().substring(page.url().lastIndexOf('/') + 1);
+		return UUID.fromString(sessionId);
+	}
+
 	private UUID currentPopulationSessionId() {
 		String sessionId = page.url().substring(page.url().lastIndexOf('/') + 1);
 		return UUID.fromString(sessionId);
+	}
+
+	private void installLocationGlobeHook() {
+		page.addInitScript(
+			"""
+				(() => {
+					window.__worldmapBrowserSmoke = window.__worldmapBrowserSmoke || {};
+					let wrappedGlobeFactory;
+
+					Object.defineProperty(window, "Globe", {
+						configurable: true,
+						get() {
+							return wrappedGlobeFactory;
+						},
+						set(value) {
+							if (typeof value !== "function" || value.__worldmapLocationHookWrapped) {
+								wrappedGlobeFactory = value;
+								return;
+							}
+
+							const wrapped = function (...args) {
+								const globeFactory = value.apply(this, args);
+								if (typeof globeFactory !== "function") {
+									return globeFactory;
+								}
+
+								return function (...factoryArgs) {
+									const globe = globeFactory.apply(this, factoryArgs);
+									window.__worldmapBrowserSmoke.locationGlobe = globe;
+
+									if (globe && typeof globe.onPolygonClick === "function" && !globe.onPolygonClick.__worldmapLocationHookWrapped) {
+										const originalOnPolygonClick = globe.onPolygonClick.bind(globe);
+										const wrappedOnPolygonClick = function (...handlerArgs) {
+											if (handlerArgs.length > 0 && typeof handlerArgs[0] === "function") {
+												window.__worldmapBrowserSmoke.locationPolygonClickHandler = handlerArgs[0];
+											}
+											return originalOnPolygonClick(...handlerArgs);
+										};
+										wrappedOnPolygonClick.__worldmapLocationHookWrapped = true;
+										globe.onPolygonClick = wrappedOnPolygonClick;
+									}
+
+									return globe;
+								};
+							};
+
+							wrapped.__worldmapLocationHookWrapped = true;
+							wrappedGlobeFactory = wrapped;
+						}
+					});
+				})();
+			"""
+		);
 	}
 
 	private int findWrongOptionNumber(int correctOptionNumber) {

@@ -34,6 +34,35 @@
 - 면접용 30초 요약:
 ```
 
+## 2026-03-31 - location 게임오버 모달 키보드 흐름도 실제 브라우저 E2E로 고정하기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: capital, population, population-battle까지 modal browser E2E를 붙인 뒤에도, 위치 찾기 게임은 WebGL 지구본 표면 때문에 아직 real-browser keyboard 검증에서 비어 있었다. `location`은 radio/card shell이 아니라 3D globe selection을 쓰므로, modal contract 자체를 검증하면서도 클릭 좌표 flaky함에 끌려가면 안 됐다. 이번 조각은 지구본 표면의 테스트 seam을 최소한으로 잡아, location 셸에서도 같은 game-over modal keyboard 규칙이 유지되는지 실제 Chromium으로 고정하는 데 집중했다.
+- 변경 파일:
+  - `src/test/java/com/worldmap/e2e/BrowserSmokeE2ETest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/120-lock-location-game-over-modal-keyboard-flow-with-real-browser-e2e.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+- 요청 흐름: 브라우저는 먼저 `GET /games/location/start -> POST /api/games/location/sessions -> GET /games/location/play/{sessionId}`로 실제 세션을 연다. Playwright init script는 location play page가 `window.Globe`로 지구본을 만들 때 polygon click handler를 잡아 `window.__worldmapBrowserSmoke`에 저장한다. 이후 테스트는 같은 세션의 `guestSessionKey`를 읽어 서버 `LocationGameService.submitAnswer(...)`로 lives를 1개 남은 상태까지 준비하고, 마지막 오답 선택은 브라우저 안에서 그 polygon click handler를 호출해 만든다. 그 다음 브라우저가 제출 버튼을 눌러 `location-game-over-modal`을 열고, `Tab`, `Shift+Tab`, `Escape`, `restart`를 보내 마지막에는 `#globe-stage`로 focus가 돌아오는지 확인한다.
+- 데이터 / 상태 변화: 운영 DB/Redis 스키마 변화는 없다. test runtime 안에서 location game session / stage / attempt row가 생성되고, 서버 도메인 API 두 번 호출로 lives가 `3 -> 1`이 된다. 마지막 오답은 브라우저 submit으로 들어가 `GAME_OVER`와 modal open을 만들고, restart 후에는 같은 sessionId가 Stage 1 state로 리셋된다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “WebGL 셸도 modal browser E2E를 포기하지 말되, 검증 대상과 flaky한 렌더링 좌표는 분리해야 한다”는 점이다. location 게임에서 중요한 생산물은 modal keyboard contract이지 픽셀 좌표 클릭 자체가 아니다. 그래서 지구본 선택은 브라우저 안의 polygon click handler를 재사용하고, 상태 준비는 서버 서비스에 두는 편이 더 설명 가능하고 안정적이다.
+- 예외 / 엣지 케이스:
+  - 마지막 오답을 만들기 위해 production JS를 바꾸지 않고, Playwright init script에서만 `window.Globe`를 감싸 polygon click handler를 잡았다. 즉 사용자 코드 경로는 그대로고, browser test만 deterministic selection seam을 가진다.
+  - restart 뒤 focus return은 radio input이 아니라 `#globe-stage`다. location 셸의 primary play surface가 지구본이기 때문이다.
+  - 아직 flag modal은 real-browser E2E가 없다. 즉 modal keyboard 품질을 대표 4개 표면까지는 닫았지만 전 게임 전체는 아니다.
+- 테스트:
+  - `./gradlew compileTestJava`
+  - `./gradlew browserSmokeTest --tests com.worldmap.e2e.BrowserSmokeE2ETest.locationGameOverModalSupportsKeyboardTrapAndRestartFocusReturn`
+  - `./gradlew browserSmokeTest`
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이번 조각은 새 기능이 아니라 verification 확대지만, 왜 location만은 클릭 좌표 대신 globe hook seam이 필요했는지와 왜 이 seam이 서버/브라우저 책임을 흐리지 않는지 설명 가치가 있다.
+- 배운 점: real-browser E2E는 “진짜 브라우저를 돌린다”와 “픽셀 좌표까지 무식하게 클릭한다”가 같은 말이 아니었다. 중요한 contract가 modal keyboard 흐름이라면, 3D 표면에서는 브라우저 안의 실제 handler를 재사용하는 seam을 두는 편이 더 안정적이고 설명 가능했다.
+- 아직 약한 부분: flag modal은 아직 real-browser E2E가 없다. 또한 verify workflow는 이미 있지만 GitHub에서 required check로 강제한 상태는 아니다.
+- 면접용 30초 요약: location 게임도 game-over modal keyboard E2E를 붙였습니다. 핵심은 브라우저가 세션을 실제로 만들고 서버 도메인 API로 lives를 1개 남은 상태까지 준비한 뒤, 마지막 오답 선택은 Playwright init script가 잡아 둔 `Globe` polygon click handler를 브라우저 안에서 재사용하게 한 점입니다. 덕분에 WebGL 지구본 셸에서도 `Tab / Shift+Tab / Escape / restart 후 focus return`이 실제 Chromium에서 유지된다고 설명할 수 있게 됐습니다.
+
 ## 2026-03-31 - population 게임오버 모달 키보드 흐름도 실제 브라우저 E2E로 고정하기
 
 - 단계: 10. 포트폴리오 정리와 발표 준비
