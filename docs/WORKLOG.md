@@ -34,6 +34,37 @@
 - 면접용 30초 요약:
 ```
 
+## 2026-03-31 - 첫 ECS 배포 전에 빠진 입력을 한 번에 찾는 preflight 스크립트 추가하기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 공개 URL이 없는 상태에서 다음 단계는 첫 ECS 배포인데, 지금 저장소는 `deploy-prod-ecs.yml`과 sample task definition은 있어도 “배포 버튼을 누르기 전에 뭐가 빠졌는지”를 한 번에 알려 주는 장치가 없었다. 현재 repo는 GitHub repository variables도 0개라서, 첫 실행을 누르면 workflow 안에서야 비로소 실패한다. 이번 조각은 첫 배포 전에 빠진 입력을 바로 찾을 수 있게 `check_prod_deploy_preflight.py` 스크립트를 추가하는 데 집중했다.
+- 변경 파일:
+  - `scripts/check_prod_deploy_preflight.py`
+  - `src/test/java/com/worldmap/common/config/ProdDeployPreflightScriptTest.java`
+  - `README.md`
+  - `docs/DEPLOYMENT_RUNBOOK_AWS_ECS.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/124-add-a-first-deploy-preflight-check-for-github-actions-ecs-inputs.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+- 요청 흐름: 시작점은 `python3 scripts/check_prod_deploy_preflight.py --repo answndud/world_map_game`이다. 스크립트는 먼저 [.github/workflows/deploy-prod-ecs.yml](/Users/alex/project/worldmap/.github/workflows/deploy-prod-ecs.yml)을 읽어 `vars.*` 참조 목록을 source of truth로 추출한다. 그다음 `gh api repos/<repo>/actions/variables`로 현재 GitHub repository variables를 읽고, `workflow_dispatch` 존재 여부와 [task-definition.prod.sample.json](/Users/alex/project/worldmap/deploy/ecs/task-definition.prod.sample.json), [render_ecs_task_definition.py](/Users/alex/project/worldmap/scripts/render_ecs_task_definition.py) 같은 필수 파일도 같이 확인한다. 마지막에는 `build/reports/deploy-preflight/prod-deploy-preflight.md`를 생성해 missing variable과 다음 액션을 Markdown으로 남긴다.
+- 데이터 / 상태 변화: 운영 DB, Redis, ECS 리소스 자체는 바뀌지 않는다. 새로 생기는 것은 배포 readiness report다. 현재 실제 repo 상태로 실행하면 GitHub repository variables가 0개라서, `AWS_REGION`, `AWS_ACCOUNT_ID`, `ECS_CLUSTER`, `RDS_ENDPOINT` 등 13개 missing 변수 목록이 report에 남는다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “배포 workflow가 있다”와 “배포를 눌러도 될 만큼 입력이 준비됐다”는 다른 말이라는 점이다. 첫 배포 전 preflight는 앱 도메인이 아니라 운영 입력 계약을 검증하는 단계이므로, source of truth도 배포 workflow 파일이어야 한다. 그래서 required variable 목록을 스크립트에 다시 하드코딩하지 않고, workflow의 `${{ vars.NAME }}` 참조를 읽어 계산하도록 만들었다.
+- 예외 / 엣지 케이스:
+  - `gh`가 없거나 인증이 안 되어 있으면 스크립트는 실패한다. 대신 테스트에서는 `--variables-json`으로 fake GitHub API 응답을 주입할 수 있게 만들어 외부 의존 없이 통과/실패 경로를 둘 다 고정했다.
+  - 현재 repo는 실제로 variables가 0개라서 스크립트가 실패하는 것이 정상이다. 이 실패는 버그가 아니라 “첫 배포 전에 아직 채워야 할 입력이 남았다”는 신호다.
+  - 공개 URL은 여전히 첫 배포 이후 ALB DNS로 생긴다. 즉 이번 조각은 production smoke 자체가 아니라, 그 직전 단계인 “배포 입력 준비 확인”이다.
+- 테스트:
+  - `python3 -m py_compile scripts/check_prod_deploy_preflight.py`
+  - `./gradlew test --tests com.worldmap.common.config.ProdDeployPreflightScriptTest --tests com.worldmap.common.config.GitHubActionsDeployWorkflowTemplateTest --tests com.worldmap.common.config.RenderEcsTaskDefinitionScriptTest`
+  - `python3 scripts/check_prod_deploy_preflight.py --repo answndud/world_map_game`
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이번 조각은 단순 문서 추가가 아니라 첫 배포 readiness를 코드로 검증하는 작은 feature slice라서, source of truth를 workflow에서 읽는 이유와 report 구조를 설명할 가치가 있다.
+- 배운 점: production-ready에서 가장 답답한 순간은 “뭐가 안 돼서 막힌 건지”를 너무 늦게 아는 경우다. 첫 배포 전에는 배포 자체를 서두르기보다, 누락된 입력을 미리 드러내는 preflight가 오히려 더 가치 있다.
+- 아직 약한 부분: 이 스크립트는 GitHub repository variables와 필수 파일만 본다. AWS 안쪽 리소스(ECR repository, ECS cluster, ALB, ACM, Route 53)가 실제로 존재하는지는 아직 검증하지 않는다.
+- 면접용 30초 요약: 첫 ECS 배포 전에 GitHub Actions 입력이 다 준비됐는지 보는 preflight 스크립트를 추가했습니다. 핵심은 필요한 변수 목록을 따로 복사하지 않고 `deploy-prod-ecs.yml`의 실제 `vars.*` 참조를 읽어서, 현재 repository variables와 비교하도록 만든 점입니다. 그래서 이제는 배포 버튼을 누르기 전에 뭐가 빠졌는지 Markdown report로 바로 설명할 수 있습니다.
+
 ## 2026-03-31 - 실제 공개 URL smoke와 초기 진입 수치를 재는 전용 레일 추가하기
 
 - 단계: 10. 포트폴리오 정리와 발표 준비

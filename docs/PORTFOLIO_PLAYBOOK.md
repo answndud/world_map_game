@@ -916,11 +916,12 @@
 - 홈 / `/ranking` / `/stats` public shell은 구조는 유지한 채 hero, panel, helper copy를 더 짧게 다듬어 읽기 부담을 줄였다. 게임 선택 / 공개 지표 / 랭킹 설명은 남기되, 같은 뜻을 반복하던 문장과 placeholder copy를 줄여 첫 화면에서 핵심만 먼저 읽히게 정리했다
 - `publicUrlSmokeTest` verification task를 추가해, 실제 공개 URL이 생기면 `WORLDMAP_PUBLIC_BASE_URL=https://... ./gradlew publicUrlSmokeTest`로 `/`, `/stats`, `/ranking`, `/login`, `/signup`, `/recommendation/survey`, `/games/capital/start`의 status와 browser-side `TTFB(responseStart) / DOMContentLoaded / load`를 같은 Markdown report로 남길 수 있게 했다
 - 이 레일은 URL이 없을 때는 `test + browser-smoke` 내장 서버를 자동으로 써서 로컬에서도 먼저 검증된다. 즉 “배포 URL이 생기면 그대로 production에 대입할 측정 도구”를 먼저 코드로 고정한 셈이다
+- `check_prod_deploy_preflight.py`로 첫 ECS 배포 전에 `deploy-prod-ecs.yml`이 실제로 요구하는 GitHub repository variables, `workflow_dispatch`, sample task definition, render script가 다 준비됐는지 한 번에 확인하도록 했다. 현재처럼 vars가 하나도 없는 상태에서는 어떤 값이 비었는지 Markdown report로 바로 남긴다
 
 다음 후속 개선 후보:
 
 - 국기 게임 세부 난이도(동일 대륙 고정 비율, 자산 36개 이후 확장 전략)를 더 넓힐지 결정
-- 실제 ECS/ALB 공개 URL을 `publicUrlSmokeTest`에 넣어 첫 production report를 남기고, 홈/랭킹/Stats 초기 체감 수치를 한 번 더 확인
+- `check_prod_deploy_preflight.py`를 초록으로 만든 뒤 첫 GitHub Actions ECS 배포를 시도하고, 그 다음 ALB DNS를 `publicUrlSmokeTest`에 넣어 first production report를 남기기
 
 반드시 이해할 것:
 
