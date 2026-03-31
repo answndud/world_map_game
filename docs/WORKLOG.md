@@ -34,6 +34,35 @@
 - 면접용 30초 요약:
 ```
 
+## 2026-03-31 - flag 게임오버 모달 키보드 흐름도 실제 브라우저 E2E로 고정하기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: location까지 붙인 뒤에도 `flag`는 아직 modal browser E2E가 비어 있었다. flag는 radio 기반 4-choice quiz처럼 보이지만, 실제로는 이미지 자산 로딩과 선택 카드 셸이 끼어 있어서 다른 대표 표본 하나로 볼 가치가 있었다. 이번 조각은 `flag`까지 real-browser keyboard 흐름을 닫아, public 게임 5종의 terminal modal contract를 모두 실제 Chromium으로 설명 가능한 상태로 만드는 데 집중했다.
+- 변경 파일:
+  - `src/test/java/com/worldmap/e2e/BrowserSmokeE2ETest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/121-lock-flag-game-over-modal-keyboard-flow-with-real-browser-e2e.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+- 요청 흐름: 브라우저는 먼저 `GET /games/flag/start -> POST /api/games/flag/sessions -> GET /games/flag/play/{sessionId}`로 실제 세션을 연다. 이후 테스트는 같은 세션의 `guestSessionKey`를 읽어 서버 `FlagGameService.submitAnswer(...)`로 lives를 1개 남은 상태까지 준비한다. 그 다음 브라우저가 마지막 오답 보기를 실제로 선택해 제출하고 `flag-game-over-modal`을 열며, Playwright가 `Tab`, `Shift+Tab`, `Escape`, `restart`를 보내 마지막에는 첫 번째 `flag-option` input으로 focus가 돌아오는지 확인한다.
+- 데이터 / 상태 변화: 운영 DB/Redis 스키마 변화는 없다. test runtime 안에서 flag game session / stage / attempt row가 생성되고, 서버 도메인 API 두 번 호출로 lives가 `3 -> 1`이 된다. 마지막 오답은 브라우저 submit으로 들어가 `GAME_OVER`와 modal open을 만들고, restart 후에는 같은 sessionId가 Stage 1 state로 리셋된다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “대표 browser modal E2E를 한 표면 더 추가한다”가 아니라 “public 게임 5종 전체를 다 닫는다”는 점이다. 이제 location, capital, population, population-battle, flag가 모두 같은 terminal modal keyboard contract를 real browser에서 공유한다고 말할 수 있다.
+- 예외 / 엣지 케이스:
+  - 이번에도 modal 품질이 핵심이라, 앞부분의 반복 오답 전체를 브라우저로 밟지 않고 서버 도메인 API로 lives 1 상태를 준비한 뒤 마지막 오답과 modal keyboard 흐름만 브라우저로 검증했다.
+  - `Escape`는 flag에서도 dismiss가 아니라 restart button focus return 규칙을 유지한다.
+  - 이제 public 게임 5종 modal E2E는 모두 닫혔지만, verify workflow는 아직 GitHub에서 required check로 강제되지 않는다.
+- 테스트:
+  - `./gradlew compileTestJava`
+  - `./gradlew browserSmokeTest --tests com.worldmap.e2e.BrowserSmokeE2ETest.flagGameOverModalSupportsKeyboardTrapAndRestartFocusReturn`
+  - `./gradlew browserSmokeTest`
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이번 조각은 마지막 modal 표본을 닫아 public 게임 5종 전체의 real-browser keyboard contract를 설명 가능하게 만든 milestone이라 블로그 가치가 있다.
+- 배운 점: browser E2E는 표본 하나씩 늘리다 보면 어느 순간 “대표 검증”이 아니라 “제품 범위 닫기”로 바뀐다. 이번 flag 조각이 그 지점이었다. 이제는 modal coverage를 더 늘리는 것보다, 이 레일을 운영 규칙에 어떻게 연결할지가 더 중요한 질문이 됐다.
+- 아직 약한 부분: verify workflow는 이미 있지만 GitHub에서 required check로 강제한 상태는 아니다. 또한 반복된 modal focus 로직을 공용 helper로 올릴지, 게임별 script 안에 유지할지는 아직 결정하지 않았다.
+- 면접용 30초 요약: flag 게임도 game-over modal keyboard E2E를 붙였습니다. 브라우저가 세션을 실제로 만든 뒤 서버 도메인 API로 lives를 1개 남은 상태까지 준비하고, 마지막 오답과 `Tab / Shift+Tab / Escape / restart 후 focus return`만 실제 Chromium으로 검증하게 했습니다. 이로써 location, capital, population, population-battle, flag까지 public 게임 5종의 terminal modal keyboard contract를 모두 real browser로 설명할 수 있게 됐습니다.
+
 ## 2026-03-31 - location 게임오버 모달 키보드 흐름도 실제 브라우저 E2E로 고정하기
 
 - 단계: 10. 포트폴리오 정리와 발표 준비

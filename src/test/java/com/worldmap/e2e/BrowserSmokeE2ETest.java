@@ -13,6 +13,10 @@ import com.worldmap.game.capital.domain.CapitalGameSessionRepository;
 import com.worldmap.game.capital.domain.CapitalGameStage;
 import com.worldmap.game.capital.domain.CapitalGameStageRepository;
 import com.worldmap.game.common.application.GameSessionAccessContext;
+import com.worldmap.game.flag.application.FlagGameService;
+import com.worldmap.game.flag.domain.FlagGameSessionRepository;
+import com.worldmap.game.flag.domain.FlagGameStage;
+import com.worldmap.game.flag.domain.FlagGameStageRepository;
 import com.worldmap.game.location.application.LocationGameService;
 import com.worldmap.game.location.domain.LocationGameSessionRepository;
 import com.worldmap.game.location.domain.LocationGameStage;
@@ -65,6 +69,15 @@ class BrowserSmokeE2ETest {
 
 	@Autowired
 	private LocationGameService locationGameService;
+
+	@Autowired
+	private FlagGameStageRepository flagGameStageRepository;
+
+	@Autowired
+	private FlagGameSessionRepository flagGameSessionRepository;
+
+	@Autowired
+	private FlagGameService flagGameService;
 
 	@Autowired
 	private PopulationGameStageRepository populationGameStageRepository;
@@ -305,6 +318,56 @@ class BrowserSmokeE2ETest {
 	}
 
 	@Test
+	void flagGameOverModalSupportsKeyboardTrapAndRestartFocusReturn() {
+		startFlagGameFromBrowser("browser-flag-modal");
+
+		UUID sessionId = currentFlagSessionId();
+		FlagGameStage firstStage = flagGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
+			.orElseThrow();
+		int wrongOptionNumber = findWrongOptionNumber(firstStage.getCorrectOptionNumber());
+		String guestSessionKey = flagGameSessionRepository.findById(sessionId)
+			.orElseThrow()
+			.getGuestSessionKey();
+		GameSessionAccessContext accessContext = GameSessionAccessContext.forGuest(guestSessionKey);
+
+		flagGameService.submitAnswer(sessionId, 1, wrongOptionNumber, accessContext);
+		flagGameService.submitAnswer(sessionId, 1, wrongOptionNumber, accessContext);
+
+		page.reload();
+		waitForFlagPlayReady();
+
+		page.locator("#flag-options label.option-card[data-option-number='" + wrongOptionNumber + "']").click();
+		page.locator("#flag-submit-button").click();
+
+		page.waitForFunction("() => !document.getElementById('flag-game-over-modal').hidden");
+
+		assertThat(page.evaluate("() => document.activeElement?.id")).isEqualTo("flag-restart-button");
+		assertThat(page.evaluate("() => document.querySelector('.page-shell')?.inert")).isEqualTo(true);
+
+		page.keyboard().press("Tab");
+		assertThat(page.evaluate("() => document.activeElement?.getAttribute('href')")).isEqualTo("/");
+
+		page.keyboard().press("Shift+Tab");
+		assertThat(page.evaluate("() => document.activeElement?.id")).isEqualTo("flag-restart-button");
+
+		page.keyboard().press("Tab");
+		assertThat(page.evaluate("() => document.activeElement?.getAttribute('href')")).isEqualTo("/");
+
+		page.keyboard().press("Escape");
+		assertThat(page.evaluate("() => !document.getElementById('flag-game-over-modal').hidden")).isEqualTo(true);
+		assertThat(page.evaluate("() => document.activeElement?.id")).isEqualTo("flag-restart-button");
+
+		page.locator("#flag-restart-button").click();
+		page.waitForFunction(
+			"() => document.getElementById('flag-game-over-modal').hidden "
+				+ "&& document.activeElement?.matches('#flag-options input[name=\"flag-option\"]')"
+		);
+
+		assertThat(page.evaluate("() => document.querySelector('.page-shell')?.inert")).isEqualTo(false);
+		assertThat(page.evaluate("() => document.activeElement?.getAttribute('name')")).isEqualTo("flag-option");
+	}
+
+	@Test
 	void populationGameOverModalSupportsKeyboardTrapAndRestartFocusReturn() {
 		startPopulationGameFromBrowser("browser-population-modal");
 
@@ -470,6 +533,16 @@ class BrowserSmokeE2ETest {
 		waitForLocationPlayReady();
 	}
 
+	private void startFlagGameFromBrowser(String nickname) {
+		page.navigate(baseUrl() + "/games/flag/start");
+
+		assertThat(page.locator("h1").textContent().trim()).isEqualTo("국기 보고 나라 맞히기");
+
+		page.locator("#flag-nickname").fill(nickname);
+		page.locator("#flag-start-submit").click();
+		waitForFlagPlayReady();
+	}
+
 	private void startPopulationGameFromBrowser(String nickname) {
 		page.navigate(baseUrl() + "/games/population/start");
 
@@ -492,6 +565,16 @@ class BrowserSmokeE2ETest {
 			"() => !!window.__worldmapBrowserSmoke?.locationGlobe "
 				+ "&& typeof window.__worldmapBrowserSmoke?.locationPolygonClickHandler === 'function'"
 		);
+	}
+
+	private void waitForFlagPlayReady() {
+		page.waitForURL("**/games/flag/play/*");
+		page.waitForFunction(
+			"() => document.body.dataset.page === 'flag-play' "
+				+ "&& document.getElementById('flag-stage-copy') "
+				+ "&& document.getElementById('flag-stage-copy').textContent !== '현재 라운드 규칙에 맞는 국기와 보기 4개를 준비하는 중입니다.'"
+		);
+		page.waitForFunction("() => document.querySelectorAll('#flag-game-status .stat-card').length > 0");
 	}
 
 	private void waitForPopulationPlayReady() {
@@ -525,6 +608,11 @@ class BrowserSmokeE2ETest {
 	}
 
 	private UUID currentLocationSessionId() {
+		String sessionId = page.url().substring(page.url().lastIndexOf('/') + 1);
+		return UUID.fromString(sessionId);
+	}
+
+	private UUID currentFlagSessionId() {
 		String sessionId = page.url().substring(page.url().lastIndexOf('/') + 1);
 		return UUID.fromString(sessionId);
 	}
