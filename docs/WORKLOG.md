@@ -34,6 +34,35 @@
 - 면접용 30초 요약:
 ```
 
+## 2026-03-31 - capital 게임오버 모달 키보드 흐름을 실제 브라우저 E2E로 고정하기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: public 게임들의 game-over modal은 이미 `aria-describedby`, `inert`, focus trap, restart 후 focus return`까지 붙어 있었지만, 그동안은 SSR 마크업이나 JS 존재만 통합 테스트로 확인했다. production-ready 품질을 더 올리려면 “실제 Chromium에서 Tab, Shift+Tab, Escape, restart 후 focus return이 끝까지 유지되는가”를 한 번은 자동으로 밟아야 했다. 이번 조각은 대표 게임 하나를 골라 그 흐름을 browser smoke 레일에 넣는 데 집중했다.
+- 변경 파일:
+  - `src/test/java/com/worldmap/e2e/BrowserSmokeE2ETest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/116-lock-capital-game-over-modal-keyboard-flow-with-real-browser-e2e.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+- 요청 흐름: 브라우저는 먼저 `GET /games/capital/start -> POST /api/games/capital/sessions -> GET /games/capital/play/{sessionId}`로 실제 capital 세션을 연다. 그 다음 테스트는 같은 세션의 `guestSessionKey`를 읽어 서버 쪽 `CapitalGameService.submitAnswer(...)`로 lives를 1개 남은 상태까지 먼저 줄인다. 이후 브라우저가 play page를 다시 로드하고 마지막 오답 1회를 제출하면 `capital-game-over-modal`이 열린다. 여기서 Playwright가 `Tab`, `Shift+Tab`, `Escape`, `restart button click`을 실제로 보내고, 마지막에는 첫 번째 수도 보기 input으로 focus가 돌아오는지 확인한다.
+- 데이터 / 상태 변화: 운영 DB/Redis 스키마 변화는 없다. test DB에서는 capital session과 stage, attempt row가 생성되고, 서버 쪽 도메인 API 두 번 호출로 lives가 `3 -> 1`까지 줄어든다. 마지막 오답 1회는 브라우저 submit으로 들어가 `GAME_OVER`와 modal open, restart 뒤 state reset을 만든다. 즉 이번 조각의 상태 변화는 모두 test runtime 안에서만 일어난다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “E2E도 모든 상태를 브라우저 클릭으로만 만들 필요는 없고, 검증하려는 위험에 맞춰 서버 도메인과 브라우저 책임을 분리할 수 있다”는 점이다. modal keyboard 품질을 보려는 테스트라면, 앞부분의 두 번 오답 루프는 서버 API로 축약하고 마지막 modal 진입과 keyboard 상호작용만 브라우저로 밟는 편이 더 안정적이고 설명 가능하다.
+- 예외 / 엣지 케이스:
+  - 세 번 연속 오답을 전부 브라우저로 밟는 방식은 UI 타이밍에 흔들릴 수 있어, 이번에는 대표 게임 modal 검증의 초점을 keyboard flow에만 두었다.
+  - `Escape`는 modal을 닫지 않고 restart button으로 focus를 되돌리는 현재 규칙을 검증한다. 즉 일반적인 “Escape dismiss”가 아니라 이 제품의 game-over UX 규칙을 고정한 것이다.
+  - 이번 조각은 capital 대표 게임 1개만 닫았다. 나머지 위치/인구수/국기/배틀 모달은 JS 구조가 유사하지만, 실제 브라우저 E2E는 후속 조각으로 넓혀야 한다.
+- 테스트:
+  - `./gradlew compileTestJava`
+  - `./gradlew browserSmokeTest --tests com.worldmap.e2e.BrowserSmokeE2ETest.capitalGameOverModalSupportsKeyboardTrapAndRestartFocusReturn`
+  - `./gradlew browserSmokeTest --tests com.worldmap.e2e.BrowserSmokeE2ETest`
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이번 조각은 기능 추가보다 verification 강화지만, 왜 modal keyboard flow를 “브라우저에서 직접” 고정해야 하는지와 왜 앞쪽 상태 준비는 서버 도메인 API로 줄였는지를 설명할 가치가 있다.
+- 배운 점: production-ready 테스트는 “최대한 현실적으로”와 “회귀 신호가 안정적으로 유지되게” 사이의 균형이 중요했다. 마지막 위험이 modal keyboard라면, 거기까지 가는 반복 플레이 전체를 브라우저로 강제하는 것보다 서버 상태를 일부 준비하고 브라우저는 핵심 상호작용만 맡는 편이 더 설계 의도에 맞다.
+- 아직 약한 부분: capital 1개 modal은 닫았지만, 다른 게임 modal도 실제 브라우저 E2E로 넓히는 작업이 남아 있다. 그리고 현재 browser smoke는 로컬/수동 verification lane이지, 아직 CI에서 자동으로 막아 주는 레일까지는 아니다.
+- 면접용 30초 요약: 모달 접근성 로직이 코드에 있다는 것만으로는 부족해서, 이번에는 capital 게임의 game-over modal을 실제 Chromium에서 검증하도록 browser smoke를 넓혔습니다. 브라우저가 세션을 만든 뒤 서버 도메인 API로 lives를 1개 남은 상태까지 먼저 줄이고, 마지막 오답과 `Tab / Shift+Tab / Escape / restart 후 focus return`만 브라우저로 밟게 해서, keyboard 품질을 회귀 없이 설명 가능한 레일로 고정했습니다.
+
 ## 2026-03-31 - Redis가 없어도 `/ranking`, `/stats` public read path를 DB fallback으로 유지하기
 
 - 단계: 10. 포트폴리오 정리와 발표 준비

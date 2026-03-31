@@ -134,6 +134,7 @@
 107. [Playwright로 public 핵심 흐름 브라우저 스모크 테스트 레일 추가하기](./113-add-a-playwright-browser-smoke-lane-for-public-flows.md)
 108. [browser smoke를 local Redis 없이도 뜨는 profile로 분리하기](./114-make-browser-smoke-tests-independent-from-local-redis.md)
 109. [Redis가 없어도 `/ranking`, `/stats`는 DB fallback으로 계속 읽히게 만들기](./115-keep-ranking-and-stats-readable-with-db-fallback-when-redis-is-down.md)
+110. [capital 게임오버 모달 키보드 흐름을 실제 브라우저 E2E로 고정하기](./116-lock-capital-game-over-modal-keyboard-flow-with-real-browser-e2e.md)
 
 ### Part E. 테스트, 확장, 취업 패키징
 
