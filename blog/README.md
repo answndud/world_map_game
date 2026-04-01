@@ -1,203 +1,218 @@
 # Blog Workspace
 
-이 폴더는 WorldMap 프로젝트를 기반으로 작성할 `취업용 개발 블로그 시리즈`의 작업 공간입니다.
+이 폴더는 WorldMap을 기반으로 작성하는 **서버 주도 게임 플랫폼 포트폴리오 시리즈**의 작업 공간입니다.
 
 목표는 세 가지입니다.
 
-1. Spring Boot 초보자가 "이런 순서로 프로젝트를 만들면 되는구나"를 이해하게 만들기
-2. 면접 준비생이 "기획 -> 도메인 -> 게임 로직 -> Redis -> AI -> 테스트 -> 포트폴리오 패키징" 흐름을 따라가게 만들기
-3. 작성자인 내가 `blog/`만 보고도 구현 이유와 요청 흐름을 다시 설명할 수 있게 만들기
+1. Spring Boot 입문자도 "게임 상태를 서버가 주도하는 프로젝트를 이런 순서로 만들 수 있구나"를 이해하게 만들기
+2. 취업 준비생이 "부트스트랩 -> 도메인 -> 랭킹/추천 -> 인증/권한 -> 운영/검증" 흐름으로 성장하게 만들기
+3. 독자가 `blog/`와 각 글이 직접 가리키는 코드, 테스트, 설정 파일을 함께 따라가며 현재 WorldMap 저장소를 단계별로 재구현할 수 있게 만들기
+
+이 시리즈는 커밋 로그나 작업 회고 모음이 아닙니다. 각 글은 **문제 하나를 닫고**, **그 문제를 닫기 위해 먼저 열 파일**, **요청 흐름**, **테스트**, **재현 체크포인트**까지 같이 제공합니다.
+
+## 블로그 작업 SSOT
+
+- [README.md](../README.md)
+  - 제품 소개, 현재 public 범위, 전체 아키텍처 방향
+- [docs/PORTFOLIO_PLAYBOOK.md](../docs/PORTFOLIO_PLAYBOOK.md)
+  - 개발 순서, 단계 목표, 다음에 이어갈 주제
+- [docs/WORKLOG.md](../docs/WORKLOG.md)
+  - 실제 작업 단위, 요청 흐름, 테스트 이력
+- [00_rebuild_guide.md](./00_rebuild_guide.md)
+  - 이 시리즈를 "재현형 기술 문서"로 쓰기 위한 공통 규칙
+- [00_quality_checklist.md](./00_quality_checklist.md)
+  - 초보자 이해도, 재현성, 코드-문서 정합성, 면접 대응력 점검표
+
+즉, `docs/`가 개발 SSOT라면 `blog/`는 독자용 재현 허브입니다.
+다만 최종 source of truth는 언제나 저장소의 실제 코드, 테스트, 설정 파일입니다.
+`blog/`는 그 source of truth를 읽는 순서와 이유를 설명하는 문서 계층이지, 저장소와 분리된 별도 교과서가 아닙니다.
+
+## 링크 정책
+
+- `blog/` 문서는 repo-relative 링크를 사용합니다.
+- 모든 글은 실제 클래스, 설정 파일, 테스트 파일을 직접 가리킵니다.
+- 설명만 있고 파일 포인터가 없는 글은 실패한 글로 봅니다.
+- 외부 플랫폼으로 옮길 때만 절대 URL 또는 permalink 체계로 바꿉니다.
 
 ## 이 폴더의 역할
 
-- 연재 전체 순서를 관리한다.
-- 각 글을 일정한 템플릿으로 쓴다.
-- 초보자 기준으로 개념을 풀어 쓴다.
-- 실제 코드가 생기면 파일, 클래스, 메서드 이름까지 연결한다.
+- [00_series_plan.md](./00_series_plan.md)
+  - 전체 연재 구조
+  - 각 글이 닫는 문제
+  - 공개 순서와 집필 우선순위
+- [00_rebuild_guide.md](./00_rebuild_guide.md)
+  - 각 글에 반드시 있어야 하는 섹션과 재현 규칙
+- [00_quality_checklist.md](./00_quality_checklist.md)
+  - 문장 품질, 구조 품질, 코드-문서 정합성 기준
 
-## 이 프로젝트에서 문서 역할 분리
+## 이 시리즈가 다루는 범위
 
-- [README.md](/Users/alex/project/worldmap/README.md)
-  - 프로젝트 소개, 기능, 아키텍처, 도메인 개요
-- [AGENTS.md](/Users/alex/project/worldmap/AGENTS.md)
-  - AI 에이전트 작업 규칙
-- [docs/PORTFOLIO_PLAYBOOK.md](/Users/alex/project/worldmap/docs/PORTFOLIO_PLAYBOOK.md)
-  - 개발 순서, 단계별 목표, 이해 체크
-- [docs/WORKLOG.md](/Users/alex/project/worldmap/docs/WORKLOG.md)
-  - 실제 작업 기록과 학습 메모
-- [blog/00_series_plan.md](/Users/alex/project/worldmap/blog/00_series_plan.md)
-  - 공개용 글 순서와 주제
-- [blog/_post_template.md](/Users/alex/project/worldmap/blog/_post_template.md)
-  - 실제 글 작성 템플릿
-
-즉, `docs/`는 개발용 SSOT이고, `blog/`는 설명용 출판 워크스페이스다.
-
-운영 기준도 하나 더 분명하다.
-
-- 의미 있는 기능 조각이 끝났다면 `docs/`와 함께 `blog/`도 같은 턴에 같이 남긴다.
-- 아주 작은 문구 수정이나 미세 CSS 조정처럼 설명 가치가 낮은 변경만 예외로 둔다.
-
-현재 코드 기준으로 다시 만들고 싶다면, 번호 순서로 바로 들어가기 전에
-[50-current-state-rebuild-map.md](./50-current-state-rebuild-map.md)부터 보는 편이 안전하다.
+- 왜 WorldMap을 `서버 주도 게임 플랫폼`으로 정의했는가
+- Spring Boot, Thymeleaf SSR, Docker, PostgreSQL, Redis 기반 baseline
+- 국가 시드와 공통 reference data 파이프라인
+- `Session / Stage / Attempt` 게임 루프
+- 위치 게임, 인구수 퀴즈, 수도 퀴즈, 인구 비교 배틀, 국기 게임
+- Redis leaderboard와 공개 `/ranking` 페이지
+- deterministic recommendation engine과 feedback loop
+- guest ownership, simple auth, `/mypage`, `/stats`, `/dashboard`
+- public scope reset과 Level 1-only lineup 정리
+- production runtime, Redis session, ECS deploy prep
+- game integrity, current member/current role revalidation
+- browser smoke, public URL smoke, verify pipeline
+- demo bootstrap, architecture docs, interview pack
 
 ## 집필 원칙
 
-- "무엇을 만들었는가"보다 "왜 그렇게 설계했는가"를 먼저 설명한다.
-- 매 글마다 실제 파일 경로, 클래스 이름, 가능하면 메서드 이름까지 적는다.
-- 글 구조는 `문제 -> 개념 -> 설계 -> 코드 -> 흐름 -> 테스트 -> 회고 -> 취업 포인트`를 유지한다.
-- 초보자를 위해 용어를 먼저 풀어서 설명한다.
-- 글 끝에는 반드시 면접에서 어떻게 설명할지 적는다.
+- "무엇을 만들었는가"보다 "왜 지금 이 설계를 택했는가"를 먼저 설명합니다.
+- 각 글은 한 문제를 닫아야 합니다. 문제 두세 개를 억지로 합치지 않습니다.
+- 각 글은 최소한 아래를 포함해야 합니다.
+  - 최종 도착 상태
+  - 실제 파일 목록
+  - 요청 흐름 또는 상태 변화
+  - 실패 케이스
+  - 테스트와 검증 명령
+- 초심자를 위해 용어를 바로 쓰지 않고, 한 번은 평이한 말로 풀어 씁니다.
+- 글 끝에는 항상 `취업 포인트`와 `글 종료 체크포인트`를 둡니다.
+- 자동 검증으로 고정된 사실과 수동 운영 절차, 아직 남은 한계를 같은 문장에 섞어 쓰지 않습니다.
 
-## 현재 연재 인덱스
+## 이 시리즈가 약속하지 않는 것
 
-### Part A. 문제 정의와 프로젝트 방향
+- `blog/` 문장만 읽고 저장소 밖에서 그대로 복사 구현이 끝난다고 약속하지 않습니다.
+- 실제 재현은 각 글이 연결한 클래스, 템플릿, 테스트, 스크립트를 함께 열어야 닫힙니다.
+- production runtime, verify, public smoke 같은 후반부 글은 특히 `자동으로 증명된 범위`와 `사람이 수동으로 맞춰야 하는 범위`를 분리해서 설명합니다.
+- local fallback timing, fixture 기반 preflight, controller/page test 결과를 production 실측이나 운영 보장으로 과장하지 않습니다.
 
-1. [왜 WorldMap 게임 플랫폼을 포트폴리오 주제로 잡았는가](./01-why-worldmap-game-platform-domain.md)
+## 연재 인덱스
 
-### Part B. 부트스트랩과 공통 기반
+### Part A. 문제 정의와 baseline
 
-2. [Spring Boot 프로젝트 뼈대 만들기](./02-spring-boot-bootstrap.md)
-3. Docker로 DB / Redis 개발 환경 만들기
-4. application.yml과 profile 전략 설계하기
-5. JPA / Redis / Validation 공통 기반 잡기
-6. 패키지 구조와 예외 처리 전략 정리하기
+1. [왜 WorldMap을 서버 주도 게임 플랫폼으로 잡았는가](./01-why-worldmap-server-driven-game-platform.md)
+   - 이 프로젝트를 CRUD가 아니라 상태 관리가 있는 서비스로 포지셔닝하는 글
+2. [Gradle, Spring Boot, SSR 뼈대 만들기](./02-gradle-spring-boot-ssr-bootstrap.md)
+   - 실행 가능한 Spring Boot baseline과 패키지 뼈대를 고정하는 글
+3. [Docker로 PostgreSQL, Redis 개발 환경 만들기](./03-docker-postgres-redis-dev-environment.md)
+   - 로컬 개발 환경을 문서가 아니라 코드와 compose로 재현 가능하게 만드는 글
+4. [application.yml과 profile 전략 설계하기](./04-application-yml-and-profile-strategy.md)
+   - local, test, prod의 책임을 분리하고 운영 위험을 줄이는 글
 
-### Part C. 핵심 게임 도메인
+### Part B. 공통 데이터와 게임 골격
 
-7. [국가 데이터 시드와 `country` 모델링](./03-country-seed-loading.md)
-8. `game_session`, `game_round` 모델링
-9. [국가 위치 찾기 게임 Level 1 만들기](./04-location-game-level-1.md)
-10. [국가 인구수 맞추기 게임 Level 1 만들기](./05-population-game-level-1.md)
+5. [country seed와 reference data 파이프라인 만들기](./05-country-seed-and-reference-data-pipeline.md)
+   - 모든 게임과 추천이 공통으로 쓰는 국가 기준 데이터를 만드는 글
+6. [game 패키지 구조와 shared session contract 잡기](./06-game-package-structure-and-shared-session-contract.md)
+   - 여러 게임이 같은 언어로 말하게 만드는 공통 골격 설계 글
+7. [위치 게임으로 `Session / Stage / Attempt` 루프 만들기](./07-location-game-session-stage-attempt-loop.md)
+   - WorldMap의 대표 vertical slice를 구현하는 글
+8. [인구수 퀴즈로 endless arcade loop와 option generation 확장하기](./08-population-quiz-arcade-loop-and-option-generation.md)
+   - 퀴즈형 게임도 같은 상태 기계로 설명 가능하게 만드는 글
 
-### Part D. 랭킹과 추천
+### Part C. 결과를 읽기 좋은 surface로 바꾸기
 
-11. [Redis Sorted Set으로 실시간 랭킹 만들기](./06-redis-leaderboard-vertical-slice.md)
-12. [SSE 대신 15초 폴링으로 랭킹 화면을 살아 있게 만들기](./07-leaderboard-polling-refresh.md)
-13. [랭킹 화면에 모드/범위 필터와 동점 규칙 정리하기](./08-ranking-filter-and-tie-rule.md)
-14. [설문 기반 나라 추천 엔진 만들기](./09-survey-recommendation-engine.md)
-15. [추천 후보 국가 풀을 30개로 넓히기](./10-expand-recommendation-candidate-pool.md)
-16. [추천 가중치와 경계값 튜닝하기](./11-recommendation-weight-tuning.md)
-17. [추천 결과는 저장하지 않고 만족도 피드백만 수집하기](./12-collect-recommendation-feedback.md)
-18. [설문 / 엔진 버전별 만족도 집계 기준 정리하기](./13-recommendation-feedback-insights.md)
-19. [오프라인 AI-assisted 설문 개선 루프 정리하기](./14-offline-ai-survey-improvement-loop.md)
-20. [페르소나 평가로 survey v2 개정안 만들기](./15-survey-v2-proposal-from-persona-eval.md)
-21. [추천 엔진 실험 전 persona top3 snapshot 고정하기](./16-freeze-persona-top3-snapshot.md)
-22. [추천 설문을 8문항으로 확장하기](./17-expand-recommendation-survey-question-set.md)
-23. [새 추천 문항을 실제로 쓰는 active-signal 페르소나 추가하기](./18-activate-new-recommendation-signals-in-persona-eval.md)
-24. [public 화면 문구를 제품 언어로 정리하기](./19-refresh-public-copy-before-admin-split.md)
-25. [public 운영 정보를 `/admin` read-only 화면으로 옮기기](./20-move-ops-insights-into-admin-surface.md)
-26. [추천 baseline 운영 화면과 public 헤더를 정리하기](./21-add-admin-persona-baseline-and-simplify-public-header.md)
-27. [게스트 플레이를 유지하면서 단순 계정으로 확장하는 설계](./22-guest-session-to-simple-account-plan.md)
-28. [게스트 세션 키와 기록 소유권 기반 먼저 심기](./23-add-guest-session-ownership-foundation.md)
-29. [단순 회원가입 / 로그인과 member 소유 게임 시작 연결하기](./24-add-simple-auth-and-member-owned-game-starts.md)
-30. [로그인 직후 현재 브라우저의 guest 기록을 계정으로 귀속하기](./25-claim-current-guest-progress-after-login.md)
-31. [leaderboard_record 기반으로 `/mypage` 기록 대시보드 만들기](./26-build-mypage-from-member-leaderboard-runs.md)
-32. [세션 role로 `/admin` 운영 화면 접근 제어 붙이기](./27-protect-admin-routes-with-session-role.md)
-33. [raw stage 집계로 `/mypage` 플레이 성향 지표 추가하기](./28-add-mypage-stage-performance-metrics.md)
-34. [환경변수로 운영용 admin 계정 bootstrap 하기](./29-bootstrap-admin-account-from-env.md)
-35. [운영 화면을 `/dashboard`로 바꾸고 ADMIN만 헤더에서 노출하기](./30-rename-admin-surface-to-dashboard.md)
-36. [Dashboard에 회원 수와 오늘 활성 지표 붙이기](./31-add-dashboard-activity-metrics.md)
-37. [Dashboard 지표 중 공개 가능한 것만 `/stats`로 분리하기](./32-make-public-stats-page-from-dashboard-metrics.md)
-38. [local 프로필에서 admin / user 계정과 샘플 run 자동 생성하기](./33-bootstrap-local-demo-accounts-and-sample-runs.md)
-39. [홈 첫 화면에 로그인 / 회원가입 진입점 추가하기](./34-add-home-auth-entry-points.md)
-40. [추천 설문을 12문항 trade-off 구조로 다시 설계하기](./35-redesign-recommendation-survey-with-twelve-questions.md)
-41. [공통 셸에 다크/라이트 테마 토글 붙이기](./36-add-sitewide-light-mode-toggle.md)
-42. [추천 설문을 20문항 생활 시나리오형으로 다시 확장하기](./37-expand-recommendation-survey-to-twenty-questions.md)
-43. [홈 첫 화면에서 모드 중복 노출을 걷어내고 진입 구조 단순화하기](./38-simplify-home-landing-structure.md)
-44. [public 디자인 패스 이후 SSR 화면과 테스트를 안정화하기](./39-stabilize-public-design-pass.md)
-45. [비용 선호에 따라 초과 물가 패널티를 다르게 주기](./40-split-cost-overshoot-penalty-by-preference.md)
-46. [탐색형·교통형 저예산 시나리오에 보정 신호 하나 더 넣기](./41-add-experience-transit-bonus-for-budget-explorers.md)
-47. [균형형 생활 시나리오를 위해 civic base bonus 추가하기](./42-add-civic-base-bonus-for-balanced-lifestyles.md)
-48. [현실형 저예산 사용자에게 soft landing bonus 추가하기](./43-add-soft-landing-bonus-for-practical-budget-users.md)
-49. [dashboard baseline 화면이 현재 엔진 결과를 직접 읽게 만들기](./44-make-dashboard-persona-baseline-dynamic.md)
-50. [가족형 정착 시나리오에 family base bonus 추가하기](./45-add-family-base-bonus-for-family-settlement.md)
-51. [dashboard persona baseline에 anchor drift까지 보이게 하기](./46-add-anchor-drift-to-dashboard-persona-baseline.md)
-52. [추천 만족도 운영 화면에 다음 액션 메모 붙이기](./47-add-ops-review-to-recommendation-feedback-dashboard.md)
-53. [local demo bootstrap에 현재 추천 피드백 샘플 넣기](./48-seed-current-recommendation-feedback-in-local-demo.md)
-54. [따뜻한 초도시 허브 시나리오에 global hub bonus 추가하기](./49-add-global-hub-bonus-for-warm-city-hubs.md)
-55. [현재 코드 재현용 블로그 허브](./50-current-state-rebuild-map.md)
-56. [저비용 음식·다문화 시나리오의 1위 drift 줄이기](./51-reduce-p02-anchor-drift-with-foodie-starter-bonus.md)
-57. [온화한 공공서비스형 시나리오의 1위 drift 줄이기](./52-reduce-p04-anchor-drift-with-temperate-public-base-bonus.md)
-58. [현실형 온화 기후 시나리오의 1위 drift 줄이기](./53-reduce-p06-anchor-drift-with-practical-public-value-bonus.md)
-59. [따뜻한 프리미엄 허브 시나리오의 1위 drift 줄이기](./54-reduce-p09-anchor-drift-with-premium-warm-hub-bonus.md)
-60. [자연형 저자극 정착 시나리오의 1위 drift 줄이기](./55-reduce-p08-anchor-drift-with-soft-nature-base-bonus.md)
-61. [영어 의존이 낮은 고도시 다양성 시나리오의 1위 drift 줄이기](./56-reduce-p10-anchor-drift-with-cosmopolitan-pulse-bonus.md)
-62. [온화한 글로벌 도시 시나리오의 1위 drift 줄이기](./57-reduce-p13-anchor-drift-with-temperate-global-city-bonus.md)
-63. [탐색형 자연 정착 시나리오의 1위 drift 줄이기](./60-reduce-p15-anchor-drift-with-exploratory-nature-runway-bonus.md)
-64. [warm megacity 시나리오의 baseline anchor를 다시 정의하기](./61-recalibrate-p07-baseline-anchor-for-warm-megacity-scenario.md)
-65. [공개 Level 2 실험을 롤백하고 legacy 데이터를 정리하기](./72-roll-back-game-level-2-and-purge-legacy-data.md)
-66. [남아 있던 internal Level 2 호환 코드를 완전히 제거하기](./73-remove-internal-level-2-compatibility-code.md)
-67. [polling 유지로 9단계를 닫고 실시간 전달 기준 고정하기](./74-close-stage-9-with-polling-first.md)
-68. [아키텍처, ERD, 요청 흐름, 발표 자료를 한 번에 정리하기](./75-package-architecture-and-presentation-kit.md)
-69. [다음에 어떤 게임을 더 넣을지 먼저 설계하기](./76-plan-next-country-game-expansion.md)
-70. [수도 맞히기 Level 1 vertical slice를 현재 구조에 붙이기](./77-add-capital-quiz-level-1-vertical-slice.md)
-71. [인구 비교 퀵 배틀 Level 1 vertical slice를 현재 구조에 붙이기](./78-add-population-battle-level-1-vertical-slice.md)
-72. [국기 게임을 열기 전에 FlagAssetCatalog를 먼저 만들기](./79-add-flag-asset-catalog-before-opening-flag-game.md)
-73. [수도 맞히기 seed에 한국어 수도명을 따로 넣고 게임 UI를 맞추기](./80-add-korean-capital-names-to-country-seed-and-capital-quiz.md)
-74. [국기 자산과 country seed를 합쳐 출제 가능 국가 pool 만들기](./81-build-flag-question-country-pool-from-seed-and-assets.md)
-75. [국기 보고 나라 맞히기 Level 1 vertical slice를 현재 구조에 붙이기](./82-add-flag-quiz-level-1-vertical-slice.md)
-76. [local demo bootstrap에 국기 퀴즈 sample run을 넣기](./83-seed-flag-sample-run-in-local-demo-bootstrap.md)
-77. [local demo bootstrap에 수도/인구 비교 sample run도 넣기](./84-seed-capital-and-population-battle-sample-runs-in-local-demo-bootstrap.md)
-78. [국기 자산 pool을 36개 snapshot으로 넓히고 재생성 스크립트를 붙이기](./85-expand-flag-asset-pool-with-regeneratable-snapshots.md)
-79. [국기 게임 distractor fallback 순서를 지역 기준으로 다듬기](./86-tune-flag-distractor-fallback-order.md)
-80. [국기 게임 난이도 단계와 결과 카피를 플레이어 기준으로 다시 정리하기](./87-polish-flag-difficulty-phases-and-result-copy.md)
-81. [신규 게임 3종이 들어온 뒤 public 홈, 랭킹, Stats를 다시 묶기](./88-group-public-surfaces-after-adding-three-new-games.md)
-82. [local boot에서 legacy leaderboard game_level 제약 풀기](./89-relax-legacy-leaderboard-game-level-constraint-for-local-boot.md)
-83. [모든 게임에서 정답 뒤 자동으로 다음 Stage로 넘기기](./90-auto-advance-to-the-next-stage-after-correct-answers.md)
-84. [모든 게임의 오답 피드백 시간을 같은 리듬으로 맞추기](./91-unify-wrong-answer-feedback-rhythm-across-public-games.md)
-85. [Java 25 기준 multi-stage Dockerfile로 ECS 배포 준비 시작하기](./92-add-java-25-multi-stage-dockerfile-for-ecs-prep.md)
-86. [ECS에서 앱이 어떤 설정으로 떠야 하는지 먼저 분리하기](./93-add-application-prod-profile-for-ecs-runtime-baseline.md)
-87. [ECS에서 graceful shutdown과 JVM 옵션 기준 먼저 고정하기](./94-add-graceful-shutdown-and-runtime-jvm-opts-for-ecs.md)
-88. [ECS와 ALB가 볼 actuator health probe를 실제로 열기](./95-add-actuator-readiness-and-liveness-for-ecs-health-checks.md)
-89. [ECS task definition sample로 secrets 주입 기준 고정하기](./96-add-ecs-task-definition-sample-for-secrets-manager-and-ssm.md)
-90. [prod에서만 Spring Session Redis를 켜서 멀티태스크 준비하기](./97-enable-prod-only-spring-session-redis-for-fargate-scale-out.md)
-91. [GitHub Actions에서 sample task definition을 렌더링해 ECS에 배포하기](./98-add-github-actions-ecs-deploy-workflow-from-template.md)
-92. [현재 브라우저에만 게임 세션을 열고 결과는 종료 후에만 노출하기](./99-protect-game-session-access-and-terminal-results.md)
-93. [게임 write를 직렬화하고 stale submit을 막아 무결성 1차 닫기](./100-serialize-game-session-writes-and-stale-submit-guard.md)
-94. [prod 설정을 더 안전하게 만들고 startup rollback 범위를 local/test로 제한하기](./101-harden-prod-config-with-schema-validation-and-safer-startup.md)
-95. [guest 기록 귀속 범위를 5개 게임 전체로 확장하기](./102-extend-guest-progress-claim-to-all-five-games.md)
-96. [5개 게임 기준으로 `/mypage` read model을 다시 정리하고 현재 순위를 바로잡기](./103-rebuild-mypage-read-model-for-all-five-games.md)
-97. [추천 피드백을 session token에 묶고 summary API를 admin 전용으로 닫기](./104-bind-recommendation-feedback-to-session-token-and-lock-summary-api.md)
-98. [추천 만족도와 게임오버 모달을 키보드로도 제대로 쓰게 만들기](./105-make-recommendation-feedback-and-game-over-modal-keyboard-accessible.md)
-99. [남은 4개 게임에도 같은 game over modal focus 규칙 적용하기](./106-extend-keyboard-game-over-modal-focus-rules-to-all-games.md)
-100. [랭킹 화면은 active board만 갱신하고 일간 카피도 같이 맞추기](./107-refresh-only-the-active-ranking-board-and-keep-daily-copy-fresh.md)
-101. [`/ranking` 첫 SSR은 기본 보드만 그리고 나머지는 지연 로드하기](./108-defer-non-active-ranking-boards-on-initial-ssr.md)
-102. [admin 운영 접근을 session role이 아니라 현재 DB role로 다시 검증하기](./109-revalidate-admin-access-against-current-member-role.md)
-103. [public 헤더의 Dashboard 링크도 현재 DB role 기준으로 맞추기](./110-align-public-dashboard-link-visibility-with-current-admin-role.md)
-104. [public/auth SSR과 게임 시작도 현재 회원 기준으로 stale 세션 UI를 정리하기](./111-use-current-member-state-for-public-auth-ssr.md)
-105. [current member 재검증을 request당 한 번만 하도록 정리하기](./112-cache-current-member-resolution-per-request.md)
-106. [Playwright로 public 핵심 흐름 브라우저 스모크 테스트 레일 추가하기](./113-add-a-playwright-browser-smoke-lane-for-public-flows.md)
-107. [browser smoke를 local Redis 없이도 뜨는 profile로 분리하기](./114-make-browser-smoke-tests-independent-from-local-redis.md)
-108. [Redis가 없어도 `/ranking`, `/stats`는 DB fallback으로 계속 읽히게 만들기](./115-keep-ranking-and-stats-readable-with-db-fallback-when-redis-is-down.md)
-109. [capital 게임오버 모달 키보드 흐름을 실제 브라우저 E2E로 고정하기](./116-lock-capital-game-over-modal-keyboard-flow-with-real-browser-e2e.md)
-110. [GitHub Actions에 `test -> browserSmokeTest` verify 레일 올리기](./117-add-a-github-actions-verify-lane-for-tests-and-browser-smoke.md)
-111. [population-battle 게임오버 모달 키보드 흐름도 실제 브라우저 E2E로 고정하기](./118-lock-population-battle-game-over-modal-keyboard-flow-with-real-browser-e2e.md)
-112. [population 게임오버 모달 키보드 흐름도 실제 브라우저 E2E로 고정하기](./119-lock-population-game-over-modal-keyboard-flow-with-real-browser-e2e.md)
-113. [location 게임오버 모달 키보드 흐름도 실제 브라우저 E2E로 고정하기](./120-lock-location-game-over-modal-keyboard-flow-with-real-browser-e2e.md)
-114. [flag 게임오버 모달 키보드 흐름도 실제 브라우저 E2E로 고정하기](./121-lock-flag-game-over-modal-keyboard-flow-with-real-browser-e2e.md)
-115. [public 게임들의 게임오버 모달 focus 규칙을 공용 helper로 정리하기](./122-extract-shared-game-over-modal-focus-helper-for-public-games.md)
-116. [공개 URL smoke와 초기 진입 수치를 같은 레일에서 재기](./123-add-a-public-url-smoke-lane-for-read-only-pages-and-navigation-timing.md)
-117. [첫 ECS 배포 전에 GitHub Actions 입력부터 먼저 점검하기](./124-add-a-first-deploy-preflight-check-for-github-actions-ecs-inputs.md)
+9. [Redis leaderboard와 공개 `/ranking` 페이지 만들기](./09-redis-leaderboard-and-ranking-page.md)
+   - terminal run을 Redis Sorted Set과 SSR read model로 읽게 만드는 글
+10. [deterministic recommendation engine과 feedback loop 만들기](./10-deterministic-recommendation-engine-and-feedback-loop.md)
+   - 런타임 LLM 없이도 설명 가능한 추천 엔진과 피드백 루프를 설계하는 글
 
-### Part E. 확장과 포트폴리오 정리
+### Part D. 사용자와 운영 surface 열기
 
-48. 인증과 내 전적 조회 고도화하기
-49. 실시간 전달 방식 고도화하기
-50. 테스트, 아키텍처, 면접 패키지로 프로젝트 마감하기
+11. [guest session ownership과 progress claim 만들기](./11-guest-session-ownership-and-progress-claim.md)
+   - 비회원 즉시 플레이와 기록 귀속을 동시에 잡는 글
+12. [simple auth, member session, admin entry 만들기](./12-simple-auth-member-session-and-admin-entry.md)
+   - 닉네임/비밀번호 기반 인증과 세션, 관리자 진입 기준을 고정하는 글
+13. [`/mypage`와 공개 `/stats` read model 만들기](./13-mypage-and-public-stats-read-models.md)
+   - 사용자 중심 read model과 공개 지표 surface를 설계하는 글
+14. [`/dashboard` 운영 surface와 operations card 만들기](./14-dashboard-admin-surface-and-operations-cards.md)
+   - 관리자용 read model을 일반 public 화면과 분리하는 글
 
-## 읽는 순서
+### Part E. public scope를 다시 닫고 게임 라인업 확장하기
 
-1. [blog/00_rebuild_guide.md](/Users/alex/project/worldmap/blog/00_rebuild_guide.md)로 이 시리즈를 어떤 방식으로 읽을지 확인한다.
-2. [blog/00_series_plan.md](/Users/alex/project/worldmap/blog/00_series_plan.md)로 전체 순서를 훑는다.
-3. 글은 번호 순서대로 읽는다.
-4. 구현 글에서는 본문뿐 아니라 "다룰 파일", "요청 흐름", "테스트", "취업 포인트"를 같이 본다.
+15. [public scope reset과 신규 게임 lineup 정리하기](./15-public-scope-reset-and-new-games-lineup.md)
+   - Level 2 실험 흔적을 걷고 capital, population-battle, flag를 public lineup에 올리는 글
 
-## 작성자용 규칙
+### Part F. 운영 런타임과 hardening
 
-새 글을 쓰기 전에는 아래를 먼저 확인한다.
+16. [production runtime, Redis session, ECS deploy prep 묶기](./16-production-runtime-redis-session-and-ecs-deploy-prep.md)
+   - Docker image, prod profile, Redis session, ECS 배포 준비를 한 번에 설명하는 글
+17. [game integrity와 current member/current role 재검증 닫기](./17-game-integrity-current-member-and-role-revalidation.md)
+   - ownership, stale submit, terminal result, admin role 재검증을 production hardening으로 묶는 글
 
-1. 현재 단계가 [docs/PORTFOLIO_PLAYBOOK.md](/Users/alex/project/worldmap/docs/PORTFOLIO_PLAYBOOK.md)에서 어디인지
-2. 최근 작업이 [docs/WORKLOG.md](/Users/alex/project/worldmap/docs/WORKLOG.md)에 정리됐는지
-3. 글에 넣을 실제 파일/클래스/테스트 근거가 있는지
+### Part G. production-ready 검증과 마감
 
-코드 근거가 없는 글은 추상적으로 길게 쓰지 않는다.
+18. [production verification과 demo/interview pack으로 프로젝트 마감하기](./18-production-verification-and-demo-interview-pack.md)
+   - browser smoke, public URL smoke, verify workflow, demo bootstrap, 발표 자료를 하나의 마감 패키지로 묶는 글
+
+### production-ready bundle만 먼저 읽고 싶다면
+
+후반부만 빠르게 따라갈 때는 아래 세 편을 한 묶음으로 읽는 편이 좋습니다.
+
+1. [16](./16-production-runtime-redis-session-and-ecs-deploy-prep.md)
+   - 운영 런타임과 deploy input contract
+2. [17](./17-game-integrity-current-member-and-role-revalidation.md)
+   - ownership, stale submit, current member/current role hardening
+3. [18](./18-production-verification-and-demo-interview-pack.md)
+   - verify lane, demo baseline, interview pack
+
+즉 `16 -> 17 -> 18`은 runtime, hardening, verification을 순서대로 닫는 trilogy입니다.
+
+## 독자용 시작 순서
+
+### 1. 프로젝트를 처음 읽는 경우
+
+1. [00_rebuild_guide.md](./00_rebuild_guide.md)
+2. [00_quality_checklist.md](./00_quality_checklist.md)
+3. [00_series_plan.md](./00_series_plan.md)
+4. [01](./01-why-worldmap-server-driven-game-platform.md)부터 [18](./18-production-verification-and-demo-interview-pack.md)까지 순서대로 읽기
+
+### 2. "재구현"이 목적일 때
+
+아래 순서로 들어가는 것이 가장 빠릅니다.
+
+1. [02](./02-gradle-spring-boot-ssr-bootstrap.md)
+2. [03](./03-docker-postgres-redis-dev-environment.md)
+3. [04](./04-application-yml-and-profile-strategy.md)
+4. [05](./05-country-seed-and-reference-data-pipeline.md)
+5. [06](./06-game-package-structure-and-shared-session-contract.md)
+6. [07](./07-location-game-session-stage-attempt-loop.md)
+7. [08](./08-population-quiz-arcade-loop-and-option-generation.md)
+8. [09](./09-redis-leaderboard-and-ranking-page.md)
+9. [10](./10-deterministic-recommendation-engine-and-feedback-loop.md)
+10. [11](./11-guest-session-ownership-and-progress-claim.md)
+11. [12](./12-simple-auth-member-session-and-admin-entry.md)
+12. [13](./13-mypage-and-public-stats-read-models.md)
+13. [14](./14-dashboard-admin-surface-and-operations-cards.md)
+14. [15](./15-public-scope-reset-and-new-games-lineup.md)
+15. [16](./16-production-runtime-redis-session-and-ecs-deploy-prep.md)
+16. [17](./17-game-integrity-current-member-and-role-revalidation.md)
+17. [18](./18-production-verification-and-demo-interview-pack.md)
+
+### 3. "면접 준비"가 목적일 때
+
+아래 글만 먼저 읽어도 큰 줄기를 잡을 수 있습니다.
+
+1. [01](./01-why-worldmap-server-driven-game-platform.md)
+2. [07](./07-location-game-session-stage-attempt-loop.md)
+3. [09](./09-redis-leaderboard-and-ranking-page.md)
+4. [10](./10-deterministic-recommendation-engine-and-feedback-loop.md)
+5. [17](./17-game-integrity-current-member-and-role-revalidation.md)
+6. [18](./18-production-verification-and-demo-interview-pack.md)
+
+추가로 production-ready 답변을 더 안정적으로 준비하려면
+[16](./16-production-runtime-redis-session-and-ecs-deploy-prep.md)까지 같이 읽는 것이 좋습니다.
+
+## 작성자용 시작 순서
+
+1. [README.md](../README.md)로 현재 제품 범위와 public scope를 다시 확인합니다.
+2. [docs/PORTFOLIO_PLAYBOOK.md](../docs/PORTFOLIO_PLAYBOOK.md)로 현재 단계와 다음 목표를 확인합니다.
+3. [docs/WORKLOG.md](../docs/WORKLOG.md)로 최근 작업과 설계 이유를 확인합니다.
+4. [00_rebuild_guide.md](./00_rebuild_guide.md)와 [00_quality_checklist.md](./00_quality_checklist.md)로 문서 기준을 맞춥니다.
+5. 새 글을 추가하기 전에 "이 글이 실제로 닫는 문제 하나가 무엇인가"를 먼저 적습니다.
+
+## 이 시리즈가 약속하는 것
+
+WorldMap 블로그는 아래 셋을 동시에 만족해야 합니다.
+
+- 현재 저장소를 이해할 수 있어야 한다
+- 글이 가리키는 코드/테스트/설정 파일을 함께 따라가며 같은 구조를 다시 만들 순서를 배울 수 있어야 한다
+- 면접에서 30초와 1분 답변으로 축약할 수 있어야 한다
+
+이 셋 중 하나라도 빠지면 글을 다시 써야 합니다.

@@ -70,9 +70,10 @@ demo bootstrap은 아래 확인용 데이터를 local DB에 넣는다.
 - guest 진행 중 위치 게임 세션 1개
   - `guestSessionKey = demo-guest-live`
   - `status = IN_PROGRESS`
-- 현재 추천 버전 만족도 샘플 5개
+- 현재 추천 버전 만족도 샘플
   - 기준 버전: `survey-v4 / engine-v20`
-  - 평균 만족도: 약 `4.4`
+  - fresh local DB 기준으로는 샘플 5개가 들어가고 평균 만족도는 약 `4.4`
+  - 이미 같은 버전 응답이 일부 있으면 bootstrap은 부족분만 보충하므로, rerun 이후에는 `최소 5개 이상`으로 읽어야 한다
   - `/dashboard/recommendation/feedback`에서 `현재 엔진 유지` 메모가 바로 보이는 수준으로 seed
 
 또한 예전 local DB에 남아 있던 `LEVEL_2` 위치/인구수 세션, 시도, 랭킹 데이터와 Redis `l2` 키는 startup rollback initializer가 먼저 비운다.
