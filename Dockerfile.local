@@ -22,7 +22,7 @@ RUN useradd --system --create-home --uid 10001 spring
 
 ENV JAVA_RUNTIME_OPTS="-XX:MaxRAMPercentage=75.0"
 
-COPY --from=builder /workspace/build/libs/*.jar /app/app.jar
+COPY --from=builder /workspace/build/libs/worldmap.jar /app/app.jar
 
 RUN chown -R spring:spring /app
 

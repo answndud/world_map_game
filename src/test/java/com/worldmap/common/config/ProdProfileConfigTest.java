@@ -14,7 +14,7 @@ import org.springframework.core.io.ClassPathResource;
 class ProdProfileConfigTest {
 
 	@Test
-	void prodProfileDefinesEcsReadyDefaults() throws IOException {
+	void prodProfileDefinesDeployReadyDefaults() throws IOException {
 		Map<String, Object> properties = loadYaml("application-prod.yml");
 
 		assertThat(asString(properties, "spring.docker.compose.enabled")).isEqualTo("false");
@@ -43,8 +43,12 @@ class ProdProfileConfigTest {
 		assertThat(asString(properties, "spring.datasource.url")).isEqualTo("${SPRING_DATASOURCE_URL}");
 		assertThat(asString(properties, "spring.datasource.username")).isEqualTo("${SPRING_DATASOURCE_USERNAME}");
 		assertThat(asString(properties, "spring.datasource.password")).isEqualTo("${SPRING_DATASOURCE_PASSWORD}");
-		assertThat(asString(properties, "spring.data.redis.host")).isEqualTo("${SPRING_DATA_REDIS_HOST}");
+		assertThat(asString(properties, "spring.data.redis.host")).isEqualTo("${SPRING_DATA_REDIS_HOST:}");
 		assertThat(asString(properties, "spring.data.redis.port")).isEqualTo("${SPRING_DATA_REDIS_PORT:6379}");
+		assertThat(asString(properties, "spring.data.redis.username"))
+			.isEqualTo("${SPRING_DATA_REDIS_USERNAME:}");
+		assertThat(asString(properties, "spring.data.redis.password"))
+			.isEqualTo("${SPRING_DATA_REDIS_PASSWORD:}");
 		assertThat(asString(properties, "spring.data.redis.ssl.enabled"))
 			.isEqualTo("${SPRING_DATA_REDIS_SSL_ENABLED:false}");
 		assertThat(asString(properties, "worldmap.admin.bootstrap.enabled"))

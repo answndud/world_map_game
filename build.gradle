@@ -42,6 +42,10 @@ tasks.named('test') {
 	}
 }
 
+tasks.named('bootJar') {
+	archiveFileName = 'worldmap.jar'
+}
+
 tasks.register('browserSmokeTest', Test) {
 	group = 'verification'
 	description = 'Runs browser-based smoke tests against a real Spring Boot server.'
