@@ -6109,6 +6109,42 @@
 - 아직 약한 부분: 아직 실제 AWS 계정에 OIDC role, repository variables, ECS cluster/service를 연결해 workflow를 한 번 돌린 상태는 아니다. 즉 자동 배포의 코드 뼈대는 생겼지만, smoke test는 다음 단계다.
 - 면접용 30초 요약: 이번에는 GitHub Actions로 ECS 배포 workflow를 추가했습니다. 핵심은 `OIDC 인증 -> 테스트 -> ECR push -> sample task definition 렌더링 -> ECS deploy`까지 저장소 파일로 고정한 점입니다. 특히 task definition을 사람이 직접 수정하지 않고 `render_ecs_task_definition.py`가 실제 AWS 값과 image URI를 주입하도록 만들어서, 초보자도 자동 배포 흐름을 코드 기준으로 설명할 수 있게 했습니다.
 
+## 2026-04-01 - Railway 단일 플랫폼 배포 baseline으로 전환
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 사용자가 AWS 대신 “하나의 플랫폼에서 끝나는 배포”를 원했고, 루트 `Dockerfile`도 배포용이 아니라 로컬 검증용으로만 두고 싶다고 방향을 바꿨다. 이번 조각의 목적은 현재 기본 배포 경로를 ECS에서 Railway 단일 플랫폼으로 재정렬하고, 그 기준을 저장소 설정과 문서로 같이 고정하는 것이다.
+- 변경 파일:
+  - `build.gradle`
+  - `Dockerfile.local`
+  - `.github/workflows/deploy-prod-ecs.yml`
+  - `railway.toml`
+  - `src/main/resources/application-prod.yml`
+  - `src/test/java/com/worldmap/common/config/ProdProfileConfigTest.java`
+  - `src/test/java/com/worldmap/common/config/RailwayConfigTemplateTest.java`
+  - `README.md`
+  - `docs/DEPLOYMENT_RUNBOOK_RAILWAY.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/99-pivot-deploy-baseline-from-ecs-to-railway.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+- 요청 흐름 / 데이터 흐름: 사용자 요청 흐름은 바뀌지 않았다. 바뀐 것은 운영 런타임 흐름이다. 현재 기본 배포 흐름은 `Railway build (RAILPACK) -> ./gradlew bootJar -> worldmap.jar -> java -Dserver.port=$PORT -jar ... -> /actuator/health/readiness`다. ECS workflow는 보조 경로로 남기되, 루트 `Dockerfile` 대신 `Dockerfile.local`을 사용하도록 바꿔 Railway auto-detection과 충돌하지 않게 했다.
+- 데이터 / 상태 변화: DB 스키마나 게임 도메인 상태는 변하지 않는다. 대신 prod Redis 연결 계약이 Railway `SPRING_DATA_REDIS_URL` direct binding과 host 기반 `host`, `port`, `username`, `password` 분기를 함께 설명할 수 있게 정리됐다. `bootJar` 산출물 이름도 `worldmap.jar`로 고정돼 배포 명령이 버전 문자열과 분리됐다.
+- 핵심 도메인 개념: 이 조각의 핵심은 “배포 source of truth 재정의”다. `Dockerfile`이 더 이상 기본 배포 기준이 아니라 `Dockerfile.local`이 되고, 실제 배포 책임은 `railway.toml`과 `application-prod.yml`이 맡는다. 이건 웹 요청 로직이 아니라 운영 계약 문제라서 컨트롤러/서비스가 아니라 build 설정과 런북 문서에 있어야 한다.
+- 예외 / 엣지 케이스:
+  - Railway는 루트 `Dockerfile`이 있으면 그 파일을 자동 사용하므로, 이름 변경 없이 `railway.toml`만 추가하는 방식은 의도와 다르게 Docker 배포로 흘러갈 수 있다.
+  - Redis는 Railway에서 `REDIS_URL` 한 개로 받는 흐름이 자연스럽지만, 기존 설정은 host/port만 전제로 설명돼 있었다. 그래서 host 기반 계약은 `application-prod.yml`에 남기고, `SPRING_DATA_REDIS_URL`은 Spring Boot 환경변수 바인딩으로 직접 받는다고 기준을 다시 정리했다.
+  - ECS workflow는 저장소에 남아 있지만 이제는 보조 경로다. 파일 자체가 깨지지 않도록 `docker build -f Dockerfile.local`로 같이 수정했다.
+- 테스트:
+  - `./gradlew test --tests com.worldmap.common.config.RailwayConfigTemplateTest --tests com.worldmap.common.config.ProdProfileConfigTest --tests com.worldmap.common.config.ActuatorHealthEndpointIntegrationTest --tests com.worldmap.common.config.RedisSessionConfigurationIntegrationTest`
+  - `docker build -f Dockerfile.local -t worldmap-railway-check .`
+  - `./gradlew test`
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이번 조각은 “배포 플랫폼을 바꾸면서 source of truth를 어디에 둘 것인가”를 설명하는 운영 feature slice라서 블로그로 남길 가치가 충분하다.
+- 배운 점: 플랫폼을 바꾸는 일은 문서 교체가 아니라 런타임 계약 재정의에 가깝다. 특히 Railway처럼 `Dockerfile` auto-detection이 있는 플랫폼에선, 파일 이름 하나가 실제 배포 방식 자체를 바꿔 버릴 수 있다.
+- 아직 약한 부분: 아직 Railway 프로젝트 생성, GitHub 저장소 연결, Postgres/Redis reference variable 입력, 공개 URL smoke test는 하지 않았다. 즉 저장소는 Railway-ready지만, 실제 플랫폼 배포 성공 기록은 다음 단계다.
+- 면접용 30초 요약: 이번에는 배포 기준을 Railway 단일 플랫폼으로 다시 정리했습니다. 핵심은 루트 `Dockerfile`을 `Dockerfile.local`로 바꿔 Railway auto-detection과 분리하고, `railway.toml`에서 Railpack 빌드와 `worldmap.jar` start command, readiness health check를 고정한 점입니다. 그리고 prod Redis 설정이 URL 방식도 받을 수 있게 해서 Railway Postgres/Redis reference variable로 바로 연결할 수 있게 만들었습니다.
+
 ## 2026-03-31 - 신규 게임 3종 확장 구간을 대표 글 하나로 다시 묶기
 
 - 단계: 10. 포트폴리오 정리와 발표 준비

@@ -809,9 +809,9 @@
 - 마지막 수평 검수로 본편 `01~18`의 첫머리, `테스트`, `현재 구현의 한계`, `실행 / 검증 명령`을 한 번 더 점검했다. 이제 baseline, core game, auth/read model, production-ready 글이 모두 같은 규칙으로 `코드로 존재하는 사실`, `대표 테스트가 직접 고정하는 범위`, `브라우저/운영에서 따로 확인해야 하는 범위`, `아직 남겨 둔 한계`를 구분해서 말한다
 - [docs/DEPLOYMENT_RUNBOOK_AWS_ECS.md](/Users/alex/project/worldmap/docs/DEPLOYMENT_RUNBOOK_AWS_ECS.md)로 계정 생성, 인프라 선택, 시나리오별 비용, 수동 배포, CI/CD, 운영, 롤백까지 초보자 기준 런북 정리
 - 런북 2차 보정으로 `Java 25 배포 이미지 결정`, `forwarded headers`, `JVM 메모리 옵션`, `graceful shutdown`, `Secrets Manager/SSM`, `public IPv4 비용`, `ElastiCache TLS`, `ECR lifecycle policy`를 첫 배포 판단 항목으로 보강
-- [Dockerfile](/Users/alex/project/worldmap/Dockerfile)과 [.dockerignore](/Users/alex/project/worldmap/.dockerignore)를 추가해 Java 25 기준 multi-stage 컨테이너 빌드를 실제로 검증
+- 로컬 이미지 검증용 [Dockerfile.local](/Users/alex/project/worldmap/Dockerfile.local)과 [.dockerignore](/Users/alex/project/worldmap/.dockerignore)를 추가해 Java 25 기준 multi-stage 컨테이너 빌드를 실제로 검증
 - [application-prod.yml](/Users/alex/project/worldmap/src/main/resources/application-prod.yml)을 추가해 prod datasource / redis / demo bootstrap off / forwarded header 기준이 어디서 분리되는지 고정
-- [Dockerfile](/Users/alex/project/worldmap/Dockerfile)의 JVM 옵션을 `JAVA_RUNTIME_OPTS`로 override 가능하게 바꾸고, [application-prod.yml](/Users/alex/project/worldmap/src/main/resources/application-prod.yml)에 graceful shutdown 기준을 추가해 ALB 뒤 종료 동작을 코드로 고정
+- [Dockerfile.local](/Users/alex/project/worldmap/Dockerfile.local)의 JVM 옵션을 `JAVA_RUNTIME_OPTS`로 override 가능하게 바꾸고, [application-prod.yml](/Users/alex/project/worldmap/src/main/resources/application-prod.yml)에 graceful shutdown 기준을 추가해 ALB 뒤 종료 동작을 코드로 고정
 - `spring-boot-starter-actuator`를 추가하고 [application-prod.yml](/Users/alex/project/worldmap/src/main/resources/application-prod.yml)에 health/liveness/readiness probe group을 구성해 ECS/ALB health check 기준을 실제 endpoint로 열었다
 - 운영 안정화 1차로 base [application.yml](/Users/alex/project/worldmap/src/main/resources/application.yml)에서 `local` 기본 프로필을 제거하고, prod [application-prod.yml](/Users/alex/project/worldmap/src/main/resources/application-prod.yml)은 `ddl-auto=validate`, readiness `db+redis+ping` 기준으로 다시 고정했다
 - 같은 조각에서 [GameLevelRollbackInitializer.java](/Users/alex/project/worldmap/src/main/java/com/worldmap/common/config/GameLevelRollbackInitializer.java)는 `worldmap.legacy.rollback.enabled=true`일 때만 켜지게 바꿨다. local/test는 true, prod는 false로 나눠, legacy rollback 호환 코드가 운영 startup에서 실제 데이터를 건드리지 않게 했다
@@ -819,14 +819,18 @@
 - [RedisSessionProdConfiguration.java](/Users/alex/project/worldmap/src/main/java/com/worldmap/common/config/RedisSessionProdConfiguration.java)로 `prod` 프로필에서만 Redis-backed session을 켜고, [application-local.yml](/Users/alex/project/worldmap/src/main/resources/application-local.yml) / [application-test.yml](/Users/alex/project/worldmap/src/main/resources/application-test.yml)에서는 session auto-configuration을 제외해 기존 servlet session 흐름을 보존했다
 - [deploy-prod-ecs.yml](/Users/alex/project/worldmap/.github/workflows/deploy-prod-ecs.yml)로 `workflow_dispatch -> OIDC AWS 인증 -> ./gradlew test -> ECR push -> rendered task definition deploy` 순서를 저장소에 고정했다
 - [render_ecs_task_definition.py](/Users/alex/project/worldmap/scripts/render_ecs_task_definition.py)로 sample task definition을 실제 AWS 리소스 값과 image URI로 치환하는 렌더링 규칙을 추가했다
+- 단일 플랫폼 배포 요구에 맞춰 루트 Dockerfile을 [Dockerfile.local](/Users/alex/project/worldmap/Dockerfile.local)로 분리하고, Railway가 직접 읽는 [railway.toml](/Users/alex/project/worldmap/railway.toml)을 추가했다
+- [build.gradle](/Users/alex/project/worldmap/build.gradle)의 `bootJar` 산출물을 `worldmap.jar`로 고정해 Railway start command를 버전 문자열과 분리했다
+- [application-prod.yml](/Users/alex/project/worldmap/src/main/resources/application-prod.yml)은 Railway Redis host 기반 연결용 `host`, `port`, `username`, `password` 계약을 명시하고, `SPRING_DATA_REDIS_URL`은 Spring Boot env 바인딩으로 직접 받을 수 있게 정리했다
+- [DEPLOYMENT_RUNBOOK_RAILWAY.md](/Users/alex/project/worldmap/docs/DEPLOYMENT_RUNBOOK_RAILWAY.md)로 GitHub 저장소 연결, Railway Postgres/Redis, 환경변수, 기본 도메인, readiness health check를 한 번에 설명하는 단일 플랫폼 배포 런북을 추가했다
 - README에 실시간 전달 결정과 발표용 문서 세트 링크 반영
 
 다음에 이어서 할 일:
 
-- 실제 AWS 계정에서 `workflow_dispatch`에 필요한 repository variables와 OIDC role을 연결한다
-- ECS 수동 배포 1회와 GitHub Actions 배포 1회를 모두 성공시켜 smoke test를 남긴다
-- 실제 ECS 환경에서 Redis-backed session이 task 재기동 이후에도 유지되는지 smoke test를 한다
-- migration 도구(Flyway/Liquibase) 도입 여부와 첫 baseline schema 전략을 결정해 `ddl-auto=validate` 이후 운영 schema 변경 경로를 명시한다
+- Railway 프로젝트를 실제로 만들고 GitHub 저장소를 연결한다
+- Railway Postgres/Redis reference variable을 넣어 첫 공개 URL 배포를 성공시킨다
+- Railway 공개 URL 기준 smoke test와 admin/dashboard 로그인 확인을 남긴다
+- Railway 배포가 안정된 뒤에만 커스텀 도메인이나 Cloudflare 앞단 연결을 검토한다
 
 반드시 이해할 것:
 

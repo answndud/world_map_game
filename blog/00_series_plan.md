@@ -19,7 +19,7 @@
 | 13 | 사용자용 기록 화면과 공개 지표를 어떻게 분리하는가 | `/mypage`, `/stats` read model |
 | 14 | 운영자 surface를 어떻게 public 화면과 분리하는가 | `/dashboard`, operations cards, admin review |
 | 15 | public product scope를 다시 닫고 게임 라인업을 어떻게 늘리는가 | Level 2 rollback, capital/battle/flag |
-| 16 | 운영 런타임과 배포 준비를 어떻게 코드로 남기는가 | Docker, prod profile, Redis session, ECS prep |
+| 16 | 운영 런타임과 배포 준비를 어떻게 코드로 남기는가 | Docker.local, prod profile, Redis session, Railway/ECS prep |
 | 17 | production-ready hardening을 어떻게 닫는가 | ownership, terminal result, stale submit, role revalidation |
 | 18 | 검증과 시연 자료를 어떻게 하나의 포트폴리오 패키지로 묶는가 | browser smoke, verify, demo bootstrap, interview pack |
 
@@ -111,7 +111,7 @@
 ### runtime, hardening, verification
 
 - `15`: `GameLevelRollbackInitializer`, 신규 게임 3종 패키지, 홈/랭킹/stats 연동
-- `16`: `Dockerfile`, `application-prod.yml`, `RedisSessionProdConfiguration`, ECS scripts/workflow
+- `16`: `Dockerfile.local`, `railway.toml`, `application-prod.yml`, `RedisSessionProdConfiguration`, deploy scripts/workflow
 - `17`: `GameSessionAccessContextResolver`, `GameSubmissionGuard`, `CurrentMemberAccessService`, `AdminAccessGuard`
 - `18`: `BrowserSmokeE2ETest`, `PublicUrlSmokeE2ETest`, `verify.yml`, `DemoBootstrapService`, 발표 문서
 

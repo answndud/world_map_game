@@ -64,7 +64,7 @@
 
 반대로 이번 기준으로 이미 있는 것은 아래다.
 
-- multi-stage `Dockerfile`
+- multi-stage `Dockerfile.local`
 - `.dockerignore`
 - Docker 내부 `bootJar` 기반 self-contained image build 검증
 - `application-prod.yml`
@@ -103,7 +103,7 @@
 1. `Java 25`를 유지하고, 실제로 사용 가능한 runtime base image를 확정한다.
 2. `Java 21 LTS`로 낮춰서 배포 호환성과 실무 표준성을 우선한다.
 
-현재 저장소에는 `eclipse-temurin:25-jdk`, `eclipse-temurin:25-jre` 기반 Dockerfile이 들어갔고, 실제 `docker build`까지 통과했다.
+현재 저장소에는 `eclipse-temurin:25-jdk`, `eclipse-temurin:25-jre` 기반 `Dockerfile.local`이 들어갔고, 실제 `docker build -f Dockerfile.local .`까지 통과했다.
 
 즉, 지금 기준에서는 `Java 25 유지` 경로가 일단 검증된 상태다. 다만 이력서/실무 표준성을 더 우선하면 이후 `Java 21 LTS`로 내리는 판단도 열어 둘 수 있다.
 
@@ -868,7 +868,7 @@ ElastiCache:
 
 아래 순서로 진행하면 된다.
 
-- [x] `Dockerfile` 작성
+- [x] `Dockerfile.local` 작성
 - [x] `.dockerignore` 작성
 - [x] `application-prod.yml` 추가
 - [ ] Java 25 runtime image 유지 여부 또는 Java 21 LTS 전환 여부 결정

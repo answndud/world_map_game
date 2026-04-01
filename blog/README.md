@@ -56,7 +56,7 @@
 - deterministic recommendation engine과 feedback loop
 - guest ownership, simple auth, `/mypage`, `/stats`, `/dashboard`
 - public scope reset과 Level 1-only lineup 정리
-- production runtime, Redis session, ECS deploy prep
+- production runtime, Redis session, deploy prep
 - game integrity, current member/current role revalidation
 - browser smoke, public URL smoke, verify pipeline
 - demo bootstrap, architecture docs, interview pack
@@ -131,8 +131,8 @@
 
 ### Part F. 운영 런타임과 hardening
 
-16. [production runtime, Redis session, ECS deploy prep 묶기](./16-production-runtime-redis-session-and-ecs-deploy-prep.md)
-   - Docker image, prod profile, Redis session, ECS 배포 준비를 한 번에 설명하는 글
+16. [production runtime, Redis session, deploy prep 묶기](./16-production-runtime-redis-session-and-ecs-deploy-prep.md)
+   - Docker image, prod profile, Redis session, Railway/ECS 대안 배포 준비를 한 번에 설명하는 글
 17. [game integrity와 current member/current role 재검증 닫기](./17-game-integrity-current-member-and-role-revalidation.md)
    - ownership, stale submit, terminal result, admin role 재검증을 production hardening으로 묶는 글
 
