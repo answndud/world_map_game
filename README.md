@@ -147,8 +147,18 @@ npm run dev
 
 ```bash
 cd demo-lite
+npm run inspect:pages-git
 npm run smoke:public -- https://worldmap-demo-lite.pages.dev
 ```
+
+현재 `worldmap-demo-lite` Pages 프로젝트는 direct-upload 상태입니다. 즉 기존 production URL은 수동 `wrangler pages deploy`로 운영 중이고, Git-connected auto deploy로 넘기려면 새 Pages 프로젝트를 만들어 handoff해야 합니다.
+
+Git-connected handoff 준비:
+
+- [demo-lite-verify.yml](/Users/alex/project/worldmap/.github/workflows/demo-lite-verify.yml)이 `demo-lite` 변경마다 `npm test`, `npm run build`, `npm run verify:pages`를 실행합니다.
+- `workflow_dispatch`에서는 public URL을 직접 넣어 `npm run smoke:public`까지 GitHub Actions에서 다시 돌릴 수 있습니다.
+- 현재 `worldmap-demo-lite`는 Direct Upload 프로젝트이므로, Git integration으로 넘기려면 기존 프로젝트를 전환하는 대신 새 Git-connected Pages 프로젝트를 만들어야 합니다.
+- 로컬에서는 `cd demo-lite && npm run inspect:pages-git`으로 현재 Pages 프로젝트의 Git provider, 현재 브랜치, working tree 상태, 다음 handoff step을 바로 확인할 수 있습니다.
 
 ## 검증 레일
 
@@ -180,6 +190,7 @@ WORLDMAP_PUBLIC_BASE_URL=https://<public-url> ./gradlew publicUrlSmokeTest
 - Railway 런북과 `demo-lite` scope / decomposition 문서 정리
 - `demo-lite`용 Cloudflare Pages 런북, `.node-version`, `_headers` baseline 추가
 - `demo-lite`용 public URL smoke 스크립트 추가
+- `demo-lite`용 GitHub Actions verify lane 추가
 
 현재 상태는 두 갈래입니다.
 

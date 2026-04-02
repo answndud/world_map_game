@@ -6985,3 +6985,41 @@
 - 배운 점: 공개 URL smoke는 브라우저 스크린샷보다 범위가 좁아도, 저장소 안에서 재실행 가능한 형태로 남겨 두는 편이 운영 설명력은 더 높다. 즉 “한 번 확인했다”보다 “누구나 같은 명령으로 다시 확인할 수 있다”가 더 중요하다.
 - 아직 약한 부분: 현재 smoke는 hash route shell과 정적 asset/data chain 위주다. route 내부 interaction까지 반복 검증하려면 Git-connected auto deploy 이후 browser smoke 기준도 별도로 정리해야 한다.
 - 면접용 30초 요약: demo-lite 공개 URL에 대해 반복 가능한 smoke 스크립트를 추가했습니다. `npm run smoke:public` 한 번으로 root HTML, `/assets/*`, generated countries/flag data, 대표 SVG, `_headers` 기반 보안/캐시 헤더까지 같이 확인하게 했고, 이를 테스트와 문서에 연결했습니다. 핵심은 static hosting 검증을 사람 손검사에서 저장소 스크립트로 바꿔 release 설명력을 높인 점입니다.
+
+## 2026-04-02 - demo-lite Git-connected Pages handoff를 위한 verify workflow 추가
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 현재 `worldmap-demo-lite` public URL은 Direct Upload 프로젝트로 열려 있다. 이 상태는 유지할 수 있지만, Git-connected auto deploy source of truth로 넘기려면 저장소 쪽에서 `main` branch가 배포 가능한 상태라는 것을 먼저 CI로 고정해야 한다. 이번 조각의 목적은 그 handoff를 위해 `demo-lite` 전용 GitHub Actions verify lane을 추가하고, 기존 Direct Upload 프로젝트는 새 Git-connected Pages 프로젝트로 교체해야 한다는 기준을 문서에 남기는 것이다.
+- 변경 파일:
+  - `demo-lite/scripts/inspect-pages-git-handoff.mjs`
+  - `demo-lite/tests/pages-git-handoff.test.mjs`
+  - `.github/workflows/demo-lite-verify.yml`
+  - `src/test/java/com/worldmap/common/config/DemoLiteVerifyWorkflowTemplateTest.java`
+  - `README.md`
+  - `demo-lite/README.md`
+  - `docs/DEPLOYMENT_RUNBOOK_DEMO_LITE_CLOUDFLARE_PAGES.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/111-add-demo-lite-verify-workflow-for-git-connected-pages-handoff.md`
+- 요청 흐름 / 데이터 흐름: 앱 runtime은 바뀌지 않았다. 대신 새 release 흐름이 추가됐다. `pull_request / push(main) -> demo-lite-verify workflow -> npm ci -> npm test -> npm run build -> npm run verify:pages` 순서로 `demo-lite` 정적 배포 readiness를 먼저 확인한다. 그리고 `workflow_dispatch`에서는 public URL을 입력하면 `npm run smoke:public -- <url>`까지 실행할 수 있다.
+- 데이터 / 상태 변화: DB, Redis, localStorage, Cloudflare Pages runtime은 바뀌지 않았다. 바뀐 것은 저장소의 release gate다. 이제 `demo-lite`는 Pages Git 연결 이전에도 GitHub Actions 안에서 `Node pin + shared asset sync + static build + baseline verify`를 자동으로 다시 확인할 수 있다.
+- 핵심 도메인 개념:
+  - `handoff inspection script`: 현재 Pages 프로젝트가 Direct Upload인지, 현재 브랜치와 working tree 상태가 handoff에 적합한지 로컬에서 즉시 보여 주는 도구
+  - `demo-lite verify lane`: full app verify와 분리된 정적 앱 전용 CI
+  - `Git-connected handoff`: 기존 Direct Upload project를 그대로 전환하는 것이 아니라, 새 Git-connected Pages project에 repo/main을 넘기기 전 저장소 쪽 준비를 끝내는 단계
+  - `manual public smoke dispatch`: public URL을 입력받아 release 후 smoke를 GitHub Actions에서 수동으로 돌리는 방식
+  - `source of truth split`: 현재 production URL은 Direct Upload로 유지하되, 앞으로의 운영 기준은 Git-connected project로 넘길 준비를 하는 구조
+- 예외 / 엣지 케이스:
+  - 이 workflow가 있다고 해서 기존 `worldmap-demo-lite` Direct Upload project가 자동으로 Git-connected가 되는 것은 아니다.
+  - public smoke job은 network 외부 의존이 있으므로 push/PR 기본 lane에 넣지 않고 `workflow_dispatch`에서만 켠다.
+  - `demo-lite` 관련 문서 파일이 바뀌어도 이 workflow는 현재 `demo-lite/**`와 workflow 파일 자체에만 path trigger를 둔다. 즉 docs-only 수정은 수동 dispatch나 full verify로 보는 것이 맞다.
+- 테스트:
+  - `./gradlew test --tests com.worldmap.common.config.DemoLiteVerifyWorkflowTemplateTest`
+  - `cd demo-lite && npm test`
+  - `cd demo-lite && npm run build`
+  - `cd demo-lite && npm run verify:pages`
+  - `cd demo-lite && npm run smoke:public -- https://worldmap-demo-lite.pages.dev`
+  - `git diff --check`
+- 배운 점: Cloudflare Pages에서 Direct Upload와 Git-connected는 단순한 토글 문제가 아니기 때문에, 실제 전환 전에 저장소 쪽 release gate를 먼저 분리해 두는 것이 중요하다. 즉 대시보드 클릭 이전에 CI contract를 먼저 고정해야 이후 운영 기준이 설명 가능해진다.
+- 아직 약한 부분: 새 Git-connected Pages project 생성 자체는 여전히 Cloudflare 대시보드에서 직접 해야 한다. 즉 지금 단계는 handoff 준비를 끝낸 것이지, auto deploy 전환을 끝낸 것은 아니다.
+- 면접용 30초 요약: demo-lite를 Git-connected Pages로 넘기기 전에, 저장소 쪽 source of truth를 먼저 닫기 위해 `demo-lite-verify` GitHub Actions workflow를 추가했습니다. 이 workflow는 `demo-lite` 변경마다 테스트, static build, Pages baseline verify를 자동으로 돌리고, 필요하면 public URL smoke도 수동으로 다시 돌릴 수 있습니다. 핵심은 Direct Upload 상태를 바로 전환하려 하지 않고, 먼저 repo/main이 배포 가능한 branch라는 사실을 CI로 증명하도록 만든 점입니다.
