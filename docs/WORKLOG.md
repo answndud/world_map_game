@@ -34,6 +34,33 @@
 - 면접용 30초 요약:
 ```
 
+## 2026-04-02 - README를 배포용 공개 소개 문서로 전면 재작성하기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 기존 [README.md](/Users/alex/project/worldmap/README.md)는 제품 소개 문서라기보다 설계 노트, 구현 우선순위, 규칙, 세부 게임 정책이 한 파일에 다 들어 있는 상태였다. 공개 저장소 첫 화면에서 읽기에는 너무 길고, `README / docs / blog` 역할도 섞여 있었다. 이번 조각의 목적은 README를 “배포용 소개 문서”로 다시 잘라서, 방문자가 제품을 빠르게 이해하고 실행/검증/문서 진입점을 찾게 만드는 것이다.
+- 변경 파일:
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 앱 런타임 코드는 바뀌지 않았다. 바뀐 것은 `방문자 -> README -> 빠른 실행/검증/문서 링크 -> 세부 docs/blog` 읽기 흐름이다. 예전 README는 `서비스 컨셉 -> MVP -> 게임 규칙 -> 추천 설계 -> 랭킹 설계 -> 아키텍처 -> 도메인 모델 -> 화면 초안 -> API 초안 -> 구현 우선순위`처럼 내부 설계 문서까지 끌어안고 있었는데, 지금은 `소개 -> 현재 범위 -> 아키텍처 -> 핵심 요청 흐름 -> 기술 스택 -> 로컬 실행 -> 검증 레일 -> 배포 상태 -> 문서 안내 -> 저장소 포인트 -> 현재 한계`만 남긴다. 즉 첫 화면은 소개와 진입점만 맡고, 세부 설명은 [docs/ARCHITECTURE_OVERVIEW.md](/Users/alex/project/worldmap/docs/ARCHITECTURE_OVERVIEW.md), [docs/REQUEST_FLOW_GUIDE.md](/Users/alex/project/worldmap/docs/REQUEST_FLOW_GUIDE.md), [blog/README.md](/Users/alex/project/worldmap/blog/README.md) 같은 전용 문서로 보낸다.
+- 데이터 / 상태 변화: DB, Redis, 세션, 브라우저 상태는 변하지 않는다. 대신 문서 상태는 크게 단순해졌다. README는 더 이상 단계별 구현 순서나 장문 게임 규칙을 담지 않고, public-facing 소개와 quickstart, verification, deployment readiness만 남긴다. 같은 사실을 [PORTFOLIO_PLAYBOOK.md](/Users/alex/project/worldmap/docs/PORTFOLIO_PLAYBOOK.md)에도 반영해 stage 10 산출물 중 README가 이제 `공개 소개 문서` 역할로 정리됐다고 기록했다.
+- 핵심 도메인 개념:
+  - `README 역할 분리`: README는 저장소 첫 화면 소개 문서이고, 세부 설계와 연대기는 `docs/`와 `blog/`가 맡는다.
+  - `public-facing contract`: 공개 문서에서는 현재 제품 범위, 핵심 아키텍처, 실행 방법, 검증 레일, 배포 상태만 빠르게 보여 주는 것이 중요하다.
+  - `documentation layering`: `README -> docs overview -> blog rebuild series -> playbook/worklog` 순서로 깊이를 나눠야 읽는 사람이 길을 잃지 않는다.
+- 예외 / 엣지 케이스:
+  - 소개 문서를 줄이면서도 현재 한계는 숨기면 안 된다. 그래서 공개 URL 미배포, runtime LLM 미사용, browser smoke 범위, 신규 게임 확장 여지를 README에 남겼다.
+  - README 링크는 GitHub에서 열려야 하므로 로컬 절대경로가 아니라 상대경로를 써야 한다.
+  - local demo bootstrap은 편리하지만 소개 문서에 계정/fixture 세부를 과하게 넣으면 다시 내부 문서처럼 보일 수 있어 링크만 남겼다.
+- 테스트:
+  - 없음. 이번 조각은 doc-only 편집 작업이다.
+  - `python3` one-off script로 `README.md`, `docs/*.md`, `blog/*.md` Markdown 링크 존재 여부 확인
+  - `git diff --check`
+- 블로그 반영 여부: 생략. 이번 작업은 기능 조각이 아니라 README 역할 정리이므로 `blog/`를 새로 수정하지 않았다.
+- 배운 점: README는 많이 설명하는 문서보다 “어디까지 설명하고 어디서 멈출지”를 잘 정하는 문서여야 한다. 구현 세부와 연대기를 한 파일에 다 넣으면 오히려 공개 소개 문서로서의 기능이 죽는다.
+- 아직 약한 부분: README는 많이 좋아졌지만, 실제 공개 URL이 생기면 상단에 live link와 production smoke 결과를 추가할 여지가 있다. 지금은 배포 준비 상태까지만 정직하게 적는 것이 맞다.
+- 면접용 30초 요약: 이번에는 기능이 아니라 README 역할을 다시 정리했습니다. 기존 README는 설계 노트와 구현 우선순위까지 다 담고 있어서 공개 소개 문서로는 너무 무거웠고, 지금은 제품 소개, 현재 범위, 아키텍처, 로컬 실행, 검증 레일, 배포 상태, 문서 링크만 남겼습니다. 그래서 저장소 첫 화면에서 바로 “이 프로젝트가 무엇이고, 어디서 실행하고, 어디서 더 깊게 읽어야 하는지”가 훨씬 선명해졌습니다.
+
 ## 2026-04-01 - 본편 01~18의 증명 범위 언어를 마지막으로 수평 정리하기
 
 - 단계: 10. 포트폴리오 정리와 발표 준비
