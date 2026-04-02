@@ -110,6 +110,7 @@ function initPlayPage() {
 
     window.addEventListener("pageshow", gameOverModalController.hide);
     restartButton?.addEventListener("click", restartCurrentSession);
+    installBrowserSmokeHooks();
 
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -174,7 +175,10 @@ function initPlayPage() {
                 }
 
                 setTimeout(() => {
-                    loadState().catch((error) => showLocationMessage(messageBox, error.message, "error"));
+                    loadState().catch((error) => {
+                        lockInteraction(false);
+                        showLocationMessage(messageBox, error.message, "error");
+                    });
                 }, STAGE_FEEDBACK_DELAY_MS);
                 return;
             }
@@ -202,19 +206,10 @@ function initPlayPage() {
             }
 
             setTimeout(() => {
-                lockInteraction(false);
-                highlightedWrongIso3Code = null;
-                stageOverlay.hidden = true;
-                feedback.hidden = true;
-                clearSelection();
-                renderStatus(statusBox, {
-                    stageNumber: currentState.stageNumber,
-                    difficultyLabel: currentState.difficultyLabel,
-                    clearedStageCount: payload.clearedStageCount,
-                    totalScore: payload.totalScore,
-                    livesRemaining: payload.livesRemaining
+                loadState().catch((error) => {
+                    lockInteraction(false);
+                    showLocationMessage(messageBox, error.message, "error");
                 });
-                refreshGlobe();
             }, STAGE_FEEDBACK_DELAY_MS);
         } catch (error) {
             lockInteraction(false);
@@ -452,6 +447,25 @@ function initPlayPage() {
 
     function focusPrimaryPlaySurface() {
         globeStage?.focus();
+    }
+
+    function installBrowserSmokeHooks() {
+        const browserSmokeHook = window.__worldmapBrowserSmoke;
+        if (!browserSmokeHook) {
+            return;
+        }
+
+        browserSmokeHook.locationSelectCountry = (iso3Code) => {
+            if (!currentState || interactionLocked || !iso3Code || !activeCountryIsoCodes.has(iso3Code)) {
+                return false;
+            }
+
+            hideLocationMessage(messageBox);
+            selectedCountryIso3Code = iso3Code;
+            submitButton.disabled = false;
+            refreshGlobe();
+            return true;
+        };
     }
 
     function syncGlobeSize() {

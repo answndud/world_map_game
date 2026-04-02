@@ -61,7 +61,8 @@ WorldMap은 later stage에서 Redis를 session과 leaderboard에 사용합니다
 
 ### 5-1. local Postgres state
 
-- port: `5432`
+- host port: `5433`
+- container port: `5432`
 - db: `worldmap`
 - user: `worldmap`
 - password: `worldmap`
@@ -147,7 +148,7 @@ Redis를 later stage까지 미루면 다음 문제가 생깁니다.
 #### PostgreSQL
 
 - image: `postgres:16-alpine`
-- port: `5432:5432`
+- port: `5433:5432`
 - db/user/password: 모두 `worldmap`
 - healthcheck: `pg_isready -U worldmap -d worldmap`
 
@@ -159,6 +160,7 @@ Redis를 later stage까지 미루면 다음 문제가 생깁니다.
 - healthcheck: `redis-cli ping`
 
 이 파일에서 중요한 것은 "서비스 개수"가 아니라 **WorldMap이 현재 어떤 외부 런타임에 기대는지 명확히 드러난다**는 점입니다.
+또 local 개발 머신에서 다른 프로젝트가 이미 `5432`를 쓰고 있어도 WorldMap compose를 같이 띄울 수 있도록, host published port는 `5433`으로 분리했습니다. Spring Boot Docker Compose 연동은 published port를 따라가므로 앱 설정 파일 쪽은 추가 변경이 필요하지 않습니다.
 
 ### 7-2. `application-local.yml`: 사람이 직접 만지는 개발 환경
 

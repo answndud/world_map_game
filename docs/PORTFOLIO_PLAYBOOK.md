@@ -289,7 +289,7 @@
 - 플레이 HUD에 `선택 상태 / 진행 가이드` 영역을 추가해 현재 입력 상태와 다음 행동을 더 분명하게 노출
 - 결과 화면에 `총 시도 수 / 1트 클리어 수`를 추가해 디브리프 요약 밀도를 높임
 - 오답 시에는 하단 결과 카드를 띄우지 않고 오버레이만 보여주도록 피드백 강도 조정
-- 오답 시 같은 Stage를 다시 그리기 위해 `GET /state`를 재호출하지 않고, 로컬 상태만 갱신하도록 조정
+- 오답 시 같은 Stage를 다시 풀 때도 stale submit guard와 attempt 번호가 어긋나지 않도록, `GET /state`를 다시 읽어 최신 `stageId / expectedAttemptNumber`를 동기화하도록 조정
 - 정답 시 `획득 점수`만 잠깐 보여 준 뒤 자동으로 다음 Stage를 다시 로드하도록 전환
 - 오답 시에도 오버레이와 HUD를 약 `950ms`만 노출한 뒤, 같은 Stage 재시도 상태로 자동 복귀하도록 리듬을 통일
 - 홈 / 시작 / 결과 화면에 공통 `cold space` 테마 1차 적용
@@ -824,6 +824,8 @@
 - [build.gradle](/Users/alex/project/worldmap/build.gradle)의 `bootJar` 산출물을 `worldmap.jar`로 고정해 Railway start command를 버전 문자열과 분리했다
 - [application-prod.yml](/Users/alex/project/worldmap/src/main/resources/application-prod.yml)은 Railway Redis host 기반 연결용 `host`, `port`, `username`, `password` 계약을 명시하고, `SPRING_DATA_REDIS_URL`은 Spring Boot env 바인딩으로 직접 받을 수 있게 정리했다
 - [DEPLOYMENT_RUNBOOK_RAILWAY.md](/Users/alex/project/worldmap/docs/DEPLOYMENT_RUNBOOK_RAILWAY.md)로 GitHub 저장소 연결, Railway Postgres/Redis, 환경변수, 기본 도메인, readiness health check를 한 번에 설명하는 단일 플랫폼 배포 런북을 추가했다
+- 무료 공개 요구를 별도 트랙으로 다루기 위해 [DEMO_LITE_SCOPE_PLAN.md](/Users/alex/project/worldmap/docs/DEMO_LITE_SCOPE_PLAN.md)와 [DEMO_LITE_DECOMPOSITION_PLAN.md](/Users/alex/project/worldmap/docs/DEMO_LITE_DECOMPOSITION_PLAN.md)을 추가했다. 이 문서들은 `full Spring Boot app은 유지`하고, free-tier 공개는 `auth / mypage / stats / ranking / dashboard / recommendation feedback persistence`를 의도적으로 제거한 별도 `demo-lite` surface로 풀어야 한다는 기준을 고정한다
+- 특히 `same Spring Boot app에 demo-lite profile만 얹는 방식`보다 `재사용 가능한 데이터/자산만 가져가는 sibling demo-lite app`이 더 안전하다는 점, 그리고 가장 먼저 분리해야 할 hot spot이 `site-header + auth state`, 그다음이 `recommendation feedback`, `stats/ranking/mypage/dashboard`, `LeaderboardService` 직결 게임 service라는 순서를 문서로 정리했다
 - README에 실시간 전달 결정과 발표용 문서 세트 링크 반영
 
 다음에 이어서 할 일:
@@ -832,6 +834,8 @@
 - Railway Postgres/Redis reference variable을 넣어 첫 공개 URL 배포를 성공시킨다
 - Railway 공개 URL 기준 smoke test와 admin/dashboard 로그인 확인을 남긴다
 - Railway 배포가 안정된 뒤에만 커스텀 도메인이나 Cloudflare 앞단 연결을 검토한다
+- 무료 배포가 꼭 필요하면 full app을 억지로 깎지 말고, [DEMO_LITE_SCOPE_PLAN.md](/Users/alex/project/worldmap/docs/DEMO_LITE_SCOPE_PLAN.md) 기준 retained surface를 먼저 고정한 뒤 sibling `demo-lite` app으로 분리한다
+- 그다음 [DEMO_LITE_DECOMPOSITION_PLAN.md](/Users/alex/project/worldmap/docs/DEMO_LITE_DECOMPOSITION_PLAN.md) 순서대로 `header/auth -> recommendation feedback -> stats/ranking/mypage/dashboard -> leaderboard write -> auth/ownership -> server-side game persistence`를 끊는 설계를 구현한다
 
 반드시 이해할 것:
 
@@ -914,9 +918,13 @@
 - 공개 `/ranking`은 다섯 게임 필터를 `위치 / 수도 / 국기 / 배틀 / 인구` 짧은 버튼으로 바꾸고, 정렬 규칙은 그대로 서버에 둔 채 전환 밀도만 줄임
 - 공개 `/stats`는 서비스 전체 지표와 게임별 완료 수를 분리하고, Top 보드를 `아케이드 상위 기록 / 퀵 퀴즈 상위 기록` 두 묶음으로 재정리해 다섯 게임 확장 이후의 읽기 부담을 낮춤
 - `HomeControllerTest`, `StatsPageControllerTest`, `LeaderboardIntegrationTest`로 새 grouped public surface를 고정
+- 신규 게임 5종과 추천이 한 화면에 같이 보이기 시작한 뒤, 홈/공개 Stats/공개 Ranking의 장식 밀도와 카피를 다시 낮춰 `오늘의 게임`, `지금 시작할 게임`, `오늘 얼마나 플레이했나`, `현재 보드만 자동 갱신`처럼 더 구체적인 문장 중심의 public shell로 재정리
+- 홈의 모드 카드 설명, 시작 순서, 계정 안내는 `HomeController` read model에서 더 구체적인 행동 언어로 바꾸고, Stats/Ranking은 템플릿과 CSS에서 영문 badge/동일한 glow/중복 sync 카드 대신 우선순위가 드러나는 단일 toolbar와 한국어 label 중심으로 정리
+- `HomeControllerTest`, `StatsPageControllerTest`, `LeaderboardIntegrationTest`, `./gradlew test`로 humanized public surface 카피와 SSR 구조를 다시 고정
 - 위치/인구수/수도/인구 비교/국기 게임은 정답 시 `획득 점수`만 잠깐 보여 준 뒤 자동으로 다음 Stage를 다시 로드하도록 공통 UX를 맞춤
 - 수도/인구수/인구 비교/국기 플레이 화면에서 `다음 Stage` 수동 버튼을 제거하고, 결과 페이지 중심이 아니라 플레이 연속성 중심으로 루프를 정리
 - 위치/인구수/수도/인구 비교/국기 게임은 오답 오버레이와 입력 잠금 해제도 약 `950ms` 리듬으로 맞춰, 정답/오답 템포가 게임마다 흔들리지 않게 정리
+- 위치/인구수/수도/인구 비교/국기 게임은 오답 후 같은 Stage 재도전으로 돌아갈 때 로컬 partial state patch 대신 `GET /state`를 다시 읽어 최신 attempt 번호를 맞추고, 정상 재시도에서 stale submit 에러를 보지 않게 정리
 - 공통 shell에 `focus-visible` 링을 추가하고, 위치/인구수/수도/국기/인구 비교 퀵 배틀의 게임오버 모달은 `aria-describedby + tabindex + inert + focus trap`으로 실제 focus scope를 갖게 정리해 키보드 접근성을 한 번 더 보강
 - 국기 플레이/결과 화면의 카드 프레임이 정의되지 않은 CSS 토큰 때문에 무테두리처럼 깨지지 않도록, `flag-display-card`와 `flag-display-image`에 공통 surface/border fallback token을 적용
 - `build.gradle`에 `browserSmokeTest` verification task를 추가하고, `BrowserSmokeE2ETest`로 `home` SSR shell, `capital start -> play`, `recommendation survey -> result`를 실제 headless Chromium에서 검증하는 Playwright 브라우저 스모크 레일을 붙였다

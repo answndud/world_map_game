@@ -121,6 +121,48 @@ numReplicas = 1
 6. Railway 기본 도메인 생성
 7. 첫 배포 smoke test
 
+## 무료 공개를 원할 때 왜 full app을 더 깎지 말아야 하나
+
+여기서 자주 생기는 다음 질문이 있습니다.
+
+> Railway나 다른 단일 플랫폼의 free-tier로 공개하려면,
+> 지금 Spring Boot 앱에서 기능만 조금 빼면 되지 않을까?
+
+현재 WorldMap 기준으로는 이 접근이 생각보다 위험합니다.
+
+이유는 기능 수보다 **저장형 약속**이 더 문제이기 때문입니다.
+
+지금 full app은 아래를 동시에 갖고 있습니다.
+
+- auth와 member/guest ownership
+- `/mypage`
+- `/stats`
+- `/ranking`
+- `/dashboard`
+- recommendation feedback persistence
+- Redis-backed session과 leaderboard read model
+
+즉 단순히 화면 몇 개를 감추는 것만으로는 free-tier 공개용 app이 되지 않습니다.
+
+오히려 같은 Spring Boot 앱 안에 `demo-lite` profile을 억지로 넣기 시작하면
+
+- 공통 헤더의 auth state
+- game service의 leaderboard write
+- recommendation 결과의 feedback token/session
+- prod profile의 DB/Redis/readiness 전제
+
+가 한 번에 엮이기 때문에, `main` 안정성까지 흔들릴 가능성이 큽니다.
+
+그래서 현재 기준으로 더 안전한 판단은 아래입니다.
+
+1. full app은 그대로 둔다
+2. 무료 공개가 꼭 필요하면 별도 `demo-lite` surface를 정의한다
+3. retained surface는 `홈 + 수도 + 국기 + 인구 비교 + 추천`처럼 저장형 기능이 없는 흐름만 먼저 남긴다
+4. `/stats`, `/ranking`, `/mypage`, `/dashboard`, auth, recommendation feedback 저장은 demo-lite에서 과감히 뺀다
+
+즉 free-tier 문제는 `운영 기능을 공짜에 맞게 축소하는 문제`가 아니라,
+**별도 public demo product를 어디까지로 볼 것인지 다시 고정하는 문제**에 가깝습니다.
+
 ## 면접에서 30초로 설명하면
 
 배포 방향을 Railway 단일 플랫폼 기준으로 다시 정리했습니다. 핵심은 루트 `Dockerfile`을 배포 source of truth에서 내리고 `Dockerfile.local`로 분리한 뒤, `railway.toml`에서 Railpack 빌드와 start command, readiness health check를 고정한 점입니다. 그리고 `bootJar` 산출물을 `worldmap.jar`로 통일하고, prod Redis 설정이 URL 방식도 받을 수 있게 해서 Railway Postgres/Redis reference variable로 바로 연결할 수 있게 만들었습니다.

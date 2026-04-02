@@ -104,6 +104,9 @@ docker compose up -d
 ./gradlew bootRun --args='--spring.profiles.active=local'
 ```
 
+IntelliJ에서 직접 실행할 때는 Gradle generated main task보다 저장소에 포함된 공유 실행 구성 [`.run/WorldMap Local.run.xml`](/Users/alex/project/worldmap/.run/WorldMap%20Local.run.xml)을 쓰는 편이 낫다.
+Gradle task를 강제로 멈추면 실제 서버 종료와 별개로 `Build cancelled while executing task`가 실패처럼 보일 수 있지만, `Application` 실행 구성은 같은 local profile로 더 조용하게 시작하고 멈출 수 있다.
+
 이미 데이터가 있는 상태에서 다시 시작해도, demo bootstrap은 `run_signature`, `guestSessionKey`, `nickname`을 기준으로 중복 생성을 피한다.
 추천 만족도 샘플은 현재 `surveyVersion + engineVersion` 조합의 응답 수가 5개 미만일 때만 부족한 개수만큼 보충한다.
 반대로 예전 Level 2 실험 흔적은 legacy 컬럼이 남아 있는 환경에서만 startup마다 다시 비운다.

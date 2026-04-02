@@ -1137,3 +1137,114 @@ production-ready 단계에서 중요한 건
 - verify workflow와 required check는 왜 다른 레이어인가
 - local demo baseline은 어떤 계정과 어떤 run으로 구성되는가
 - 면접 직전에 어떤 문서 순서로 프로젝트를 다시 떠올리면 되는가
+
+## 26. 무료 공개용 demo-lite를 왜 full app와 분리해서 보아야 하는가
+
+production-ready를 정리하고 나면 종종 이런 질문이 나옵니다.
+
+> 이 앱을 무료 플랜에 바로 올릴 수는 없을까?
+
+WorldMap의 현재 구조에서는 답이 단순하지 않습니다.
+
+왜냐하면 지금 public 제품은 아래를 함께 전제하기 때문입니다.
+
+- Spring Boot always-on runtime
+- PostgreSQL source of truth
+- Redis leaderboard / prod session
+- auth와 guest ownership claim
+- `/mypage`, `/stats`, `/dashboard`
+- recommendation feedback 저장과 운영 review
+
+즉 이 앱은 "게임 몇 개가 있다"보다
+`저장되는 기록과 운영 surface가 같이 있는 서버 주도 플랫폼`에 가깝습니다.
+
+그래서 무료 공개를 하려면
+현재 앱을 조금 가볍게 만드는 수준이 아니라,
+**무엇을 public free demo로 남길지 다시 정의해야 합니다.**
+
+### 26-1. safest path는 main을 유지하고 demo-lite를 별도 트랙으로 두는 것이다
+
+처음 떠올리기 쉬운 방법은 아래입니다.
+
+- 같은 Spring Boot 앱에서 `demo-lite=true` 같은 flag로 반쪽 기능만 켠다
+- auth, ranking, stats, admin을 if문으로 끈다
+
+하지만 현재 저장소는 그렇게 생기지 않았습니다.
+
+예를 들어 아래는 서로 강하게 엮여 있습니다.
+
+- [SiteHeaderModelAdvice.java](../src/main/java/com/worldmap/web/SiteHeaderModelAdvice.java)
+- [CurrentMemberAccessService.java](../src/main/java/com/worldmap/auth/application/CurrentMemberAccessService.java)
+- [LocationGameService.java](../src/main/java/com/worldmap/game/location/application/LocationGameService.java)
+- [CapitalGameService.java](../src/main/java/com/worldmap/game/capital/application/CapitalGameService.java)
+- [LeaderboardService.java](../src/main/java/com/worldmap/ranking/application/LeaderboardService.java)
+
+게임 service는 DB session/stage/attempt와 leaderboard write를 함께 전제하고,
+공통 header는 current member와 dashboard visibility를 전제합니다.
+
+즉 free 공개 요구 때문에 main app에 conditional bean을 광범위하게 퍼뜨리면,
+오히려 현재 full app의 integrity를 흔들 가능성이 큽니다.
+
+그래서 더 안전한 길은 아래입니다.
+
+- main: 지금처럼 유지
+- demo-lite: 별도 공개 트랙
+
+### 26-2. demo-lite는 무엇을 남기고 무엇을 버려야 하는가
+
+free 공개용 `demo-lite`는 아래 정도만 남기는 것이 현실적입니다.
+
+- 홈
+- 수도 맞히기
+- 국기 맞히기
+- 인구 비교 배틀
+- 추천 설문 결과
+
+반대로 아래는 제거합니다.
+
+- 로그인/회원가입
+- guest ownership claim
+- `/mypage`
+- `/ranking`
+- `/stats`
+- `/dashboard`
+- recommendation feedback 저장
+
+중요한 점은,
+여기서 빠지는 기능이 "덜 중요한 기능"이어서가 아니라
+**저장과 운영을 필요로 하는 기능이기 때문**입니다.
+
+즉 free demo는 기능 가치보다 인프라 요구 조건을 기준으로 다시 정의하는 셈입니다.
+
+### 26-3. extraction 순서도 main 보호 기준으로 잡아야 한다
+
+이때 가장 먼저 봐야 할 hot spot은 아래 순서입니다.
+
+1. 공통 header와 auth 상태
+2. ranking / stats / mypage / admin
+3. recommendation feedback loop
+4. game service의 leaderboard write와 ownership 전제
+5. deploy/test lane
+
+이 순서가 중요한 이유는,
+겉보기에는 `/ranking`과 `/stats`를 지우는 게 쉬워 보여도
+실제로는 공통 navigation과 game write path가 더 큰 충돌 지점이기 때문입니다.
+
+즉 free demo는 "화면부터 줄이기"보다
+**공통 의존성부터 잘라 내는 순서**가 더 중요합니다.
+
+### 26-4. 그래서 문서를 먼저 남겨야 한다
+
+이 질문에 답하기 위해 이번 단계에서는 먼저 아래 두 문서를 만들었습니다.
+
+- [docs/DEMO_LITE_SCOPE_PLAN.md](../docs/DEMO_LITE_SCOPE_PLAN.md)
+- [docs/DEMO_LITE_DECOMPOSITION_PLAN.md](../docs/DEMO_LITE_DECOMPOSITION_PLAN.md)
+
+첫 문서는
+"free 공개용으로 어떤 surface만 남길 것인가"를 고정하고,
+
+둘째 문서는
+"현재 코드 기준으로 무엇부터 분리해야 main이 안 흔들리는가"를 정리합니다.
+
+즉 demo-lite 작업도 코드를 먼저 줄이는 것이 아니라,
+**제품 범위와 충돌 순서를 먼저 문서로 닫는 것**부터 시작해야 합니다.

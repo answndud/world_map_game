@@ -4,24 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WorldMap</title>
-    <link rel="stylesheet" th:href="@{/css/site.css(v='20260330-a11y-keyboard-2')}">
+    <link rel="stylesheet" th:href="@{/css/site.css(v='20260402-human-pass-1')}">
 </head>
 <body>
 <div class="page-shell">
     <th:block th:replace="~{fragments/site-header :: siteHeader('home')}"></th:block>
     <header class="hero home-hero">
         <div class="home-hero-copy">
-            <p class="eyebrow">Explore The World</p>
-            <h1>WorldMap Command</h1>
+            <p class="eyebrow">오늘의 게임</p>
+            <h1>시작할 게임을 고르세요</h1>
             <p class="hero-copy">
-                지구본 탐색, 퀴즈, 추천, 랭킹을 한곳에서 이어서 즐기는 월드 플레이 허브입니다.
+
             </p>
             <div class="home-hero-support">
-                <a class="ghost-link hero-support-link" th:href="@{/stats}">서비스 현황 보기</a>
+                <a class="ghost-link hero-support-link" th:href="@{/stats}">오늘 통계 보기</a>
                 <div class="hero-account-callout"
                      th:if="${currentMember == null}">
                     <p class="hero-account-copy">
-                        기록을 이어가려면 계정을 연결하세요.
+                        게스트로 바로 시작한 뒤, 기록이 마음에 들면 로그인 후 기록을 저장할 수 있습니다
                     </p>
                     <div class="page-actions">
                         <a class="secondary-button" th:href="@{/login}">로그인</a>
@@ -33,7 +33,7 @@
                      th:if="${currentMember != null}">
                     <p class="hero-account-copy">
                         <span class="account-chip" th:text="${currentMember.nickname}">orbit_runner</span>
-                        계정에 현재 기록이 연결되어 있습니다.
+                        계정에 현재 브라우저 기록이 연결되어 있습니다.
                     </p>
                     <div class="page-actions">
                         <a class="secondary-button" th:href="@{/mypage}">My Page</a>
@@ -49,12 +49,12 @@
     <main class="layout home-layout">
         <section class="panel home-mode-panel" id="home-modes">
             <div class="panel-head">
-                <h2>바로 시작할 게임</h2>
-                <p>아케이드, 퀴즈, 추천을 빠르게 고를 수 있게 정리했습니다.</p>
+                <h2>지금 시작할 게임</h2>
+                <p>길게 버티는 게임과 짧게 푸는 게임을 나눠서 두었습니다.</p>
             </div>
             <div class="panel-head home-subhead">
-                <h3>아케이드</h3>
-                <p>오래 버틸수록 점수가 쌓입니다.</p>
+                <h3>오래 버티는 게임</h3>
+                <p>하트가 남아 있는 동안 계속 진행됩니다.</p>
             </div>
             <div class="card-grid home-mode-grid">
                 <article class="mode-card" th:each="card : ${modeCards}" th:if="${card.group == 'arcade'}">
@@ -66,13 +66,13 @@
                     <p th:text="${card.description}">
                         원하는 게임을 골라 바로 플레이를 시작할 수 있습니다.
                     </p>
-                    <a class="ghost-link home-mode-link" th:href="${card.href}">게임 열기</a>
+                    <a class="ghost-link home-mode-link" th:href="${card.href}">바로 시작</a>
                 </article>
             </div>
 
             <div class="panel-head home-subhead">
-                <h3>퀴즈·추천</h3>
-                <p>짧게 한 판 하거나 추천으로 넘어갈 수 있습니다.</p>
+                <h3>짧게 푸는 게임과 추천</h3>
+                <p>짧은 4지선다와 설문을 바로 고를 수 있습니다.</p>
             </div>
             <div class="card-grid home-mode-grid">
                 <article class="mode-card" th:each="card : ${modeCards}" th:if="${card.group != 'arcade'}">
@@ -84,7 +84,7 @@
                     <p th:text="${card.description}">
                         원하는 게임을 골라 바로 플레이를 시작할 수 있습니다.
                     </p>
-                    <a class="ghost-link home-mode-link" th:href="${card.href}">게임 열기</a>
+                    <a class="ghost-link home-mode-link" th:href="${card.href}">바로 시작</a>
                 </article>
             </div>
         </section>
@@ -92,8 +92,8 @@
         <section class="split home-info-grid">
             <article class="panel home-info-panel">
                 <div class="panel-head">
-                    <h2>처음이라면</h2>
-                    <p>끌리는 게임 하나만 고르면 됩니다.</p>
+                    <h2>처음 시작 순서</h2>
+                    <p>처음 보는 사람도 한 판 안에 흐름을 이해할 수 있습니다.</p>
                 </div>
                 <ol class="roadmap">
                     <li th:each="step : ${entrySteps}" th:text="${step}">
@@ -104,8 +104,8 @@
 
             <article class="panel home-info-panel">
                 <div class="panel-head">
-                    <h2>기록 연결</h2>
-                    <p>게스트로 시작하고 필요할 때 계정으로 이어받으면 됩니다.</p>
+                    <h2>기록이 이어지는 방식</h2>
+                    <p>로그인 시점에 현재 브라우저 기록만 계정으로 옮깁니다.</p>
                 </div>
                 <ul class="check-list">
                     <li th:each="note : ${accountNotes}" th:text="${note}">

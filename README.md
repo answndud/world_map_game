@@ -167,6 +167,9 @@ python3 scripts/check_prod_deploy_preflight.py --repo answndud/world_map_game
 ### 배포 / 운영 준비
 
 - [docs/DEPLOYMENT_RUNBOOK_AWS_ECS.md](docs/DEPLOYMENT_RUNBOOK_AWS_ECS.md)
+- [docs/DEPLOYMENT_RUNBOOK_RAILWAY.md](docs/DEPLOYMENT_RUNBOOK_RAILWAY.md)
+- [docs/DEMO_LITE_SCOPE_PLAN.md](docs/DEMO_LITE_SCOPE_PLAN.md)
+- [docs/DEMO_LITE_DECOMPOSITION_PLAN.md](docs/DEMO_LITE_DECOMPOSITION_PLAN.md)
 - [docs/LOCAL_DEMO_BOOTSTRAP.md](docs/LOCAL_DEMO_BOOTSTRAP.md)
 
 ### 구현 과정과 재현 설명

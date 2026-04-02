@@ -4,36 +4,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>실시간 랭킹</title>
-    <link rel="stylesheet" th:href="@{/css/site.css(v='20260330-ranking-active-board-2')}">
+    <link rel="stylesheet" th:href="@{/css/site.css(v='20260402-human-pass-1')}">
     <script th:src="@{/js/ranking.js(v='20260330-ranking-initial-ssr-3')}" defer></script>
 </head>
 <body data-page="ranking">
 <div class="page-shell">
     <th:block th:replace="~{fragments/site-header :: siteHeader('ranking')}"></th:block>
     <header class="hero compact-hero">
-        <p class="eyebrow">Live Scores</p>
+        <p class="eyebrow">공개 랭킹</p>
         <h1>실시간 랭킹</h1>
         <p class="hero-copy">
-            방금 끝난 플레이를 포함한 전체·일간 Top 10을 바로 볼 수 있습니다.
+            방금 끝난 플레이까지 포함해 게임별 전체·일간 Top 10을 바로 비교할 수 있습니다.
         </p>
     </header>
 
     <main class="layout">
         <section class="panel">
-            <div class="ranking-sync-bar">
-                <article class="stat-card">
-                    <span class="subtitle">자동 갱신</span>
+            <div class="ranking-toolbar">
+                <div class="ranking-toolbar-copy">
+                    <span class="subtitle">현재 보드만 자동 갱신</span>
                     <strong id="ranking-auto-refresh-status">현재 보드 15초 간격 ON</strong>
-                </article>
-                <article class="stat-card">
-                    <span class="subtitle">마지막 갱신</span>
-                    <strong id="ranking-last-updated">첫 로드 기준</strong>
-                </article>
-                <article class="stat-card">
-                    <span class="subtitle">갱신 주기</span>
-                    <strong>현재 보드 15초 자동 갱신</strong>
-                    <p class="stat-card-copy">보고 있는 보드만 자동 갱신합니다.</p>
-                </article>
+                    <p class="ranking-toolbar-meta">마지막 갱신 <span id="ranking-last-updated">첫 로드 기준</span></p>
+                </div>
                 <div class="action-buttons">
                     <button id="ranking-refresh-button" class="secondary-button" type="button">지금 새로고침</button>
                 </div>
@@ -42,7 +34,7 @@
                 <section class="panel ranking-filter-shell">
                     <div class="ranking-filter-group">
                         <span class="subtitle">게임 종류</span>
-                        <p class="stat-card-copy">게임을 바꿔가며 같은 형식으로 Top 10을 봅니다.</p>
+                        <p class="stat-card-copy">게임 하나를 골라 같은 형식으로 Top 10을 비교합니다.</p>
                         <div class="ranking-filter-buttons" role="group" aria-label="게임 종류 필터">
                             <button class="secondary-button ranking-filter-button is-active"
                                     id="ranking-mode-location"
@@ -105,7 +97,7 @@
                 <aside class="panel ranking-rule-card">
                     <span class="subtitle">동점 처리</span>
                     <h2>정렬 기준</h2>
-                    <p>동점이면 클리어 수, 시도 수, 기록 시간 순으로 정렬합니다.</p>
+                    <p>동점이면 클리어 수, 시도 수, 기록 시간 순서로 앞섭니다.</p>
                 </aside>
             </div>
             <p id="ranking-refresh-message" class="message-box" data-tone="error" hidden></p>

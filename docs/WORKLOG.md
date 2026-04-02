@@ -34,6 +34,108 @@
 - 면접용 30초 요약:
 ```
 
+## 2026-04-02 - 오답 후 같은 Stage 재도전에서 stale submit 에러가 뜨지 않게 public 게임 루프를 동기화하기
+
+- 단계: 3. 국가 위치 찾기 게임 Level 1, 4. 국가 인구수 맞추기 게임 Level 1, 11. 신규 게임 확장
+- 목적: 위치 게임에서 한 번 틀린 뒤 같은 Stage를 다시 선택해 제출하면 `이미 처리된 제출이거나 최신 Stage 상태가 아닙니다`가 보였다. 원인은 서버 stale submit guard가 아니라 브라우저가 오답 뒤 최신 `expectedAttemptNumber`를 다시 읽지 않고 예전 상태를 재전송한 데 있었다. 이번 조각의 목적은 위치/수도/인구수/인구 비교/국기처럼 같은 재시도형 Stage 루프를 쓰는 public 게임들이 오답 뒤 항상 최신 state를 다시 읽어, 정상 재도전에서 stale 에러를 보지 않게 만드는 것이다.
+- 변경 파일:
+  - `src/main/resources/static/js/location-game.js`
+  - `src/main/resources/static/js/capital-game.js`
+  - `src/main/resources/static/js/population-game.js`
+  - `src/main/resources/static/js/population-battle-game.js`
+  - `src/main/resources/static/js/flag-game.js`
+  - `src/main/resources/templates/location-game/start.html`
+  - `src/main/resources/templates/location-game/play.html`
+  - `src/main/resources/templates/capital-game/start.html`
+  - `src/main/resources/templates/capital-game/play.html`
+  - `src/main/resources/templates/population-game/start.html`
+  - `src/main/resources/templates/population-game/play.html`
+  - `src/main/resources/templates/population-battle-game/start.html`
+  - `src/main/resources/templates/population-battle-game/play.html`
+  - `src/main/resources/templates/flag-game/start.html`
+  - `src/main/resources/templates/flag-game/play.html`
+  - `src/test/java/com/worldmap/e2e/BrowserSmokeE2ETest.java`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 요청은 public 플레이 화면의 `POST /answer`에서 시작한다. 서버는 첫 오답 제출을 정상 처리하고, Stage는 그대로 유지하지만 attempt 번호는 증가시킨다. 문제는 브라우저가 오답 후 overlay만 잠깐 보여 준 뒤 `currentState`의 일부 필드만 로컬에서 덮어쓰고 있었기 때문에, 두 번째 제출에선 예전 `stageId / expectedAttemptNumber`를 다시 보내 stale guard에 걸렸다는 점이다. 이번에는 오답이지만 `GAME_OVER`가 아닌 경우 각 게임 JS가 `950ms` 뒤 `GET /state`를 다시 호출해 최신 state를 통째로 다시 받게 바꿨다. 그래서 상태 변화의 진실 공급원은 계속 서버이고, 브라우저는 같은 Stage 재도전 직전에 최신 attempt 번호를 다시 맞춘다.
+- 데이터 / 상태 변화: DB 스키마나 도메인 모델은 바뀌지 않는다. `*_game_session / stage / attempt`와 stale submit guard는 그대로 유지된다. 바뀐 것은 브라우저 상태 동기화 방식이다. 기존에는 오답 뒤 `totalScore / livesRemaining / clearedStageCount`만 로컬에서 패치하고 입력을 다시 열었지만, 지금은 각 게임이 `GET /state`로 최신 `stageId / expectedAttemptNumber / options or globe target`를 다시 받는다. 템플릿의 JS asset version도 `20260402-retry-state-sync-1`로 올려 캐시 때문에 예전 스크립트가 남지 않게 했다.
+- 핵심 도메인 개념:
+  - `stale submit guard`는 중복 제출과 뒤늦은 제출을 막는 서버 안전장치다.
+  - 같은 Stage 재시도에서도 `attemptNumber`는 증가하므로, 클라이언트는 최신 state를 다시 읽어야 한다.
+  - 브라우저 HUD는 편의를 위해 잠깐 이전 값을 보여 줄 수 있어도, 재제출 직전 상태 기준은 항상 서버여야 한다.
+- 예외 / 엣지 케이스:
+  - `GAME_OVER`는 같은 Stage 재도전이 아니라 terminal 상태라서 기존 모달 흐름을 그대로 유지한다.
+  - `GET /state` 재호출이 실패하면 입력을 잠금 해제만 하고 에러 메시지를 보여 준다. stale guard를 약하게 만들지 않고, 최신 state를 못 읽었을 때는 다시 제출하지 않게 한다.
+  - 위치 게임은 WebGL/Globe 셸이라 선택 재적용이 다른 게임보다 까다롭지만, 핵심 문제는 그래픽이 아니라 stale attempt 번호였다.
+- 테스트:
+  - `node --check src/main/resources/static/js/location-game.js`
+  - `node --check src/main/resources/static/js/capital-game.js`
+  - `node --check src/main/resources/static/js/population-game.js`
+  - `node --check src/main/resources/static/js/population-battle-game.js`
+  - `node --check src/main/resources/static/js/flag-game.js`
+  - `./gradlew browserSmokeTest --tests com.worldmap.e2e.BrowserSmokeE2ETest.locationWrongAnswerCanRetrySameStageWithoutStaleSubmitError`
+  - `./gradlew browserSmokeTest --tests com.worldmap.e2e.BrowserSmokeE2ETest.capitalWrongAnswerCanRetrySameStageWithoutStaleSubmitError`
+  - `git diff --check`
+- 블로그 반영 여부: 생략. 이번 조각은 API/도메인 규칙을 바꾼 것이 아니라, 기존 stale guard 계약을 public 클라이언트가 정상 재시도에서도 맞추도록 JS 상태 동기화만 수정한 버그 픽스라 블로그 설명 가치가 크지 않다.
+- 배운 점: stale submit guard를 넣은 뒤 UX가 깨지면 guard를 약하게 풀고 싶어지기 쉽지만, 이번 경우엔 서버가 아니라 클라이언트 상태 동기화가 문제였다. 재시도형 게임에서는 오답 후에도 `attemptNumber`가 증가하므로, 로컬 patch보다 state 재조회가 더 단순하고 안전하다.
+- 아직 약한 부분: 수도/인구수/배틀/국기 네 게임은 같은 패턴을 따르지만, 지금은 browser smoke를 위치/수도 대표 경로만 추가했다. 나머지 세 게임도 필요하면 같은 stale-retry smoke를 더 붙일 수 있다.
+- 면접용 30초 요약: 위치 게임에서 오답 후 다시 제출할 때 stale submit 에러가 뜬 이유는 서버가 아니라 브라우저가 예전 `expectedAttemptNumber`를 다시 보내고 있었기 때문입니다. 그래서 stale guard는 그대로 두고, 오답 후 같은 Stage를 다시 풀기 전에는 `GET /state`를 다시 읽어 최신 attempt 번호를 맞추도록 위치/수도/인구수/배틀/국기 게임 JS를 같이 수정했습니다. 대표 경로는 real-browser smoke로 다시 고정했습니다.
+
+## 2026-04-02 - IntelliJ local 실행을 Gradle task가 아니라 공유 Application 구성으로 고정하기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: IntelliJ에서 `WorldMapApplication.main()`을 Gradle generated main task로 실행하면, 서버가 정상 동작하다가 사용자가 Stop을 눌러도 `Build cancelled while executing task ':com.worldmap.WorldMapApplication.main()'`가 `BUILD FAILED`처럼 보인다. 이번 조각의 목적은 이 메시지를 애플리케이션 오류로 오해하지 않게 하고, 저장소를 받은 누구나 같은 local profile로 조용하게 시작/종료할 수 있게 공유 `Application` 실행 구성을 제공하는 것이다.
+- 변경 파일:
+  - `.run/WorldMap Local.run.xml`
+  - `docs/LOCAL_DEMO_BOOTSTRAP.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 요청은 IntelliJ Run 버튼에서 시작된다. 기존에는 IDE가 `:com.worldmap.WorldMapApplication.main()` Gradle task를 실행했고, 사용자가 Stop을 누르면 프로세스 취소가 Gradle build cancellation로 번역돼 실패처럼 보였다. 이제는 저장소에 공유된 `.run/WorldMap Local.run.xml`이 `com.worldmap.WorldMapApplication`을 `Application` 타입으로 직접 실행하고, `--spring.profiles.active=local` program argument와 `worldmap.main` module을 함께 고정한다. 즉 상태 변화는 컨트롤러나 서비스가 아니라 IDE 실행 레이어에서 일어난다.
+- 데이터 / 상태 변화: DB, Redis, 세션, 게임 상태는 변하지 않는다. 바뀌는 것은 local developer experience뿐이다. IntelliJ는 더 이상 임시 Gradle main task에 의존하지 않고, 저장소에 포함된 공유 실행 구성을 통해 local profile을 직접 실행한다. 문서 상태도 바뀐다. [docs/LOCAL_DEMO_BOOTSTRAP.md](/Users/alex/project/worldmap/docs/LOCAL_DEMO_BOOTSTRAP.md)는 이제 command line `bootRun`과 IntelliJ `Application` 실행 구성을 둘 다 안내한다.
+- 핵심 도메인 개념:
+  - `Gradle task cancellation`과 `애플리케이션 런타임 실패`는 같은 말이 아니다.
+  - `IntelliJ shared run configuration`은 팀/포트폴리오 저장소에서 같은 실행 인자를 재사용하게 해 준다.
+  - local profile 선택은 런타임 계약이고, 이 계약은 IDE 실행 구성에서도 명시적으로 고정하는 편이 설명 가능성이 높다.
+- 예외 / 엣지 케이스:
+  - 사용자가 여전히 Gradle tool window에서 `:com.worldmap.WorldMapApplication.main()`를 직접 실행하면 cancellation 메시지는 다시 보일 수 있다.
+  - `.idea`는 gitignored이므로 실행 구성을 공유하려면 `.run/*.run.xml`처럼 저장소 추적 경로를 써야 한다.
+  - 이 조각은 종료 시 보이는 UX를 개선하는 것이지, Java 25의 Netty `Unsafe` 경고를 없애는 것은 아니다.
+- 테스트:
+  - `python3 - <<'PY' ... xml.etree.ElementTree.parse('.run/WorldMap Local.run.xml') ... PY`
+  - `git diff --check`
+- 블로그 반영 여부: 생략. 이번 작업은 제품 기능이나 도메인 규칙이 아니라 IntelliJ local 실행 UX 조정이므로 블로그 설명 가치가 낮다.
+- 배운 점: IntelliJ의 `BUILD FAILED` 문구만 보고 앱 오류라고 판단하면 원인을 잘못 좁히기 쉽다. 특히 Gradle task로 main class를 실행하는 경우 Stop 동작이 cancellation failure처럼 보일 수 있어서, 공유 `Application` 구성을 따로 제공하는 편이 초기에 훨씬 덜 헷갈린다.
+- 아직 약한 부분: README는 공개 소개 문서라 그대로 두었고, IntelliJ 실행 팁은 local demo bootstrap 문서에만 남겼다. 나중에 팀원이 CLI보다 IDE 중심으로 시작한다면 별도 `RUNNING_LOCALLY.md` 같은 문서 분리가 더 나을 수 있다.
+- 면접용 30초 요약: 이번에는 서버 로직이 아니라 개발자 실행 경험을 정리했습니다. IntelliJ에서 Gradle generated main task를 멈추면 정상 종료도 `BUILD FAILED`처럼 보여 혼란이 생겨서, 저장소에 공유 `Application` 실행 구성 `.run/WorldMap Local.run.xml`을 추가해 local profile을 직접 실행하게 했고, 로컬 부트스트랩 문서에도 그 차이를 짧게 설명했습니다.
+
+## 2026-04-02 - local Docker Compose Postgres port 충돌과 YAML 파손을 같이 복구하기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: IntelliJ에서 `WorldMapApplication` 실행이 `Process ... finished with non-zero exit value 1`로만 보이던 문제를 실제로 재현해 보니, 원인은 코드가 아니라 local Docker Compose 상태였다. `compose.yaml` 첫 줄이 잘못 들여써져 YAML 파싱이 깨져 있었고, 기존 `worldmap-postgres` 컨테이너는 host port 없이 `5432/tcp`만 떠 있는 반면 다른 프로젝트 Postgres가 이미 `0.0.0.0:5432`를 점유하고 있었다. 이번 조각의 목적은 Compose 문법을 복구하고, WorldMap Postgres host published port를 `5433`으로 옮겨 로컬 충돌을 피하면서 Spring Boot Docker Compose 연동이 다시 정상 동작하게 만드는 것이다.
+- 변경 파일:
+  - `compose.yaml`
+  - `blog/03-docker-postgres-redis-dev-environment.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 요청은 IntelliJ의 Gradle 실행에서 시작됐지만, 실제 상태 변화는 앱 코드가 아니라 Docker Compose 런타임에서 일어났다. `bootRun --stacktrace` 재현 결과는 `No host port mapping found for container port 5432`였고, `docker compose ps` 직전에는 YAML 파싱 오류도 같이 있었다. 그래서 이번엔 `compose.yaml` 첫 줄 들여쓰기를 복구하고, Postgres mapping을 `5432:5432`에서 `5433:5432`로 옮긴 뒤, Compose가 다시 published port를 가진 Postgres 컨테이너를 만들게 한다. 앱 쪽은 [application-local.yml](/Users/alex/project/worldmap/src/main/resources/application-local.yml)처럼 fixed JDBC URL을 들고 있지 않고 Spring Boot Docker Compose service connection을 쓰므로, published port 변경은 compose 파일만 맞으면 따라간다.
+- 데이터 / 상태 변화: 코드/도메인 상태는 변하지 않는다. 로컬 인프라 상태만 바뀐다. 이제 WorldMap Postgres는 호스트에서 `5433`으로 접근하고, 컨테이너 내부는 그대로 `5432`를 쓴다. 덕분에 다른 프로젝트가 `5432`를 이미 쓰더라도 WorldMap compose를 같이 띄울 수 있고, Spring Boot는 published `5433`을 자동 인식한다. 문서 상태도 맞췄다. [blog/03-docker-postgres-redis-dev-environment.md](/Users/alex/project/worldmap/blog/03-docker-postgres-redis-dev-environment.md)는 local Postgres state와 `compose.yaml` 설명을 `5433:5432` 기준으로 다시 쓴다.
+- 핵심 도메인 개념:
+  - `published host port`와 `container port`는 다르다. 개발자는 host port 충돌을 피하기 위해 앞쪽만 바꿀 수 있다.
+  - `Spring Boot Docker Compose service connection`은 고정 local JDBC URL이 아니라 Compose metadata의 published port를 읽는다.
+  - local infra bug는 애플리케이션 예외처럼 보이더라도 실제로는 Compose 상태/컨테이너 상태를 먼저 봐야 할 때가 있다.
+- 예외 / 엣지 케이스:
+  - `compose.yaml` 문법이 깨지면 `docker compose ps`조차 못 돌기 때문에, 먼저 YAML parse error를 해결해야 한다.
+  - 이미 떠 있는 `worldmap-postgres`가 host port 없이 만들어져 있으면 Spring Boot는 `No host port mapping found for container port 5432`로 죽는다.
+  - 다른 프로젝트가 `5432`를 점유 중이어도 WorldMap은 `5433`으로 우회할 수 있다.
+  - 이 변경 뒤에는 기존 컨테이너를 recreate해야 새 port mapping이 실제로 반영된다.
+- 테스트:
+  - `docker compose -f /Users/alex/project/worldmap/compose.yaml config`
+  - `./gradlew bootRun --stacktrace`
+  - `./gradlew bootRun --args='--spring.profiles.active=local' --stacktrace`
+  - 이후 Compose recreate와 부팅 smoke를 이어서 확인할 예정
+- 블로그 반영 여부: 반영. local runtime 계약을 설명하는 기존 [blog/03-docker-postgres-redis-dev-environment.md](/Users/alex/project/worldmap/blog/03-docker-postgres-redis-dev-environment.md)를 현재 host port 기준으로 갱신했다.
+- 배운 점: `Execution failed for task ... non-zero exit value 1` 같은 IntelliJ/Gradle 오류는 원인 자체가 아니라 wrapper일 때가 많다. 실제 stacktrace를 보면 애플리케이션보다 Compose service connection이 먼저 터지는 경우가 있고, 이때는 코드보다 컨테이너 published port 상태를 보는 것이 빠르다.
+- 아직 약한 부분: local compose port를 `5433`으로 옮긴 만큼, 앞으로 README나 실행 가이드에서 “직접 DB 접속” 예시가 필요해지면 host port 차이를 한 번 더 명시해야 한다. 지금은 Spring Boot가 Compose metadata를 읽기 때문에 quickstart 자체는 그대로 유지해도 된다.
+- 면접용 30초 요약: 이번엔 앱 코드가 아니라 로컬 인프라를 고쳤습니다. IntelliJ 실행 실패 원인을 stacktrace로 좁혀 보니 `worldmap-postgres`가 host port 없이 떠 있어서 Spring Boot Docker Compose 연동이 JDBC 연결 정보를 만들지 못하고 있었습니다. 그래서 깨진 `compose.yaml` 문법을 복구하고 Postgres host port를 `5433`으로 옮겨 다른 프로젝트 `5432`와 충돌하지 않게 했고, local runtime 계약 설명도 같이 문서에 맞췄습니다.
+
 ## 2026-04-02 - README를 배포용 공개 소개 문서로 전면 재작성하기
 
 - 단계: 10. 포트폴리오 정리와 발표 준비
@@ -6353,3 +6455,95 @@
 - 배운 점: hardening 문서는 특히 "막는다"라는 표현을 쉽게 세게 쓰게 된다. 하지만 실제 저장소가 보장하는 건 policy source, request contract, test coverage의 교집합이므로 그 경계를 정확히 적는 편이 오히려 더 설득력 있다.
 - 아직 약한 부분: 이제 `17`도 범위가 정리됐지만, 다음 조각에서는 `18-production-verification-and-demo-interview-pack`이 browser smoke와 public smoke의 보장 범위를 과장하지 않는지 한 번 더 cross-review해야 한다.
 - 면접용 30초 요약: integrity 글을 다시 다듬으면서, stale-submit `409`와 header visibility 설명을 실제 public contract 수준으로 낮춰 썼습니다. 이제 문서는 `GameSubmissionGuard`가 현재 public client가 보내는 freshness 값 기준 stale submit을 `409`로 끊고, `/dashboard/**`와 admin API는 `AdminAccessGuard`가 막으며, public 헤더는 같은 current-member source를 재사용해 `Dashboard` 링크를 계산한다고 더 정확히 설명합니다.
+
+## 2026-04-02 - 신규 게임 5종 이후 public surface를 덜 꾸미고 더 구체적으로 정리하기
+
+- 단계: 11. 신규 게임 확장
+- 목적: 신규 게임 5종과 추천이 홈, 공개 `/stats`, 공개 `/ranking`에 모두 붙은 뒤 화면이 지나치게 균일하고 장식적인 톤으로 보이기 시작했다. 이번 조각의 목적은 구조를 새로 갈아엎지 않고도 `장식 밀도 감소`, `하나의 시각 언어 유지`, `타이포 정리`, `구체적인 카피`로 public shell을 더 사람 손처럼 보이게 만드는 것이다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/web/HomeController.java`
+  - `src/main/resources/templates/home.html`
+  - `src/main/resources/templates/stats/index.html`
+  - `src/main/resources/templates/ranking/index.html`
+  - `src/main/resources/static/css/site.css`
+  - `src/test/java/com/worldmap/web/HomeControllerTest.java`
+  - `src/test/java/com/worldmap/stats/StatsPageControllerTest.java`
+  - `src/test/java/com/worldmap/ranking/LeaderboardIntegrationTest.java`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/15-public-scope-reset-and-new-games-lineup.md`
+- 요청 흐름: 요청 흐름과 상태 변화는 바뀌지 않았다. 홈은 여전히 `GET / -> HomeController -> home.html`, 공개 통계는 `GET /stats -> StatsPageController -> stats/index.html`, 공개 랭킹은 `GET /ranking -> LeaderboardPageController -> ranking/index.html`로 내려간다. 바뀐 것은 이 read model을 어떤 언어와 어떤 시각 우선순위로 보여 줄지다.
+- 데이터 / 상태 변화: DB, Redis, 세션 상태 변화는 없다. 대신 홈의 `modeCards`, `entrySteps`, `accountNotes`가 더 구체적인 행동 언어로 바뀌었고, 공개 `stats`와 `ranking`은 영문 badge와 중복 sync 카드 대신 한국어 label, 단일 toolbar, 더 낮은 장식 밀도로 public 정보를 읽게 됐다.
+- 핵심 도메인 개념:
+  - `public shell humanization`: 기능 추가 없이도 public surface의 말투와 강조 방식을 정리해 제품이 더 직접 설계된 것처럼 보이게 만드는 작업
+  - `concrete copy`: 추상적인 슬로건보다 실제 행동과 상태를 말하는 문장
+  - `restrained chrome`: glow, blur, uppercase badge를 줄이고 정보 우선순위가 먼저 보이게 만드는 표현 규칙
+  - `read model presentation`: 서버가 만드는 모델은 유지하되, 템플릿과 CSS가 그 모델을 어떤 밀도로 읽게 하는지 조정
+- 예외 / 엣지 케이스:
+  - 공개 랭킹의 auto-refresh UI는 단순화했지만 `ranking.js`가 읽는 `ranking-refresh-button`, `ranking-auto-refresh-status`, `ranking-last-updated` id는 유지해야 한다.
+  - admin/dashboard 링크 visibility와 로그인 상태 분기는 건드리지 않고 public shell만 정리해야 한다.
+  - 이번 조각은 디자인 감도 조정이지만, SSR 문자열이 바뀌므로 controller/page test 기대값도 같이 고정해야 한다.
+- 테스트:
+  - `./gradlew test --tests com.worldmap.web.HomeControllerTest --tests com.worldmap.stats.StatsPageControllerTest --tests com.worldmap.ranking.LeaderboardIntegrationTest`
+  - `./gradlew test`
+  - `git diff --check`
+- 배운 점: AI 느낌은 대개 "더 많은 효과"보다 "효과가 너무 균일한 것"에서 생긴다. 이번 조각처럼 장식을 줄이고 카피를 실제 행동 단위로 바꾸면, 구조를 유지해도 훨씬 직접 설계한 제품처럼 보였다.
+- 아직 약한 부분: public shell은 많이 정리됐지만, `mypage`, `dashboard`, 추천 결과 화면 쪽에는 아직 동일한 정도의 humanization pass가 들어가지 않았다. 다음 디자인 조각이 생기면 이 세 화면도 같은 기준으로 다시 봐야 한다.
+- 면접용 30초 요약: 신규 게임 5종이 붙은 뒤 public 화면이 너무 꾸며져 보이는 문제가 생겨서, 구조는 그대로 두고 홈/Stats/Ranking의 말투와 장식 밀도를 다시 정리했습니다. 홈은 행동 중심 카피로 바꾸고, Stats와 Ranking은 영문 badge와 중복 sync 카드를 덜어 한국어 label과 단일 toolbar 중심으로 다시 구성했습니다. 요청 흐름은 그대로 유지하면서 `HomeControllerTest`, `StatsPageControllerTest`, `LeaderboardIntegrationTest`와 전체 테스트로 현재 SSR 기준을 다시 고정했습니다.
+
+## 2026-04-02 - 무료 공개용 demo-lite 범위와 분리 순서를 먼저 문서로 고정하기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 현재 풀 기능 Spring Boot 앱은 포트폴리오 설명력은 높지만 무료 플랜 공개용으로는 너무 무겁다. 이번 조각의 목적은 "현재 코드를 억지로 무료에 욱여넣는가"가 아니라, `main은 유지하고 free 공개는 별도 demo-lite 트랙으로 분리한다`는 기준과 그 범위/분리 순서를 먼저 문서로 고정하는 것이다.
+- 변경 파일:
+  - `docs/DEMO_LITE_SCOPE_PLAN.md`
+  - `docs/DEMO_LITE_DECOMPOSITION_PLAN.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/18-production-verification-and-demo-interview-pack.md`
+- 요청 흐름: 런타임 요청 흐름은 바뀌지 않았다. 이번 조각의 독자 흐름은 `README -> DEPLOYMENT_RUNBOOK_RAILWAY -> DEMO_LITE_SCOPE_PLAN -> DEMO_LITE_DECOMPOSITION_PLAN`이다. 즉 코드를 먼저 뜯는 대신, 무엇을 남기고 무엇을 제거할지, 그리고 제거 순서가 왜 그런지를 문서 계층에서 먼저 닫았다.
+- 데이터 / 상태 변화: DB, Redis, 세션, 게임 상태 변화는 없다. 대신 설계 모델이 바뀌었다. 이제 무료 공개 트랙은 `full app 축소판`이 아니라 `capital / flag / population-battle / recommendation` 중심의 별도 `demo-lite` surface로 정의되고, 로그인/전적/랭킹/통계/운영/feedback persistence는 free-demo 범위 밖으로 정리된다.
+- 핵심 도메인 개념:
+  - `demo-lite`: 무료 공개를 위한 별도 제품 트랙
+  - `main 보호`: 현재 Spring Boot 백엔드 포트폴리오는 유지하고, free 공개 요구 때문에 integrity를 약화시키지 않는 원칙
+  - `dependency hot spot`: auth/header, leaderboard write path, stats/mypage/admin read model, recommendation feedback loop, prod Redis session
+  - `copy-and-simplify`: JPA/Redis/service를 끄는 대신 정적 데이터와 자산만 재사용하는 분리 전략
+- 예외 / 엣지 케이스:
+  - 위치 게임은 대표성은 높지만 `WebGL + hit-test + 서버 판정` 때문에 demo-lite v1 retained scope에서 제외했다.
+  - recommendation은 엔진 자체보다 feedback token/session/API가 충돌 지점이라, 결과 계산은 남기고 feedback 저장 루프만 제거하는 쪽으로 정리했다.
+  - `same app + demo-lite profile`은 가능해 보여도 auth/ranking/game service 전반에 conditional bean이 퍼질 위험이 커서 권장안에서 뺐다.
+- 테스트:
+  - 없음. 이번 조각은 planning-only 문서 작업이다.
+  - `git diff --check`
+- 배운 점: 무료 배포 문제는 화면을 몇 개 덜 보여 주느냐보다 `항상 켜진 서버 + DB/Redis + 세션`을 유지하느냐가 핵심이었다. 그래서 "기능 삭제 순서"를 먼저 정리하지 않으면 곧바로 auth, ranking, game service가 서로 얽혀 충돌이 난다.
+- 아직 약한 부분: 문서는 `어떻게 만들지`까지는 닫았지만, 실제 `demo-lite` sibling app 구조, retained game runtime, localStorage 계약, free-tier 대상 플랫폼 설정은 아직 구현되지 않았다.
+- 면접용 30초 요약: 무료 공개용으로는 현재 풀 기능 Spring Boot 앱이 너무 무거워서, main을 건드리지 않고 별도 `demo-lite` 트랙을 정의했습니다. `DEMO_LITE_SCOPE_PLAN`에서는 capital, flag, population-battle, recommendation만 남기고 auth, mypage, stats, ranking, dashboard, feedback persistence는 제거하는 범위를 고정했고, `DEMO_LITE_DECOMPOSITION_PLAN`에서는 가장 먼저 header/auth 의존성을 분리하고, 그다음 persistence-heavy public surface와 recommendation feedback을 잘라야 main integrity를 지킬 수 있다는 순서를 정리했습니다.
+
+## 2026-04-02 - free-tier 공개를 위한 demo-lite 범위와 분리 우선순위 문서화
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 현재 full WorldMap은 Spring Boot + PostgreSQL + Redis + auth + ranking/stats/dashboard까지 포함한 백엔드 포트폴리오 구조라서, free-tier 단일 플랫폼 공개에는 맞지 않는다. 이번 조각의 목적은 full app을 억지로 깎는 대신, 무료 공개용 `demo-lite`를 별도 surface로 정의하고 어떤 순서로 분리해야 충돌이 적은지 먼저 문서로 고정하는 것이다.
+- 변경 파일:
+  - `docs/DEMO_LITE_SCOPE_PLAN.md`
+  - `docs/DEMO_LITE_DECOMPOSITION_PLAN.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/99-pivot-deploy-baseline-from-ecs-to-railway.md`
+- 요청 흐름 / 데이터 흐름: 애플리케이션 요청 흐름 자체는 바뀌지 않았다. 바뀐 것은 배포/제품 분리 계획이다. 문서 기준 흐름은 `full app 유지 -> demo-lite retained surface 정의 -> auth/header 분리 -> recommendation feedback 제거 -> stats/ranking/mypage/dashboard 제거 -> leaderboard write 절단 -> auth/ownership 절단 -> server-side game persistence 재설계`다.
+- 데이터 / 상태 변화: DB, Redis, 세션, 게임 상태 변화는 없다. 대신 문서 모델에서 `무료 공개 = 현재 prod app을 공짜에 억지로 올리는 것`이 아니라, `저장형 기능을 뺀 별도 공개 surface`라는 기준을 고정했다. retained surface는 `홈 + 수도 + 국기 + 인구 비교 퀵 배틀 + 추천`, 위치 찾기는 2차 옵션, 인구수 맞추기는 첫 demo-lite에서 제거 권장으로 정리했다.
+- 핵심 도메인 개념:
+  - `demo-lite`: full app을 대체하지 않는 무료 공개용 축소 surface
+  - `retained surface`: free-tier에서 실제로 보여 줄 홈/게임/추천 범위
+  - `decomposition order`: main을 깨지 않기 위해 무엇부터 끊어야 하는지의 순서
+  - `hot spot`: `site-header + auth state`, `LeaderboardService` 직결 게임 service, `stats/mypage/dashboard` DB read model, recommendation feedback/session 결합
+- 예외 / 엣지 케이스:
+  - 같은 Spring Boot 앱에 `demo-lite` profile을 얹어 everything optional로 만들면 conditional bean과 route branching이 폭증한다.
+  - ranking/stats를 localStorage로 흉내 내는 것은 public 약속을 깨기 때문에 금지한다.
+  - 위치 찾기는 WorldMap의 시그니처 게임이지만, WebGL/지오데이터/QA 비용 때문에 free-tier demo 첫 retained set에서는 2차 옵션으로 미루는 편이 안전하다.
+  - recommendation 결과는 남길 수 있지만 feedback form과 dashboard 연결은 반드시 함께 제거해야 한다.
+- 테스트:
+  - 없음. 이번 조각은 planning-only 문서 작업이다.
+  - `git diff --check`
+- 배운 점: 무료 배포 문제는 "기능을 조금 덜 켜기"보다 "어떤 제품 약속을 유지할 것인가"를 먼저 정해야 풀린다. 특히 ranking/stats처럼 공유 persistence를 전제로 하는 화면은, 억지 축소보다 과감한 제거가 오히려 더 정직하다.
+- 아직 약한 부분: 문서는 `왜 sibling demo-lite app이 safer한가`까지는 정리했지만, 실제 구현은 아직 없다. 다음 조각에서는 `demo-lite` 앱 구조를 별도 디렉터리로 만들지, 현재 repo 안의 어떤 자산만 재사용할지를 더 구체적으로 결정해야 한다.
+- 면접용 30초 요약: 무료 공개를 위해 full Spring Boot 앱을 억지로 깎는 대신, 저장형 기능을 제거한 별도 `demo-lite` surface를 정의했습니다. 문서에서 retained surface는 `홈 + 수도 + 국기 + 인구 비교 + 추천`으로 줄이고, 가장 먼저 끊어야 할 hot spot을 `공통 헤더/auth`, `recommendation feedback`, `stats/ranking/mypage/dashboard`, `LeaderboardService` 직결 게임 service 순서로 정리했습니다. 핵심은 same app에 feature flag를 퍼뜨리기보다, 재사용 가능한 데이터/자산만 가져가는 sibling demo-lite app이 훨씬 안전하다는 판단입니다.
