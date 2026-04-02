@@ -265,3 +265,17 @@ curl -I -L --max-redirs 3 https://worldmap-demo-lite.pages.dev/assets/index-BO7e
 ## 마무리
 
 이번 조각으로 `demo-lite`를 Cloudflare Pages에 실제로 배포해 [https://worldmap-demo-lite.pages.dev/](https://worldmap-demo-lite.pages.dev/)를 열었습니다. `wrangler pages project create`로 프로젝트를 만들고, `dist/`를 production branch로 배포한 뒤 `curl`로 응답 헤더와 자산 경로를 확인하고, Chrome channel screenshot smoke로 홈·수도·추천 화면이 실제로 렌더링되는지 봤습니다. 핵심은 static hosting 계획을 문서에서 끝내지 않고, 실제 public URL과 smoke 결과까지 남겼다는 점입니다.
+
+---
+
+추가 정리:
+
+이 글을 쓴 직후, 실제로 현재 `demo-lite` 전체 변경을 커밋/푸시하고
+production alias를 clean repo commit `5356fde` 기준으로 다시 배포했습니다.
+
+즉 현재 [https://worldmap-demo-lite.pages.dev/](https://worldmap-demo-lite.pages.dev/)는
+dirty working tree snapshot이 아니라
+**clean repo commit 기준으로 다시 맞춘 상태**입니다.
+
+다만 아직도 이것은 `wrangler pages deploy` 기반 수동 production이고,
+Git-connected auto deploy source of truth는 아닙니다.

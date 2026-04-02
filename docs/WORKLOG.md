@@ -6920,3 +6920,34 @@
 - 배운 점: static hosting에서 “첫 URL을 열었다”보다 더 중요한 것은 그 URL이 어떤 경로와 계약으로 열렸는지 설명하는 것이다. 이번 조각에서 특히 중요했던 것은 `project create -> preview deploy -> production branch deploy` 순서를 실제로 경험하고, `_headers` 규칙이 응답으로 내려오는지 확인한 것이다.
 - 아직 약한 부분: 현재 public URL은 저장소 commit과 아직 1:1로 맞아 있지 않다. 즉 지금 production은 dirty working tree snapshot이 먼저 반영된 상태이고, Git-connected Pages production source of truth는 다음 조각에서 다시 맞춰야 한다.
 - 면접용 30초 요약: demo-lite를 Cloudflare Pages에 실제로 배포해 [https://worldmap-demo-lite.pages.dev/](https://worldmap-demo-lite.pages.dev/)를 열었습니다. `wrangler pages project create`로 프로젝트를 만들고, `dist/`를 production branch로 배포한 뒤 `curl`로 응답 헤더와 자산 경로를 확인하고, Chrome channel screenshot smoke로 홈·수도·추천 화면이 실제 렌더링되는지 검증했습니다. 핵심은 static hosting 계획을 문서에서 끝내지 않고 실제 공개 URL까지 열어 봤다는 점입니다.
+
+## 2026-04-02 - demo-lite 공개 URL을 clean repo commit 기준으로 다시 맞추기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 첫 Pages production URL은 열렸지만 dirty working tree snapshot 기준으로 먼저 올라간 상태였다. 이번 조각의 목적은 현재 `demo-lite` 전체 변경을 실제 commit으로 고정하고, production alias도 clean repo commit 기준으로 다시 배포해 공개 URL과 저장소 상태를 한 번 더 맞추는 것이다.
+- 변경 파일:
+  - `README.md`
+  - `demo-lite/README.md`
+  - `docs/DEPLOYMENT_RUNBOOK_DEMO_LITE_CLOUDFLARE_PAGES.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/109-deploy-demo-lite-to-cloudflare-pages-and-record-first-public-smoke.md`
+- 요청 흐름 / 데이터 흐름: 이번 조각은 코드 기능이 아니라 release alignment 흐름이다. 먼저 `demo-lite` app/asset/config와 문서 묶음을 두 개의 commit으로 나눠 커밋하고 브랜치에 push했다. 그다음 `npm run build`로 clean tree 산출물을 다시 만들고, `wrangler pages deploy dist --project-name worldmap-demo-lite --branch main --commit-hash 5356fde...`로 production alias를 clean repo commit에 다시 연결했다.
+- 데이터 / 상태 변화: DB, Redis, localStorage, 정적 asset 내용은 바뀌지 않았다. 바뀐 것은 Cloudflare Pages production alias가 가리키는 source snapshot이다. 이제 [https://worldmap-demo-lite.pages.dev/](https://worldmap-demo-lite.pages.dev/)는 dirty working tree가 아니라 clean repo commit `5356fde` 기준으로 다시 배포된 상태다.
+- 핵심 도메인 개념:
+  - `clean-tree production alignment`: 공개 URL이 임시 작업 상태가 아니라 실제 Git commit을 기준으로 다시 배포된 상태
+  - `intentional commit split`: `demo-lite app`과 `docs/blog`를 separate commit으로 정리해 설명 가능성을 높이는 방식
+  - `manual but reproducible production`: Git auto deploy는 아니지만, 적어도 특정 commit hash로 다시 만든 production alias
+- 예외 / 엣지 케이스:
+  - Pages production branch label은 `main`이지만, 현재 clean production deploy의 실제 commit hash는 feature branch `codex/security-session-guard`의 HEAD다. 즉 “main에서 자동 배포됐다”는 의미는 아직 아니다.
+  - production URL은 clean commit 기준으로 맞췄지만, Git-connected auto deploy source of truth는 아직 아니다. 대시보드의 Git 연결과 production branch 운영 기준이 마지막으로 남아 있다.
+- 테스트:
+  - `cd demo-lite && npm test`
+  - `cd demo-lite && npm run build`
+  - `cd demo-lite && npm run verify:pages`
+  - `git diff --check`
+  - `git push origin codex/security-session-guard`
+  - `wrangler pages deploy dist --project-name worldmap-demo-lite --branch main --commit-hash 5356fde7fc24cf91e9f9b7d9cd54500a6bfe55e0`
+- 배운 점: 공개 URL이 있다고 바로 source of truth가 생기는 것은 아니다. 포트폴리오용 static hosting에서도 “어떤 commit 상태가 production인지”를 명확히 맞춰 두는 과정이 꼭 필요하다.
+- 아직 약한 부분: 현재 production URL은 clean commit 기준으로는 맞았지만, 여전히 Git-connected auto deploy가 아니다. 즉 Cloudflare 대시보드에서 브랜치와 repo를 직접 연결하기 전까지는 manual production 운영이다.
+- 면접용 30초 요약: demo-lite 첫 공개 URL을 연 뒤, 그 상태가 dirty working tree snapshot에 묶여 있지 않도록 전체 변경을 커밋/푸시하고 Pages production alias를 clean repo commit `5356fde` 기준으로 다시 배포했습니다. 핵심은 단순히 URL을 열어 두는 것이 아니라, 실제 저장소 commit과 public URL을 다시 맞춰 설명 가능한 배포 상태로 정리한 점입니다.

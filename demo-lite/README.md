@@ -18,7 +18,7 @@
 
 - [https://worldmap-demo-lite.pages.dev/](https://worldmap-demo-lite.pages.dev/)
 
-현재 공개 URL은 첫 수동 `wrangler pages deploy` 기준입니다. 즉 Git-connected 자동 배포 source of truth가 아니라 로컬 working tree snapshot이 먼저 반영된 상태이므로, 다음 조각에서 현재 변경을 커밋/푸시하고 Cloudflare Pages production source를 저장소 기준으로 다시 맞출 필요가 있습니다.
+현재 공개 URL은 수동 `wrangler pages deploy` 기준입니다. 다만 가장 최근 production alias는 clean repo commit `5356fde` 기준으로 다시 맞췄습니다. 아직 Git-connected 자동 배포 source of truth는 아니므로, 다음 단계는 이 상태를 `main` 기준 auto deploy 흐름으로 넘기는 것입니다.
 
 아직 없는 것:
 

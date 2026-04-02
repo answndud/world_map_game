@@ -181,8 +181,9 @@ Cloudflare Pages build image는 `.node-version` 또는 `NODE_VERSION`을 읽을 
 중요:
 
 - 현재 production URL은 `wrangler pages deploy dist --project-name worldmap-demo-lite --branch main`으로 먼저 연 상태다.
-- 즉 Git-connected Pages production source가 아직 저장소 commit과 1:1로 맞아 있는 상태는 아니다.
-- 다음 단계는 현재 `demo-lite` working tree를 커밋/푸시하고, production deploy 기준을 Git source of truth로 다시 맞추는 것이다.
+- 이후 clean repo commit `5356fde` 기준으로 같은 명령을 다시 실행해 production alias를 dirty working tree 상태에서 벗겨 냈다.
+- 다만 Git-connected Pages production source가 아직 branch commit과 자동으로 연결된 상태는 아니다.
+- 다음 단계는 이 수동 production 상태를 `main` 기준 auto deploy source of truth로 넘기는 것이다.
 
 ## 10. 저장소 안에서 먼저 확인할 명령
 

@@ -139,9 +139,9 @@ npm run dev
 
 주의:
 
-- 현재 public URL은 첫 `wrangler pages deploy`로 열어 둔 상태입니다.
-- 즉 Git-connected 자동 배포가 아니라, 로컬 working tree snapshot이 먼저 올라간 상태입니다.
-- 다음 조각에서 현재 `demo-lite` 변경을 커밋/푸시하고, Pages production source of truth를 저장소 기준으로 다시 맞춰야 합니다.
+- 현재 public URL은 `wrangler pages deploy`로 열어 둔 수동 Pages 배포입니다.
+- 다만 가장 최근 production alias는 clean repo commit `5356fde` 기준으로 다시 맞췄습니다.
+- 아직 Git-connected 자동 배포 source of truth는 아니므로, 다음 단계는 이 상태를 `main` 기준 auto deploy 흐름으로 넘기는 것입니다.
 
 ## 검증 레일
 
