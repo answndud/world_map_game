@@ -164,18 +164,11 @@ function initPlayPage() {
                 return;
             }
 
-            currentState = {
-                ...currentState,
-                totalScore: payload.totalScore,
-                livesRemaining: payload.livesRemaining,
-                clearedStageCount: payload.clearedStageCount
-            };
-
             setTimeout(() => {
-                overlay.hidden = true;
-                clearAnswerInput();
-                resetHudGuidance(currentState);
-                lockInteraction(false);
+                loadState().catch((error) => {
+                    lockInteraction(false);
+                    showCapitalMessage(messageBox, error.message, "error");
+                });
             }, STAGE_FEEDBACK_DELAY_MS);
         } catch (error) {
             lockInteraction(false);

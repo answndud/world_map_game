@@ -121,6 +121,125 @@ numReplicas = 1
 6. Railway 기본 도메인 생성
 7. 첫 배포 smoke test
 
+## 무료 공개를 원할 때 왜 full app을 더 깎지 말아야 하나
+
+여기서 자주 생기는 다음 질문이 있습니다.
+
+> Railway나 다른 단일 플랫폼의 free-tier로 공개하려면,
+> 지금 Spring Boot 앱에서 기능만 조금 빼면 되지 않을까?
+
+현재 WorldMap 기준으로는 이 접근이 생각보다 위험합니다.
+
+이유는 기능 수보다 **저장형 약속**이 더 문제이기 때문입니다.
+
+지금 full app은 아래를 동시에 갖고 있습니다.
+
+- auth와 member/guest ownership
+- `/mypage`
+- `/stats`
+- `/ranking`
+- `/dashboard`
+- recommendation feedback persistence
+- Redis-backed session과 leaderboard read model
+
+즉 단순히 화면 몇 개를 감추는 것만으로는 free-tier 공개용 app이 되지 않습니다.
+
+오히려 같은 Spring Boot 앱 안에 `demo-lite` profile을 억지로 넣기 시작하면
+
+- 공통 헤더의 auth state
+- game service의 leaderboard write
+- recommendation 결과의 feedback token/session
+- prod profile의 DB/Redis/readiness 전제
+
+가 한 번에 엮이기 때문에, `main` 안정성까지 흔들릴 가능성이 큽니다.
+
+그래서 현재 기준으로 더 안전한 판단은 아래입니다.
+
+1. full app은 그대로 둔다
+2. 무료 공개가 꼭 필요하면 별도 `demo-lite` surface를 정의한다
+3. retained surface는 `홈 + 수도 + 국기 + 인구 비교 + 추천`처럼 저장형 기능이 없는 흐름만 먼저 남긴다
+4. `/stats`, `/ranking`, `/mypage`, `/dashboard`, auth, recommendation feedback 저장은 demo-lite에서 과감히 뺀다
+
+즉 free-tier 문제는 `운영 기능을 공짜에 맞게 축소하는 문제`가 아니라,
+**별도 public demo product를 어디까지로 볼 것인지 다시 고정하는 문제**에 가깝습니다.
+
+## planning만으로 끝내지 않고 `demo-lite/` 앱 골격을 먼저 연 이유
+
+문서만 보면 sibling `demo-lite` app 전략이 좋아 보일 수 있습니다.
+
+하지만 실제로 별도 앱 entrypoint가 없으면 아래 판단이 계속 추상적으로 남습니다.
+
+- 같은 저장소에서 정말 별도 앱이 충돌 없이 공존할 수 있는가
+- 정적 데이터만 재사용하는 방식이 실제 build에서 성립하는가
+- free-tier static hosting에 맞는 route map을 어떻게 잡을 것인가
+
+그래서 planning 다음 첫 조각에서는 [demo-lite](../demo-lite) 디렉터리를 실제로 열었습니다.
+
+이번 첫 조각의 역할은 제한적입니다.
+
+- `Vite + vanilla SPA + hash route` shell
+- 전용 header/navigation
+- `#/`, `#/games/capital`, `#/games/flag`, `#/games/population-battle`, `#/recommendation` route map
+- [countries.json](../src/main/resources/data/countries.json), [flag-assets.json](../src/main/resources/data/flag-assets.json), [static/images/flags](../src/main/resources/static/images/flags) sync script 기반 재사용
+
+즉 아직 game loop를 옮긴 것이 아니라, **별도 앱 전략이 기술적으로 정말 가벼운가**를 먼저 확인한 것입니다.
+
+### 왜 Vite + hash route인가
+
+이번 slice에서 중요한 것은 React냐 아니냐가 아닙니다.
+
+중요한 것은 아래 세 가지입니다.
+
+1. 메인 Spring Boot 앱을 건드리지 않을 것
+2. free-tier static hosting에서 rewrite 의존성을 줄일 것
+3. 첫 retained route shell을 가장 작은 비용으로 열 것
+
+그래서 이번에는 hash route를 택했습니다.
+
+- static host rewrite가 없어도 동작하기 쉽다
+- route를 바로 늘리기 쉽다
+- 게임 loop를 붙이기 전에도 navigation contract를 먼저 검증할 수 있다
+
+즉 이 첫 조각은 UI 프레임워크 취향보다 **배포 제약에 맞는 최소 구조**를 고르는 단계에 가깝습니다.
+
+### 왜 shared data만 재사용하는가
+
+이번 skeleton에서 메인 앱과 직접 공유하는 것은 아래뿐입니다.
+
+- [countries.json](../src/main/resources/data/countries.json)
+- [flag-assets.json](../src/main/resources/data/flag-assets.json)
+- [static/images/flags](../src/main/resources/static/images/flags)
+
+다만 브라우저가 Spring Boot runtime 밖의 파일을 직접 참조하게 두지는 않습니다.
+
+이번 첫 조각에서는 [demo-lite/scripts/sync-shared-assets.mjs](../demo-lite/scripts/sync-shared-assets.mjs)가 메인 저장소 자산을 `demo-lite/public/generated/`로 복사하고, 브라우저는 [demo-lite/src/lib/shared-data.js](../demo-lite/src/lib/shared-data.js)에서 generated JSON을 fetch합니다.
+
+반대로 재사용하지 않는 것은 아래입니다.
+
+- Spring Boot controller/service
+- JPA entity/repository
+- auth/session
+- leaderboard/stats/dashboard
+
+이 판단이 중요한 이유는,
+`demo-lite`의 목적이 full app을 브라우저-only로 복제하는 것이 아니라
+**무료 공개에서도 설명 가능한 최소 surface만 새로 여는 것**이기 때문입니다.
+
+### 이번 조각에서 실제로 닫힌 것
+
+이제 저장소 안에는 아래 두 세계가 같이 존재합니다.
+
+1. full app
+   - Spring Boot + PostgreSQL + Redis + auth + ranking/stats/dashboard
+2. demo-lite
+   - 별도 앱 디렉터리
+   - static-host friendly shell
+   - retained route 4개 + 홈
+   - shared JSON 재사용
+
+즉 `demo-lite`는 더 이상 문서 속 아이디어가 아니라,
+실제로 다음 게임 loop를 하나씩 옮겨 붙일 수 있는 별도 공개 트랙이 되었습니다.
+
 ## 면접에서 30초로 설명하면
 
 배포 방향을 Railway 단일 플랫폼 기준으로 다시 정리했습니다. 핵심은 루트 `Dockerfile`을 배포 source of truth에서 내리고 `Dockerfile.local`로 분리한 뒤, `railway.toml`에서 Railpack 빌드와 start command, readiness health check를 고정한 점입니다. 그리고 `bootJar` 산출물을 `worldmap.jar`로 통일하고, prod Redis 설정이 URL 방식도 받을 수 있게 해서 Railway Postgres/Redis reference variable로 바로 연결할 수 있게 만들었습니다.

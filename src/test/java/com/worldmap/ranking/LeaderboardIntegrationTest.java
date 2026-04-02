@@ -160,7 +160,7 @@ class LeaderboardIntegrationTest {
 				.andExpect(content().string(containsString("id=\"ranking-mode-flag\"")))
 				.andExpect(content().string(containsString("id=\"ranking-mode-population-battle\"")))
 				.andExpect(content().string(containsString("동점 처리")))
-				.andExpect(content().string(containsString("현재 보드 15초 자동 갱신")))
+				.andExpect(content().string(containsString("현재 보드 15초 간격 ON")))
 				.andExpect(content().string(containsString("data-copy-base=\"오늘 기준 위치 찾기 랭킹입니다.\"")))
 				.andExpect(content().string(containsString("data-initial-rendered=\"false\"")))
 				.andExpect(content().string(containsString("보드를 열면 랭킹을 불러옵니다.")))

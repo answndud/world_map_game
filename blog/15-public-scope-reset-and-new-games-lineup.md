@@ -1196,3 +1196,128 @@ home의 카드와 안내 문구는 현재 public product 선언입니다.
 2. `GameLevelRollbackInitializer`는 요청 처리 코드인가, startup 호환성 코드인가
 3. capital / battle / flag 중 어떤 것이 data-first, interaction-first, asset-first 확장인가
 4. 새 게임이 ranking과 stats에 자연스럽게 들어가려면 어떤 공통 contract를 따라야 하는가
+
+## 22. 확장 뒤 public shell을 다시 덜 꾸미는 이유
+
+신규 게임 5종과 추천이 홈, `/stats`, `/ranking`에 모두 붙고 나면 다른 문제가 생깁니다.
+
+기능은 맞는데 화면이 너무 균일하게 예쁘고, 너무 많은 badge와 glow와 섹션이 동시에 강조되면서 사람이 직접 고른 결과라기보다 템플릿처럼 보이기 시작합니다.
+
+이 시점의 문제는 기능 부족이 아니라 **정보를 읽는 말투와 강조 순서**입니다.
+
+즉 다음 질문에 답할 수 있어야 합니다.
+
+- 홈에서 사용자는 무엇부터 눌러야 하는가
+- stats에서 사용자는 어떤 숫자를 먼저 읽어야 하는가
+- ranking에서 사용자는 어떤 보드가 현재 자동 갱신되는지 바로 이해할 수 있는가
+
+이번 정리는 제품 구조를 새로 바꾸는 작업이 아니라, 이미 열린 public surface를 더 설명 가능하게 다듬는 작업입니다.
+
+### 22-1. 무엇을 줄였는가
+
+아래 네 가지를 먼저 줄였습니다.
+
+1. glow, blur, pseudo-glint 같은 장식 효과
+2. uppercase subtitle, badge, Orbitron 느낌이 강한 타이포
+3. 같은 힘으로 반복되는 카드와 섹션 강조
+4. "도전을 시작하세요" 같은 추상적 표현
+
+이유는 간단합니다.
+
+지금 WorldMap의 public surface에서 중요한 것은 "예쁘다"보다 아래 네 가지입니다.
+
+- 지금 어떤 게임을 시작할지
+- 오늘 사람들이 얼마나 플레이했는지
+- 어떤 랭킹 보드가 현재 보이는지
+- 게스트와 로그인 기록이 어떻게 이어지는지
+
+### 22-2. 홈은 product scope의 front page처럼 말해야 한다
+
+홈은 cosmetic page가 아니라 현재 public product 선언입니다.
+
+그래서 이번에는 [HomeController.java](../src/main/java/com/worldmap/web/HomeController.java)와 [home.html](../src/main/resources/templates/home.html)을 같이 손봤습니다.
+
+바뀐 기준은 아래입니다.
+
+- `오늘의 게임`, `바로 시작할 게임을 고르세요`
+- `오래 버티는 게임`, `짧게 푸는 게임과 추천`
+- `게스트로 바로 시작한 뒤, 기록이 마음에 들면 로그인해 이어받을 수 있습니다`
+- `처음 시작 순서`, `기록이 이어지는 방식`
+
+즉 홈 카피가 "세계 지도 기반 게임 플랫폼"을 소개하는 추상 문장이 아니라, 사용자가 지금 무엇을 누르고 어떤 흐름으로 기록이 이어지는지를 직접 말하도록 바뀌었습니다.
+
+### 22-3. stats는 예쁜 대시보드보다 읽기 순서가 먼저다
+
+[stats/index.html](../src/main/resources/templates/stats/index.html)의 목표도 바뀌었습니다.
+
+이전에는 카드 하나하나가 모두 비슷한 힘으로 보였다면, 지금은 읽기 순서를 더 분명하게 둡니다.
+
+1. `오늘 얼마나 플레이했나`
+2. `오늘 많이 끝난 게임`
+3. `오래 버티는 게임 Top 3`
+4. `짧게 푸는 게임 Top 3`
+
+라벨도 `TODAY ACTIVE PLAYERS` 같은 영문형보다 아래처럼 실제 사용 문장에 가까운 한국어로 바꿉니다.
+
+- `전체 회원`
+- `오늘 플레이어`
+- `오늘 시작 세션`
+- `오늘 완료 런`
+- `인구 비교 배틀`
+
+이건 단순 번역이 아니라, public surface가 실제 서비스 상태를 말하게 만드는 작업입니다.
+
+### 22-4. ranking은 sync bar보다 현재 보드가 먼저 보여야 한다
+
+[ranking/index.html](../src/main/resources/templates/ranking/index.html)은 특히 AI 템플릿 느낌이 생기기 쉬운 페이지입니다.
+
+보드 위에 sync 카드가 여러 개 겹치고, 필터와 상태 카드가 동시에 강하면 사용자는 "지금 뭐가 갱신되는가"보다 "예쁜 control panel"을 먼저 보게 됩니다.
+
+그래서 이번에는 중복 stat card를 걷고 단일 toolbar로 정리했습니다.
+
+- `현재 보드만 자동 갱신`
+- `현재 보드 15초 간격 ON`
+- `마지막 갱신`
+- `지금 새로고침`
+
+즉 sync는 여전히 존재하지만, 보드를 압도하는 장식 요소가 아니라 현재 읽고 있는 보드의 상태 메모처럼 보이게 바꾼 것입니다.
+
+### 22-5. 왜 이 정리는 controller보다 read model과 template가 맡는가
+
+이 조각은 데이터나 게임 규칙을 바꾸는 일이 아닙니다.
+
+그래서 위치는 아래처럼 나뉩니다.
+
+- 홈의 행동 언어, 시작 순서, 기록 안내: [HomeController.java](../src/main/java/com/worldmap/web/HomeController.java)
+- 공개 shell의 구조와 문장 배치: `home.html`, `stats/index.html`, `ranking/index.html`
+- 장식 밀도와 타이포 규칙: [site.css](../src/main/resources/static/css/site.css)
+
+즉 "무슨 상태를 보여 줄 것인가"는 controller read model에,
+"그 상태를 얼마나 직접적이고 절제된 톤으로 읽게 할 것인가"는 template와 CSS에 둔 셈입니다.
+
+### 22-6. 이 조각에서 요청 흐름은 바뀌지 않는다
+
+중요한 점은, 이번 조각은 public shell humanization이지 기능 추가가 아니라는 것입니다.
+
+요청 흐름은 그대로입니다.
+
+- `GET / -> HomeController -> home.html`
+- `GET /stats -> StatsPageController -> stats/index.html`
+- `GET /ranking -> LeaderboardPageController -> ranking/index.html`
+
+DB, Redis, session 상태 변화도 없습니다.
+
+바뀐 것은 read model을 읽는 언어와 chrome density입니다.
+
+### 22-7. 무엇으로 고정했는가
+
+문구와 구조는 반드시 테스트로 다시 고정해야 합니다.
+
+이번 정리에서 다시 본 테스트는 아래입니다.
+
+- [HomeControllerTest.java](../src/test/java/com/worldmap/web/HomeControllerTest.java)
+- [StatsPageControllerTest.java](../src/test/java/com/worldmap/stats/StatsPageControllerTest.java)
+- [LeaderboardIntegrationTest.java](../src/test/java/com/worldmap/ranking/LeaderboardIntegrationTest.java)
+- `./gradlew test`
+
+즉 이 조각도 "감각적 수정"으로 끝내지 않고, 현재 SSR public surface 계약으로 다시 굳혀 놓았습니다.

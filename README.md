@@ -115,6 +115,34 @@ docker compose up -d
 
 `local` 프로필에서는 PostgreSQL/Redis를 `compose.yaml` 기준으로 사용하고, demo bootstrap이 기본 활성화되어 바로 화면을 둘러볼 수 있습니다.
 
+### demo-lite 실행
+
+무료 static hosting 기준으로 분리 중인 `demo-lite` 별도 앱은 아래처럼 실행합니다.
+
+```bash
+cd demo-lite
+npm install
+npm run dev
+```
+
+현재는 수도 맞히기, 국기 퀴즈, 인구 비교 배틀, 20문항 추천 결과, browser recent play summary, recent streak / 복사용 한 줄 요약까지 local-state 데모가 열려 있습니다.
+
+현재 공개 URL:
+
+- [https://worldmap-demo-lite.pages.dev/](https://worldmap-demo-lite.pages.dev/)
+
+- `#/`
+- `#/games/capital`
+- `#/games/flag`
+- `#/games/population-battle`
+- `#/recommendation`
+
+주의:
+
+- 현재 public URL은 `wrangler pages deploy`로 열어 둔 수동 Pages 배포입니다.
+- 다만 가장 최근 production alias는 clean repo commit `5356fde` 기준으로 다시 맞췄습니다.
+- 아직 Git-connected 자동 배포 source of truth는 아니므로, 다음 단계는 이 상태를 `main` 기준 auto deploy 흐름으로 넘기는 것입니다.
+
 ## 검증 레일
 
 기본 회귀:
@@ -137,12 +165,13 @@ WORLDMAP_PUBLIC_BASE_URL=https://<public-url> ./gradlew publicUrlSmokeTest
 
 ## 배포 상태
 
-현재 저장소에는 production runtime 계약과 ECS 배포 준비가 포함되어 있습니다.
+현재 저장소에는 production runtime 계약과 Railway 단일 플랫폼 배포 준비, 그리고 free-tier용 `demo-lite` 별도 트랙 준비가 포함되어 있습니다.
 
 - `application-prod.yml`로 prod 전용 datasource / Redis / readiness 계약 분리
 - `verify.yml`로 `test` + `browser-smoke` 검증 레일 분리
 - ECS task definition sample + render script + preflight script 제공
-- AWS ECS 배포 런북 정리
+- Railway 런북과 `demo-lite` scope / decomposition 문서 정리
+- `demo-lite`용 Cloudflare Pages 런북, `.node-version`, `_headers` baseline 추가
 
 다만 **공개 URL은 아직 연결되지 않았습니다.**
 즉 현재 상태는 “배포 완료”가 아니라 **배포 준비와 검증 레일이 코드로 정리된 상태**에 가깝습니다.
@@ -167,6 +196,9 @@ python3 scripts/check_prod_deploy_preflight.py --repo answndud/world_map_game
 ### 배포 / 운영 준비
 
 - [docs/DEPLOYMENT_RUNBOOK_AWS_ECS.md](docs/DEPLOYMENT_RUNBOOK_AWS_ECS.md)
+- [docs/DEPLOYMENT_RUNBOOK_RAILWAY.md](docs/DEPLOYMENT_RUNBOOK_RAILWAY.md)
+- [docs/DEMO_LITE_SCOPE_PLAN.md](docs/DEMO_LITE_SCOPE_PLAN.md)
+- [docs/DEMO_LITE_DECOMPOSITION_PLAN.md](docs/DEMO_LITE_DECOMPOSITION_PLAN.md)
 - [docs/LOCAL_DEMO_BOOTSTRAP.md](docs/LOCAL_DEMO_BOOTSTRAP.md)
 
 ### 구현 과정과 재현 설명

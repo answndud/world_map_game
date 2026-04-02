@@ -29,6 +29,7 @@ import com.worldmap.game.populationbattle.application.PopulationBattleGameServic
 import com.worldmap.game.populationbattle.domain.PopulationBattleGameSessionRepository;
 import com.worldmap.game.populationbattle.domain.PopulationBattleGameStage;
 import com.worldmap.game.populationbattle.domain.PopulationBattleGameStageRepository;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -142,7 +143,7 @@ class BrowserSmokeE2ETest {
 		assertThat(page.textContent("[data-theme-toggle-label]").trim()).isEqualTo("Light");
 		assertThat(page.locator("header.site-header").count()).isEqualTo(1);
 		assertThat(page.locator("article.mode-card").count()).isEqualTo(6);
-		assertThat(page.locator("a.hero-support-link").textContent().trim()).isEqualTo("서비스 현황 보기");
+		assertThat(page.locator("a.hero-support-link").textContent().trim()).isEqualTo("오늘 통계 보기");
 	}
 
 	@Test
@@ -318,6 +319,40 @@ class BrowserSmokeE2ETest {
 	}
 
 	@Test
+	void locationWrongAnswerCanRetrySameStageWithoutStaleSubmitError() {
+		startLocationGameFromBrowser("browser-location-retry");
+
+		UUID sessionId = currentLocationSessionId();
+		LocationGameStage firstStage = locationGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
+			.orElseThrow();
+		@SuppressWarnings("unchecked")
+		List<String> wrongCountryIso3Codes = (List<String>) page.evaluate(
+			"""
+				targetCountryIso3Code => {
+					const globe = window.__worldmapBrowserSmoke?.locationGlobe;
+					const polygonFeatures = globe?.polygonsData?.() || [];
+					return polygonFeatures
+						.map((feature) => feature?.properties?.iso3Code)
+						.filter((iso3Code) => iso3Code && iso3Code !== targetCountryIso3Code)
+						.slice(0, 2);
+				}
+			""",
+			firstStage.getTargetCountryIso3Code()
+		);
+		assertThat(wrongCountryIso3Codes).hasSize(2);
+
+		selectLocationCountry(wrongCountryIso3Codes.get(0));
+		page.locator("#location-submit-button").click();
+		waitForLocationRetryReady();
+
+		selectLocationCountry(wrongCountryIso3Codes.get(1));
+		page.locator("#location-submit-button").click();
+		waitForLocationRetryReady();
+
+		assertThat(page.textContent("#location-play-message")).doesNotContain("이미 처리된 제출");
+	}
+
+	@Test
 	void flagGameOverModalSupportsKeyboardTrapAndRestartFocusReturn() {
 		startFlagGameFromBrowser("browser-flag-modal");
 
@@ -365,6 +400,26 @@ class BrowserSmokeE2ETest {
 
 		assertThat(page.evaluate("() => document.querySelector('.page-shell')?.inert")).isEqualTo(false);
 		assertThat(page.evaluate("() => document.activeElement?.getAttribute('name')")).isEqualTo("flag-option");
+	}
+
+	@Test
+	void capitalWrongAnswerCanRetrySameStageWithoutStaleSubmitError() {
+		startCapitalGameFromBrowser("browser-capital-retry");
+
+		UUID sessionId = currentCapitalSessionId();
+		CapitalGameStage firstStage = capitalGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
+			.orElseThrow();
+		int wrongOptionNumber = findWrongOptionNumber(firstStage.getCorrectOptionNumber());
+
+		page.locator("#capital-options label.option-card[data-option-number='" + wrongOptionNumber + "']").click();
+		page.locator("#capital-submit-button").click();
+		waitForCapitalRetryReady();
+
+		page.locator("#capital-options label.option-card[data-option-number='" + wrongOptionNumber + "']").click();
+		page.locator("#capital-submit-button").click();
+		waitForCapitalRetryReady();
+
+		assertThat(page.textContent("#capital-play-message")).doesNotContain("이미 처리된 제출");
 	}
 
 	@Test
@@ -512,6 +567,14 @@ class BrowserSmokeE2ETest {
 		page.waitForFunction("() => document.querySelectorAll('#capital-game-status .stat-card').length > 0");
 	}
 
+	private void waitForCapitalRetryReady() {
+		page.waitForFunction("() => !document.getElementById('capital-stage-overlay').hidden");
+		page.waitForFunction(
+			"() => document.getElementById('capital-stage-overlay').hidden "
+				+ "&& document.getElementById('capital-submit-button').disabled"
+		);
+	}
+
 	private void startPopulationBattleGameFromBrowser(String nickname) {
 		page.navigate(baseUrl() + "/games/population-battle/start");
 
@@ -563,7 +626,16 @@ class BrowserSmokeE2ETest {
 		page.waitForFunction("() => document.querySelectorAll('#location-game-status .stat-card').length > 0");
 		page.waitForFunction(
 			"() => !!window.__worldmapBrowserSmoke?.locationGlobe "
-				+ "&& typeof window.__worldmapBrowserSmoke?.locationPolygonClickHandler === 'function'"
+				+ "&& typeof window.__worldmapBrowserSmoke?.locationPolygonClickHandler === 'function' "
+				+ "&& typeof window.__worldmapBrowserSmoke?.locationSelectCountry === 'function'"
+		);
+	}
+
+	private void waitForLocationRetryReady() {
+		page.waitForFunction("() => !document.getElementById('location-stage-overlay').hidden");
+		page.waitForFunction(
+			"() => document.getElementById('location-stage-overlay').hidden "
+				+ "&& document.getElementById('location-submit-button').disabled"
 		);
 	}
 
@@ -673,6 +745,22 @@ class BrowserSmokeE2ETest {
 				})();
 			"""
 		);
+	}
+
+	private void selectLocationCountry(String iso3Code) {
+		Boolean selectionApplied = (Boolean) page.evaluate(
+			"""
+				targetIso3Code => {
+					const hook = window.__worldmapBrowserSmoke || {};
+					if (typeof hook.locationSelectCountry !== "function") {
+						return false;
+					}
+					return hook.locationSelectCountry(targetIso3Code);
+				}
+			""",
+			iso3Code
+		);
+		assertThat(selectionApplied).isTrue();
 	}
 
 	private int findWrongOptionNumber(int correctOptionNumber) {

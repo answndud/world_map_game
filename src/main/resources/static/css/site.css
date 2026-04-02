@@ -37,9 +37,9 @@
     --hint-ink: var(--text-muted);
     --meta-ink: var(--text-muted);
     --primary-action-ink: #03111d;
-    --chrome-surface: linear-gradient(180deg, rgba(10, 20, 36, 0.88) 0%, rgba(5, 11, 20, 0.88) 100%);
-    --chrome-shadow: 0 0 0 1px rgba(141, 224, 255, 0.06), 0 18px 44px rgba(0, 0, 0, 0.22);
-    --chrome-blur: 16px;
+    --chrome-surface: rgba(8, 16, 30, 0.92);
+    --chrome-shadow: 0 0 0 1px rgba(141, 224, 255, 0.05), 0 10px 24px rgba(0, 0, 0, 0.18);
+    --chrome-blur: 0px;
     --interactive-surface: rgba(8, 16, 30, 0.56);
     --interactive-surface-strong: linear-gradient(180deg, rgba(11, 22, 39, 0.88) 0%, rgba(7, 14, 26, 0.88) 100%);
     --interactive-surface-selected: linear-gradient(180deg, rgba(14, 33, 57, 0.92) 0%, rgba(9, 21, 37, 0.92) 100%);
@@ -50,10 +50,10 @@
     --panel-surface: linear-gradient(180deg, rgba(11, 22, 39, 0.84) 0%, rgba(7, 14, 26, 0.84) 100%);
     --nested-panel-surface: rgba(5, 12, 22, 0.62);
     --result-banner-surface: linear-gradient(180deg, rgba(10, 20, 36, 0.9) 0%, rgba(7, 14, 26, 0.9) 100%);
-    --panel-shell-surface: linear-gradient(180deg, rgba(10, 22, 39, 0.92) 0%, rgba(6, 13, 24, 0.82) 100%);
-    --panel-shell-shadow: var(--shadow);
-    --panel-shell-blur: 18px;
-    --panel-glint: linear-gradient(135deg, rgba(141, 224, 255, 0.08), transparent 35%, transparent 100%);
+    --panel-shell-surface: rgba(9, 18, 31, 0.92);
+    --panel-shell-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
+    --panel-shell-blur: 0px;
+    --panel-glint: none;
     --hero-callout-surface: rgba(7, 15, 27, 0.72);
     --hero-callout-border: var(--line);
     --hero-callout-shadow: none;
@@ -134,9 +134,9 @@ html[data-theme="light"] {
     --hint-ink: #516074;
     --meta-ink: #64748b;
     --primary-action-ink: #ffffff;
-    --chrome-surface: linear-gradient(180deg, rgba(255, 255, 255, 0.84) 0%, rgba(243, 248, 255, 0.94) 100%);
-    --chrome-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.86), 0 22px 48px rgba(71, 85, 105, 0.12), 0 6px 16px rgba(37, 99, 235, 0.06);
-    --chrome-blur: 14px;
+    --chrome-surface: rgba(255, 255, 255, 0.96);
+    --chrome-shadow: 0 10px 24px rgba(71, 85, 105, 0.08);
+    --chrome-blur: 0px;
     --interactive-surface: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 251, 255, 0.98) 100%);
     --interactive-surface-strong: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(247, 251, 255, 0.98) 56%, rgba(238, 245, 255, 0.96) 100%);
     --interactive-surface-selected: linear-gradient(180deg, #f5f9ff 0%, #e7f0ff 100%);
@@ -147,12 +147,10 @@ html[data-theme="light"] {
     --panel-surface: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 251, 255, 0.98) 58%, rgba(241, 247, 255, 0.96) 100%);
     --nested-panel-surface: linear-gradient(180deg, #fbfdff 0%, #f1f6ff 100%);
     --result-banner-surface: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(246, 250, 255, 0.98) 100%);
-    --panel-shell-surface: linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, rgba(248, 251, 255, 0.96) 52%, rgba(239, 246, 255, 0.98) 100%);
-    --panel-shell-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.86), 0 24px 50px rgba(71, 85, 105, 0.11), 0 8px 18px rgba(37, 99, 235, 0.06);
-    --panel-shell-blur: 10px;
-    --panel-glint:
-        linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.42) 18%, transparent 46%),
-        radial-gradient(circle at 100% 0%, rgba(96, 165, 250, 0.14), transparent 30%);
+    --panel-shell-surface: rgba(255, 255, 255, 0.98);
+    --panel-shell-shadow: 0 12px 28px rgba(71, 85, 105, 0.08);
+    --panel-shell-blur: 0px;
+    --panel-glint: none;
     --hero-callout-surface: linear-gradient(145deg, rgba(255, 255, 255, 0.98) 0%, rgba(245, 250, 255, 0.98) 56%, rgba(232, 243, 255, 0.98) 100%);
     --hero-callout-border: rgba(37, 99, 235, 0.14);
     --hero-callout-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.86), 0 18px 36px rgba(37, 99, 235, 0.09), 0 6px 14px rgba(71, 85, 105, 0.08);
@@ -239,14 +237,12 @@ body::before {
         radial-gradient(circle at 76% 20%, var(--stars) 0 1px, transparent 2px),
         radial-gradient(circle at 34% 72%, var(--stars) 0 1px, transparent 2px),
         radial-gradient(circle at 84% 64%, var(--stars) 0 1px, transparent 2px);
-    opacity: 0.35;
+    opacity: 0.12;
 }
 
 body::after {
-    background:
-        radial-gradient(circle at center, var(--glow), transparent 0 26%),
-        linear-gradient(90deg, transparent 0%, rgba(92, 200, 255, 0.02) 48%, transparent 100%);
-    mix-blend-mode: screen;
+    background: radial-gradient(circle at center, var(--glow), transparent 0 20%);
+    mix-blend-mode: normal;
 }
 
 html[data-theme="light"] body::before {
@@ -286,7 +282,6 @@ a {
     border: 1px solid var(--line-strong);
     border-radius: 0;
     background: var(--chrome-surface);
-    backdrop-filter: blur(var(--chrome-blur));
     box-shadow: var(--chrome-shadow);
 }
 
@@ -442,39 +437,36 @@ body[data-page="population-play"] .page-shell {
 .eyebrow {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 0;
     margin: 0;
     color: var(--eyebrow-ink);
-    font-size: 0.76rem;
+    font-size: 0.82rem;
     font-weight: 700;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    text-transform: none;
 }
 
 .eyebrow::before {
-    content: "";
-    width: 32px;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, var(--accent));
+    display: none;
 }
 
 .hero h1 {
     margin: 0;
     color: var(--display-ink);
-    font-family: "Orbitron", "Space Grotesk", sans-serif;
-    max-width: 11ch;
-    font-size: clamp(3.4rem, 9vw, 6.6rem);
-    line-height: 0.9;
-    letter-spacing: -0.045em;
-    text-transform: uppercase;
+    font-family: "Space Grotesk", "SUIT Variable", "Pretendard Variable", sans-serif;
+    max-width: 13ch;
+    font-size: clamp(2.8rem, 7vw, 5rem);
+    line-height: 0.98;
+    letter-spacing: -0.03em;
+    text-transform: none;
 }
 
 .hero-copy {
     max-width: 640px;
     margin: 0;
     color: var(--text-muted);
-    font-size: 1.08rem;
-    line-height: 1.85;
+    font-size: 1rem;
+    line-height: 1.72;
 }
 
 .home-hero-support {
@@ -533,10 +525,10 @@ body[data-page="population-play"] .page-shell {
     border: 1px solid var(--chip-border);
     background: var(--chip-surface);
     color: var(--chip-ink);
-    font-family: "Orbitron", "Space Grotesk", sans-serif;
+    font-family: "Space Grotesk", "SUIT Variable", "Pretendard Variable", sans-serif;
     font-size: 0.78rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    text-transform: none;
 }
 
 .overview-radar {
@@ -643,9 +635,8 @@ html[data-theme="light"] .home-hero-panel .signal-list li {
     border: 1px solid var(--line-strong);
     border-radius: 0;
     background: var(--panel-shell-surface);
-    backdrop-filter: blur(var(--panel-shell-blur));
     box-shadow: var(--panel-shell-shadow);
-    padding: 30px;
+    padding: 26px;
     color: var(--text-strong);
 }
 
@@ -657,11 +648,7 @@ html[data-theme="light"] .home-hero-panel .signal-list li {
 .selection-pill::before,
 .rule-card::before,
 .option-card::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background: var(--panel-glint);
+    display: none;
 }
 
 .panel > *,
@@ -692,7 +679,7 @@ html[data-theme="light"] .home-hero-panel .signal-list li {
 .panel-head p {
     margin: 0;
     color: var(--text-muted);
-    line-height: 1.7;
+    line-height: 1.6;
 }
 
 .card-grid {
@@ -706,7 +693,7 @@ html[data-theme="light"] .home-hero-panel .signal-list li {
 }
 
 .home-subhead {
-    margin-top: 28px;
+    margin-top: 24px;
 }
 
 .mode-card {
@@ -717,7 +704,7 @@ html[data-theme="light"] .home-hero-panel .signal-list li {
     align-content: start;
     border: 1px solid var(--line);
     border-radius: 0;
-    background: var(--interactive-surface-strong);
+    background: var(--panel);
     padding: 24px;
     box-shadow: var(--card-shadow);
 }
@@ -738,32 +725,32 @@ html[data-theme="light"] .home-hero-panel .signal-list li {
     border-radius: 0;
     background: var(--badge-surface);
     color: var(--badge-ink);
-    font-size: 0.74rem;
+    font-size: 0.78rem;
     font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    text-transform: none;
 }
 
 .subtitle {
     color: var(--text-muted);
     font-size: 0.84rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    letter-spacing: 0.01em;
+    text-transform: none;
 }
 
 .mode-card h3 {
     margin: 0 0 12px;
     font-family: "Space Grotesk", "SUIT Variable", "Pretendard Variable", sans-serif;
-    font-size: 1.56rem;
+    font-size: 1.4rem;
     font-weight: 700;
     letter-spacing: -0.025em;
     text-transform: none;
 }
 
 .mode-card p {
-    margin: 0 0 26px;
+    margin: 0 0 20px;
     color: var(--text-muted);
-    line-height: 1.75;
+    line-height: 1.68;
 }
 
 html[data-theme="light"] .mode-card:hover,
@@ -773,7 +760,7 @@ html[data-theme="light"] .feedback-card:hover,
 html[data-theme="light"] .rule-card:hover,
 html[data-theme="light"] .selection-pill:hover,
 html[data-theme="light"] .history-item:hover {
-    transform: translateY(-2px);
+    transform: translateY(-1px);
     border-color: var(--line-accent);
     box-shadow: var(--selection-shadow);
 }
@@ -922,7 +909,7 @@ button:disabled {
 }
 
 .compact-hero h1 {
-    font-size: clamp(2.2rem, 5vw, 4rem);
+    font-size: clamp(2rem, 4.2vw, 3.2rem);
 }
 
 .game-panel {
@@ -1010,9 +997,9 @@ button:disabled {
 .question-card h2,
 .result-banner h2 {
     margin: 0;
-    font-family: "Orbitron", "Space Grotesk", sans-serif;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
+    font-family: "Space Grotesk", "SUIT Variable", "Pretendard Variable", sans-serif;
+    letter-spacing: -0.02em;
+    text-transform: none;
 }
 
 .feedback-card p,
@@ -1090,8 +1077,8 @@ button:disabled {
 .result-table th {
     color: var(--accent-strong);
     font-size: 0.78rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    letter-spacing: 0.01em;
+    text-transform: none;
 }
 
 .page-actions {
@@ -1134,9 +1121,9 @@ button:disabled {
 }
 
 .history-main strong {
-    font-family: "Orbitron", "Space Grotesk", sans-serif;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
+    font-family: "Space Grotesk", "SUIT Variable", "Pretendard Variable", sans-serif;
+    letter-spacing: -0.01em;
+    text-transform: none;
 }
 
 .history-metrics {
@@ -1148,21 +1135,32 @@ button:disabled {
     font-size: 0.9rem;
 }
 
-.ranking-sync-bar {
+.ranking-toolbar {
     display: flex;
     flex-wrap: wrap;
-    gap: 14px;
-    align-items: stretch;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: center;
     margin-bottom: 18px;
 }
 
-.ranking-sync-bar .stat-card {
-    min-width: 220px;
-    flex: 1;
+.ranking-toolbar-copy {
+    display: grid;
+    gap: 4px;
 }
 
-.ranking-sync-bar .action-buttons {
-    align-self: stretch;
+.ranking-toolbar-copy strong {
+    font-size: 1.05rem;
+}
+
+.ranking-toolbar-meta {
+    margin: 0;
+    color: var(--text-muted);
+    line-height: 1.6;
+}
+
+.ranking-toolbar .action-buttons {
+    align-self: center;
 }
 
 .ranking-controls-grid {

@@ -6,6 +6,11 @@
 
 이 문서는 `한 플랫폼에서 끝나는 Spring Boot 배포`를 원하는 현재 프로젝트 기준으로, 초보자도 Railway에서 처음부터 끝까지 따라갈 수 있게 정리한 실행 문서다.
 
+중요:
+
+- 이 문서는 **현재 full Spring Boot 앱**을 Railway에 올리는 기준이다.
+- free-tier 공개가 목적이라면 이 문서 하나로 해결하려 하지 말고, [DEMO_LITE_SCOPE_PLAN.md](/Users/alex/project/worldmap/docs/DEMO_LITE_SCOPE_PLAN.md)과 [DEMO_LITE_DECOMPOSITION_PLAN.md](/Users/alex/project/worldmap/docs/DEMO_LITE_DECOMPOSITION_PLAN.md)을 먼저 본다.
+
 목표는 아래 4개다.
 
 - Railway에 GitHub 저장소 연결
