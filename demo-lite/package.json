@@ -11,7 +11,8 @@
     "sync:shared": "node ./scripts/sync-shared-assets.mjs",
     "verify:shared": "node ./scripts/check-shared-assets.mjs",
     "verify:pages": "node ./scripts/check-cloudflare-pages-baseline.mjs",
-    "smoke:public": "node ./scripts/smoke-public-url.mjs"
+    "smoke:public": "node ./scripts/smoke-public-url.mjs",
+    "inspect:pages-git": "node ./scripts/inspect-pages-git-handoff.mjs"
   },
   "engines": {
     "node": "20.x"
