@@ -240,6 +240,23 @@ demo-lite에서는 가져오면 안 된다.
 
 - **권장안**
 
+## 현재 채택한 구현 선택
+
+문서 단계에서 권장안으로만 두지 않고, 현재 저장소에서는 실제로 아래를 채택했다.
+
+1. sibling 앱 경로: [demo-lite](/Users/alex/project/worldmap/demo-lite)
+2. 프론트 스택: `Vite + vanilla JS`
+3. route 전략: `hash routing`
+4. shared source: 메인 앱의 정적 JSON/국기 자산만 재사용
+5. main Spring Boot app와 bean graph는 건드리지 않음
+
+이 선택을 한 이유는 아래와 같다.
+
+- 같은 저장소 안에서 관리하기 쉽다.
+- static hosting에 바로 올리기 쉽다.
+- `auth`, `ranking`, `stats`, `dashboard`, `game service` conditional branching을 main에 퍼뜨리지 않는다.
+- 첫 조각에서 build 가능한 별도 앱을 실제로 만들 수 있다.
+
 ## current code 기준 제거 / 분리 우선순위
 
 아래 순서는 "현재 앱을 그대로 지우는 순서"가 아니라,
@@ -254,6 +271,19 @@ demo-lite에서는 가져오면 안 된다.
 3. full app용 test/deploy lane은 그대로 유지
 
 이 단계 없이 코드부터 지우면 충돌이 난다.
+
+현재 이 보호선은 코드 기준으로 아래처럼 반영돼 있다.
+
+- 메인 앱 빌드/테스트/배포 설정은 그대로 유지
+- 별도 [demo-lite/package.json](/Users/alex/project/worldmap/demo-lite/package.json)과 [demo-lite/vite.config.mjs](/Users/alex/project/worldmap/demo-lite/vite.config.mjs) 추가
+- [demo-lite/README.md](/Users/alex/project/worldmap/demo-lite/README.md)로 별도 실행 명령 분리
+- [sync-shared-assets.mjs](/Users/alex/project/worldmap/demo-lite/scripts/sync-shared-assets.mjs)가 메인 저장소 JSON/국기 자산을 `public/generated/`로 복사하고, [shared-data.js](/Users/alex/project/worldmap/demo-lite/src/lib/shared-data.js)는 브라우저에서 이 generated JSON만 fetch한다
+- 첫 retained runtime으로 [capital-game.js](/Users/alex/project/worldmap/demo-lite/src/features/capital-game.js)를 열어 `5 rounds + 3 lives + localStorage best score` 루프를 실제로 붙였다
+- 두 번째 retained runtime으로 [flag-game.js](/Users/alex/project/worldmap/demo-lite/src/features/flag-game.js)를 열어 `flag asset manifest + country seed join`, `same-continent 우선 distractor`, `같은 문제 재시도` 루프를 같은 local-state 패턴으로 붙였다
+- 세 번째 retained runtime으로 [population-battle-game.js](/Users/alex/project/worldmap/demo-lite/src/features/population-battle-game.js)를 열어 `population rank gap 기반 pair`, `difficulty band`, `2-choice battle`, `같은 문제 재시도` 루프를 브라우저 메모리 상태로 붙였다
+- retained surface의 마지막 축으로 [recommendation.js](/Users/alex/project/worldmap/demo-lite/src/features/recommendation.js)를 열어 `20문항 survey + 30국가 deterministic top 3 result`를 local-state 패턴으로 붙였다
+- 마감 조각으로 [browser-history.js](/Users/alex/project/worldmap/demo-lite/src/lib/browser-history.js)를 추가해 각 feature가 terminal result 또는 recommendation result를 localStorage history로 남기고, [app.js](/Users/alex/project/worldmap/demo-lite/src/app.js) 홈이 이를 cross-mode summary로 다시 읽게 했다
+- 첫 retained runtime 예시로 [capital-game.js](/Users/alex/project/worldmap/demo-lite/src/features/capital-game.js)와 Node 테스트 [capital-game.test.mjs](/Users/alex/project/worldmap/demo-lite/tests/capital-game.test.mjs)를 추가해, local-state loop가 메인 Spring Boot service 없이도 별도 앱 안에서 독립적으로 닫히는지 증명했다
 
 ### 1단계. navigation / header 의존성부터 분리
 

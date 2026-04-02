@@ -6547,3 +6547,376 @@
 - 배운 점: 무료 배포 문제는 "기능을 조금 덜 켜기"보다 "어떤 제품 약속을 유지할 것인가"를 먼저 정해야 풀린다. 특히 ranking/stats처럼 공유 persistence를 전제로 하는 화면은, 억지 축소보다 과감한 제거가 오히려 더 정직하다.
 - 아직 약한 부분: 문서는 `왜 sibling demo-lite app이 safer한가`까지는 정리했지만, 실제 구현은 아직 없다. 다음 조각에서는 `demo-lite` 앱 구조를 별도 디렉터리로 만들지, 현재 repo 안의 어떤 자산만 재사용할지를 더 구체적으로 결정해야 한다.
 - 면접용 30초 요약: 무료 공개를 위해 full Spring Boot 앱을 억지로 깎는 대신, 저장형 기능을 제거한 별도 `demo-lite` surface를 정의했습니다. 문서에서 retained surface는 `홈 + 수도 + 국기 + 인구 비교 + 추천`으로 줄이고, 가장 먼저 끊어야 할 hot spot을 `공통 헤더/auth`, `recommendation feedback`, `stats/ranking/mypage/dashboard`, `LeaderboardService` 직결 게임 service 순서로 정리했습니다. 핵심은 same app에 feature flag를 퍼뜨리기보다, 재사용 가능한 데이터/자산만 가져가는 sibling demo-lite app이 훨씬 안전하다는 판단입니다.
+
+## 2026-04-02 - sibling demo-lite 앱 골격과 전용 header/navigation 열기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 문서에서 `sibling demo-lite app`이 safest path라고 정리한 뒤에도, 실제 separate app 골격이 없으면 계획이 공중에 뜬다. 이번 조각의 목적은 메인 Spring Boot 앱을 건드리지 않고 `/demo-lite` 별도 앱 디렉터리를 만들고, free-tier static hosting 기준의 첫 shell과 navigation, shared data 접근 계약을 코드로 고정하는 것이다.
+- 변경 파일:
+  - `.gitignore`
+  - `demo-lite/.npmrc`
+  - `demo-lite/README.md`
+  - `demo-lite/package.json`
+  - `demo-lite/package-lock.json`
+  - `demo-lite/vite.config.mjs`
+  - `demo-lite/index.html`
+  - `demo-lite/scripts/sync-shared-assets.mjs`
+  - `demo-lite/scripts/check-shared-assets.mjs`
+  - `demo-lite/src/main.js`
+  - `demo-lite/src/app.js`
+  - `demo-lite/src/routes.js`
+  - `demo-lite/src/lib/shared-data.js`
+  - `demo-lite/src/style.css`
+  - `README.md`
+  - `docs/DEMO_LITE_SCOPE_PLAN.md`
+  - `docs/DEMO_LITE_DECOMPOSITION_PLAN.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/100-start-demo-lite-sibling-app-shell.md`
+- 요청 흐름 / 데이터 흐름: 메인 앱 요청 흐름은 바뀌지 않았다. 새 흐름은 `demo-lite/index.html -> src/main.js -> app.js -> hash route 판별 -> routes.js resolve -> render`다. 데이터는 `sync-shared-assets.mjs`가 메인 앱의 `src/main/resources/data/countries.json`, `flag-assets.json`, `static/images/flags/*`를 `demo-lite/public/generated/`로 복사하고, 브라우저는 `src/lib/shared-data.js`에서 이 generated JSON을 fetch한다.
+- 데이터 / 상태 변화: DB, Redis, 세션 상태 변화는 없다. 대신 저장소 구조에 `demo-lite`라는 별도 앱 entrypoint가 생겼다. 현재 상태는 shell only이며, retained route는 `#/`, `#/games/capital`, `#/games/flag`, `#/games/population-battle`, `#/recommendation`까지 열려 있고 실제 게임/설문 loop는 아직 없다.
+- 핵심 도메인 개념:
+  - `sibling app`: main Spring Boot bean graph와 분리된 별도 공개용 앱
+  - `hash route shell`: free-tier static hosting에서 rewrite 의존성을 줄이는 최소 라우팅 방식
+  - `build-time shared asset sync`: Spring Boot runtime 대신 정적 JSON과 flag SVG만 `public/generated/`로 복사해 재사용하는 전략
+  - `retained route shell`: retained scope를 먼저 네비게이션과 placeholder page로 고정하고, 그 위에 실제 loop를 하나씩 올리는 방식
+- 예외 / 엣지 케이스:
+  - 현재 환경의 npm 11은 workspace 설정 때문에 `No workspaces found!`를 낼 수 있어, `demo-lite/.npmrc`에 `workspaces=false`를 별도로 둬 local 실행 계약을 안정화했다.
+  - 국기 SVG 자산은 이번 첫 조각에서 실제 렌더링까지 쓰지 않고, `flag-assets.json` count와 route shell만 재사용한다. 이미지 실사용은 다음 조각으로 미뤘다.
+  - `demo-lite`는 static app이라 `login`, `ranking`, `stats`, `dashboard` 같은 메인 앱 계약을 흉내 내지 않는다.
+- 테스트:
+  - `cd demo-lite && npm install`
+  - `cd demo-lite && npm run build`
+  - `git diff --check`
+- 배운 점: free-tier용 별도 트랙은 문서보다 실제 entrypoint가 먼저 있어야 판단이 쉬워진다. 특히 hash route shell을 먼저 열어 두면 retained scope가 정말 한 화면에서 설명 가능한지 바로 확인할 수 있다.
+- 아직 약한 부분: 현재 `demo-lite`는 shell only다. 다음 조각에서 `capital`, `flag`, `population-battle`, `recommendation` 중 하나씩 local-state loop를 붙여야 진짜 공개 체험판이 된다.
+- 면접용 30초 요약: full Spring Boot 앱을 건드리지 않고, free-tier 공개용 `demo-lite`를 별도 앱으로 먼저 열었습니다. `demo-lite`는 Vite 기반의 아주 얇은 SPA shell이고, `countries.json`, `flag-assets.json`, flag SVG를 빌드 전에 `public/generated/`로 복사한 뒤 브라우저가 fetch하는 구조입니다. 첫 조각에서는 `#/`, `#/games/capital`, `#/games/flag`, `#/games/population-battle`, `#/recommendation` route와 전용 header/navigation만 고정해서, same-app feature flag가 아니라 sibling app 전략이 실제로 더 단순하다는 점을 코드로 보여 줬습니다.
+
+## 2026-04-02 - demo-lite 수도 맞히기 local-state 한 판을 먼저 열기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: `demo-lite`가 shell만 있는 상태로 오래 머물면 free-tier 공개 전략의 설득력이 약하다. 이번 조각의 목적은 retained route 중 가장 단순한 `capital`부터 실제로 닫아, 메인 Spring Boot runtime을 건드리지 않고도 브라우저 메모리 상태만으로 한 판이 끝까지 도는지 증명하는 것이다.
+- 변경 파일:
+  - `demo-lite/package.json`
+  - `demo-lite/src/app.js`
+  - `demo-lite/src/routes.js`
+  - `demo-lite/src/style.css`
+  - `demo-lite/src/lib/shared-data.js`
+  - `demo-lite/src/features/capital-game.js`
+  - `demo-lite/tests/capital-game.test.mjs`
+  - `demo-lite/README.md`
+  - `README.md`
+  - `docs/DEMO_LITE_SCOPE_PLAN.md`
+  - `docs/DEMO_LITE_DECOMPOSITION_PLAN.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/101-add-first-demo-lite-capital-local-state-loop.md`
+- 요청 흐름 / 데이터 흐름: 메인 앱 요청 흐름은 바뀌지 않았다. 새 흐름은 `demo-lite/index.html -> src/main.js -> app.js -> capital route mount -> capital-game.js`다. 데이터는 여전히 `sync-shared-assets.mjs`가 `countries.json`과 국기 자산을 `public/generated/`로 복사하고, 브라우저는 `loadSharedCatalog()`로 countries를 읽는다. 그다음 `capital-game.js`가 문제 pool을 만들고, 브라우저 메모리 상태와 `localStorage` best score만으로 `정답/오답/재시도/종료`를 진행한다.
+- 데이터 / 상태 변화: DB, Redis, 세션 상태 변화는 없다. 대신 `demo-lite` 안에 첫 실제 게임 runtime이 생겼다. 수도 게임은 `5 rounds`, `3 lives`, `오답 시 같은 문제 재시도`, `정답 시 점수만 잠깐 보여주고 자동 다음 문제`, `종료 후 localStorage best score 갱신` 규칙을 가진다.
+- 핵심 도메인 개념:
+  - `local-state loop`: 서버 세션 없이도 브라우저 메모리 상태로 닫는 retained demo game run
+  - `question pool`: `capitalCityKr`가 있는 국가만 추려 만든 출제 집합
+  - `copy-and-simplify`: 메인 app의 endless run 전체를 재사용하지 않고, 5문제 러닝과 단순 점수 규칙으로 축소한 구조
+  - `localStorage best score`: 서버 전적 없이도 최소한의 반복 플레이 보상을 남기는 브라우저 저장 전략
+- 예외 / 엣지 케이스:
+  - 중복 한국어 수도명은 `buildCapitalQuestionPool()`에서 제거해 보기 중복을 막는다.
+  - 같은 나라가 한 러닝에서 반복 출제되지 않도록 `usedIso3Codes`를 별도로 관리한다.
+  - 정답일 때는 즉시 다음 문제로 넘어가지 않고 점수만 잠깐 보여 준 뒤 이동하게 해 현재 제품의 자동 진행 템포와 맞췄다.
+  - 오답일 때는 정답을 즉시 공개하지 않고 하트만 줄인 채 같은 문제를 다시 풀게 해, free demo에서도 최소한의 게임성을 유지했다.
+- 테스트:
+  - `cd demo-lite && npm test`
+  - `cd demo-lite && npm run build`
+  - `git diff --check`
+- 배운 점: free-tier용 별도 트랙도 shell만으로는 설득력이 약하다. `capital`처럼 데이터 의존성이 단순한 retained 게임 하나를 먼저 local-state로 닫아 두면, 이후 `flag`, `population-battle`, `recommendation`도 같은 방식으로 분해할 수 있는 기준점이 생긴다.
+- 아직 약한 부분: 지금은 `capital`만 실제 플레이 가능하다. `flag`, `population-battle`, `recommendation`은 여전히 shell 상태이고, localStorage도 아직 게임별 best score 축적만 있을 뿐 cross-mode history는 없다.
+- 면접용 30초 요약: `demo-lite`에서 첫 retained 게임으로 수도 맞히기 한 판을 먼저 열었습니다. 메인 Spring Boot 서비스는 건드리지 않고, `countries.json`을 브라우저에서 읽어 5문제 러닝과 3 lives, 오답 재시도, 정답 후 자동 진행, localStorage 최고 점수를 처리합니다. 핵심은 free-tier 공개용 앱에서도 최소 한 게임은 shell이 아니라 실제 playable state machine으로 닫았다는 점이고, 이를 `capital-game.test.mjs`와 `npm run build`로 함께 고정했습니다.
+
+## 2026-04-02 - demo-lite 국기 퀴즈 local-state 한 판을 같은 패턴으로 열기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: `capital` 한 판만 playable한 상태에서는 `demo-lite`가 "텍스트 퀴즈 하나만 되는 체험판"처럼 보인다. 이번 조각의 목적은 두 번째 retained 게임으로 `flag`를 열어, 메인 앱의 `flag asset manifest + country seed` 계약을 free-tier static 앱에서도 같은 방식으로 설명할 수 있게 만드는 것이다.
+- 변경 파일:
+  - `demo-lite/src/features/flag-game.js`
+  - `demo-lite/tests/flag-game.test.mjs`
+  - `demo-lite/src/app.js`
+  - `demo-lite/src/routes.js`
+  - `demo-lite/src/style.css`
+  - `demo-lite/src/features/capital-game.js`
+  - `demo-lite/tests/capital-game.test.mjs`
+  - `demo-lite/README.md`
+  - `README.md`
+  - `docs/DEMO_LITE_SCOPE_PLAN.md`
+  - `docs/DEMO_LITE_DECOMPOSITION_PLAN.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/102-add-demo-lite-flag-local-state-loop.md`
+- 요청 흐름 / 데이터 흐름: 메인 앱 요청 흐름은 바뀌지 않았다. 새 흐름은 `demo-lite/index.html -> src/main.js -> app.js -> flag route mount -> flag-game.js`다. 데이터는 `loadSharedCatalog()`가 `countries.json`과 `flag-assets.json`을 읽고, [flag-game.js](/Users/alex/project/worldmap/demo-lite/src/features/flag-game.js)가 `iso3Code` 기준으로 국가와 국기 자산을 join해 playable pool을 만든다. 그다음 브라우저 메모리 상태와 `localStorage` best score만으로 `정답/오답/재시도/종료`를 진행한다.
+- 데이터 / 상태 변화: DB, Redis, 세션 상태 변화는 없다. 대신 `demo-lite` 안에 두 번째 실제 retained 게임 runtime이 생겼다. 국기 게임은 `5 rounds`, `3 lives`, `same-continent 우선 distractor`, `오답 시 같은 Stage 재시도`, `정답 시 점수만 잠깐 보여주고 자동 다음 Stage`, `종료 후 localStorage best score 갱신` 규칙을 가진다.
+- 핵심 도메인 개념:
+  - `flag question pool`: `country seed ∩ flag manifest`를 `iso3Code` 기준으로 join해 만든 출제 집합
+  - `same-continent first distractor`: 현재 public flag 게임의 방향성을 유지하되, static 앱에 맞게 단순화한 보기 생성 규칙
+  - `local-state loop`: 서버 세션 없이도 브라우저 메모리 상태로 닫는 retained demo game run
+  - `copy-and-simplify`: 메인 app의 asset-backed quiz contract를 재사용하되, persistent history와 leaderboard write는 제거한 구조
+- 예외 / 엣지 케이스:
+  - playable pool은 `relativePath`가 실제 generated path로 변환 가능한 asset만 허용한다.
+  - 국가명 중복은 `nameKr` 기준으로 제거해 보기 중복을 막는다.
+  - same-continent distractor가 부족한 대륙은 인접 fallback 대륙 순서로만 채우고, 그래도 부족하면 전체 pool로 보강한다.
+  - 정답/오답 피드백은 현재 public 게임 정책에 맞춰 즉시 정답 이름을 다시 보여 주지 않는다.
+- 테스트:
+  - `cd demo-lite && npm test`
+  - `cd demo-lite && npm run build`
+  - `git diff --check`
+- 배운 점: `flag`는 화면보다 asset contract가 먼저다. 그래서 free-tier용 별도 앱에서도 "국기 SVG를 어떻게 읽고 어떤 나라를 문제로 쓸 수 있는가"를 먼저 정리한 뒤 local-state loop를 붙이는 편이 훨씬 안전했다.
+- 아직 약한 부분: 지금은 `capital`과 `flag`만 playable하다. `population-battle`, `recommendation`은 아직 shell 상태이고, localStorage도 게임별 best score만 있을 뿐 브라우저 단위 cross-mode history는 없다.
+- 면접용 30초 요약: `demo-lite`의 두 번째 retained 게임으로 국기 퀴즈 한 판을 열었습니다. 메인 Spring Boot 서비스는 건드리지 않고 `countries.json`과 `flag-assets.json`을 브라우저에서 읽어 `iso3Code` 기준 playable pool을 만들고, same-continent 우선 distractor와 5문제 러닝, 3 lives, 오답 재시도, 정답 후 자동 진행, localStorage 최고 점수를 처리합니다. 핵심은 free-tier 공개용 앱에서도 텍스트 퀴즈뿐 아니라 asset-backed 이미지 퀴즈까지 실제 playable state machine으로 닫았다는 점이고, 이를 `flag-game.test.mjs`와 `npm run build`로 함께 고정했다는 것입니다.
+
+## 2026-04-02 - demo-lite 인구 비교 배틀 local-state 한 판을 세 번째 retained game으로 열기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: `capital`과 `flag`까지만 playable한 상태에서는 demo-lite가 퀴즈 앱처럼 보이기 쉽다. 이번 조각의 목적은 세 번째 retained 게임으로 `population-battle`을 열어, 텍스트/이미지 퀴즈뿐 아니라 2-choice arcade battle도 free-tier static 앱 안에서 설명 가능하게 만드는 것이다.
+- 변경 파일:
+  - `demo-lite/src/features/population-battle-game.js`
+  - `demo-lite/tests/population-battle-game.test.mjs`
+  - `demo-lite/src/app.js`
+  - `demo-lite/src/routes.js`
+  - `demo-lite/src/style.css`
+  - `demo-lite/README.md`
+  - `README.md`
+  - `docs/DEMO_LITE_SCOPE_PLAN.md`
+  - `docs/DEMO_LITE_DECOMPOSITION_PLAN.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/103-add-demo-lite-population-battle-local-state-loop.md`
+- 요청 흐름 / 데이터 흐름: 메인 앱 요청 흐름은 바뀌지 않았다. 새 흐름은 `demo-lite/index.html -> src/main.js -> app.js -> population-battle route mount -> population-battle-game.js`다. 데이터는 `loadSharedCatalog()`가 generated `countries.json`을 읽고, [population-battle-game.js](/Users/alex/project/worldmap/demo-lite/src/features/population-battle-game.js)가 인구수 내림차순 pool을 만든다. 그다음 브라우저 메모리 상태와 `localStorage` best score만으로 `pair 생성 / 정답 판정 / 하트 감소 / 종료`를 진행한다.
+- 데이터 / 상태 변화: DB, Redis, 세션 상태 변화는 없다. 대신 `demo-lite` 안에 세 번째 실제 retained 게임 runtime이 생겼다. 인구 배틀은 `5 Stage`, `3 lives`, `difficulty band`, `2-choice 선택`, `오답 시 같은 Stage 재시도`, `정답 시 점수만 잠깐 보여주고 자동 다음 Stage`, `종료 후 localStorage best score 갱신` 규칙을 가진다.
+- 핵심 도메인 개념:
+  - `population battle pool`: 인구수 숫자가 있는 국가를 내림차순으로 정렬한 출제 집합
+  - `rank-gap pair`: 메인 앱의 difficulty 감각을 줄여, 인구 순위 gap 범위로 좌우 pair를 만드는 방식
+  - `difficulty band`: `큰 격차 -> 넉넉한 차이 -> 근접 비교 -> 고난도 -> 초근접` 다섯 Stage 구간
+  - `copy-and-simplify`: 메인 배틀의 score 감각과 2-choice 구조는 유지하고, DB session / stale guard / leaderboard write는 제거한 구조
+- 예외 / 엣지 케이스:
+  - pool은 `population`이 숫자로 있는 국가만 허용하고 `nameKr` 중복은 제거한다.
+  - 같은 run 안에서는 exact pair 중복만 막고, country reuse 자체는 허용해 구현을 과하게 무겁게 만들지 않았다.
+  - 정답/오답 피드백은 현재 public 게임 정책에 맞춰 정답 국가나 인구수를 다시 노출하지 않는다.
+  - 메인 앱 배틀은 endless 성격이 더 강하지만, demo-lite는 `capital`/`flag`와 같은 고정 5 Stage loop로 먼저 단순화했다.
+- 테스트:
+  - `cd demo-lite && npm test`
+  - `cd demo-lite && npm run build`
+  - `git diff --check`
+- 배운 점: `population-battle`는 템플릿을 옮기는 작업이 아니라, 메인 앱의 `difficulty band + life bonus` 감각 중 어디까지 retained demo에 남길지를 고르는 작업에 더 가까웠다. 이번에는 session persistence보다 플레이 리듬을 유지하는 쪽을 우선했다.
+- 아직 약한 부분: 이제 retained game 3종은 playable하지만 `recommendation`은 아직 shell 상태다. 또한 localStorage는 여전히 mode별 best score만 저장하고, 브라우저 단위 최근 플레이 히스토리나 통합 전적은 만들지 않았다.
+- 면접용 30초 요약: demo-lite의 세 번째 retained 게임으로 인구 비교 배틀 한 판을 열었습니다. 메인 Spring Boot 서비스는 건드리지 않고 `countries.json`의 population 값을 브라우저에서 읽어 rank-gap 기반 pair를 만들고, difficulty band, 2-choice 선택, 3 lives, 오답 재시도, 정답 후 자동 진행, localStorage 최고 점수를 처리합니다. 핵심은 free-tier 공개용 앱에서도 퀴즈뿐 아니라 arcade battle 성격의 게임까지 실제 playable state machine으로 닫았다는 점이고, 이를 `population-battle-game.test.mjs`와 `npm run build`로 함께 고정했다는 것입니다.
+
+## 2026-04-02 - demo-lite compact recommendation 결과 loop를 마지막 retained surface로 열기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: retained game 3종이 모두 playable해진 뒤에도 `recommendation`이 shell 상태면 demo-lite의 마지막 surface가 비어 있다. 이번 조각의 목적은 free-tier static 앱에서도 추천 결과까지 끝까지 체험할 수 있게 만들되, 메인 앱의 20문항과 feedback loop를 그대로 옮기지 않고 compact deterministic slice로 먼저 닫는 것이다.
+- 변경 파일:
+  - `demo-lite/src/features/recommendation.js`
+  - `demo-lite/tests/recommendation.test.mjs`
+  - `demo-lite/src/app.js`
+  - `demo-lite/src/routes.js`
+  - `demo-lite/src/style.css`
+  - `demo-lite/README.md`
+  - `README.md`
+  - `docs/DEMO_LITE_SCOPE_PLAN.md`
+  - `docs/DEMO_LITE_DECOMPOSITION_PLAN.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/104-add-demo-lite-compact-recommendation-loop.md`
+- 요청 흐름 / 데이터 흐름: 메인 앱 요청 흐름은 바뀌지 않았다. 새 흐름은 `demo-lite/index.html -> src/main.js -> app.js -> recommendation route mount -> recommendation.js`다. 데이터는 generated `countries.json`만 읽고, [recommendation.js](/Users/alex/project/worldmap/demo-lite/src/features/recommendation.js)가 내부 `COUNTRY_PROFILES`와 `iso3Code` 기준으로 join한다. 그다음 브라우저 메모리 상태로 compact 6문항 설문 답을 모으고 deterministic top 3 결과를 계산한다.
+- 데이터 / 상태 변화: DB, Redis, 세션, feedback token 상태 변화는 없다. 대신 `demo-lite` 안에 마지막 retained surface가 shell에서 playable loop로 바뀌었다. 추천은 `기후 / 속도 / 비용·품질 / 영어 / 안전 / 도시-자연` 6문항만 남기고, `feedback 저장`, `ops review`, `20문항 full parity`는 제거했다.
+- 핵심 도메인 개념:
+  - `compact recommendation`: 메인 앱의 추천 방향성을 대표하는 최소 설문 축만 남긴 free-tier용 추천 surface
+  - `country profile join`: generated `countries.json`와 local profile table을 `iso3Code` 기준으로 합쳐 결과 카드 metadata를 만드는 방식
+  - `deterministic top 3`: 브라우저 안에서 같은 답이면 항상 같은 결과가 나오는 점수화 방식
+  - `copy-and-simplify`: 메인 앱의 20문항/feedback loop를 그대로 복제하지 않고, 설명 가능한 최소 축만 retained demo에 남기는 전략
+- 예외 / 엣지 케이스:
+  - 메인 앱의 recommendation은 20문항과 훨씬 많은 profile dimension을 쓰지만, demo-lite는 free-tier용 별도 surface라 compact 6문항으로 줄였다.
+  - 결과는 top 3만 보여 주고 만족도 저장, feedback token, dashboard 연결은 모두 제거했다.
+  - 추천 결과는 브라우저 상태로만 유지하고 localStorage에도 저장하지 않았다. 이번 조각의 목적은 “결과 loop 완성”이지 “브라우저 전적 축적”이 아니기 때문이다.
+- 테스트:
+  - `cd demo-lite && npm test`
+  - `cd demo-lite && npm run build`
+  - `git diff --check`
+- 배운 점: recommendation을 retained surface로 옮길 때 중요한 건 20문항 parity보다 “현재 제품이 어떤 trade-off 질문으로 나라를 고르는가”를 얼마나 정직하게 압축하느냐였다. 이번에는 질문 수를 줄이는 대신, warm city와 cool nature 같은 대표 성향이 무너지지 않는지 테스트로 먼저 고정했다.
+- 아직 약한 부분: 이제 demo-lite retained surface는 모두 playable하지만, browser 단위 recent play/history는 없다. 또한 recommendation은 compact 6문항이므로 메인 앱의 full 20문항과 완전한 품질 parity를 주장하면 안 된다.
+- 면접용 30초 요약: demo-lite의 마지막 retained surface로 compact recommendation loop를 열었습니다. 메인 Spring Boot 추천 엔진은 건드리지 않고, generated countries와 local profile table을 `iso3Code`로 join해서 6문항 설문과 deterministic top 3 결과를 브라우저 안에서 계산합니다. 핵심은 free-tier 공개용 앱에서도 추천 결과까지 shell이 아니라 실제 결과 loop로 닫았다는 점이고, 이를 `recommendation.test.mjs`와 `npm run build`로 함께 고정했다는 것입니다.
+
+## 2026-04-02 - demo-lite recommendation breadth를 20문항과 30국가로 확장
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: compact 6문항 recommendation은 free-tier 공개에는 충분했지만, 메인 앱과의 설명 간격이 너무 컸다. 이번 조각의 목적은 `feedback 저장과 ops review는 빼되`, 질문 breadth와 국가 프로필 폭은 메인 앱에 더 가깝게 끌어올려 demo-lite recommendation의 설명력을 높이는 것이다.
+- 변경 파일:
+  - `demo-lite/src/features/recommendation.js`
+  - `demo-lite/tests/recommendation.test.mjs`
+  - `demo-lite/src/routes.js`
+  - `demo-lite/README.md`
+  - `README.md`
+  - `docs/DEMO_LITE_SCOPE_PLAN.md`
+  - `docs/DEMO_LITE_DECOMPOSITION_PLAN.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/105-expand-demo-lite-recommendation-breadth-toward-main-survey.md`
+- 요청 흐름 / 데이터 흐름: 메인 앱 요청 흐름은 바뀌지 않았다. 새 흐름은 여전히 `demo-lite/index.html -> src/main.js -> app.js -> recommendation route mount -> recommendation.js`다. 다만 [recommendation.js](/Users/alex/project/worldmap/demo-lite/src/features/recommendation.js)가 이제 generated `countries.json`에 30개 로컬 프로필 테이블을 `iso3Code`로 join한 뒤, 20문항 raw answers를 브라우저 메모리 상태에서 normalize하고 deterministic top 3를 계산한다.
+- 데이터 / 상태 변화: DB, Redis, 세션, feedback token 상태 변화는 없다. 대신 `demo-lite` recommendation surface가 `6문항 compact slice`에서 `20문항 / 30국가 deterministic slice`로 확장됐다. 저장은 여전히 하지 않고, 결과도 top 3만 보여 준다.
+- 핵심 도메인 개념:
+  - `normalized answer option`: radio value를 바로 숫자로 쓰지 않고, 각 선택지가 `targetValue`, `weight`, `label`을 함께 가진 option object로 normalize하는 방식
+  - `country profile breadth`: 메인 recommendation country catalog의 30개 프로필을 브라우저 쪽 local table로 옮겨 결과 후보 폭을 맞춘 구조
+  - `deterministic local scoring`: 메인 서비스의 `closeness / support / priority / cost overshoot / coherence` helper를 로컬 함수로 옮겨 같은 답이면 항상 같은 top 3가 나오게 한 구조
+  - `copy-but-not-persist`: 질문 breadth와 profile 폭은 가져오되, feedback 저장과 dashboard 연결은 의도적으로 버린 free-tier용 설계
+- 예외 / 엣지 케이스:
+  - generated `countries.json`에 없는 ISO3는 결과 catalog에서 자동 제외한다.
+  - 추천 질문은 20문항 전체를 받지만, 메인 `engine-v20`의 모든 combo bonus를 100% 복제하지는 않았다. demo-lite는 `broad scoring parity`를 목표로 하고 `ops tuning parity`까지 주장하지 않는다.
+  - answer 값은 숫자가 아니라 enum-like string을 쓰기 때문에, 유효하지 않은 값이 들어오면 `normalizeAnswers()` 단계에서 바로 실패한다.
+- 테스트:
+  - `cd demo-lite && npm test`
+  - `cd demo-lite && npm run build`
+  - `git diff --check`
+- 배운 점: demo-lite recommendation을 믿을 수 있게 보이게 만드는 핵심은 “질문 수를 몇 개로 줄였느냐”보다, 메인 앱이 실제로 보는 생활 trade-off 축을 얼마나 정직하게 유지하느냐에 더 가까웠다. 저장/운영 루프를 빼더라도 질문 breadth와 profile breadth를 살리면 체감 설득력이 훨씬 올라간다.
+- 아직 약한 부분: 이제 질문 breadth는 메인 앱에 더 가까워졌지만, recommendation scoring은 여전히 브라우저 전용 로컬 포트다. 따라서 `engine-v20` 운영 튜닝과 100% 동일하다고 설명하면 안 된다. 또한 browser 단위 recent play/history는 여전히 없다.
+- 면접용 30초 요약: demo-lite recommendation을 6문항 compact 버전에서 20문항·30국가 구조로 확장했습니다. 메인 Spring Boot 추천 엔진의 broad scoring helper를 브라우저 로컬 함수로 옮기고, generated countries와 30개 프로필을 `iso3Code`로 join해 deterministic top 3를 계산합니다. 핵심은 free-tier 공개용 앱에서도 feedback 저장 없이 질문 breadth와 추천 후보 폭을 유지해, 메인 앱과 더 가까운 설명이 가능해졌다는 점입니다.
+
+## 2026-04-02 - demo-lite 홈에 browser recent play와 cross-mode summary를 붙이기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: retained surface 4개가 모두 playable해진 뒤에도 홈으로 돌아오면 사용자가 방금 무엇을 했는지 다시 읽을 수 없었다. 이번 조각의 목적은 서버 저장 없이도 `demo-lite`가 체험판 앱처럼 보이도록, 브라우저 localStorage 기준 recent play와 mode별 요약을 홈에서 다시 읽게 만드는 것이다.
+- 변경 파일:
+  - `demo-lite/src/lib/browser-history.js`
+  - `demo-lite/src/app.js`
+  - `demo-lite/src/features/capital-game.js`
+  - `demo-lite/src/features/flag-game.js`
+  - `demo-lite/src/features/population-battle-game.js`
+  - `demo-lite/src/features/recommendation.js`
+  - `demo-lite/tests/browser-history.test.mjs`
+  - `demo-lite/README.md`
+  - `README.md`
+  - `docs/DEMO_LITE_SCOPE_PLAN.md`
+  - `docs/DEMO_LITE_DECOMPOSITION_PLAN.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/106-add-demo-lite-browser-history-and-cross-mode-summary.md`
+- 요청 흐름 / 데이터 흐름: 메인 앱 요청 흐름은 바뀌지 않았다. 새 흐름은 `capital/flag/population-battle`의 terminal result, 그리고 `recommendation` 결과 계산 시점에서 각 feature가 [browser-history.js](/Users/alex/project/worldmap/demo-lite/src/lib/browser-history.js)에 history entry를 기록하는 것이다. 이후 [app.js](/Users/alex/project/worldmap/demo-lite/src/app.js)가 `#/` 홈을 렌더링할 때 `readDemoLiteActivitySummary()`를 읽어 `최근 기록 수 / 플레이한 모드 수 / 브라우저 최고 점수 / 최근 추천 TOP1`, mode별 요약 카드, 최근 기록 리스트를 그린다.
+- 데이터 / 상태 변화: DB, Redis, 세션 상태 변화는 없다. 대신 `demo-lite` 브라우저 localStorage에 `recent-history` key가 추가되고, 기존 mode별 best score key와 함께 읽혀 홈의 cross-mode read model이 된다.
+- 핵심 도메인 개념:
+  - `recent history entry`: terminal game result 또는 recommendation result를 한 줄 요약으로 남긴 localStorage row
+  - `cross-mode summary`: 개별 feature 저장값을 홈에서 다시 조합해 읽는 브라우저 단위 read model
+  - `browser-only read model`: 서버가 없어도 홈에서 “최근에 뭘 했는가”를 설명 가능하게 만드는 얇은 계약
+  - `record-on-terminal`: 게임은 `FINISHED/GAME_OVER`, 추천은 `top 3 계산 완료` 시점에서만 기록을 남기는 규칙
+- 예외 / 엣지 케이스:
+  - localStorage 접근이 실패하면 recent history는 조용히 비활성화되고 앱은 계속 동작한다.
+  - recommendation은 점수가 아니라 `최근 TOP1`과 계산 횟수만 남긴다. game best-score 모델과 같은 구조를 억지로 맞추지 않는다.
+  - recent history는 무한히 늘리지 않고 최근 8개까지만 유지한다.
+- 테스트:
+  - `cd demo-lite && npm test`
+  - `cd demo-lite && npm run build`
+  - `git diff --check`
+- 배운 점: free-tier sibling 앱에서도 “저장 기능을 얼마나 많이 넣었느냐”보다, 남긴 local state를 홈에서 다시 읽을 수 있느냐가 체감 완성도를 크게 바꾼다. 이번 조각은 feature 추가보다 read model 추가에 더 가까웠다.
+- 아직 약한 부분: recent history는 브라우저 단위라 기기 간 동기화는 없다. 또한 streak, badge, share URL 같은 상위 개념은 아직 없다.
+- 면접용 30초 요약: demo-lite 홈에 browser recent play와 cross-mode summary를 붙였습니다. 각 게임은 종료 시점에, 추천은 결과 계산 시점에 localStorage history entry를 남기고, 홈은 그 기록과 mode별 best score를 다시 읽어 최근 활동과 요약 카드를 그립니다. 핵심은 서버 저장 없이도 demo-lite가 “방금 무엇을 했는지 기억하는 체험판 앱”처럼 보이게 만든 점입니다.
+
+## 2026-04-02 - demo-lite 홈에 recent streak와 복사용 한 줄 요약을 붙이기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: recent play와 mode summary까지 붙인 뒤에도 홈에는 “지금 어떤 흐름으로 플레이 중인가”를 한 번에 말해 주는 문장이 없었다. 이번 조각의 목적은 browser-side read model을 한 단계 더 확장해, 최근 game streak와 바로 복사할 수 있는 한 줄 요약까지 홈에서 제공하는 것이다.
+- 변경 파일:
+  - `demo-lite/src/lib/browser-history.js`
+  - `demo-lite/src/app.js`
+  - `demo-lite/src/style.css`
+  - `demo-lite/tests/browser-history.test.mjs`
+  - `demo-lite/README.md`
+  - `README.md`
+  - `docs/DEMO_LITE_SCOPE_PLAN.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/107-add-demo-lite-streak-and-copyable-summary-on-home.md`
+- 요청 흐름 / 데이터 흐름: 메인 앱 요청 흐름은 바뀌지 않았다. 새 흐름은 기존과 동일하게 각 feature가 terminal result 또는 recommendation result를 [browser-history.js](/Users/alex/project/worldmap/demo-lite/src/lib/browser-history.js)에 기록한 뒤, 홈 `#/`이 `readDemoLiteActivitySummary()`를 읽어 `recent game streak`, `recent clear streak`, `shareSummaryText`까지 함께 렌더링하는 것이다. 복사 버튼은 [app.js](/Users/alex/project/worldmap/demo-lite/src/app.js)가 홈에서만 얇게 붙여 `navigator.clipboard.writeText()`로 summary를 복사한다.
+- 데이터 / 상태 변화: DB, Redis, 세션 상태 변화는 없다. localStorage 구조도 새 key를 더 만들지 않고 기존 `recent-history`와 mode별 best-score key를 다시 계산해 `recentGameStreak`, `shareSummaryText` read model만 추가했다.
+- 핵심 도메인 개념:
+  - `recent mode streak`: 가장 최근 game mode가 몇 판 연속 이어졌는지 읽는 브라우저 요약값
+  - `clear streak`: 최근 game entry 기준으로 몇 판 연속 `FINISHED`가 이어졌는지 읽는 요약값
+  - `share summary`: recent count, active mode count, highest score, latest recommendation, recent streak를 한 줄 문장으로 합친 copy용 read model
+  - `home-only interaction`: 복사 버튼은 route shell에서만 붙고, game/recommendation feature 로직과 섞이지 않는 상호작용
+- 예외 / 엣지 케이스:
+  - 게임 기록이 하나도 없으면 streak는 `아직 플레이 전`, `최근 클리어 streak 없음`으로 고정한다.
+  - recommendation entry는 recent game streak를 끊지 않고, game entry 필터링 뒤에만 streak를 계산한다.
+  - clipboard API가 없거나 실패하면 홈 안내 문구만 바꾸고 앱은 계속 동작한다.
+- 테스트:
+  - `cd demo-lite && npm test`
+  - `cd demo-lite && npm run build`
+  - `git diff --check`
+- 배운 점: 홈에 수치를 하나 더 얹는 것보다, 기존 기록을 다시 계산해 “현재 흐름을 한 문장으로 설명할 수 있게 만드는 것”이 demo-lite의 체감 완성도를 더 크게 올린다. write model을 늘리지 않고 read model만 확장해도 제품 느낌이 달라진다.
+- 아직 약한 부분: share summary는 아직 URL을 포함하지 않고, recent streak도 브라우저 단위라 기기 간 연속성은 없다. 공개 배포 URL이 생긴 뒤에는 copy 문구에 실제 링크를 붙일지 다시 결정해야 한다.
+- 면접용 30초 요약: demo-lite 홈에 recent streak와 복사용 한 줄 요약을 붙였습니다. 기존 browser-history read model을 확장해 최근 게임 mode streak와 클리어 streak를 계산하고, recent count·최고 점수·최근 추천 TOP1을 한 문장으로 합친 뒤 홈에서 바로 복사할 수 있게 했습니다. 핵심은 서버 저장 없이도 demo-lite가 “내가 지금 어떤 상태까지 체험했는지”를 스스로 요약하는 앱처럼 보이게 만든 점입니다.
+
+## 2026-04-02 - demo-lite Cloudflare Pages 배포 baseline을 저장소에 고정하기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: `demo-lite` retained surface와 browser-side summary가 모두 닫힌 뒤에는, 이제 실제 무료 공개를 위해 어느 값을 Cloudflare Pages에 넣어야 하는지 저장소에 남겨야 했다. 이번 조각의 목적은 계정 작업 전 단계로서 `Pages가 바로 읽을 수 있는 build/caching/security baseline`을 코드와 문서로 먼저 고정하는 것이다.
+- 변경 파일:
+  - `demo-lite/package.json`
+  - `demo-lite/.node-version`
+  - `demo-lite/public/_headers`
+  - `demo-lite/scripts/check-cloudflare-pages-baseline.mjs`
+  - `demo-lite/tests/cloudflare-pages-config.test.mjs`
+  - `demo-lite/README.md`
+  - `README.md`
+  - `docs/DEPLOYMENT_RUNBOOK_DEMO_LITE_CLOUDFLARE_PAGES.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/108-add-cloudflare-pages-baseline-for-demo-lite-static-hosting.md`
+- 요청 흐름 / 데이터 흐름: 메인 앱 요청 흐름은 바뀌지 않았다. 새 배포 흐름은 `Cloudflare Pages -> root directory demo-lite -> npm run build -> sync shared assets -> verify shared assets -> vite build -> dist/_headers 포함 정적 배포`다. 런타임 라우팅은 계속 hash route이므로 `_redirects`는 추가하지 않고, Pages는 `/` 하나만 정적으로 제공하면 된다.
+- 데이터 / 상태 변화: DB, Redis, localStorage 구조 변화는 없다. 대신 배포 계약이 추가됐다. Node 버전은 `.node-version`으로 고정되고, 응답 캐시/보안 헤더는 `public/_headers`를 통해 `dist/`로 같이 복사된다.
+- 핵심 도메인 개념:
+  - `Pages baseline`: Cloudflare 대시보드에 넣을 root/build/output 값을 저장소 안에 먼저 고정하는 배포 계약
+  - `header-as-artifact`: 캐시/보안 정책을 대시보드 수기 설정이 아니라 정적 산출물의 일부로 관리하는 방식
+  - `hash-route static hosting`: direct path rewrite가 필요 없어서 `_redirects` 없이도 안정적으로 배포할 수 있는 route 전략
+  - `node pin for build image`: Pages build image가 바뀌어도 demo-lite가 어떤 Node 기준으로 build되는지 저장소에서 설명 가능한 상태
+- 예외 / 엣지 케이스:
+  - `hash route` 기준이므로 `/#/games/capital` 같은 주소는 정상이고, `/games/capital` direct path rewrite는 현재 범위 밖이다.
+  - `_headers`의 CSP는 현재 demo-lite가 쓰는 same-origin script/style/img/connect만 허용한다. 외부 폰트나 analytics를 붙이면 다시 열어야 한다.
+  - Git-connected Pages 정적 배포만 기준이므로 `wrangler.toml`은 아직 넣지 않았다.
+- 테스트:
+  - `cd demo-lite && npm test`
+  - `cd demo-lite && npm run build`
+  - `cd demo-lite && npm run verify:pages`
+  - `git diff --check`
+- 배운 점: free static hosting 준비에서 중요한 것은 “Cloudflare에 올릴 수 있나”보다, root/build/output/headers 같은 운영 계약을 저장소 안에서 먼저 설명 가능한 파일로 고정하는 것이다. 대시보드 클릭보다 repo 안의 배포 source of truth가 먼저 있어야 한다.
+- 아직 약한 부분: 실제 Cloudflare Pages 프로젝트와 공개 URL smoke는 아직 남아 있다. 또한 현재 `_headers` 정책은 가장 보수적인 same-origin 기준이라, 나중에 외부 분석 도구나 공유 스크립트를 붙이면 조정이 필요하다.
+- 면접용 30초 요약: demo-lite를 실제 무료 공개로 넘기기 위해 Cloudflare Pages baseline을 저장소에 고정했습니다. `demo-lite`를 root directory로 쓰고 `npm run build -> dist`를 output으로 삼는 계약, `.node-version` 기반 Node pin, `_headers` 기반 캐시/보안 헤더를 코드로 남겼고, 이를 Node 테스트와 build로 검증했습니다. 핵심은 대시보드 수기 설정이 아니라 배포 규칙 자체를 repo 안에서 설명 가능하게 만든 점입니다.
+
+## 2026-04-02 - demo-lite를 Cloudflare Pages 첫 공개 URL로 배포하고 smoke를 남기기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: Pages baseline을 저장소에 고정한 뒤에는 실제 무료 공개 URL을 한 번 열어 봐야 했다. 이번 조각의 목적은 `demo-lite`를 Cloudflare Pages에 실제로 배포하고, 응답 헤더와 핵심 hash route가 정상 렌더링되는지 공개 URL 기준 smoke를 남기는 것이다.
+- 변경 파일:
+  - `README.md`
+  - `demo-lite/README.md`
+  - `docs/DEPLOYMENT_RUNBOOK_DEMO_LITE_CLOUDFLARE_PAGES.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/109-deploy-demo-lite-to-cloudflare-pages-and-record-first-public-smoke.md`
+- 요청 흐름 / 데이터 흐름: 애플리케이션 요청 흐름은 바뀌지 않았다. 바뀐 것은 배포 흐름이다. `wrangler whoami`로 account/token 상태를 확인한 뒤, `wrangler pages project create worldmap-demo-lite --production-branch main`으로 Pages 프로젝트를 만들고, `demo-lite/dist`를 `wrangler pages deploy dist --project-name worldmap-demo-lite --branch main`으로 production URL에 올렸다. 이후 `curl`로 `/`, `/generated/data/countries.json`, `/assets/*`를 확인하고, Chrome channel 기반 Playwright screenshot smoke로 `/`, `/#/games/capital`, `/#/recommendation`이 실제 렌더링되는지 봤다.
+- 데이터 / 상태 변화: DB, Redis, localStorage 구조는 바뀌지 않았다. 대신 Cloudflare 계정에 실제 `worldmap-demo-lite` Pages 프로젝트가 생겼고, [https://worldmap-demo-lite.pages.dev/](https://worldmap-demo-lite.pages.dev/)가 첫 공개 URL이 됐다. 현재 production URL은 Git-connected auto deploy가 아니라 local working tree snapshot을 `wrangler pages deploy`로 먼저 올린 상태다.
+- 핵심 도메인 개념:
+  - `first public URL`: 문서 속 배포 계획이 아니라 실제로 접근 가능한 static production address
+  - `manual production deploy`: GitHub 연결 전에 `wrangler pages deploy --branch main`으로 production alias를 먼저 여는 방식
+  - `header smoke`: `_headers`에 적은 cache/security 계약이 실제 응답으로 내려오는지 확인하는 검증
+  - `hash-route static smoke`: path rewrite 없이도 hash route 기반 page shell이 production에서 정상 렌더링되는지 보는 검증
+- 예외 / 엣지 케이스:
+  - preview alias `https://codex-security-session-guard.worldmap-demo-lite.pages.dev/`는 먼저 생겼지만, production URL은 `--branch main` 재배포 전까지 `404`였다. 즉 Pages 프로젝트를 만들었다고 바로 production alias가 살아나는 것은 아니다.
+  - 공개 URL은 열렸지만 현재 소스 기준은 Git commit이 아니라 dirty working tree snapshot이다. 저장소와 public URL이 잠깐 어긋난 상태이므로 다음 조각에서 반드시 정리해야 한다.
+  - Playwright 기본 번들 브라우저는 로컬 캐시 경로가 비어 있어 실패했고, 대신 macOS에 이미 설치된 Chrome channel을 재사용해 screenshot smoke를 수행했다.
+- 테스트:
+  - `cd demo-lite && npm run build`
+  - `cd demo-lite && npm run verify:pages`
+  - `curl -I -L --max-redirs 3 https://worldmap-demo-lite.pages.dev/`
+  - `curl -I -L --max-redirs 3 https://worldmap-demo-lite.pages.dev/generated/data/countries.json`
+  - `curl -I -L --max-redirs 3 https://worldmap-demo-lite.pages.dev/assets/index-BO7e55jL.js`
+  - `npm exec --yes --package=playwright -- playwright screenshot --channel chrome --wait-for-timeout 3000 https://worldmap-demo-lite.pages.dev/ /tmp/worldmap-demo-lite-home.png`
+  - `npm exec --yes --package=playwright -- playwright screenshot --channel chrome --wait-for-timeout 3000 'https://worldmap-demo-lite.pages.dev/#/games/capital' /tmp/worldmap-demo-lite-capital.png`
+  - `npm exec --yes --package=playwright -- playwright screenshot --channel chrome --wait-for-timeout 3000 'https://worldmap-demo-lite.pages.dev/#/recommendation' /tmp/worldmap-demo-lite-recommendation.png`
+  - `git diff --check`
+- 배운 점: static hosting에서 “첫 URL을 열었다”보다 더 중요한 것은 그 URL이 어떤 경로와 계약으로 열렸는지 설명하는 것이다. 이번 조각에서 특히 중요했던 것은 `project create -> preview deploy -> production branch deploy` 순서를 실제로 경험하고, `_headers` 규칙이 응답으로 내려오는지 확인한 것이다.
+- 아직 약한 부분: 현재 public URL은 저장소 commit과 아직 1:1로 맞아 있지 않다. 즉 지금 production은 dirty working tree snapshot이 먼저 반영된 상태이고, Git-connected Pages production source of truth는 다음 조각에서 다시 맞춰야 한다.
+- 면접용 30초 요약: demo-lite를 Cloudflare Pages에 실제로 배포해 [https://worldmap-demo-lite.pages.dev/](https://worldmap-demo-lite.pages.dev/)를 열었습니다. `wrangler pages project create`로 프로젝트를 만들고, `dist/`를 production branch로 배포한 뒤 `curl`로 응답 헤더와 자산 경로를 확인하고, Chrome channel screenshot smoke로 홈·수도·추천 화면이 실제 렌더링되는지 검증했습니다. 핵심은 static hosting 계획을 문서에서 끝내지 않고 실제 공개 URL까지 열어 봤다는 점입니다.

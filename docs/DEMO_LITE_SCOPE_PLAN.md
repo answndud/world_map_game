@@ -43,6 +43,21 @@
 4. 서버 저장형 랭킹/통계/운영 화면 없이 동작해야 한다.
 5. free-tier에서 끊기지 않게 `정적 + 가벼운 함수` 또는 매우 얇은 런타임만 가정한다.
 
+## 구현 baseline
+
+현재 저장소는 `demo-lite`의 실제 baseline을 아래처럼 고정한다.
+
+1. sibling 앱 경로는 [demo-lite](/Users/alex/project/worldmap/demo-lite)다.
+2. 스택은 `Vite + vanilla JS`다.
+3. 라우팅은 free static hosting rewrite 의존을 줄이기 위해 `hash routing`을 먼저 쓴다.
+4. 메인 앱의 Spring Boot runtime, JPA, Redis, auth bean graph는 재사용하지 않는다.
+5. 대신 아래 정적 데이터와 자산만 직접 읽는다.
+   - [countries.json](/Users/alex/project/worldmap/src/main/resources/data/countries.json)
+   - [flag-assets.json](/Users/alex/project/worldmap/src/main/resources/data/flag-assets.json)
+   - [flags](/Users/alex/project/worldmap/src/main/resources/static/images/flags)
+
+즉 `demo-lite`는 "메인 앱의 profile 하나"가 아니라, 같은 저장소 안의 **별도 공개 앱**이다.
+
 ## 추천 범위
 
 ### 남길 화면
@@ -188,6 +203,52 @@
 3. 수도/국기/인구 배틀이 DB 없이 한 판 끝까지 동작한다.
 4. 추천 설문이 저장 없이 결과 3개를 보여 준다.
 5. 로그인, 랭킹, 통계, 운영 화면이 없어도 제품 설명이 어색하지 않다.
+
+## 현재 실제로 열린 첫 조각
+
+현재 저장소에는 아래까지 구현돼 있다.
+
+- [demo-lite](/Users/alex/project/worldmap/demo-lite) 디렉터리 생성
+- [package.json](/Users/alex/project/worldmap/demo-lite/package.json), [vite.config.mjs](/Users/alex/project/worldmap/demo-lite/vite.config.mjs) 추가
+- [index.html](/Users/alex/project/worldmap/demo-lite/index.html), [main.js](/Users/alex/project/worldmap/demo-lite/src/main.js), [app.js](/Users/alex/project/worldmap/demo-lite/src/app.js), [routes.js](/Users/alex/project/worldmap/demo-lite/src/routes.js), [style.css](/Users/alex/project/worldmap/demo-lite/src/style.css)로 별도 app shell 생성
+- `#/`, `#/games/capital`, `#/games/flag`, `#/games/population-battle`, `#/recommendation` retained route map 고정
+- [sync-shared-assets.mjs](/Users/alex/project/worldmap/demo-lite/scripts/sync-shared-assets.mjs)와 [shared-data.js](/Users/alex/project/worldmap/demo-lite/src/lib/shared-data.js)로 메인 저장소의 `countries.json`, `flag-assets.json`, `flags/*`를 `public/generated/`로 복사하고 fetch하는 계약 추가
+- [README.md](/Users/alex/project/worldmap/demo-lite/README.md)로 별도 실행 명령 분리
+
+즉 첫 구현 조각의 목적은 실제 게임 이식이 아니라, **free-tier 공개용 sibling 앱의 entrypoint와 navigation을 먼저 고정하는 것**이다.
+
+후속 실제 구현으로는 아래 세 retained game과 20문항 recommendation loop가 먼저 열려 있다.
+
+- [capital-game.js](/Users/alex/project/worldmap/demo-lite/src/features/capital-game.js)
+  - `수도 맞히기 5문제 러닝 + 3 lives + 같은 문제 재시도 + localStorage best score`
+- [flag-game.js](/Users/alex/project/worldmap/demo-lite/src/features/flag-game.js)
+  - `국기 퀴즈 5문제 러닝 + same-continent 우선 distractor + 같은 문제 재시도 + localStorage best score`
+- [population-battle-game.js](/Users/alex/project/worldmap/demo-lite/src/features/population-battle-game.js)
+  - `인구 순위 gap 기반 2-choice 배틀 + 5 Stage 구간 + 같은 문제 재시도 + localStorage best score`
+- [recommendation.js](/Users/alex/project/worldmap/demo-lite/src/features/recommendation.js)
+  - `20문항 설문 + 30국가 deterministic top 3 + feedback 저장 제거`
+
+즉 현재 `demo-lite v1`은 retained route shell만 있는 상태가 아니라, retained game 3종과 20문항 recommendation surface까지 브라우저 메모리 상태만으로 끝까지 체험할 수 있다.
+
+후속 마감 조각으로는 [browser-history.js](/Users/alex/project/worldmap/demo-lite/src/lib/browser-history.js)를 추가해,
+
+- 각 게임 종료 기록
+- recommendation 최근 TOP1
+- mode별 browser summary
+
+를 [app.js](/Users/alex/project/worldmap/demo-lite/src/app.js) 홈에서 다시 읽게 했다.
+
+즉 `demo-lite`는 이제 retained surface만 playable한 것이 아니라, **브라우저 단위 recent play와 cross-mode summary까지 가진 체험판**이 됐다.
+
+추가 마감 조각으로는 같은 [browser-history.js](/Users/alex/project/worldmap/demo-lite/src/lib/browser-history.js)가
+
+- 최근 게임 mode streak
+- 최근 클리어 streak
+- 복사 가능한 one-line share summary
+
+까지 계산하고, [app.js](/Users/alex/project/worldmap/demo-lite/src/app.js) 홈이 이를 별도 panel로 노출한다.
+
+즉 현재 `demo-lite` 홈은 단순 route index가 아니라, **playable surface 4개 위에 얇은 browser-side read model을 한 번 더 올린 요약 대시보드**에 가깝다.
 
 ## v1 이후 후보
 
