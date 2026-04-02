@@ -5,10 +5,8 @@ import java.util.List;
 public record MyPageDashboardView(
 	String nickname,
 	long totalCompletedRuns,
-	MyPageBestRunView locationBest,
-	MyPageBestRunView populationBest,
-	MyPageModePerformanceView locationPerformance,
-	MyPageModePerformanceView populationPerformance,
+	List<MyPageBestRunView> bestRuns,
+	List<MyPageModePerformanceView> modePerformances,
 	List<MyPageRecentPlayView> recentPlays
 ) {
 }

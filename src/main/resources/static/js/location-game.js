@@ -77,8 +77,19 @@ function initPlayPage() {
     const heroCopy = document.getElementById("location-hero-copy");
     const stageHint = document.getElementById("location-stage-hint");
     const gameOverModal = document.getElementById("location-game-over-modal");
+    const gameOverPanel = gameOverModal?.querySelector(".game-over-modal__panel");
     const gameOverSummary = document.getElementById("location-game-over-summary");
     const restartButton = document.getElementById("location-restart-button");
+    const pageShell = document.querySelector(".page-shell");
+    const gameOverModalController = window.createGameOverModalController({
+        modal: gameOverModal,
+        panel: gameOverPanel,
+        summaryTarget: gameOverSummary,
+        restartButton,
+        pageShell,
+        buildSummaryText: (payload) =>
+            `Stage ${payload.stageNumber}에서 하트를 모두 잃었습니다. 현재 점수는 ${payload.totalScore}점입니다. 홈으로 돌아가거나 바로 다시 시작할 수 있습니다.`
+    });
 
     let currentState = null;
     let selectedCountryIso3Code = null;
@@ -97,7 +108,7 @@ function initPlayPage() {
         startY: 0
     };
 
-    window.addEventListener("pageshow", hideGameOverModal);
+    window.addEventListener("pageshow", gameOverModalController.hide);
     restartButton?.addEventListener("click", restartCurrentSession);
 
     form.addEventListener("submit", async (event) => {
@@ -125,6 +136,8 @@ function initPlayPage() {
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify({
                     stageNumber: currentState.stageNumber,
+                    stageId: currentState.stageId,
+                    expectedAttemptNumber: currentState.expectedAttemptNumber,
                     selectedCountryIso3Code
                 })
             });
@@ -291,6 +304,7 @@ function initPlayPage() {
 
             hideGameOverModal();
             await loadState();
+            focusPrimaryPlaySurface();
         } catch (error) {
             showLocationMessage(messageBox, error.message, "error");
         } finally {
@@ -429,20 +443,15 @@ function initPlayPage() {
     }
 
     function showGameOverModal(payload) {
-        if (!gameOverModal) {
-            return;
-        }
-
-        gameOverSummary.textContent = `Stage ${payload.stageNumber}에서 하트를 모두 잃었습니다. 현재 점수는 ${payload.totalScore}점입니다. 홈으로 돌아가거나 바로 다시 시작할 수 있습니다.`;
-        gameOverModal.hidden = false;
+        gameOverModalController.show(payload);
     }
 
     function hideGameOverModal() {
-        if (!gameOverModal) {
-            return;
-        }
+        gameOverModalController.hide();
+    }
 
-        gameOverModal.hidden = true;
+    function focusPrimaryPlaySurface() {
+        globeStage?.focus();
     }
 
     function syncGlobeSize() {

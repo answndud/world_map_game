@@ -1,7 +1,11 @@
 package com.worldmap.auth;
 
+import static com.worldmap.auth.application.MemberSessionManager.MEMBER_ID_ATTRIBUTE;
+import static com.worldmap.auth.application.MemberSessionManager.MEMBER_NICKNAME_ATTRIBUTE;
+import static com.worldmap.auth.application.MemberSessionManager.MEMBER_ROLE_ATTRIBUTE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -14,15 +18,27 @@ import com.worldmap.auth.domain.MemberRepository;
 import com.worldmap.auth.domain.MemberRole;
 import com.worldmap.auth.application.MemberPasswordHasher;
 import com.worldmap.country.domain.CountryRepository;
+import com.worldmap.game.capital.domain.CapitalGameSession;
+import com.worldmap.game.capital.domain.CapitalGameSessionRepository;
+import com.worldmap.game.flag.domain.FlagGameSession;
+import com.worldmap.game.flag.domain.FlagGameSessionRepository;
 import com.worldmap.game.location.domain.LocationGameSession;
 import com.worldmap.game.location.domain.LocationGameSessionRepository;
 import com.worldmap.game.location.domain.LocationGameStage;
 import com.worldmap.game.location.domain.LocationGameStageRepository;
+import com.worldmap.game.population.domain.PopulationGameSession;
+import com.worldmap.game.population.domain.PopulationGameSessionRepository;
+import com.worldmap.game.populationbattle.domain.PopulationBattleGameSession;
+import com.worldmap.game.populationbattle.domain.PopulationBattleGameSessionRepository;
 import com.worldmap.ranking.domain.LeaderboardRecord;
 import com.worldmap.ranking.domain.LeaderboardRecordRepository;
 import java.util.UUID;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -51,6 +67,18 @@ class AuthFlowIntegrationTest {
 	private LocationGameStageRepository locationGameStageRepository;
 
 	@Autowired
+	private PopulationGameSessionRepository populationGameSessionRepository;
+
+	@Autowired
+	private CapitalGameSessionRepository capitalGameSessionRepository;
+
+	@Autowired
+	private FlagGameSessionRepository flagGameSessionRepository;
+
+	@Autowired
+	private PopulationBattleGameSessionRepository populationBattleGameSessionRepository;
+
+	@Autowired
 	private LeaderboardRecordRepository leaderboardRecordRepository;
 
 	@Autowired
@@ -65,6 +93,7 @@ class AuthFlowIntegrationTest {
 	@Test
 	void signupCreatesSimpleAccountAndKeepsMemberSession() throws Exception {
 		MockHttpSession browserSession = new MockHttpSession();
+		String previousSessionId = browserSession.getId();
 
 		mockMvc.perform(
 			post("/signup")
@@ -78,6 +107,7 @@ class AuthFlowIntegrationTest {
 		Member member = memberRepository.findByNicknameIgnoreCase("orbit_runner").orElseThrow();
 		assertThat(member.getPasswordHash()).isNotEqualTo("secret1234");
 		assertThat(member.getLastLoginAt()).isNotNull();
+		assertThat(browserSession.getId()).isNotEqualTo(previousSessionId);
 
 		mockMvc.perform(get("/mypage").session(browserSession))
 			.andExpect(status().isOk())
@@ -110,20 +140,106 @@ class AuthFlowIntegrationTest {
 			)
 		);
 
+		MockHttpSession browserSession = new MockHttpSession();
+		String previousSessionId = browserSession.getId();
+
 		mockMvc.perform(
 			post("/login")
+				.session(browserSession)
 				.param("nickname", "worldmap_admin")
 				.param("password", "secret123")
 				.param("returnTo", "/dashboard")
 		)
 			.andExpect(status().is3xxRedirection())
 			.andExpect(redirectedUrl("/dashboard"));
+
+		assertThat(browserSession.getId()).isNotEqualTo(previousSessionId);
+
+		mockMvc.perform(get("/dashboard").session(browserSession))
+			.andExpect(status().isOk())
+			.andExpect(view().name("admin/index"));
+	}
+
+	@Test
+	void deletedMemberSessionFallsBackToGuestStateOnHomeAndMyPage() throws Exception {
+		Member member = memberRepository.save(Member.create("orbit_runner", memberPasswordHasher.hash("secret123"), MemberRole.USER));
+		MockHttpSession browserSession = sessionFor(member);
+
+		memberRepository.delete(member);
+
+		mockMvc.perform(get("/").session(browserSession))
+			.andExpect(status().isOk())
+			.andExpect(content().string(containsString(">로그인<")))
+			.andExpect(content().string(containsString(">회원가입<")))
+			.andExpect(content().string(not(containsString(">로그아웃<"))))
+			.andExpect(content().string(not(containsString("계정으로 기록을 이어서 남기고 있습니다."))));
+
+		mockMvc.perform(get("/mypage").session(browserSession))
+			.andExpect(status().isOk())
+			.andExpect(view().name("mypage"))
+			.andExpect(content().string(containsString("기록을 남기려면 로그인")))
+			.andExpect(content().string(not(containsString("로그아웃"))));
+
+		assertThat(browserSession.getAttribute(MEMBER_ID_ATTRIBUTE)).isNull();
+		assertThat(browserSession.getAttribute(MEMBER_NICKNAME_ATTRIBUTE)).isNull();
+		assertThat(browserSession.getAttribute(MEMBER_ROLE_ATTRIBUTE)).isNull();
+	}
+
+	@Test
+	void deletedMemberSessionCanOpenLoginPageInsteadOfRedirectingToMyPage() throws Exception {
+		Member member = memberRepository.save(Member.create("orbit_runner", memberPasswordHasher.hash("secret123"), MemberRole.USER));
+		MockHttpSession browserSession = sessionFor(member);
+
+		memberRepository.delete(member);
+
+		mockMvc.perform(get("/login").session(browserSession))
+			.andExpect(status().isOk())
+			.andExpect(view().name("auth/login"))
+			.andExpect(content().string(containsString("로그인")));
+	}
+
+	@ParameterizedTest
+	@MethodSource("gameStartPages")
+	void deletedMemberSessionFallsBackToGuestPromptOnGameStartPage(String path, String guestPrompt) throws Exception {
+		Member member = memberRepository.save(Member.create("orbit_runner", memberPasswordHasher.hash("secret123"), MemberRole.USER));
+		MockHttpSession browserSession = sessionFor(member);
+
+		memberRepository.delete(member);
+
+		mockMvc.perform(get(path).session(browserSession))
+			.andExpect(status().isOk())
+			.andExpect(content().string(containsString("게임 시작")))
+			.andExpect(content().string(containsString(guestPrompt)))
+			.andExpect(content().string(not(containsString("현재 로그인 상태에서는"))))
+			.andExpect(content().string(not(containsString(">orbit_runner<"))));
+	}
+
+	@Test
+	void deletedMemberSessionStartsNewGameAsGuestOwnership() throws Exception {
+		Member member = memberRepository.save(Member.create("orbit_runner", memberPasswordHasher.hash("secret123"), MemberRole.USER));
+		MockHttpSession browserSession = sessionFor(member);
+
+		memberRepository.delete(member);
+
+		UUID sessionId = UUID.fromString(startLocationGame("fallback_guest", browserSession));
+		LocationGameSession locationGameSession = locationGameSessionRepository.findById(sessionId).orElseThrow();
+
+		assertThat(locationGameSession.getMemberId()).isNull();
+		assertThat(locationGameSession.getGuestSessionKey()).isNotBlank();
+		assertThat(locationGameSession.getPlayerNickname()).isEqualTo("fallback_guest");
+		assertThat(browserSession.getAttribute(MEMBER_ID_ATTRIBUTE)).isNull();
+		assertThat(browserSession.getAttribute(MEMBER_NICKNAME_ATTRIBUTE)).isNull();
+		assertThat(browserSession.getAttribute(MEMBER_ROLE_ATTRIBUTE)).isNull();
 	}
 
 	@Test
 	void signupClaimsCurrentGuestRecordsIntoMemberOwnership() throws Exception {
 		MockHttpSession browserSession = new MockHttpSession();
 		UUID guestSessionId = UUID.fromString(startLocationGame("guest_runner", browserSession));
+		UUID populationSessionId = UUID.fromString(startPopulationGame("guest_population", browserSession));
+		UUID capitalSessionId = UUID.fromString(startCapitalGame("guest_capital", browserSession));
+		UUID flagSessionId = UUID.fromString(startFlagGame("guest_flag", browserSession));
+		UUID populationBattleSessionId = UUID.fromString(startPopulationBattleGame("guest_battle", browserSession));
 		LocationGameSession guestSession = locationGameSessionRepository.findById(guestSessionId).orElseThrow();
 		String guestSessionKey = guestSession.getGuestSessionKey();
 		assertThat(guestSessionKey).isNotBlank();
@@ -162,11 +278,29 @@ class AuthFlowIntegrationTest {
 
 		Member member = memberRepository.findByNicknameIgnoreCase("claimed_runner").orElseThrow();
 		LocationGameSession claimedSession = locationGameSessionRepository.findById(guestSessionId).orElseThrow();
+		PopulationGameSession claimedPopulationSession = populationGameSessionRepository.findById(populationSessionId)
+			.orElseThrow();
+		CapitalGameSession claimedCapitalSession = capitalGameSessionRepository.findById(capitalSessionId).orElseThrow();
+		FlagGameSession claimedFlagSession = flagGameSessionRepository.findById(flagSessionId).orElseThrow();
+		PopulationBattleGameSession claimedPopulationBattleSession =
+			populationBattleGameSessionRepository.findById(populationBattleSessionId).orElseThrow();
 		LeaderboardRecord claimedRecord = leaderboardRecordRepository.findAll().getFirst();
 
 		assertThat(claimedSession.getMemberId()).isEqualTo(member.getId());
 		assertThat(claimedSession.getGuestSessionKey()).isNull();
 		assertThat(claimedSession.getPlayerNickname()).isEqualTo("guest_runner");
+		assertThat(claimedPopulationSession.getMemberId()).isEqualTo(member.getId());
+		assertThat(claimedPopulationSession.getGuestSessionKey()).isNull();
+		assertThat(claimedPopulationSession.getPlayerNickname()).isEqualTo("guest_population");
+		assertThat(claimedCapitalSession.getMemberId()).isEqualTo(member.getId());
+		assertThat(claimedCapitalSession.getGuestSessionKey()).isNull();
+		assertThat(claimedCapitalSession.getPlayerNickname()).isEqualTo("guest_capital");
+		assertThat(claimedFlagSession.getMemberId()).isEqualTo(member.getId());
+		assertThat(claimedFlagSession.getGuestSessionKey()).isNull();
+		assertThat(claimedFlagSession.getPlayerNickname()).isEqualTo("guest_flag");
+		assertThat(claimedPopulationBattleSession.getMemberId()).isEqualTo(member.getId());
+		assertThat(claimedPopulationBattleSession.getGuestSessionKey()).isNull();
+		assertThat(claimedPopulationBattleSession.getPlayerNickname()).isEqualTo("guest_battle");
 
 		assertThat(claimedRecord.getMemberId()).isEqualTo(member.getId());
 		assertThat(claimedRecord.getGuestSessionKey()).isNull();
@@ -180,6 +314,59 @@ class AuthFlowIntegrationTest {
 			.andExpect(content().string(containsString("국가 위치 찾기")))
 			.andExpect(content().string(containsString("최근 플레이")))
 			.andExpect(content().string(containsString("#1")));
+	}
+
+	@Test
+	void loginClaimsCurrentGuestRecordsIntoMemberOwnership() throws Exception {
+		memberRepository.save(
+			Member.create(
+				"claimed_runner",
+				memberPasswordHasher.hash("secret1234"),
+				MemberRole.USER
+			)
+		);
+
+		MockHttpSession browserSession = new MockHttpSession();
+		UUID locationSessionId = UUID.fromString(startLocationGame("guest_runner", browserSession));
+		UUID populationSessionId = UUID.fromString(startPopulationGame("guest_population", browserSession));
+		UUID capitalSessionId = UUID.fromString(startCapitalGame("guest_capital", browserSession));
+		UUID flagSessionId = UUID.fromString(startFlagGame("guest_flag", browserSession));
+		UUID populationBattleSessionId = UUID.fromString(startPopulationBattleGame("guest_battle", browserSession));
+
+		mockMvc.perform(
+			post("/login")
+				.session(browserSession)
+				.param("nickname", "claimed_runner")
+				.param("password", "secret1234")
+		)
+			.andExpect(status().is3xxRedirection())
+			.andExpect(redirectedUrl("/mypage"));
+
+		Member member = memberRepository.findByNicknameIgnoreCase("claimed_runner").orElseThrow();
+		LocationGameSession claimedLocationSession = locationGameSessionRepository.findById(locationSessionId)
+			.orElseThrow();
+		PopulationGameSession claimedPopulationSession = populationGameSessionRepository.findById(populationSessionId)
+			.orElseThrow();
+		CapitalGameSession claimedCapitalSession = capitalGameSessionRepository.findById(capitalSessionId).orElseThrow();
+		FlagGameSession claimedFlagSession = flagGameSessionRepository.findById(flagSessionId).orElseThrow();
+		PopulationBattleGameSession claimedPopulationBattleSession =
+			populationBattleGameSessionRepository.findById(populationBattleSessionId).orElseThrow();
+
+		assertThat(claimedLocationSession.getMemberId()).isEqualTo(member.getId());
+		assertThat(claimedLocationSession.getGuestSessionKey()).isNull();
+		assertThat(claimedLocationSession.getPlayerNickname()).isEqualTo("guest_runner");
+		assertThat(claimedPopulationSession.getMemberId()).isEqualTo(member.getId());
+		assertThat(claimedPopulationSession.getGuestSessionKey()).isNull();
+		assertThat(claimedPopulationSession.getPlayerNickname()).isEqualTo("guest_population");
+		assertThat(claimedCapitalSession.getMemberId()).isEqualTo(member.getId());
+		assertThat(claimedCapitalSession.getGuestSessionKey()).isNull();
+		assertThat(claimedCapitalSession.getPlayerNickname()).isEqualTo("guest_capital");
+		assertThat(claimedFlagSession.getMemberId()).isEqualTo(member.getId());
+		assertThat(claimedFlagSession.getGuestSessionKey()).isNull();
+		assertThat(claimedFlagSession.getPlayerNickname()).isEqualTo("guest_flag");
+		assertThat(claimedPopulationBattleSession.getMemberId()).isEqualTo(member.getId());
+		assertThat(claimedPopulationBattleSession.getGuestSessionKey()).isNull();
+		assertThat(claimedPopulationBattleSession.getPlayerNickname()).isEqualTo("guest_battle");
 	}
 
 	private String startLocationGame(String nickname, MockHttpSession browserSession) throws Exception {
@@ -198,5 +385,95 @@ class AuthFlowIntegrationTest {
 			)
 			.get("sessionId")
 			.asText();
+	}
+
+	private String startPopulationGame(String nickname, MockHttpSession browserSession) throws Exception {
+		return com.fasterxml.jackson.databind.json.JsonMapper.builder().build()
+			.readTree(
+				mockMvc.perform(
+					post("/api/games/population/sessions")
+						.session(browserSession)
+						.contentType("application/json")
+						.content("{\"nickname\":\"" + nickname + "\"}")
+				)
+					.andExpect(status().isCreated())
+					.andReturn()
+					.getResponse()
+					.getContentAsString()
+			)
+			.get("sessionId")
+			.asText();
+	}
+
+	private String startCapitalGame(String nickname, MockHttpSession browserSession) throws Exception {
+		return com.fasterxml.jackson.databind.json.JsonMapper.builder().build()
+			.readTree(
+				mockMvc.perform(
+					post("/api/games/capital/sessions")
+						.session(browserSession)
+						.contentType("application/json")
+						.content("{\"nickname\":\"" + nickname + "\"}")
+				)
+					.andExpect(status().isCreated())
+					.andReturn()
+					.getResponse()
+					.getContentAsString()
+			)
+			.get("sessionId")
+			.asText();
+	}
+
+	private String startFlagGame(String nickname, MockHttpSession browserSession) throws Exception {
+		return com.fasterxml.jackson.databind.json.JsonMapper.builder().build()
+			.readTree(
+				mockMvc.perform(
+					post("/api/games/flag/sessions")
+						.session(browserSession)
+						.contentType("application/json")
+						.content("{\"nickname\":\"" + nickname + "\"}")
+				)
+					.andExpect(status().isCreated())
+					.andReturn()
+					.getResponse()
+					.getContentAsString()
+			)
+			.get("sessionId")
+			.asText();
+	}
+
+	private String startPopulationBattleGame(String nickname, MockHttpSession browserSession) throws Exception {
+		return com.fasterxml.jackson.databind.json.JsonMapper.builder().build()
+			.readTree(
+				mockMvc.perform(
+					post("/api/games/population-battle/sessions")
+						.session(browserSession)
+						.contentType("application/json")
+						.content("{\"nickname\":\"" + nickname + "\"}")
+				)
+					.andExpect(status().isCreated())
+					.andReturn()
+					.getResponse()
+					.getContentAsString()
+			)
+			.get("sessionId")
+			.asText();
+	}
+
+	private MockHttpSession sessionFor(Member member) {
+		MockHttpSession session = new MockHttpSession();
+		session.setAttribute(MEMBER_ID_ATTRIBUTE, member.getId());
+		session.setAttribute(MEMBER_NICKNAME_ATTRIBUTE, member.getNickname());
+		session.setAttribute(MEMBER_ROLE_ATTRIBUTE, member.getRole().name());
+		return session;
+	}
+
+	private static Stream<Arguments> gameStartPages() {
+		return Stream.of(
+			Arguments.of("/games/location/start", "닉네임은 선택 입력입니다."),
+			Arguments.of("/games/capital/start", "틀리면 같은 Stage를 다시 시도"),
+			Arguments.of("/games/population/start", "틀리면 같은 Stage를 다시 시도"),
+			Arguments.of("/games/flag/start", "틀리면 같은 Stage를 다시 시도"),
+			Arguments.of("/games/population-battle/start", "틀리면 같은 Stage를 다시 시도")
+		);
 	}
 }

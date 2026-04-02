@@ -63,13 +63,24 @@ function initPlayPage() {
     const stageHint = document.getElementById("population-stage-hint");
     const submitButton = document.getElementById("population-submit-button");
     const gameOverModal = document.getElementById("population-game-over-modal");
+    const gameOverPanel = gameOverModal?.querySelector(".game-over-modal__panel");
     const gameOverSummary = document.getElementById("population-game-over-summary");
     const restartButton = document.getElementById("population-restart-button");
+    const pageShell = document.querySelector(".page-shell");
+    const gameOverModalController = window.createGameOverModalController({
+        modal: gameOverModal,
+        panel: gameOverPanel,
+        summaryTarget: gameOverSummary,
+        restartButton,
+        pageShell,
+        buildSummaryText: (payload) =>
+            `Stage ${payload.stageNumber}에서 탈락했습니다. 현재 총점 ${payload.totalScore}점, 다시 시작하면 같은 세션으로 Stage 1부터 이어집니다.`
+    });
 
     let currentState = null;
     let interactionLocked = false;
 
-    window.addEventListener("pageshow", hideGameOverModal);
+    window.addEventListener("pageshow", gameOverModalController.hide);
     restartButton?.addEventListener("click", restartCurrentSession);
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -219,6 +230,7 @@ function initPlayPage() {
             overlay.hidden = true;
             showPopulationMessage(messageBox, "같은 세션을 Stage 1부터 다시 시작했습니다.", "success");
             await loadState();
+            focusFirstPlayableOption();
         } catch (error) {
             showPopulationMessage(messageBox, error.message, "error");
         } finally {
@@ -235,6 +247,8 @@ function initPlayPage() {
 
         return {
             stageNumber: currentState.stageNumber,
+            stageId: currentState.stageId,
+            expectedAttemptNumber: currentState.expectedAttemptNumber,
             selectedOptionNumber: Number(selectedOption.value)
         };
     }
@@ -375,12 +389,11 @@ function initPlayPage() {
     }
 
     function showGameOverModal(payload) {
-        gameOverSummary.textContent = `Stage ${payload.stageNumber}에서 탈락했습니다. 현재 총점 ${payload.totalScore}점, 다시 시작하면 같은 세션으로 Stage 1부터 이어집니다.`;
-        gameOverModal.hidden = false;
+        gameOverModalController.show(payload);
     }
 
     function hideGameOverModal() {
-        gameOverModal.hidden = true;
+        gameOverModalController.hide();
     }
 
     function lockInteraction(locked) {
@@ -389,6 +402,10 @@ function initPlayPage() {
         optionsBox.querySelectorAll("input[name='population-option']").forEach((input) => {
             input.disabled = locked;
         });
+    }
+
+    function focusFirstPlayableOption() {
+        optionsBox.querySelector("input[name='population-option']:not([disabled])")?.focus();
     }
 }
 

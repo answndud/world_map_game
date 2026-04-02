@@ -1,0 +1,681 @@
+package com.worldmap.e2e;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import com.microsoft.playwright.Browser;
+import com.microsoft.playwright.BrowserContext;
+import com.microsoft.playwright.BrowserType;
+import com.microsoft.playwright.Locator;
+import com.microsoft.playwright.Page;
+import com.microsoft.playwright.Playwright;
+import com.worldmap.game.capital.application.CapitalGameService;
+import com.worldmap.game.capital.domain.CapitalGameSessionRepository;
+import com.worldmap.game.capital.domain.CapitalGameStage;
+import com.worldmap.game.capital.domain.CapitalGameStageRepository;
+import com.worldmap.game.common.application.GameSessionAccessContext;
+import com.worldmap.game.flag.application.FlagGameService;
+import com.worldmap.game.flag.domain.FlagGameSessionRepository;
+import com.worldmap.game.flag.domain.FlagGameStage;
+import com.worldmap.game.flag.domain.FlagGameStageRepository;
+import com.worldmap.game.location.application.LocationGameService;
+import com.worldmap.game.location.domain.LocationGameSessionRepository;
+import com.worldmap.game.location.domain.LocationGameStage;
+import com.worldmap.game.location.domain.LocationGameStageRepository;
+import com.worldmap.game.population.application.PopulationGameService;
+import com.worldmap.game.population.domain.PopulationGameSessionRepository;
+import com.worldmap.game.population.domain.PopulationGameStage;
+import com.worldmap.game.population.domain.PopulationGameStageRepository;
+import com.worldmap.game.populationbattle.application.PopulationBattleGameService;
+import com.worldmap.game.populationbattle.domain.PopulationBattleGameSessionRepository;
+import com.worldmap.game.populationbattle.domain.PopulationBattleGameStage;
+import com.worldmap.game.populationbattle.domain.PopulationBattleGameStageRepository;
+import java.util.UUID;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.test.context.ActiveProfiles;
+
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@ActiveProfiles({"test", "browser-smoke"})
+@Tag("browser-smoke")
+class BrowserSmokeE2ETest {
+
+	private static Playwright playwright;
+	private static Browser browser;
+
+	@LocalServerPort
+	private int port;
+
+	@Autowired
+	private CapitalGameStageRepository capitalGameStageRepository;
+
+	@Autowired
+	private CapitalGameSessionRepository capitalGameSessionRepository;
+
+	@Autowired
+	private CapitalGameService capitalGameService;
+
+	@Autowired
+	private LocationGameStageRepository locationGameStageRepository;
+
+	@Autowired
+	private LocationGameSessionRepository locationGameSessionRepository;
+
+	@Autowired
+	private LocationGameService locationGameService;
+
+	@Autowired
+	private FlagGameStageRepository flagGameStageRepository;
+
+	@Autowired
+	private FlagGameSessionRepository flagGameSessionRepository;
+
+	@Autowired
+	private FlagGameService flagGameService;
+
+	@Autowired
+	private PopulationGameStageRepository populationGameStageRepository;
+
+	@Autowired
+	private PopulationGameSessionRepository populationGameSessionRepository;
+
+	@Autowired
+	private PopulationGameService populationGameService;
+
+	@Autowired
+	private PopulationBattleGameStageRepository populationBattleGameStageRepository;
+
+	@Autowired
+	private PopulationBattleGameSessionRepository populationBattleGameSessionRepository;
+
+	@Autowired
+	private PopulationBattleGameService populationBattleGameService;
+
+	private BrowserContext browserContext;
+
+	private Page page;
+
+	@BeforeAll
+	static void launchBrowser() {
+		playwright = Playwright.create();
+		browser = playwright.chromium().launch(new BrowserType.LaunchOptions()
+			.setChannel("chromium")
+			.setHeadless(true));
+	}
+
+	@AfterAll
+	static void closeBrowser() {
+		if (browser != null) {
+			browser.close();
+		}
+		if (playwright != null) {
+			playwright.close();
+		}
+	}
+
+	@BeforeEach
+	void openBrowserContext() {
+		browserContext = browser.newContext(new Browser.NewContextOptions()
+			.setViewportSize(1440, 1024));
+		page = browserContext.newPage();
+	}
+
+	@AfterEach
+	void closeBrowserContext() {
+		if (browserContext != null) {
+			browserContext.close();
+		}
+	}
+
+	@Test
+	void homePageRendersExpectedShellInRealBrowser() {
+		page.navigate(baseUrl() + "/");
+
+		assertThat(page.title()).isEqualTo("WorldMap");
+		assertThat(page.evaluate("() => document.documentElement.dataset.theme")).isEqualTo("light");
+		assertThat(page.textContent("[data-theme-toggle-label]").trim()).isEqualTo("Light");
+		assertThat(page.locator("header.site-header").count()).isEqualTo(1);
+		assertThat(page.locator("article.mode-card").count()).isEqualTo(6);
+		assertThat(page.locator("a.hero-support-link").textContent().trim()).isEqualTo("서비스 현황 보기");
+	}
+
+	@Test
+	void capitalStartPageCreatesPlayableGuestSessionInRealBrowser() {
+		startCapitalGameFromBrowser("browser-smoke");
+
+		assertThat(page.getAttribute("body", "data-page")).isEqualTo("capital-play");
+		assertThat(page.textContent("#capital-target-country-name").trim()).isNotEqualTo("문제를 불러오는 중...");
+		assertThat(page.locator("#capital-options label.option-card").count()).isEqualTo(4);
+		assertThat(page.locator("#capital-game-status .stat-card").count()).isGreaterThan(0);
+	}
+
+	@Test
+	void capitalGameOverModalSupportsKeyboardTrapAndRestartFocusReturn() {
+		startCapitalGameFromBrowser("browser-modal");
+
+		UUID sessionId = currentCapitalSessionId();
+		CapitalGameStage firstStage = capitalGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
+			.orElseThrow();
+		int wrongOptionNumber = findWrongOptionNumber(firstStage.getCorrectOptionNumber());
+		String guestSessionKey = capitalGameSessionRepository.findById(sessionId)
+			.orElseThrow()
+			.getGuestSessionKey();
+		GameSessionAccessContext accessContext = GameSessionAccessContext.forGuest(guestSessionKey);
+
+		capitalGameService.submitAnswer(sessionId, 1, wrongOptionNumber, accessContext);
+		capitalGameService.submitAnswer(sessionId, 1, wrongOptionNumber, accessContext);
+
+		page.reload();
+		waitForCapitalPlayReady();
+
+		page.locator("#capital-options label.option-card[data-option-number='" + wrongOptionNumber + "']").click();
+		page.locator("#capital-submit-button").click();
+
+		page.waitForFunction("() => !document.getElementById('capital-game-over-modal').hidden");
+
+		assertThat(page.evaluate("() => document.activeElement?.id")).isEqualTo("capital-restart-button");
+		assertThat(page.evaluate("() => document.querySelector('.page-shell')?.inert")).isEqualTo(true);
+
+		page.keyboard().press("Tab");
+		assertThat(page.evaluate("() => document.activeElement?.getAttribute('href')")).isEqualTo("/");
+
+		page.keyboard().press("Shift+Tab");
+		assertThat(page.evaluate("() => document.activeElement?.id")).isEqualTo("capital-restart-button");
+
+		page.keyboard().press("Tab");
+		assertThat(page.evaluate("() => document.activeElement?.getAttribute('href')")).isEqualTo("/");
+
+		page.keyboard().press("Escape");
+		assertThat(page.evaluate("() => !document.getElementById('capital-game-over-modal').hidden")).isEqualTo(true);
+		assertThat(page.evaluate("() => document.activeElement?.id")).isEqualTo("capital-restart-button");
+
+		page.locator("#capital-restart-button").click();
+		page.waitForFunction(
+			"() => document.getElementById('capital-game-over-modal').hidden "
+				+ "&& document.activeElement?.matches('#capital-options input[name=\"capital-option\"]')"
+		);
+
+		assertThat(page.evaluate("() => document.querySelector('.page-shell')?.inert")).isEqualTo(false);
+		assertThat(page.evaluate("() => document.activeElement?.getAttribute('name')")).isEqualTo("capital-option");
+	}
+
+	@Test
+	void recommendationSurveySubmitsAndRendersTopThreeResultCards() {
+		page.navigate(baseUrl() + "/recommendation/survey");
+
+		assertThat(page.locator("h1").textContent().trim()).isEqualTo("나에게 어울리는 국가 찾기");
+
+		Locator questionPanels = page.locator("section.recommendation-question");
+		assertThat(questionPanels.count()).isEqualTo(20);
+
+		for (int index = 0; index < questionPanels.count(); index++) {
+			questionPanels.nth(index)
+				.locator("label.recommendation-option")
+				.first()
+				.click();
+		}
+
+		page.locator("button[type='submit']").click();
+		page.waitForFunction("() => document.title === '나에게 어울리는 국가 찾기 결과'");
+
+		assertThat(page.locator("h1").textContent().trim()).isEqualTo("추천 결과");
+		assertThat(page.locator("article.recommendation-country-card").count()).isEqualTo(3);
+		assertThat(page.locator("#recommendation-feedback-submit").isDisabled()).isTrue();
+	}
+
+	@Test
+	void locationGameOverModalSupportsKeyboardTrapAndRestartFocusReturn() {
+		startLocationGameFromBrowser("browser-location-modal");
+
+		UUID sessionId = currentLocationSessionId();
+		LocationGameStage firstStage = locationGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
+			.orElseThrow();
+		String wrongCountryIso3Code = (String) page.evaluate(
+			"""
+				targetCountryIso3Code => {
+					const globe = window.__worldmapBrowserSmoke?.locationGlobe;
+					const polygonFeatures = globe?.polygonsData?.() || [];
+					const wrongFeature = polygonFeatures.find((feature) =>
+						feature?.properties?.iso3Code
+						&& feature.properties.iso3Code !== targetCountryIso3Code
+					);
+					return wrongFeature?.properties?.iso3Code ?? null;
+				}
+			""",
+			firstStage.getTargetCountryIso3Code()
+		);
+		assertThat(wrongCountryIso3Code).isNotBlank();
+
+		String guestSessionKey = locationGameSessionRepository.findById(sessionId)
+			.orElseThrow()
+			.getGuestSessionKey();
+		GameSessionAccessContext accessContext = GameSessionAccessContext.forGuest(guestSessionKey);
+
+		locationGameService.submitAnswer(sessionId, 1, wrongCountryIso3Code, accessContext);
+		locationGameService.submitAnswer(sessionId, 1, wrongCountryIso3Code, accessContext);
+
+		page.reload();
+		waitForLocationPlayReady();
+
+		Boolean selectionApplied = (Boolean) page.evaluate(
+			"""
+				wrongCountryIso3Code => {
+					const hook = window.__worldmapBrowserSmoke || {};
+					const globe = hook.locationGlobe;
+					const polygonClickHandler = hook.locationPolygonClickHandler;
+					const polygonFeatures = globe?.polygonsData?.() || [];
+					const wrongFeature = polygonFeatures.find((feature) =>
+						feature?.properties?.iso3Code === wrongCountryIso3Code
+					);
+
+					if (!wrongFeature || typeof polygonClickHandler !== "function") {
+						return false;
+					}
+
+					polygonClickHandler(wrongFeature, null, null);
+					return true;
+				}
+			""",
+			wrongCountryIso3Code
+		);
+		assertThat(selectionApplied).isTrue();
+
+		page.waitForFunction("() => document.getElementById('location-submit-button') && !document.getElementById('location-submit-button').disabled");
+		page.locator("#location-submit-button").click();
+
+		page.waitForFunction("() => !document.getElementById('location-game-over-modal').hidden");
+
+		assertThat(page.evaluate("() => document.activeElement?.id")).isEqualTo("location-restart-button");
+		assertThat(page.evaluate("() => document.querySelector('.page-shell')?.inert")).isEqualTo(true);
+
+		page.keyboard().press("Tab");
+		assertThat(page.evaluate("() => document.activeElement?.getAttribute('href')")).isEqualTo("/");
+
+		page.keyboard().press("Shift+Tab");
+		assertThat(page.evaluate("() => document.activeElement?.id")).isEqualTo("location-restart-button");
+
+		page.keyboard().press("Tab");
+		assertThat(page.evaluate("() => document.activeElement?.getAttribute('href')")).isEqualTo("/");
+
+		page.keyboard().press("Escape");
+		assertThat(page.evaluate("() => !document.getElementById('location-game-over-modal').hidden")).isEqualTo(true);
+		assertThat(page.evaluate("() => document.activeElement?.id")).isEqualTo("location-restart-button");
+
+		page.locator("#location-restart-button").click();
+		page.waitForFunction(
+			"() => document.getElementById('location-game-over-modal').hidden "
+				+ "&& document.activeElement?.id === 'globe-stage'"
+		);
+
+		assertThat(page.evaluate("() => document.querySelector('.page-shell')?.inert")).isEqualTo(false);
+		assertThat(page.evaluate("() => document.activeElement?.id")).isEqualTo("globe-stage");
+	}
+
+	@Test
+	void flagGameOverModalSupportsKeyboardTrapAndRestartFocusReturn() {
+		startFlagGameFromBrowser("browser-flag-modal");
+
+		UUID sessionId = currentFlagSessionId();
+		FlagGameStage firstStage = flagGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
+			.orElseThrow();
+		int wrongOptionNumber = findWrongOptionNumber(firstStage.getCorrectOptionNumber());
+		String guestSessionKey = flagGameSessionRepository.findById(sessionId)
+			.orElseThrow()
+			.getGuestSessionKey();
+		GameSessionAccessContext accessContext = GameSessionAccessContext.forGuest(guestSessionKey);
+
+		flagGameService.submitAnswer(sessionId, 1, wrongOptionNumber, accessContext);
+		flagGameService.submitAnswer(sessionId, 1, wrongOptionNumber, accessContext);
+
+		page.reload();
+		waitForFlagPlayReady();
+
+		page.locator("#flag-options label.option-card[data-option-number='" + wrongOptionNumber + "']").click();
+		page.locator("#flag-submit-button").click();
+
+		page.waitForFunction("() => !document.getElementById('flag-game-over-modal').hidden");
+
+		assertThat(page.evaluate("() => document.activeElement?.id")).isEqualTo("flag-restart-button");
+		assertThat(page.evaluate("() => document.querySelector('.page-shell')?.inert")).isEqualTo(true);
+
+		page.keyboard().press("Tab");
+		assertThat(page.evaluate("() => document.activeElement?.getAttribute('href')")).isEqualTo("/");
+
+		page.keyboard().press("Shift+Tab");
+		assertThat(page.evaluate("() => document.activeElement?.id")).isEqualTo("flag-restart-button");
+
+		page.keyboard().press("Tab");
+		assertThat(page.evaluate("() => document.activeElement?.getAttribute('href')")).isEqualTo("/");
+
+		page.keyboard().press("Escape");
+		assertThat(page.evaluate("() => !document.getElementById('flag-game-over-modal').hidden")).isEqualTo(true);
+		assertThat(page.evaluate("() => document.activeElement?.id")).isEqualTo("flag-restart-button");
+
+		page.locator("#flag-restart-button").click();
+		page.waitForFunction(
+			"() => document.getElementById('flag-game-over-modal').hidden "
+				+ "&& document.activeElement?.matches('#flag-options input[name=\"flag-option\"]')"
+		);
+
+		assertThat(page.evaluate("() => document.querySelector('.page-shell')?.inert")).isEqualTo(false);
+		assertThat(page.evaluate("() => document.activeElement?.getAttribute('name')")).isEqualTo("flag-option");
+	}
+
+	@Test
+	void populationGameOverModalSupportsKeyboardTrapAndRestartFocusReturn() {
+		startPopulationGameFromBrowser("browser-population-modal");
+
+		UUID sessionId = currentPopulationSessionId();
+		PopulationGameStage firstStage = populationGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
+			.orElseThrow();
+		int wrongOptionNumber = findWrongOptionNumber(firstStage.getCorrectOptionNumber());
+		String guestSessionKey = populationGameSessionRepository.findById(sessionId)
+			.orElseThrow()
+			.getGuestSessionKey();
+		GameSessionAccessContext accessContext = GameSessionAccessContext.forGuest(guestSessionKey);
+
+		populationGameService.submitAnswer(sessionId, 1, wrongOptionNumber, accessContext);
+		populationGameService.submitAnswer(sessionId, 1, wrongOptionNumber, accessContext);
+
+		page.reload();
+		waitForPopulationPlayReady();
+
+		page.locator("#population-options label.option-card[data-option-number='" + wrongOptionNumber + "']").click();
+		page.locator("#population-submit-button").click();
+
+		page.waitForFunction("() => !document.getElementById('population-game-over-modal').hidden");
+
+		assertThat(page.evaluate("() => document.activeElement?.id")).isEqualTo("population-restart-button");
+		assertThat(page.evaluate("() => document.querySelector('.page-shell')?.inert")).isEqualTo(true);
+
+		page.keyboard().press("Tab");
+		assertThat(page.evaluate("() => document.activeElement?.getAttribute('href')")).isEqualTo("/");
+
+		page.keyboard().press("Shift+Tab");
+		assertThat(page.evaluate("() => document.activeElement?.id")).isEqualTo("population-restart-button");
+
+		page.keyboard().press("Tab");
+		assertThat(page.evaluate("() => document.activeElement?.getAttribute('href')")).isEqualTo("/");
+
+		page.keyboard().press("Escape");
+		assertThat(page.evaluate("() => !document.getElementById('population-game-over-modal').hidden")).isEqualTo(true);
+		assertThat(page.evaluate("() => document.activeElement?.id")).isEqualTo("population-restart-button");
+
+		page.locator("#population-restart-button").click();
+		page.waitForFunction(
+			"() => document.getElementById('population-game-over-modal').hidden "
+				+ "&& document.activeElement?.matches('#population-options input[name=\"population-option\"]')"
+		);
+
+		assertThat(page.evaluate("() => document.querySelector('.page-shell')?.inert")).isEqualTo(false);
+		assertThat(page.evaluate("() => document.activeElement?.getAttribute('name')")).isEqualTo("population-option");
+	}
+
+	@Test
+	void populationBattleGameOverModalSupportsKeyboardTrapAndRestartFocusReturn() {
+		startPopulationBattleGameFromBrowser("browser-battle-modal");
+
+		UUID sessionId = currentPopulationBattleSessionId();
+		PopulationBattleGameStage firstStage = populationBattleGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
+			.orElseThrow();
+		int wrongOptionNumber = findWrongOptionNumber(firstStage.getCorrectOptionNumber());
+		String guestSessionKey = populationBattleGameSessionRepository.findById(sessionId)
+			.orElseThrow()
+			.getGuestSessionKey();
+		GameSessionAccessContext accessContext = GameSessionAccessContext.forGuest(guestSessionKey);
+
+		populationBattleGameService.submitAnswer(sessionId, 1, wrongOptionNumber, accessContext);
+		populationBattleGameService.submitAnswer(sessionId, 1, wrongOptionNumber, accessContext);
+
+		page.reload();
+		waitForPopulationBattlePlayReady();
+
+		page.locator("#population-battle-options label.option-card[data-option-number='" + wrongOptionNumber + "']").click();
+		page.locator("#population-battle-submit-button").click();
+
+		page.waitForFunction("() => !document.getElementById('population-battle-game-over-modal').hidden");
+
+		assertThat(page.evaluate("() => document.activeElement?.id")).isEqualTo("population-battle-restart-button");
+		assertThat(page.evaluate("() => document.querySelector('.page-shell')?.inert")).isEqualTo(true);
+
+		page.keyboard().press("Tab");
+		assertThat(page.evaluate("() => document.activeElement?.getAttribute('href')")).isEqualTo("/");
+
+		page.keyboard().press("Shift+Tab");
+		assertThat(page.evaluate("() => document.activeElement?.id")).isEqualTo("population-battle-restart-button");
+
+		page.keyboard().press("Tab");
+		assertThat(page.evaluate("() => document.activeElement?.getAttribute('href')")).isEqualTo("/");
+
+		page.keyboard().press("Escape");
+		assertThat(page.evaluate("() => !document.getElementById('population-battle-game-over-modal').hidden")).isEqualTo(true);
+		assertThat(page.evaluate("() => document.activeElement?.id")).isEqualTo("population-battle-restart-button");
+
+		page.locator("#population-battle-restart-button").click();
+		page.waitForFunction(
+			"() => document.getElementById('population-battle-game-over-modal').hidden "
+				+ "&& document.activeElement?.matches('#population-battle-options input[name=\"population-battle-option\"]')"
+		);
+
+		assertThat(page.evaluate("() => document.querySelector('.page-shell')?.inert")).isEqualTo(false);
+		assertThat(page.evaluate("() => document.activeElement?.getAttribute('name')")).isEqualTo("population-battle-option");
+	}
+
+	@Test
+	void rankingPageRendersInRealBrowserWithoutRedis() {
+		page.navigate(baseUrl() + "/ranking");
+
+		assertThat(page.title()).isEqualTo("실시간 랭킹");
+		assertThat(page.getAttribute("body", "data-page")).isEqualTo("ranking");
+		assertThat(page.locator("h1").textContent().trim()).isEqualTo("실시간 랭킹");
+		assertThat(page.locator("#ranking-active-title").textContent().trim()).contains("위치 찾기");
+		assertThat(page.locator("#ranking-location-all-body").count()).isEqualTo(1);
+	}
+
+	@Test
+	void statsPageRendersInRealBrowserWithoutRedis() {
+		page.navigate(baseUrl() + "/stats");
+
+		assertThat(page.title()).isEqualTo("Live Stats");
+		assertThat(page.locator("h1").textContent().trim()).isEqualTo("서비스 현황");
+		assertThat(page.locator(".stats-grid .stat-card").count()).isGreaterThan(0);
+		assertThat(page.locator("a.primary-link").textContent().trim()).isEqualTo("전체 랭킹 보기");
+	}
+
+	private String baseUrl() {
+		return "http://127.0.0.1:" + port;
+	}
+
+	private void startCapitalGameFromBrowser(String nickname) {
+		page.navigate(baseUrl() + "/games/capital/start");
+
+		assertThat(page.locator("h1").textContent().trim()).isEqualTo("수도 맞히기");
+
+		page.locator("#capital-nickname").fill(nickname);
+		page.locator("#capital-start-submit").click();
+		waitForCapitalPlayReady();
+	}
+
+	private void waitForCapitalPlayReady() {
+		page.waitForURL("**/games/capital/play/*");
+		page.waitForFunction(
+			"() => document.body.dataset.page === 'capital-play' "
+				+ "&& document.getElementById('capital-target-country-name') "
+				+ "&& document.getElementById('capital-target-country-name').textContent !== '문제를 불러오는 중...'"
+		);
+		page.waitForFunction("() => document.querySelectorAll('#capital-game-status .stat-card').length > 0");
+	}
+
+	private void startPopulationBattleGameFromBrowser(String nickname) {
+		page.navigate(baseUrl() + "/games/population-battle/start");
+
+		assertThat(page.locator("h1").textContent().trim()).isEqualTo("인구 비교 퀵 배틀");
+
+		page.locator("#population-battle-nickname").fill(nickname);
+		page.locator("#population-battle-start-submit").click();
+		waitForPopulationBattlePlayReady();
+	}
+
+	private void startLocationGameFromBrowser(String nickname) {
+		installLocationGlobeHook();
+		page.navigate(baseUrl() + "/games/location/start");
+
+		assertThat(page.locator("h1").textContent().trim()).isEqualTo("국가 위치 찾기");
+
+		page.locator("#nickname").fill(nickname);
+		page.locator("#location-start-submit").click();
+		waitForLocationPlayReady();
+	}
+
+	private void startFlagGameFromBrowser(String nickname) {
+		page.navigate(baseUrl() + "/games/flag/start");
+
+		assertThat(page.locator("h1").textContent().trim()).isEqualTo("국기 보고 나라 맞히기");
+
+		page.locator("#flag-nickname").fill(nickname);
+		page.locator("#flag-start-submit").click();
+		waitForFlagPlayReady();
+	}
+
+	private void startPopulationGameFromBrowser(String nickname) {
+		page.navigate(baseUrl() + "/games/population/start");
+
+		assertThat(page.locator("h1").textContent().trim()).isEqualTo("국가 인구수 맞추기");
+
+		page.locator("#population-nickname").fill(nickname);
+		page.locator("#population-start-submit").click();
+		waitForPopulationPlayReady();
+	}
+
+	private void waitForLocationPlayReady() {
+		page.waitForURL("**/games/location/play/*");
+		page.waitForFunction(
+			"() => document.body.dataset.page === 'location-play' "
+				+ "&& document.getElementById('target-country-name') "
+				+ "&& document.getElementById('target-country-name').textContent !== '문제를 불러오는 중...'"
+		);
+		page.waitForFunction("() => document.querySelectorAll('#location-game-status .stat-card').length > 0");
+		page.waitForFunction(
+			"() => !!window.__worldmapBrowserSmoke?.locationGlobe "
+				+ "&& typeof window.__worldmapBrowserSmoke?.locationPolygonClickHandler === 'function'"
+		);
+	}
+
+	private void waitForFlagPlayReady() {
+		page.waitForURL("**/games/flag/play/*");
+		page.waitForFunction(
+			"() => document.body.dataset.page === 'flag-play' "
+				+ "&& document.getElementById('flag-stage-copy') "
+				+ "&& document.getElementById('flag-stage-copy').textContent !== '현재 라운드 규칙에 맞는 국기와 보기 4개를 준비하는 중입니다.'"
+		);
+		page.waitForFunction("() => document.querySelectorAll('#flag-game-status .stat-card').length > 0");
+	}
+
+	private void waitForPopulationPlayReady() {
+		page.waitForURL("**/games/population/play/*");
+		page.waitForFunction(
+			"() => document.body.dataset.page === 'population-play' "
+				+ "&& document.getElementById('population-target-country-name') "
+				+ "&& document.getElementById('population-target-country-name').textContent !== '문제를 불러오는 중...'"
+		);
+		page.waitForFunction("() => document.querySelectorAll('#population-game-status .stat-card').length > 0");
+	}
+
+	private void waitForPopulationBattlePlayReady() {
+		page.waitForURL("**/games/population-battle/play/*");
+		page.waitForFunction(
+			"() => document.body.dataset.page === 'population-battle-play' "
+				+ "&& document.getElementById('population-battle-stage-copy') "
+				+ "&& document.getElementById('population-battle-stage-copy').textContent !== '좌우 보기 두 개를 불러오는 중입니다.'"
+		);
+		page.waitForFunction("() => document.querySelectorAll('#population-battle-game-status .stat-card').length > 0");
+	}
+
+	private UUID currentCapitalSessionId() {
+		String sessionId = page.url().substring(page.url().lastIndexOf('/') + 1);
+		return UUID.fromString(sessionId);
+	}
+
+	private UUID currentPopulationBattleSessionId() {
+		String sessionId = page.url().substring(page.url().lastIndexOf('/') + 1);
+		return UUID.fromString(sessionId);
+	}
+
+	private UUID currentLocationSessionId() {
+		String sessionId = page.url().substring(page.url().lastIndexOf('/') + 1);
+		return UUID.fromString(sessionId);
+	}
+
+	private UUID currentFlagSessionId() {
+		String sessionId = page.url().substring(page.url().lastIndexOf('/') + 1);
+		return UUID.fromString(sessionId);
+	}
+
+	private UUID currentPopulationSessionId() {
+		String sessionId = page.url().substring(page.url().lastIndexOf('/') + 1);
+		return UUID.fromString(sessionId);
+	}
+
+	private void installLocationGlobeHook() {
+		page.addInitScript(
+			"""
+				(() => {
+					window.__worldmapBrowserSmoke = window.__worldmapBrowserSmoke || {};
+					let wrappedGlobeFactory;
+
+					Object.defineProperty(window, "Globe", {
+						configurable: true,
+						get() {
+							return wrappedGlobeFactory;
+						},
+						set(value) {
+							if (typeof value !== "function" || value.__worldmapLocationHookWrapped) {
+								wrappedGlobeFactory = value;
+								return;
+							}
+
+							const wrapped = function (...args) {
+								const globeFactory = value.apply(this, args);
+								if (typeof globeFactory !== "function") {
+									return globeFactory;
+								}
+
+								return function (...factoryArgs) {
+									const globe = globeFactory.apply(this, factoryArgs);
+									window.__worldmapBrowserSmoke.locationGlobe = globe;
+
+									if (globe && typeof globe.onPolygonClick === "function" && !globe.onPolygonClick.__worldmapLocationHookWrapped) {
+										const originalOnPolygonClick = globe.onPolygonClick.bind(globe);
+										const wrappedOnPolygonClick = function (...handlerArgs) {
+											if (handlerArgs.length > 0 && typeof handlerArgs[0] === "function") {
+												window.__worldmapBrowserSmoke.locationPolygonClickHandler = handlerArgs[0];
+											}
+											return originalOnPolygonClick(...handlerArgs);
+										};
+										wrappedOnPolygonClick.__worldmapLocationHookWrapped = true;
+										globe.onPolygonClick = wrappedOnPolygonClick;
+									}
+
+									return globe;
+								};
+							};
+
+							wrapped.__worldmapLocationHookWrapped = true;
+							wrappedGlobeFactory = wrapped;
+						}
+					});
+				})();
+			"""
+		);
+	}
+
+	private int findWrongOptionNumber(int correctOptionNumber) {
+		return correctOptionNumber == 1 ? 2 : 1;
+	}
+}

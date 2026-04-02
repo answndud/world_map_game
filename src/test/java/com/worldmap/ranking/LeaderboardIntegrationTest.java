@@ -18,6 +18,7 @@ import com.worldmap.game.capital.domain.CapitalGameStage;
 import com.worldmap.game.capital.domain.CapitalGameStageRepository;
 import com.worldmap.game.flag.domain.FlagGameStage;
 import com.worldmap.game.flag.domain.FlagGameStageRepository;
+import com.worldmap.game.location.domain.LocationGameAttemptRepository;
 import com.worldmap.game.location.domain.LocationGameStage;
 import com.worldmap.game.location.domain.LocationGameStageRepository;
 import com.worldmap.game.population.domain.PopulationGameStage;
@@ -33,6 +34,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -60,6 +62,9 @@ class LeaderboardIntegrationTest {
 	private LocationGameStageRepository locationGameStageRepository;
 
 	@Autowired
+	private LocationGameAttemptRepository locationGameAttemptRepository;
+
+	@Autowired
 	private CapitalGameStageRepository capitalGameStageRepository;
 
 	@Autowired
@@ -85,13 +90,15 @@ class LeaderboardIntegrationTest {
 
 	@Test
 	void gameOverRecordsLocationLeaderboardAndRendersRankingPage() throws Exception {
-		UUID sessionId = UUID.fromString(startLocationGame("rank-location"));
+		MockHttpSession browserSession = new MockHttpSession();
+		UUID sessionId = UUID.fromString(startLocationGame("rank-location", browserSession));
 
 		LocationGameStage firstStage = locationGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
 			.orElseThrow();
 
 		MvcResult correctAnswerResult = mockMvc.perform(
 			post("/api/games/location/sessions/{sessionId}/answer", sessionId)
+				.session(browserSession)
 				.contentType("application/json")
 				.content(locationAnswerPayload(1, firstStage.getTargetCountryIso3Code()))
 		)
@@ -108,13 +115,28 @@ class LeaderboardIntegrationTest {
 		String wrongCountryIso3Code = wrongCountryIso3Code(secondStage.getTargetCountryIso3Code());
 
 		for (int attempt = 1; attempt <= 3; attempt++) {
-			mockMvc.perform(
+			MvcResult answerResult = mockMvc.perform(
 				post("/api/games/location/sessions/{sessionId}/answer", sessionId)
+					.session(browserSession)
 					.contentType("application/json")
 					.content(locationAnswerPayload(2, wrongCountryIso3Code))
 			)
-				.andExpect(status().isOk());
+				.andExpect(status().isOk())
+				.andReturn();
+
+			if (attempt == 3) {
+				JsonNode answerJson = objectMapper.readTree(answerResult.getResponse().getContentAsString());
+				assertThat(answerJson.get("gameStatus").asText()).isEqualTo("GAME_OVER");
+			}
 		}
+
+		mockMvc.perform(
+			post("/api/games/location/sessions/{sessionId}/answer", sessionId)
+				.session(browserSession)
+				.contentType("application/json")
+				.content(locationAnswerPayload(2, wrongCountryIso3Code))
+		)
+			.andExpect(status().isConflict());
 
 		mockMvc.perform(get("/api/rankings/location").param("scope", "ALL").param("limit", "5"))
 			.andExpect(status().isOk())
@@ -138,21 +160,34 @@ class LeaderboardIntegrationTest {
 				.andExpect(content().string(containsString("id=\"ranking-mode-flag\"")))
 				.andExpect(content().string(containsString("id=\"ranking-mode-population-battle\"")))
 				.andExpect(content().string(containsString("동점 처리")))
-				.andExpect(content().string(containsString("15초마다 갱신")))
+				.andExpect(content().string(containsString("현재 보드 15초 자동 갱신")))
+				.andExpect(content().string(containsString("data-copy-base=\"오늘 기준 위치 찾기 랭킹입니다.\"")))
+				.andExpect(content().string(containsString("data-initial-rendered=\"false\"")))
+				.andExpect(content().string(containsString("보드를 열면 랭킹을 불러옵니다.")))
 				.andExpect(content().string(not(containsString("Redis Leaderboard"))))
 			.andExpect(model().attributeExists("locationAll"))
-			.andExpect(model().attributeExists("capitalAll"))
-			.andExpect(model().attributeExists("flagAll"))
-			.andExpect(model().attributeExists("populationBattleAll"))
-			.andExpect(model().attributeExists("populationAll"));
+			.andExpect(model().attributeDoesNotExist(
+				"capitalAll",
+				"flagAll",
+				"populationAll",
+				"populationBattleAll",
+				"locationDaily",
+				"capitalDaily",
+				"flagDaily",
+				"populationDaily",
+				"populationBattleDaily"
+			));
 
 		assertThat(leaderboardRecordRepository.count()).isEqualTo(1);
 		assertThat(stringRedisTemplate.opsForZSet().zCard(TEST_PREFIX + ":all:location")).isEqualTo(1L);
+		assertThat(locationGameAttemptRepository.findAllByStageSessionIdOrderByStageStageNumberAscAttemptNumberAsc(sessionId))
+			.hasSize(4);
 	}
 
 	@Test
 	void gameOverRecordsCapitalLeaderboardAndRendersCapitalBoard() throws Exception {
-		UUID sessionId = UUID.fromString(startCapitalGame("rank-capital"));
+		MockHttpSession browserSession = new MockHttpSession();
+		UUID sessionId = UUID.fromString(startCapitalGame("rank-capital", browserSession));
 		CapitalGameStage firstStage = capitalGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
 			.orElseThrow();
 		int wrongOptionNumber = firstStage.getCorrectOptionNumber() == 1 ? 2 : 1;
@@ -160,6 +195,7 @@ class LeaderboardIntegrationTest {
 		for (int attempt = 1; attempt <= 3; attempt++) {
 			mockMvc.perform(
 				post("/api/games/capital/sessions/{sessionId}/answer", sessionId)
+					.session(browserSession)
 					.contentType("application/json")
 					.content(capitalAnswerPayload(1, wrongOptionNumber))
 			)
@@ -173,8 +209,6 @@ class LeaderboardIntegrationTest {
 
 		mockMvc.perform(get("/ranking"))
 			.andExpect(status().isOk())
-			.andExpect(model().attributeExists("capitalAll"))
-			.andExpect(model().attributeExists("capitalDaily"))
 			.andExpect(content().string(containsString("ranking-mode-capital")))
 			.andExpect(content().string(containsString("ranking-capital-all-body")));
 
@@ -183,7 +217,8 @@ class LeaderboardIntegrationTest {
 
 	@Test
 	void gameOverRecordsFlagLeaderboardAndRendersFlagBoard() throws Exception {
-		UUID sessionId = UUID.fromString(startFlagGame("rank-flag"));
+		MockHttpSession browserSession = new MockHttpSession();
+		UUID sessionId = UUID.fromString(startFlagGame("rank-flag", browserSession));
 		FlagGameStage firstStage = flagGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
 			.orElseThrow();
 		int wrongOptionNumber = firstStage.getCorrectOptionNumber() == 1 ? 2 : 1;
@@ -191,6 +226,7 @@ class LeaderboardIntegrationTest {
 		for (int attempt = 1; attempt <= 3; attempt++) {
 			mockMvc.perform(
 				post("/api/games/flag/sessions/{sessionId}/answer", sessionId)
+					.session(browserSession)
 					.contentType("application/json")
 					.content(flagAnswerPayload(1, wrongOptionNumber))
 			)
@@ -204,8 +240,6 @@ class LeaderboardIntegrationTest {
 
 		mockMvc.perform(get("/ranking"))
 			.andExpect(status().isOk())
-			.andExpect(model().attributeExists("flagAll"))
-			.andExpect(model().attributeExists("flagDaily"))
 			.andExpect(content().string(containsString("ranking-mode-flag")))
 			.andExpect(content().string(containsString("ranking-flag-all-body")));
 
@@ -214,7 +248,8 @@ class LeaderboardIntegrationTest {
 
 	@Test
 	void gameOverRecordsPopulationBattleLeaderboardAndRendersBattleBoard() throws Exception {
-		UUID sessionId = UUID.fromString(startPopulationBattleGame("rank-battle"));
+		MockHttpSession browserSession = new MockHttpSession();
+		UUID sessionId = UUID.fromString(startPopulationBattleGame("rank-battle", browserSession));
 		PopulationBattleGameStage firstStage = populationBattleGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
 			.orElseThrow();
 		int wrongOptionNumber = firstStage.getCorrectOptionNumber() == 1 ? 2 : 1;
@@ -222,6 +257,7 @@ class LeaderboardIntegrationTest {
 		for (int attempt = 1; attempt <= 3; attempt++) {
 			mockMvc.perform(
 				post("/api/games/population-battle/sessions/{sessionId}/answer", sessionId)
+					.session(browserSession)
 					.contentType("application/json")
 					.content(populationBattleAnswerPayload(1, wrongOptionNumber))
 			)
@@ -235,8 +271,6 @@ class LeaderboardIntegrationTest {
 
 		mockMvc.perform(get("/ranking"))
 			.andExpect(status().isOk())
-			.andExpect(model().attributeExists("populationBattleAll"))
-			.andExpect(model().attributeExists("populationBattleDaily"))
 			.andExpect(content().string(containsString("ranking-mode-population-battle")))
 			.andExpect(content().string(containsString("ranking-population-battle-all-body")));
 
@@ -244,8 +278,13 @@ class LeaderboardIntegrationTest {
 	}
 
 	private String startLocationGame(String nickname) throws Exception {
+		return startLocationGame(nickname, new MockHttpSession());
+	}
+
+	private String startLocationGame(String nickname, MockHttpSession browserSession) throws Exception {
 		MvcResult result = mockMvc.perform(
 			post("/api/games/location/sessions")
+				.session(browserSession)
 				.contentType("application/json")
 				.content("{\"nickname\":\"" + nickname + "\"}")
 		)
@@ -257,8 +296,13 @@ class LeaderboardIntegrationTest {
 	}
 
 	private String startPopulationGame(String nickname) throws Exception {
+		return startPopulationGame(nickname, new MockHttpSession());
+	}
+
+	private String startPopulationGame(String nickname, MockHttpSession browserSession) throws Exception {
 		MvcResult result = mockMvc.perform(
 			post("/api/games/population/sessions")
+				.session(browserSession)
 				.contentType("application/json")
 				.content("{\"nickname\":\"" + nickname + "\"}")
 		)
@@ -270,8 +314,13 @@ class LeaderboardIntegrationTest {
 	}
 
 	private String startCapitalGame(String nickname) throws Exception {
+		return startCapitalGame(nickname, new MockHttpSession());
+	}
+
+	private String startCapitalGame(String nickname, MockHttpSession browserSession) throws Exception {
 		MvcResult result = mockMvc.perform(
 			post("/api/games/capital/sessions")
+				.session(browserSession)
 				.contentType("application/json")
 				.content("{\"nickname\":\"" + nickname + "\"}")
 		)
@@ -283,8 +332,13 @@ class LeaderboardIntegrationTest {
 	}
 
 	private String startPopulationBattleGame(String nickname) throws Exception {
+		return startPopulationBattleGame(nickname, new MockHttpSession());
+	}
+
+	private String startPopulationBattleGame(String nickname, MockHttpSession browserSession) throws Exception {
 		MvcResult result = mockMvc.perform(
 			post("/api/games/population-battle/sessions")
+				.session(browserSession)
 				.contentType("application/json")
 				.content("{\"nickname\":\"" + nickname + "\"}")
 		)
@@ -296,8 +350,13 @@ class LeaderboardIntegrationTest {
 	}
 
 	private String startFlagGame(String nickname) throws Exception {
+		return startFlagGame(nickname, new MockHttpSession());
+	}
+
+	private String startFlagGame(String nickname, MockHttpSession browserSession) throws Exception {
 		MvcResult result = mockMvc.perform(
 			post("/api/games/flag/sessions")
+				.session(browserSession)
 				.contentType("application/json")
 				.content("{\"nickname\":\"" + nickname + "\"}")
 		)

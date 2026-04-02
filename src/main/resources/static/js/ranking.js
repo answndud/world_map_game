@@ -9,29 +9,49 @@
     const messageBox = document.getElementById("ranking-refresh-message");
     const activeTitleBox = document.getElementById("ranking-active-title");
     const activeCopyBox = document.getElementById("ranking-active-copy");
-    const tableBodies = Array.from(document.querySelectorAll("tbody[data-game-mode][data-scope]"));
     const rankingPanels = Array.from(document.querySelectorAll("[data-ranking-panel]"));
     const modeButtons = Array.from(document.querySelectorAll("[data-ranking-mode]"));
     const scopeButtons = Array.from(document.querySelectorAll("[data-ranking-scope]"));
+    const boardPanels = new Map(rankingPanels.map((panel) => [panel.dataset.rankingPanel, panel]));
+    const boardBodies = new Map(
+        rankingPanels
+            .map((panel) => {
+                const tbody = panel.querySelector("tbody[data-game-mode][data-scope]");
+                return tbody ? [panel.dataset.rankingPanel, tbody] : null;
+            })
+            .filter(Boolean)
+    );
+    const boardRefreshMeta = new Map();
     const refreshIntervalMs = 15000;
+    const initialRenderedAt = new Date();
     let activeMode = modeButtons.find((button) => button.classList.contains("is-active"))?.dataset.rankingMode ?? "location";
     let activeScope = scopeButtons.find((button) => button.classList.contains("is-active"))?.dataset.rankingScope ?? "ALL";
     let refreshTimer = null;
     let refreshInFlight = false;
+    let queuedRefresh = null;
 
-    refreshButton?.addEventListener("click", () => refreshLeaderboards(true));
+    rankingPanels.forEach((panel) => {
+        boardRefreshMeta.set(
+            panel.dataset.rankingPanel,
+            panel.dataset.initialRendered === "true"
+                ? {date: initialRenderedAt, prefix: "SSR 초기 로드"}
+                : {date: null, prefix: "아직 불러오지 않음"}
+        );
+    });
+
+    refreshButton?.addEventListener("click", () => queueRefresh(currentBoardKey(), true));
     window.addEventListener("visibilitychange", handleVisibilityChange);
     modeButtons.forEach((button) => button.addEventListener("click", () => switchMode(button.dataset.rankingMode)));
     scopeButtons.forEach((button) => button.addEventListener("click", () => switchScope(button.dataset.rankingScope)));
     syncActiveBoardUi();
-    setLastUpdated(new Date(), "SSR 초기 로드");
+    setRefreshState("현재 보드 15초 간격 ON");
     startAutoRefresh();
 
     function startAutoRefresh() {
         stopAutoRefresh();
         refreshTimer = window.setInterval(() => {
             if (document.visibilityState === "visible") {
-                refreshLeaderboards(false);
+                queueRefresh(currentBoardKey(), false);
             }
         }, refreshIntervalMs);
     }
@@ -43,39 +63,66 @@
         }
     }
 
-    async function refreshLeaderboards(manual) {
-        if (refreshInFlight) {
+    function queueRefresh(boardKey, manual) {
+        if (!boardKey || !boardBodies.has(boardKey)) {
             return;
         }
 
+        queuedRefresh = {
+            boardKey,
+            manual: Boolean(manual) || queuedRefresh?.manual === true
+        };
+
+        if (refreshInFlight) {
+            setRefreshState(manual ? "현재 보드 수동 새로고침 대기..." : "현재 보드 자동 갱신 대기...");
+            return;
+        }
+
+        void processQueuedRefresh();
+    }
+
+    async function processQueuedRefresh() {
+        const nextRefresh = queuedRefresh;
+
+        if (!nextRefresh) {
+            return;
+        }
+
+        queuedRefresh = null;
         refreshInFlight = true;
-        setRefreshState(manual ? "수동 새로고침 중..." : "자동 갱신 중...");
+        setRefreshButtonBusy(true);
+        setRefreshState(nextRefresh.manual ? "현재 보드 수동 새로고침 중..." : "현재 보드 자동 갱신 중...");
         hideRankingMessage();
 
         try {
-            const responses = await Promise.all(tableBodies.map(async (tbody) => {
-                const gameMode = tbody.dataset.gameMode;
-                const scope = tbody.dataset.scope;
-                const response = await fetch(`/api/rankings/${gameMode}?scope=${scope}&limit=10`, {
-                    cache: "no-store"
-                });
-                const payload = await response.json();
+            const panel = boardPanels.get(nextRefresh.boardKey);
+            const tbody = boardBodies.get(nextRefresh.boardKey);
 
-                if (!response.ok) {
-                    throw new Error(payload.message || "랭킹을 새로고침하지 못했습니다.");
-                }
+            if (!panel || !tbody) {
+                return;
+            }
 
-                return {tbody, payload};
-            }));
-
-            responses.forEach(({tbody, payload}) => renderLeaderboardRows(tbody, payload.entries));
-            setLastUpdated(new Date(), manual ? "수동 갱신 완료" : "자동 갱신 완료");
-            setRefreshState("15초 간격 ON");
+            const payload = await fetchLeaderboard(tbody.dataset.gameMode, tbody.dataset.scope);
+            renderLeaderboardRows(tbody, payload.entries);
+            syncPanelCopy(panel, payload);
+            boardRefreshMeta.set(nextRefresh.boardKey, {
+                date: new Date(),
+                prefix: nextRefresh.manual ? "수동 갱신 완료" : "자동 갱신 완료"
+            });
+            syncActiveBoardUi();
+            setRefreshState("현재 보드 15초 간격 ON");
         } catch (error) {
-            setRefreshState("자동 갱신 오류");
-            showRankingMessage(error.message);
+            if (nextRefresh.boardKey === currentBoardKey()) {
+                setRefreshState("현재 보드 자동 갱신 오류");
+                showRankingMessage(error instanceof Error ? error.message : "랭킹을 새로고침하지 못했습니다.");
+            }
         } finally {
             refreshInFlight = false;
+            setRefreshButtonBusy(false);
+
+            if (queuedRefresh) {
+                void processQueuedRefresh();
+            }
         }
     }
 
@@ -86,6 +133,7 @@
 
         activeMode = nextMode;
         syncActiveBoardUi();
+        queueRefresh(currentBoardKey(), false);
     }
 
     function switchScope(nextScope) {
@@ -95,6 +143,7 @@
 
         activeScope = nextScope;
         syncActiveBoardUi();
+        queueRefresh(currentBoardKey(), false);
     }
 
     function syncActiveBoardUi() {
@@ -126,6 +175,8 @@
                 }
             }
         });
+
+        syncLastUpdatedForActiveBoard();
     }
 
     function renderLeaderboardRows(tbody, entries) {
@@ -153,8 +204,23 @@
 
     function setLastUpdated(date, prefix) {
         if (lastUpdatedBox) {
+            if (!date) {
+                lastUpdatedBox.textContent = prefix;
+                return;
+            }
+
             lastUpdatedBox.textContent = `${prefix} · ${date.toLocaleTimeString("ko-KR", {hour12: false})}`;
         }
+    }
+
+    function syncLastUpdatedForActiveBoard() {
+        const refreshMeta = boardRefreshMeta.get(currentBoardKey());
+
+        if (!refreshMeta) {
+            return;
+        }
+
+        setLastUpdated(refreshMeta.date, refreshMeta.prefix);
     }
 
     function showRankingMessage(message) {
@@ -179,17 +245,71 @@
 
     function handleVisibilityChange() {
         if (document.visibilityState === "visible") {
-            refreshLeaderboards(false);
+            queueRefresh(currentBoardKey(), false);
             startAutoRefresh();
             return;
         }
 
         stopAutoRefresh();
-        setRefreshState("탭 비활성화로 자동 갱신 일시정지");
+        setRefreshState("탭 비활성화로 현재 보드 자동 갱신 일시정지");
     }
 
     function currentBoardKey() {
         return `${activeMode}:${activeScope}`;
+    }
+
+    async function fetchLeaderboard(gameMode, scope) {
+        const response = await fetch(`/api/rankings/${gameMode}?scope=${scope}&limit=10`, {
+            cache: "no-store"
+        });
+        const payload = await readJsonSafely(response);
+
+        if (!response.ok) {
+            throw new Error(payload?.message || "랭킹을 새로고침하지 못했습니다.");
+        }
+
+        if (!payload || !Array.isArray(payload.entries)) {
+            throw new Error("랭킹 응답 형식이 올바르지 않습니다.");
+        }
+
+        return payload;
+    }
+
+    async function readJsonSafely(response) {
+        const contentType = response.headers.get("content-type") || "";
+
+        if (!contentType.includes("application/json")) {
+            return null;
+        }
+
+        try {
+            return await response.json();
+        } catch (error) {
+            return null;
+        }
+    }
+
+    function syncPanelCopy(panel, payload) {
+        if (!panel || payload.scope !== "DAILY") {
+            return;
+        }
+
+        const copyBase = panel.dataset.copyBase;
+
+        if (!copyBase || !payload.targetDate) {
+            return;
+        }
+
+        panel.dataset.copy = `${copyBase} 기준 날짜: ${payload.targetDate}`;
+    }
+
+    function setRefreshButtonBusy(isBusy) {
+        if (!refreshButton) {
+            return;
+        }
+
+        refreshButton.disabled = isBusy;
+        refreshButton.textContent = isBusy ? "새로고침 중..." : "지금 새로고침";
     }
 
     function escapeHtml(value) {

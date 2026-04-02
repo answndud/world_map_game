@@ -12,15 +12,17 @@ spring:
     password: ${SPRING_DATASOURCE_PASSWORD}
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: false
   sql:
     init:
       mode: never
   data:
     redis:
-      host: ${SPRING_DATA_REDIS_HOST}
+      host: ${SPRING_DATA_REDIS_HOST:}
       port: ${SPRING_DATA_REDIS_PORT:6379}
+      username: ${SPRING_DATA_REDIS_USERNAME:}
+      password: ${SPRING_DATA_REDIS_PASSWORD:}
       ssl:
         enabled: ${SPRING_DATA_REDIS_SSL_ENABLED:false}
 
@@ -45,7 +47,7 @@ management:
         liveness:
           include: livenessState,ping
         readiness:
-          include: readinessState,db,ping
+          include: readinessState,db,redis,ping
   health:
     livenessstate:
       enabled: true
@@ -53,6 +55,9 @@ management:
       enabled: true
 
 worldmap:
+  legacy:
+    rollback:
+      enabled: false
   admin:
     bootstrap:
       enabled: ${WORLDMAP_ADMIN_BOOTSTRAP_ENABLED:false}

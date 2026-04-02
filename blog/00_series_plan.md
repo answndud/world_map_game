@@ -1,149 +1,140 @@
-# WorldMap 개발 블로그 시리즈 요약 인덱스
-
-이 문서는 공개용 목차다.
-
-상세 구현 순서와 학습 체크는 [docs/PORTFOLIO_PLAYBOOK.md](/Users/alex/project/worldmap/docs/PORTFOLIO_PLAYBOOK.md)를 기준으로 삼고, 이 문서는 독자에게 어떤 순서로 설명할지 정리한다.
-
-## 연재 목표
-
-이 시리즈는 아래 독자를 대상으로 한다.
-
-- Spring Boot 포트폴리오를 처음 만드는 사람
-- 게임형 서비스라도 백엔드 중심으로 설명하고 싶은 사람
-- AI를 붙이더라도 "왜 이렇게 설계했는가"를 설명하고 싶은 사람
+# Series Plan
 
 ## 공개 순서
 
-### Part A. 문제 정의와 방향
+| 글 | 닫는 문제 | 독자가 끝나고 얻어야 하는 것 |
+| --- | --- | --- |
+| 01 | 왜 WorldMap을 서버 주도 게임 플랫폼으로 정의하는가 | 이 프로젝트를 CRUD가 아니라 상태 관리 서비스로 설명하는 언어 |
+| 02 | Spring Boot + SSR baseline을 어떻게 여는가 | 실행 가능한 앱 뼈대와 패키지 구조 |
+| 03 | PostgreSQL/Redis 개발 환경을 어떻게 재현 가능하게 만드는가 | compose 기반 로컬 개발 환경 |
+| 04 | profile을 어떻게 분리해 local/test/prod를 구분하는가 | 설정 파일 전략과 운영 안전 기준 |
+| 05 | 모든 게임이 공통으로 쓰는 국가 데이터를 어떻게 준비하는가 | country seed, validator, initializer |
+| 06 | 여러 게임이 같은 언어로 말하게 하려면 공통 계약을 어디까지 올려야 하는가 | `BaseGameSession`, status, access contract |
+| 07 | 위치 게임에서 `Session / Stage / Attempt` 루프를 어떻게 구현하는가 | 대표 vertical slice |
+| 08 | 퀴즈형 게임도 같은 endless loop로 설명할 수 있는가 | population quiz, option generator, scale band |
+| 09 | terminal run을 어떻게 랭킹 페이지로 읽게 만드는가 | Redis leaderboard, DB fallback, `/ranking` |
+| 10 | 런타임 LLM 없이 추천 품질을 어떻게 설명 가능한 구조로 만드는가 | deterministic engine, feedback, baseline test |
+| 11 | guest 플레이와 계정 귀속을 어떻게 같이 만족시키는가 | guest ownership, claim |
+| 12 | simple auth와 member session을 어떻게 최소 구조로 닫는가 | signup/login/session/admin entry |
+| 13 | 사용자용 기록 화면과 공개 지표를 어떻게 분리하는가 | `/mypage`, `/stats` read model |
+| 14 | 운영자 surface를 어떻게 public 화면과 분리하는가 | `/dashboard`, operations cards, admin review |
+| 15 | public product scope를 다시 닫고 게임 라인업을 어떻게 늘리는가 | Level 2 rollback, capital/battle/flag |
+| 16 | 운영 런타임과 배포 준비를 어떻게 코드로 남기는가 | Docker.local, prod profile, Redis session, Railway/ECS prep |
+| 17 | production-ready hardening을 어떻게 닫는가 | ownership, terminal result, stale submit, role revalidation |
+| 18 | 검증과 시연 자료를 어떻게 하나의 포트폴리오 패키지로 묶는가 | browser smoke, verify, demo bootstrap, interview pack |
 
-1. [왜 WorldMap 게임 플랫폼을 포트폴리오 주제로 잡았는가](./01-why-worldmap-game-platform-domain.md)
+## production-ready bundle 읽는 법
 
-### Part B. 부트스트랩과 공통 기반
+후반부 `16~18`은 독립된 세 글이면서 동시에 하나의 bundle입니다.
 
-2. [Spring Boot, Gradle, Thymeleaf로 프로젝트 시작하기](./02-spring-boot-bootstrap.md)
-3. Docker로 PostgreSQL 또는 MySQL, Redis 개발 환경 만들기
-4. `application.yml`과 profile 전략 설계하기
-5. JPA, Redis, Validation 공통 기반 잡기
-6. `common`, `country`, `game`, `ranking`, `recommendation` 패키지 구조 잡기
+읽는 순서는 아래가 가장 자연스럽습니다.
 
-### Part C. 핵심 게임 도메인
+1. `16`
+   - 운영 런타임과 deploy input이 무엇인지 먼저 고정
+2. `17`
+   - 그 런타임 위에서 어떤 hardening이 server contract를 지키는지 설명
+3. `18`
+   - 마지막으로 무엇을 어떻게 검증하고 시연하는지 설명
 
-7. [`country` 엔티티와 시드 데이터 설계](./03-country-seed-loading.md)
-8. `game_session`, `game_round`로 게임 상태 모델링
-9. [위치 찾기 게임 Level 1 구현](./04-location-game-level-1.md)
-10. [인구수 맞추기 게임 Level 1 구현](./05-population-game-level-1.md)
+즉 `16` 없이 `18`만 읽으면 verify lane은 이해돼도 prod contract가 흐려지고,
+`17` 없이 `18`만 읽으면 왜 ownership/current role hardening이 필요한지 약해집니다.
 
-### Part D. 랭킹과 추천
+## 이 시리즈의 재현 범위
 
-11. [Redis Sorted Set으로 랭킹 반영하기](./06-redis-leaderboard-vertical-slice.md)
-12. [15초 폴링으로 랭킹 화면 갱신하기](./07-leaderboard-polling-refresh.md)
-13. [랭킹 화면 필터와 동점 규칙 정리하기](./08-ranking-filter-and-tie-rule.md)
-14. [설문 기반 추천 엔진 만들기](./09-survey-recommendation-engine.md)
-15. [추천 후보 국가 풀 넓히기](./10-expand-recommendation-candidate-pool.md)
-16. [추천 가중치와 경계값 튜닝하기](./11-recommendation-weight-tuning.md)
-17. [추천 결과는 저장하지 않고 만족도 피드백만 수집하기](./12-collect-recommendation-feedback.md)
-18. [설문 / 엔진 버전별 만족도 집계 기준 정리하기](./13-recommendation-feedback-insights.md)
-19. [오프라인 AI-assisted 설문 개선 루프 정리하기](./14-offline-ai-survey-improvement-loop.md)
-20. [페르소나 평가로 survey v2 개정안 만들기](./15-survey-v2-proposal-from-persona-eval.md)
-21. [추천 엔진 실험 전 persona top3 snapshot 고정하기](./16-freeze-persona-top3-snapshot.md)
-22. [추천 설문을 8문항으로 확장하기](./17-expand-recommendation-survey-question-set.md)
-23. [새 추천 문항을 실제로 쓰는 active-signal 페르소나 추가하기](./18-activate-new-recommendation-signals-in-persona-eval.md)
-24. [public 화면 문구를 제품 언어로 정리하기](./19-refresh-public-copy-before-admin-split.md)
-25. [public 운영 정보를 `/admin` read-only 화면으로 옮기기](./20-move-ops-insights-into-admin-surface.md)
-26. [추천 baseline 운영 화면과 public 헤더를 정리하기](./21-add-admin-persona-baseline-and-simplify-public-header.md)
-27. [게스트 플레이를 유지하면서 단순 계정으로 확장하는 설계](./22-guest-session-to-simple-account-plan.md)
-28. [게스트 세션 키와 기록 소유권 기반 심기](./23-add-guest-session-ownership-foundation.md)
-29. [단순 회원가입 / 로그인과 member 소유 게임 시작 연결하기](./24-add-simple-auth-and-member-owned-game-starts.md)
-30. [로그인 직후 현재 브라우저의 guest 기록을 계정으로 귀속하기](./25-claim-current-guest-progress-after-login.md)
-31. [leaderboard_record 기반으로 `/mypage` 기록 대시보드 만들기](./26-build-mypage-from-member-leaderboard-runs.md)
-32. [세션 role로 `/admin` 운영 화면 접근 제어 붙이기](./27-protect-admin-routes-with-session-role.md)
-33. [raw stage 집계로 `/mypage` 플레이 성향 지표 추가하기](./28-add-mypage-stage-performance-metrics.md)
-34. [환경변수로 운영용 admin 계정 bootstrap 하기](./29-bootstrap-admin-account-from-env.md)
-35. [운영 화면을 `/dashboard`로 바꾸고 ADMIN만 헤더에서 노출하기](./30-rename-admin-surface-to-dashboard.md)
-36. [Dashboard에 회원 수와 오늘 활성 지표 붙이기](./31-add-dashboard-activity-metrics.md)
-37. [Dashboard 지표 중 공개 가능한 것만 `/stats`로 분리하기](./32-make-public-stats-page-from-dashboard-metrics.md)
-38. [local 프로필에서 admin / user 계정과 샘플 run 자동 생성하기](./33-bootstrap-local-demo-accounts-and-sample-runs.md)
-39. [홈 첫 화면에 로그인 / 회원가입 진입점 추가하기](./34-add-home-auth-entry-points.md)
-40. [추천 설문을 12문항 trade-off 구조로 다시 설계하기](./35-redesign-recommendation-survey-with-twelve-questions.md)
-41. [공통 셸에 다크/라이트 테마 토글 붙이기](./36-add-sitewide-light-mode-toggle.md)
-42. [추천 설문을 20문항 생활 시나리오형으로 다시 확장하기](./37-expand-recommendation-survey-to-twenty-questions.md)
-43. [홈 첫 화면에서 모드 중복 노출을 걷어내고 진입 구조 단순화하기](./38-simplify-home-landing-structure.md)
-44. [public 디자인 패스 이후 SSR 화면과 테스트를 안정화하기](./39-stabilize-public-design-pass.md)
-45. [비용 선호에 따라 초과 물가 패널티를 다르게 주기](./40-split-cost-overshoot-penalty-by-preference.md)
-46. [탐색형·교통형 저예산 시나리오에 보정 신호 하나 더 넣기](./41-add-experience-transit-bonus-for-budget-explorers.md)
-47. [균형형 생활 시나리오를 위해 civic base bonus 추가하기](./42-add-civic-base-bonus-for-balanced-lifestyles.md)
-48. [현실형 저예산 사용자에게 soft landing bonus 추가하기](./43-add-soft-landing-bonus-for-practical-budget-users.md)
-49. [dashboard baseline 화면이 현재 엔진 결과를 직접 읽게 만들기](./44-make-dashboard-persona-baseline-dynamic.md)
-50. [가족형 정착 시나리오에 family base bonus 추가하기](./45-add-family-base-bonus-for-family-settlement.md)
-51. [dashboard persona baseline에 anchor drift까지 보이게 하기](./46-add-anchor-drift-to-dashboard-persona-baseline.md)
-52. [추천 만족도 운영 화면에 다음 액션 메모 붙이기](./47-add-ops-review-to-recommendation-feedback-dashboard.md)
-53. [local demo bootstrap에 현재 추천 피드백 샘플 넣기](./48-seed-current-recommendation-feedback-in-local-demo.md)
-54. [따뜻한 초도시 허브 시나리오에 global hub bonus 추가하기](./49-add-global-hub-bonus-for-warm-city-hubs.md)
-55. [현재 코드 재현용 블로그 허브](./50-current-state-rebuild-map.md)
-56. [저비용 음식·다문화 시나리오의 1위 drift 줄이기](./51-reduce-p02-anchor-drift-with-foodie-starter-bonus.md)
-57. [온화한 공공서비스형 시나리오의 1위 drift 줄이기](./52-reduce-p04-anchor-drift-with-temperate-public-base-bonus.md)
-58. [현실형 온화 기후 시나리오의 1위 drift 줄이기](./53-reduce-p06-anchor-drift-with-practical-public-value-bonus.md)
-59. [따뜻한 프리미엄 허브 시나리오의 1위 drift 줄이기](./54-reduce-p09-anchor-drift-with-premium-warm-hub-bonus.md)
-60. [자연형 저자극 정착 시나리오의 1위 drift 줄이기](./55-reduce-p08-anchor-drift-with-soft-nature-base-bonus.md)
-61. [영어 의존이 낮은 고도시 다양성 시나리오의 1위 drift 줄이기](./56-reduce-p10-anchor-drift-with-cosmopolitan-pulse-bonus.md)
-62. [온화한 글로벌 도시 시나리오의 1위 drift 줄이기](./57-reduce-p13-anchor-drift-with-temperate-global-city-bonus.md)
-63. [따뜻한 실용형 아시아 시나리오의 1위 drift 줄이기](./58-reduce-p14-anchor-drift-with-accessible-warm-value-hub-bonus.md)
-64. [온화한 가족형 정착 시나리오의 1위 drift 줄이기](./59-reduce-p11-anchor-drift-with-temperate-family-bridge-bonus.md)
-65. [탐색형 자연 정착 시나리오의 1위 drift 줄이기](./60-reduce-p15-anchor-drift-with-exploratory-nature-runway-bonus.md)
-66. [warm megacity 시나리오의 baseline anchor를 다시 정의하기](./61-recalibrate-p07-baseline-anchor-for-warm-megacity-scenario.md)
-67. [공개 Level 2 실험을 롤백하고 legacy 데이터를 정리하기](./72-roll-back-game-level-2-and-purge-legacy-data.md)
-68. [남아 있던 internal Level 2 호환 코드를 완전히 제거하기](./73-remove-internal-level-2-compatibility-code.md)
-69. [polling 유지로 9단계를 닫고 실시간 전달 기준 고정하기](./74-close-stage-9-with-polling-first.md)
-70. [아키텍처, ERD, 요청 흐름, 발표 자료를 한 번에 정리하기](./75-package-architecture-and-presentation-kit.md)
-71. [다음에 어떤 게임을 더 넣을지 먼저 설계하기](./76-plan-next-country-game-expansion.md)
-72. [수도 맞히기 Level 1 vertical slice를 현재 구조에 붙이기](./77-add-capital-quiz-level-1-vertical-slice.md)
-73. [인구 비교 퀵 배틀 Level 1 vertical slice를 현재 구조에 붙이기](./78-add-population-battle-level-1-vertical-slice.md)
-74. [국기 게임을 열기 전에 FlagAssetCatalog를 먼저 만들기](./79-add-flag-asset-catalog-before-opening-flag-game.md)
-75. [수도 맞히기 seed에 한국어 수도명을 따로 넣고 게임 UI를 맞추기](./80-add-korean-capital-names-to-country-seed-and-capital-quiz.md)
-76. [국기 자산과 country seed를 합쳐 출제 가능 국가 pool 만들기](./81-build-flag-question-country-pool-from-seed-and-assets.md)
-77. [국기 보고 나라 맞히기 Level 1 vertical slice를 현재 구조에 붙이기](./82-add-flag-quiz-level-1-vertical-slice.md)
-78. [local demo bootstrap에 국기 퀴즈 sample run을 넣기](./83-seed-flag-sample-run-in-local-demo-bootstrap.md)
-79. [local demo bootstrap에 수도/인구 비교 sample run도 넣기](./84-seed-capital-and-population-battle-sample-runs-in-local-demo-bootstrap.md)
-80. [국기 자산 pool을 36개 snapshot으로 넓히고 재생성 스크립트를 붙이기](./85-expand-flag-asset-pool-with-regeneratable-snapshots.md)
-81. [국기 게임 distractor fallback 순서를 지역 기준으로 다듬기](./86-tune-flag-distractor-fallback-order.md)
-82. [국기 게임 난이도 단계와 결과 카피를 플레이어 기준으로 다시 정리하기](./87-polish-flag-difficulty-phases-and-result-copy.md)
-83. [신규 게임 3종이 들어온 뒤 public 홈, 랭킹, Stats를 다시 묶기](./88-group-public-surfaces-after-adding-three-new-games.md)
-84. [local boot에서 legacy leaderboard game_level 제약 풀기](./89-relax-legacy-leaderboard-game-level-constraint-for-local-boot.md)
-85. [모든 게임에서 정답 뒤 자동으로 다음 Stage로 넘기기](./90-auto-advance-to-the-next-stage-after-correct-answers.md)
-86. [모든 게임의 오답 피드백 시간을 같은 리듬으로 맞추기](./91-unify-wrong-answer-feedback-rhythm-across-public-games.md)
-87. [Java 25 기준 multi-stage Dockerfile로 ECS 배포 준비 시작하기](./92-add-java-25-multi-stage-dockerfile-for-ecs-prep.md)
-88. [ECS에서 앱이 어떤 설정으로 떠야 하는지 먼저 분리하기](./93-add-application-prod-profile-for-ecs-runtime-baseline.md)
-89. [ECS에서 graceful shutdown과 JVM 옵션 기준 먼저 고정하기](./94-add-graceful-shutdown-and-runtime-jvm-opts-for-ecs.md)
-90. [ECS와 ALB가 볼 actuator health probe를 실제로 열기](./95-add-actuator-readiness-and-liveness-for-ecs-health-checks.md)
-91. [ECS task definition sample로 secrets 주입 기준 고정하기](./96-add-ecs-task-definition-sample-for-secrets-manager-and-ssm.md)
-92. [prod에서만 Spring Session Redis를 켜서 멀티태스크 준비하기](./97-enable-prod-only-spring-session-redis-for-fargate-scale-out.md)
-93. [GitHub Actions에서 sample task definition을 렌더링해 ECS에 배포하기](./98-add-github-actions-ecs-deploy-workflow-from-template.md)
+이 시리즈는 "문장만 읽고 저장소 없이 구현 끝"을 약속하지 않습니다.
+대신 아래 순서를 약속합니다.
 
-### Part E. 테스트, 확장, 취업 패키징
+1. 글이 문제와 구현 순서를 설명한다
+2. 글이 먼저 열 코드, 테스트, 설정 파일을 정확히 가리킨다
+3. 독자가 링크된 source of truth를 따라가며 현재 저장소를 다시 세운다
 
-48. 왜 핵심 게임 로직을 테스트해야 하는가
-49. 인증, 전적, 마이페이지 붙이기
-50. 실시간 전달 방식 고도화
-51. README, 아키텍처, 면접 답변 패키지 만들기
+즉 재현의 단위는 `글 단독`이 아니라 `글 + 링크된 저장소 파일`입니다.
+후반부 `16~18`은 여기에 더해 `자동 검증 범위`와 `수동 운영 절차`도 분리해서 읽어야 합니다.
 
 ## 실제 집필 우선순위
 
-공개는 1번부터 하지만, 실제 작성은 아래 순서가 더 효율적이다.
+아래 순서로 밀도를 높이면 시리즈 완성도가 가장 빨리 올라갑니다.
 
-1. 01. 주제 선정과 방향
-2. 02. 프로젝트 뼈대 만들기
-3. 07. 국가 데이터와 시드 설계
-4. 08. 게임 세션 / 라운드 모델링
-5. 09. 위치 찾기 게임 Level 1
+1. 허브 문서
+   - `README.md`
+   - `00_rebuild_guide.md`
+   - `00_quality_checklist.md`
+2. 핵심 대표 글
+   - `07`
+   - `09`
+   - `10`
+   - `17`
+   - `18`
+3. 사용자/운영 surface 글
+   - `11`
+   - `12`
+   - `13`
+   - `14`
+4. baseline과 확장 글
+   - `02~06`
+   - `08`
+   - `15`
+   - `16`
 
-이유는 이 다섯 개가 프로젝트의 성격을 가장 빠르게 보여 주기 때문이다.
+5. production-ready bundle polish
+   - `16`
+   - `17`
+   - `18`
 
-## 각 글에서 공통으로 다룰 질문
+## 글별 source of truth
 
-- 왜 이 단계가 필요한가?
-- 이전 단계에서 무엇이 준비됐는가?
-- 실제로 어떤 파일이 바뀌는가?
-- 요청은 어떤 흐름으로 지나가는가?
-- 상태는 어디에서 바뀌는가?
-- 무엇을 테스트해야 하는가?
-- 면접에서는 이걸 어떻게 설명하면 좋은가?
+### baseline
+
+- `02`: `build.gradle`, `src/main/java/com/worldmap/**`, 기본 controller/test
+- `03`: `compose.yaml`, `.env.example`, local 실행 문서
+- `04`: `application.yml`, `application-local.yml`, `application-test.yml`, `application-prod.yml`
+
+### data와 game loop
+
+- `05`: `country/**`, `scripts/generate_country_assets.py`, `countries.json`
+- `06`: `game/common/**`, `common/exception/**`, `common/response/**`
+- `07`: `game/location/**`, `location-game/**`, 관련 test
+- `08`: `game/population/**`, `population-game/**`, 관련 test
+
+### ranking과 recommendation
+
+- `09`: `ranking/**`, `ranking/index.html`, `ranking.js`
+- `10`: `recommendation/**`, `recommendation/*.html`, feedback 관련 test
+
+### ownership, auth, read model, admin
+
+- `11`: `GuestSessionKeyManager`, `GuestProgressClaimService`, ownership test
+- `12`: `MemberAuthService`, `MemberSessionManager`, `AuthPageController`, admin bootstrap
+- `13`: `MyPageService`, `ServiceActivityService`, `mypage.html`, `stats/index.html`
+- `14`: `AdminDashboardService`, `AdminRecommendationOpsReviewService`, `admin/*.html`
+
+### runtime, hardening, verification
+
+- `15`: `GameLevelRollbackInitializer`, 신규 게임 3종 패키지, 홈/랭킹/stats 연동
+- `16`: `Dockerfile.local`, `railway.toml`, `application-prod.yml`, `RedisSessionProdConfiguration`, deploy scripts/workflow
+- `17`: `GameSessionAccessContextResolver`, `GameSubmissionGuard`, `CurrentMemberAccessService`, `AdminAccessGuard`
+- `18`: `BrowserSmokeE2ETest`, `PublicUrlSmokeE2ETest`, `verify.yml`, `DemoBootstrapService`, 발표 문서
+
+## 번들 단위에서 꼭 맞아야 하는 것
+
+`16~18`은 아래 표현이 서로 어긋나면 안 됩니다.
+
+- prod runtime contract
+- current member / current role
+- browser smoke vs public URL smoke
+- verify workflow vs GitHub required check
+- local demo baseline vs interview pack
+
+## 글이 끝날 때 독자가 확인해야 하는 것
+
+모든 본편은 최소한 아래 셋을 남겨야 합니다.
+
+1. 먼저 열 파일
+2. 최소 검증 명령
+3. 다음 글로 넘어가기 전에 설명할 수 있어야 하는 질문
+
+그리고 가능하면 아래 넷째 항목까지 남겨야 합니다.
+
+4. 무엇이 자동으로 증명됐고, 무엇이 아직 수동 운영이나 후속 검증에 남는가
+
+이 세 가지가 빠진 글은 WorldMap 시리즈의 기준을 통과하지 못한 것입니다.

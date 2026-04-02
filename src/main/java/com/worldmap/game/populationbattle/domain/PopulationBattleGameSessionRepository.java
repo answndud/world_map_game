@@ -1,13 +1,20 @@
 package com.worldmap.game.populationbattle.domain;
 
+import jakarta.persistence.LockModeType;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface PopulationBattleGameSessionRepository extends JpaRepository<PopulationBattleGameSession, UUID> {
+
+	@Lock(LockModeType.PESSIMISTIC_WRITE)
+	@Query("select session from PopulationBattleGameSession session where session.id = :sessionId")
+	Optional<PopulationBattleGameSession> findByIdForUpdate(@Param("sessionId") UUID sessionId);
 
 	List<PopulationBattleGameSession> findAllByGuestSessionKeyAndMemberIdIsNull(String guestSessionKey);
 

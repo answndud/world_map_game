@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -41,7 +42,10 @@ class RecommendationPageIntegrationTest {
 
 	@Test
 	void surveySubmissionReturnsDeterministicResult() throws Exception {
+		MockHttpSession session = new MockHttpSession();
+
 		mockMvc.perform(post("/recommendation/survey")
+				.session(session)
 				.param("climatePreference", "WARM")
 				.param("seasonStylePreference", "STABLE")
 				.param("seasonTolerance", "HIGH")
@@ -68,8 +72,12 @@ class RecommendationPageIntegrationTest {
 			.andExpect(content().string(containsString("잘 맞는 나라 3곳")))
 			.andExpect(content().string(containsString("싱가포르")))
 			.andExpect(content().string(containsString("추천 만족도")))
-			.andExpect(content().string(containsString("survey-v4")))
-			.andExpect(content().string(containsString(RecommendationSurveyService.ENGINE_VERSION)))
+			.andExpect(content().string(containsString("feedbackToken")))
+			.andExpect(content().string(containsString("type=\"radio\" name=\"satisfactionScore\" value=\"1\"")))
+			.andExpect(content().string(containsString("role=\"status\"")))
+			.andExpect(content().string(not(containsString("recommendation-satisfaction-score"))))
+			.andExpect(content().string(not(containsString("surveyVersion"))))
+			.andExpect(content().string(not(containsString(RecommendationSurveyService.ENGINE_VERSION))))
 			.andExpect(content().string(not(containsString("deterministic"))))
 			.andExpect(content().string(not(containsString("만족도 집계 보기"))));
 	}

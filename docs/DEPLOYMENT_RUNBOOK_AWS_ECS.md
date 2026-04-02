@@ -64,7 +64,7 @@
 
 반대로 이번 기준으로 이미 있는 것은 아래다.
 
-- multi-stage `Dockerfile`
+- multi-stage `Dockerfile.local`
 - `.dockerignore`
 - Docker 내부 `bootJar` 기반 self-contained image build 검증
 - `application-prod.yml`
@@ -103,7 +103,7 @@
 1. `Java 25`를 유지하고, 실제로 사용 가능한 runtime base image를 확정한다.
 2. `Java 21 LTS`로 낮춰서 배포 호환성과 실무 표준성을 우선한다.
 
-현재 저장소에는 `eclipse-temurin:25-jdk`, `eclipse-temurin:25-jre` 기반 Dockerfile이 들어갔고, 실제 `docker build`까지 통과했다.
+현재 저장소에는 `eclipse-temurin:25-jdk`, `eclipse-temurin:25-jre` 기반 `Dockerfile.local`이 들어갔고, 실제 `docker build -f Dockerfile.local .`까지 통과했다.
 
 즉, 지금 기준에서는 `Java 25 유지` 경로가 일단 검증된 상태다. 다만 이력서/실무 표준성을 더 우선하면 이후 `Java 21 LTS`로 내리는 판단도 열어 둘 수 있다.
 
@@ -672,6 +672,8 @@ AWS 콘솔 작업보다 먼저 아래를 구현해야 한다.
    - deployment stabilization wait
 
 현재 저장소에는 이 흐름을 반영한 [deploy-prod-ecs.yml](/Users/alex/project/worldmap/.github/workflows/deploy-prod-ecs.yml)이 들어 있다.
+그리고 첫 실행 전에 [check_prod_deploy_preflight.py](/Users/alex/project/worldmap/scripts/check_prod_deploy_preflight.py)로
+repository variables와 필수 파일이 준비됐는지 먼저 확인할 수 있다.
 
 핵심 특징:
 
@@ -698,6 +700,22 @@ AWS 콘솔 작업보다 먼저 아래를 구현해야 한다.
 - `CLOUDWATCH_LOG_GROUP`
 - `SPRING_DATASOURCE_PASSWORD_SECRET_ARN`
 - `ADMIN_BOOTSTRAP_PASSWORD_PARAMETER_ARN`
+
+배포 전 빠른 확인:
+
+```bash
+python3 scripts/check_prod_deploy_preflight.py --repo answndud/world_map_game
+```
+
+이 스크립트는 아래를 같이 본다.
+
+- `deploy-prod-ecs.yml`에 실제로 참조된 `vars.*`
+- `workflow_dispatch` trigger 존재 여부
+- `deploy/ecs/task-definition.prod.sample.json`
+- `scripts/render_ecs_task_definition.py`
+
+결과는 `build/reports/deploy-preflight/prod-deploy-preflight.md`에 Markdown으로 남는다.
+초기 상태라면 missing variable 목록이 바로 뜨고, 모두 채워지면 “이제 첫 배포를 눌러도 된다”는 식으로 다음 액션까지 보여 준다.
 
 권장 브랜치 정책:
 
@@ -850,7 +868,7 @@ ElastiCache:
 
 아래 순서로 진행하면 된다.
 
-- [x] `Dockerfile` 작성
+- [x] `Dockerfile.local` 작성
 - [x] `.dockerignore` 작성
 - [x] `application-prod.yml` 추가
 - [ ] Java 25 runtime image 유지 여부 또는 Java 21 LTS 전환 여부 결정

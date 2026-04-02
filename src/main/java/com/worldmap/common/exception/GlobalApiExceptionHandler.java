@@ -93,4 +93,19 @@ public class GlobalApiExceptionHandler {
 			)
 		);
 	}
+
+	@ExceptionHandler(SessionAccessDeniedException.class)
+	public ResponseEntity<ApiErrorResponse> handleSessionAccessDenied(
+		SessionAccessDeniedException ex,
+		HttpServletRequest request
+	) {
+		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+			ApiErrorResponse.of(
+				HttpStatus.FORBIDDEN.value(),
+				HttpStatus.FORBIDDEN.getReasonPhrase(),
+				ex.getMessage(),
+				request.getRequestURI()
+			)
+		);
+	}
 }

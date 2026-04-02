@@ -1,14 +1,14 @@
 package com.worldmap.game.capital.web;
 
-import com.worldmap.auth.application.AuthenticatedMemberSession;
+import com.worldmap.auth.application.CurrentMemberAccessService;
+import com.worldmap.auth.application.GameSessionAccessContextResolver;
 import com.worldmap.auth.application.GuestSessionKeyManager;
-import com.worldmap.auth.application.MemberSessionManager;
 import com.worldmap.game.capital.application.CapitalGameAnswerView;
 import com.worldmap.game.capital.application.CapitalGameService;
 import com.worldmap.game.capital.application.CapitalGameSessionResultView;
 import com.worldmap.game.capital.application.CapitalGameStartView;
 import com.worldmap.game.capital.application.CapitalGameStateView;
-import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -25,62 +25,69 @@ import org.springframework.web.bind.annotation.RestController;
 public class CapitalGameApiController {
 
 	private final CapitalGameService capitalGameService;
+	private final CurrentMemberAccessService currentMemberAccessService;
 	private final GuestSessionKeyManager guestSessionKeyManager;
-	private final MemberSessionManager memberSessionManager;
+	private final GameSessionAccessContextResolver gameSessionAccessContextResolver;
 
 	public CapitalGameApiController(
 		CapitalGameService capitalGameService,
+		CurrentMemberAccessService currentMemberAccessService,
 		GuestSessionKeyManager guestSessionKeyManager,
-		MemberSessionManager memberSessionManager
+		GameSessionAccessContextResolver gameSessionAccessContextResolver
 	) {
 		this.capitalGameService = capitalGameService;
+		this.currentMemberAccessService = currentMemberAccessService;
 		this.guestSessionKeyManager = guestSessionKeyManager;
-		this.memberSessionManager = memberSessionManager;
+		this.gameSessionAccessContextResolver = gameSessionAccessContextResolver;
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	public CapitalGameStartView start(@Valid @RequestBody StartCapitalGameRequest request, HttpSession httpSession) {
-		AuthenticatedMemberSession currentMember = memberSessionManager.currentMember(httpSession).orElse(null);
+	public CapitalGameStartView start(@Valid @RequestBody StartCapitalGameRequest request, HttpServletRequest httpRequest) {
+		var currentMember = currentMemberAccessService.currentMember(httpRequest).orElse(null);
 		if (currentMember != null) {
 			return capitalGameService.startMemberGame(currentMember.memberId(), currentMember.nickname());
 		}
 
 		return capitalGameService.startGuestGame(
 			request.nickname(),
-			guestSessionKeyManager.ensureGuestSessionKey(httpSession)
+			guestSessionKeyManager.ensureGuestSessionKey(httpRequest.getSession())
 		);
 	}
 
 	@GetMapping("/{sessionId}/state")
-	public CapitalGameStateView currentState(@PathVariable UUID sessionId) {
-		return capitalGameService.getCurrentState(sessionId);
+	public CapitalGameStateView currentState(@PathVariable UUID sessionId, HttpServletRequest request) {
+		return capitalGameService.getCurrentState(sessionId, gameSessionAccessContextResolver.resolve(request));
 	}
 
 	@GetMapping("/{sessionId}/round")
-	public CapitalGameStateView currentRoundAlias(@PathVariable UUID sessionId) {
-		return capitalGameService.getCurrentState(sessionId);
+	public CapitalGameStateView currentRoundAlias(@PathVariable UUID sessionId, HttpServletRequest request) {
+		return capitalGameService.getCurrentState(sessionId, gameSessionAccessContextResolver.resolve(request));
 	}
 
 	@PostMapping("/{sessionId}/restart")
-	public CapitalGameStartView restart(@PathVariable UUID sessionId) {
-		return capitalGameService.restartGame(sessionId);
+	public CapitalGameStartView restart(@PathVariable UUID sessionId, HttpServletRequest request) {
+		return capitalGameService.restartGame(sessionId, gameSessionAccessContextResolver.resolve(request));
 	}
 
 	@PostMapping("/{sessionId}/answer")
 	public CapitalGameAnswerView answer(
 		@PathVariable UUID sessionId,
-		@Valid @RequestBody SubmitCapitalAnswerRequest request
+		@Valid @RequestBody SubmitCapitalAnswerRequest request,
+		HttpServletRequest httpRequest
 	) {
 		return capitalGameService.submitAnswer(
 			sessionId,
 			request.stageNumber(),
-			request.selectedOptionNumber()
+			request.stageId(),
+			request.expectedAttemptNumber(),
+			request.selectedOptionNumber(),
+			gameSessionAccessContextResolver.resolve(httpRequest)
 		);
 	}
 
 	@GetMapping("/{sessionId}")
-	public CapitalGameSessionResultView sessionResult(@PathVariable UUID sessionId) {
-		return capitalGameService.getSessionResult(sessionId);
+	public CapitalGameSessionResultView sessionResult(@PathVariable UUID sessionId, HttpServletRequest request) {
+		return capitalGameService.getSessionResult(sessionId, gameSessionAccessContextResolver.resolve(request));
 	}
 }

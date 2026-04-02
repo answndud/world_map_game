@@ -1,14 +1,14 @@
 package com.worldmap.game.flag.web;
 
-import com.worldmap.auth.application.AuthenticatedMemberSession;
+import com.worldmap.auth.application.CurrentMemberAccessService;
+import com.worldmap.auth.application.GameSessionAccessContextResolver;
 import com.worldmap.auth.application.GuestSessionKeyManager;
-import com.worldmap.auth.application.MemberSessionManager;
 import com.worldmap.game.flag.application.FlagGameAnswerView;
 import com.worldmap.game.flag.application.FlagGameService;
 import com.worldmap.game.flag.application.FlagGameSessionResultView;
 import com.worldmap.game.flag.application.FlagGameStartView;
 import com.worldmap.game.flag.application.FlagGameStateView;
-import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -25,62 +25,69 @@ import org.springframework.web.bind.annotation.RestController;
 public class FlagGameApiController {
 
 	private final FlagGameService flagGameService;
+	private final CurrentMemberAccessService currentMemberAccessService;
 	private final GuestSessionKeyManager guestSessionKeyManager;
-	private final MemberSessionManager memberSessionManager;
+	private final GameSessionAccessContextResolver gameSessionAccessContextResolver;
 
 	public FlagGameApiController(
 		FlagGameService flagGameService,
+		CurrentMemberAccessService currentMemberAccessService,
 		GuestSessionKeyManager guestSessionKeyManager,
-		MemberSessionManager memberSessionManager
+		GameSessionAccessContextResolver gameSessionAccessContextResolver
 	) {
 		this.flagGameService = flagGameService;
+		this.currentMemberAccessService = currentMemberAccessService;
 		this.guestSessionKeyManager = guestSessionKeyManager;
-		this.memberSessionManager = memberSessionManager;
+		this.gameSessionAccessContextResolver = gameSessionAccessContextResolver;
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	public FlagGameStartView start(@Valid @RequestBody StartFlagGameRequest request, HttpSession httpSession) {
-		AuthenticatedMemberSession currentMember = memberSessionManager.currentMember(httpSession).orElse(null);
+	public FlagGameStartView start(@Valid @RequestBody StartFlagGameRequest request, HttpServletRequest httpRequest) {
+		var currentMember = currentMemberAccessService.currentMember(httpRequest).orElse(null);
 		if (currentMember != null) {
 			return flagGameService.startMemberGame(currentMember.memberId(), currentMember.nickname());
 		}
 
 		return flagGameService.startGuestGame(
 			request.nickname(),
-			guestSessionKeyManager.ensureGuestSessionKey(httpSession)
+			guestSessionKeyManager.ensureGuestSessionKey(httpRequest.getSession())
 		);
 	}
 
 	@GetMapping("/{sessionId}/state")
-	public FlagGameStateView currentState(@PathVariable UUID sessionId) {
-		return flagGameService.getCurrentState(sessionId);
+	public FlagGameStateView currentState(@PathVariable UUID sessionId, HttpServletRequest request) {
+		return flagGameService.getCurrentState(sessionId, gameSessionAccessContextResolver.resolve(request));
 	}
 
 	@GetMapping("/{sessionId}/round")
-	public FlagGameStateView currentRoundAlias(@PathVariable UUID sessionId) {
-		return flagGameService.getCurrentState(sessionId);
+	public FlagGameStateView currentRoundAlias(@PathVariable UUID sessionId, HttpServletRequest request) {
+		return flagGameService.getCurrentState(sessionId, gameSessionAccessContextResolver.resolve(request));
 	}
 
 	@PostMapping("/{sessionId}/restart")
-	public FlagGameStartView restart(@PathVariable UUID sessionId) {
-		return flagGameService.restartGame(sessionId);
+	public FlagGameStartView restart(@PathVariable UUID sessionId, HttpServletRequest request) {
+		return flagGameService.restartGame(sessionId, gameSessionAccessContextResolver.resolve(request));
 	}
 
 	@PostMapping("/{sessionId}/answer")
 	public FlagGameAnswerView answer(
 		@PathVariable UUID sessionId,
-		@Valid @RequestBody SubmitFlagAnswerRequest request
+		@Valid @RequestBody SubmitFlagAnswerRequest request,
+		HttpServletRequest httpRequest
 	) {
 		return flagGameService.submitAnswer(
 			sessionId,
 			request.stageNumber(),
-			request.selectedOptionNumber()
+			request.stageId(),
+			request.expectedAttemptNumber(),
+			request.selectedOptionNumber(),
+			gameSessionAccessContextResolver.resolve(httpRequest)
 		);
 	}
 
 	@GetMapping("/{sessionId}")
-	public FlagGameSessionResultView sessionResult(@PathVariable UUID sessionId) {
-		return flagGameService.getSessionResult(sessionId);
+	public FlagGameSessionResultView sessionResult(@PathVariable UUID sessionId, HttpServletRequest request) {
+		return flagGameService.getSessionResult(sessionId, gameSessionAccessContextResolver.resolve(request));
 	}
 }

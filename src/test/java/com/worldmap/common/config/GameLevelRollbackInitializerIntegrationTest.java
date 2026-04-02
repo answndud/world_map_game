@@ -29,7 +29,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 
-@SpringBootTest
+@SpringBootTest(properties = "worldmap.legacy.rollback.enabled=true")
 @ActiveProfiles("test")
 class GameLevelRollbackInitializerIntegrationTest {
 

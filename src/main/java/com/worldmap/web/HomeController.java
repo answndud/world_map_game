@@ -23,7 +23,7 @@ public class HomeController {
 				"arcade",
 				"국가 위치 찾기",
 				"3D Globe",
-				"지구본을 돌려가며 목표 국가를 찾아보는 탐색형 미션입니다.",
+				"지구본에서 목표 국가를 찾는 탐색형 게임입니다.",
 				"Mission",
 				"/games/location/start"
 			),
@@ -31,7 +31,7 @@ public class HomeController {
 				"quiz",
 				"수도 맞히기",
 				"Capital Quiz",
-				"국가 이름을 보고 4개 수도 보기 중 정답을 고르는 퀴즈입니다.",
+				"국가 이름을 보고 수도를 고르는 4지선다입니다.",
 				"Quiz",
 				"/games/capital/start"
 			),
@@ -39,7 +39,7 @@ public class HomeController {
 				"quiz",
 				"국기 보고 나라 맞히기",
 				"Flag Quiz",
-				"국기 이미지를 보고 4개 국가 보기 중 정답을 고르는 퀴즈입니다.",
+				"국기를 보고 나라를 고르는 4지선다입니다.",
 				"Quiz",
 				"/games/flag/start"
 			),
@@ -47,7 +47,7 @@ public class HomeController {
 				"arcade",
 				"인구 비교 퀵 배틀",
 				"Population Battle",
-				"두 나라 중 더 큰 인구를 가진 나라를 고르는 빠른 좌우 선택 모드입니다.",
+				"두 나라 중 인구가 더 많은 쪽을 고르는 퀵 배틀입니다.",
 				"Battle",
 				"/games/population-battle/start"
 			),
@@ -55,7 +55,7 @@ public class HomeController {
 				"arcade",
 				"국가 인구수 맞추기",
 				"4 Choices",
-				"국가 이름을 보고 가장 가까운 인구 규모를 골라 맞히는 퀴즈입니다.",
+				"가장 가까운 인구 규모를 고르는 퀴즈입니다.",
 				"Quiz",
 				"/games/population/start"
 			),
@@ -63,7 +63,7 @@ public class HomeController {
 				"discover",
 				"나에게 어울리는 국가 찾기",
 				"20 Questions",
-				"생활 조건 사이의 우선순위를 고르면 지금 나와 잘 맞는 국가 3곳을 골라 보여줍니다.",
+				"생활 조건 우선순위를 고르면 어울리는 국가 3곳을 추천합니다.",
 				"Discover",
 				"/recommendation/survey"
 			)
@@ -72,19 +72,19 @@ public class HomeController {
 
 	private List<String> entrySteps() {
 		return List.of(
-			"아래 카드에서 지금 해보고 싶은 게임을 하나 고른다.",
-			"게스트로 바로 시작하고, 한 판이 끝나면 결과와 랭킹을 확인한다.",
-			"기록을 이어가고 싶으면 로그인해 현재 브라우저 기록을 계정에 연결한다.",
-			"Stats와 My Page에서 서비스 흐름과 내 기록을 함께 살펴본다."
+			"게임 하나를 고른다.",
+			"게스트로 바로 플레이하고 결과와 랭킹을 본다.",
+			"기록을 남기고 싶으면 로그인해 현재 브라우저 기록을 연결한다.",
+			"Stats와 My Page에서 전체 흐름과 내 기록을 확인한다."
 		);
 	}
 
 	private List<String> accountNotes() {
 		return List.of(
-			"게스트는 현재 브라우저 세션 기준으로 점수와 진행 기록을 유지한다.",
-			"회원가입이나 로그인 후에는 방금까지의 게스트 기록을 내 계정으로 이어받을 수 있다.",
-			"My Page에서는 최고 점수, 최근 플레이, 게임별 플레이 성향을 다시 확인할 수 있다.",
-			"공개 Stats 페이지에서는 오늘 활성 플레이와 상위 기록 흐름을 가볍게 볼 수 있다."
+			"게스트 기록은 현재 브라우저에 유지됩니다.",
+			"로그인하면 방금 플레이한 기록을 계정으로 이어받습니다.",
+			"My Page에서 최고 점수와 최근 플레이를 다시 볼 수 있습니다.",
+			"Stats에서는 오늘 활동과 상위 기록만 공개합니다."
 		);
 	}
 }

@@ -4,7 +4,7 @@ public record MyPageBestRunView(
 	String gameModeLabel,
 	Long completedRunCount,
 	Integer totalScore,
-	Integer bestRank,
+	Integer currentRank,
 	Integer clearedStageCount
 ) {
 }

@@ -1,5 +1,10 @@
 package com.worldmap.recommendation;
 
+import static com.worldmap.auth.application.MemberSessionManager.MEMBER_ID_ATTRIBUTE;
+import static com.worldmap.auth.application.MemberSessionManager.MEMBER_NICKNAME_ATTRIBUTE;
+import static com.worldmap.auth.application.MemberSessionManager.MEMBER_ROLE_ATTRIBUTE;
+import static com.worldmap.auth.domain.MemberRole.ADMIN;
+import static com.worldmap.auth.domain.MemberRole.USER;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.hasItem;
@@ -9,6 +14,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.worldmap.auth.domain.Member;
+import com.worldmap.auth.domain.MemberRepository;
 import com.worldmap.recommendation.application.RecommendationSurveyService;
 import com.worldmap.recommendation.domain.RecommendationFeedback;
 import com.worldmap.recommendation.domain.RecommendationFeedbackRepository;
@@ -19,8 +26,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -33,42 +42,29 @@ class RecommendationFeedbackIntegrationTest {
 	@Autowired
 	private RecommendationFeedbackRepository recommendationFeedbackRepository;
 
+	@Autowired
+	private MemberRepository memberRepository;
+
 	@BeforeEach
 	void setUp() {
 		recommendationFeedbackRepository.deleteAll();
+		memberRepository.deleteAll();
 	}
 
 	@Test
-	void feedbackApiStoresAnonymousSatisfactionAndAnswerSnapshot() throws Exception {
+	void feedbackApiStoresAnonymousSatisfactionAndAnswerSnapshotFromServerSideContext() throws Exception {
+		MockHttpSession browserSession = new MockHttpSession();
+		String feedbackToken = issueFeedbackToken(browserSession);
+
 		mockMvc.perform(post("/api/recommendation/feedback")
+				.session(browserSession)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("""
 					{
-					  "surveyVersion": "survey-v4",
-					  "engineVersion": "%s",
-					  "satisfactionScore": 4,
-					  "climatePreference": "WARM",
-					  "seasonStylePreference": "STABLE",
-					  "seasonTolerance": "MEDIUM",
-					  "pacePreference": "BALANCED",
-					  "crowdPreference": "BALANCED",
-					  "costQualityPreference": "VALUE_FIRST",
-					  "housingPreference": "SPACE_FIRST",
-					  "environmentPreference": "CITY",
-					  "mobilityPreference": "BALANCED",
-					  "englishSupportNeed": "MEDIUM",
-					  "newcomerSupportNeed": "HIGH",
-					  "safetyPriority": "LOW",
-					  "publicServicePriority": "LOW",
-					  "digitalConveniencePriority": "MEDIUM",
-					  "foodImportance": "HIGH",
-					  "diversityImportance": "MEDIUM",
-					  "cultureLeisureImportance": "MEDIUM",
-					  "workLifePreference": "BALANCED",
-					  "settlementPreference": "BALANCED",
-					  "futureBasePreference": "BALANCED"
+					  "feedbackToken": "%s",
+					  "satisfactionScore": 4
 					}
-					""".formatted(RecommendationSurveyService.ENGINE_VERSION)))
+					""".formatted(feedbackToken)))
 			.andExpect(status().isCreated())
 			.andExpect(jsonPath("$.satisfactionScore").value(4))
 			.andExpect(jsonPath("$.surveyVersion").value("survey-v4"))
@@ -81,44 +77,27 @@ class RecommendationFeedbackIntegrationTest {
 		assertThat(feedback.getEngineVersion()).isEqualTo(RecommendationSurveyService.ENGINE_VERSION);
 		assertThat(feedback.getClimatePreference().name()).isEqualTo("WARM");
 		assertThat(feedback.getSeasonStylePreference().name()).isEqualTo("STABLE");
-		assertThat(feedback.getSeasonTolerance().name()).isEqualTo("MEDIUM");
-		assertThat(feedback.getFoodImportance().name()).isEqualTo("HIGH");
-		assertThat(feedback.getCultureLeisureImportance().name()).isEqualTo("MEDIUM");
+		assertThat(feedback.getSeasonTolerance().name()).isEqualTo("HIGH");
+		assertThat(feedback.getFoodImportance().name()).isEqualTo("MEDIUM");
+		assertThat(feedback.getCultureLeisureImportance().name()).isEqualTo("HIGH");
 		assertThat(feedback.getSettlementPreference().name()).isEqualTo("BALANCED");
 		assertThat(feedback.getFutureBasePreference().name()).isEqualTo("BALANCED");
 	}
 
 	@Test
 	void feedbackApiRejectsOutOfRangeScore() throws Exception {
+		MockHttpSession browserSession = new MockHttpSession();
+		String feedbackToken = issueFeedbackToken(browserSession);
+
 		mockMvc.perform(post("/api/recommendation/feedback")
+				.session(browserSession)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("""
 					{
-					  "surveyVersion": "survey-v4",
-					  "engineVersion": "%s",
-					  "satisfactionScore": 6,
-					  "climatePreference": "WARM",
-					  "seasonStylePreference": "STABLE",
-					  "seasonTolerance": "MEDIUM",
-					  "pacePreference": "BALANCED",
-					  "crowdPreference": "BALANCED",
-					  "costQualityPreference": "VALUE_FIRST",
-					  "housingPreference": "SPACE_FIRST",
-					  "environmentPreference": "CITY",
-					  "mobilityPreference": "BALANCED",
-					  "englishSupportNeed": "MEDIUM",
-					  "newcomerSupportNeed": "HIGH",
-					  "safetyPriority": "LOW",
-					  "publicServicePriority": "LOW",
-					  "digitalConveniencePriority": "MEDIUM",
-					  "foodImportance": "HIGH",
-					  "diversityImportance": "MEDIUM",
-					  "cultureLeisureImportance": "MEDIUM",
-					  "workLifePreference": "BALANCED",
-					  "settlementPreference": "BALANCED",
-					  "futureBasePreference": "BALANCED"
+					  "feedbackToken": "%s",
+					  "satisfactionScore": 6
 					}
-					""".formatted(RecommendationSurveyService.ENGINE_VERSION)))
+					""".formatted(feedbackToken)))
 			.andExpect(status().isBadRequest())
 			.andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("만족도 점수는 5점 이하여야 합니다.")));
 
@@ -126,14 +105,30 @@ class RecommendationFeedbackIntegrationTest {
 	}
 
 	@Test
-	void feedbackSummaryApiAggregatesBySurveyAndEngineVersion() throws Exception {
+	void feedbackApiRejectsUnknownFeedbackToken() throws Exception {
+		mockMvc.perform(post("/api/recommendation/feedback")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+					{
+					  "feedbackToken": "unknown-token",
+					  "satisfactionScore": 4
+					}
+					"""))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("추천 결과 컨텍스트가 만료되었거나 올바르지 않습니다.")));
+
+		assertThat(recommendationFeedbackRepository.count()).isZero();
+	}
+
+	@Test
+	void feedbackSummaryApiAggregatesBySurveyAndEngineVersionForAdminOnly() throws Exception {
 		saveFeedback("survey-v1", "engine-v1", 5);
 		saveFeedback("survey-v1", "engine-v1", 4);
 		saveFeedback("survey-v1", "engine-v1", 2);
 		saveFeedback("survey-v4", RecommendationSurveyService.ENGINE_VERSION, 3);
 		saveFeedback("survey-v4", RecommendationSurveyService.ENGINE_VERSION, 3);
 
-		mockMvc.perform(get("/api/recommendation/feedback/summary"))
+		mockMvc.perform(get("/api/recommendation/feedback/summary").session(adminSession()))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.totalResponses").value(5))
 			.andExpect(jsonPath("$.trackedVersionCount").value(2))
@@ -144,6 +139,26 @@ class RecommendationFeedbackIntegrationTest {
 			.andExpect(jsonPath("$.versionSummaries[?(@.surveyVersion=='survey-v1' && @.engineVersion=='engine-v1')].score4Count").value(hasItem(1)))
 			.andExpect(jsonPath("$.versionSummaries[?(@.surveyVersion=='survey-v1' && @.engineVersion=='engine-v1')].score2Count").value(hasItem(1)))
 			.andExpect(jsonPath("$.versionSummaries[?(@.surveyVersion=='survey-v4' && @.engineVersion=='%s')].responseCount".formatted(RecommendationSurveyService.ENGINE_VERSION)).value(hasItem(2)));
+	}
+
+	@Test
+	void feedbackSummaryApiRejectsNonAdminSession() throws Exception {
+		mockMvc.perform(get("/api/recommendation/feedback/summary").session(userSession()))
+			.andExpect(status().isForbidden());
+	}
+
+	@Test
+	void feedbackSummaryApiRejectsRevokedAdminSessionUsingCurrentMemberRole() throws Exception {
+		Member adminMember = memberRepository.save(Member.create("worldmap_admin", "hash", ADMIN));
+		MockHttpSession session = sessionFor(adminMember);
+
+		adminMember.provisionUser("hash");
+		memberRepository.save(adminMember);
+
+		mockMvc.perform(get("/api/recommendation/feedback/summary").session(session))
+			.andExpect(status().isForbidden());
+
+		assertThat(session.getAttribute(MEMBER_ROLE_ATTRIBUTE)).isEqualTo(USER.name());
 	}
 
 	@Test
@@ -183,5 +198,55 @@ class RecommendationFeedbackIntegrationTest {
 				)
 			)
 		);
+	}
+
+	private String issueFeedbackToken(MockHttpSession browserSession) throws Exception {
+		MvcResult result = mockMvc.perform(post("/recommendation/survey")
+				.session(browserSession)
+				.param("climatePreference", "WARM")
+				.param("seasonStylePreference", "STABLE")
+				.param("seasonTolerance", "HIGH")
+				.param("pacePreference", "FAST")
+				.param("crowdPreference", "LIVELY")
+				.param("costQualityPreference", "QUALITY_FIRST")
+				.param("housingPreference", "CENTER_FIRST")
+				.param("environmentPreference", "CITY")
+				.param("mobilityPreference", "TRANSIT_FIRST")
+				.param("englishSupportNeed", "HIGH")
+				.param("newcomerSupportNeed", "MEDIUM")
+				.param("safetyPriority", "MEDIUM")
+				.param("publicServicePriority", "MEDIUM")
+				.param("digitalConveniencePriority", "HIGH")
+				.param("foodImportance", "MEDIUM")
+				.param("diversityImportance", "HIGH")
+				.param("cultureLeisureImportance", "HIGH")
+				.param("workLifePreference", "DRIVE_FIRST")
+				.param("settlementPreference", "BALANCED")
+				.param("futureBasePreference", "BALANCED"))
+			.andExpect(status().isOk())
+			.andReturn();
+
+		String html = result.getResponse().getContentAsString();
+		java.util.regex.Matcher matcher = java.util.regex.Pattern
+			.compile("name=\"feedbackToken\" value=\"([^\"]+)\"")
+			.matcher(html);
+		assertThat(matcher.find()).isTrue();
+		return matcher.group(1);
+	}
+
+	private MockHttpSession adminSession() {
+		return sessionFor(memberRepository.save(Member.create("worldmap_admin", "hash", ADMIN)));
+	}
+
+	private MockHttpSession userSession() {
+		return sessionFor(memberRepository.save(Member.create("orbit_runner", "hash", USER)));
+	}
+
+	private MockHttpSession sessionFor(Member member) {
+		MockHttpSession session = new MockHttpSession();
+		session.setAttribute(MEMBER_ID_ATTRIBUTE, member.getId());
+		session.setAttribute(MEMBER_NICKNAME_ATTRIBUTE, member.getNickname());
+		session.setAttribute(MEMBER_ROLE_ATTRIBUTE, member.getRole().name());
+		return session;
 	}
 }

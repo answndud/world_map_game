@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>국기 보고 나라 맞히기 플레이</title>
-    <link rel="stylesheet" th:href="@{/css/site.css(v='20260325-light-depth-10')}">
-    <script th:src="@{/js/flag-game.js(v='20260328-flag-feedback-rhythm-1')}" defer></script>
+    <link rel="stylesheet" th:href="@{/css/site.css(v='20260330-ranking-active-board-2')}">
+    <script th:src="@{/js/game-over-modal.js(v='20260331-game-over-modal-helper-1')}" defer></script>
+    <script th:src="@{/js/flag-game.js(v='20260331-game-over-modal-helper-1')}" defer></script>
 </head>
 <body data-page="flag-play" th:attr="data-session-id=${sessionId}">
 <div class="page-shell">
@@ -55,7 +56,12 @@
 </div>
 <div id="flag-game-over-modal" class="game-over-modal" hidden>
     <div class="game-over-modal__backdrop"></div>
-    <section class="game-over-modal__panel" role="dialog" aria-modal="true" aria-labelledby="flag-game-over-title">
+    <section class="game-over-modal__panel"
+             role="dialog"
+             aria-modal="true"
+             aria-labelledby="flag-game-over-title"
+             aria-describedby="flag-game-over-summary"
+             tabindex="-1">
         <p class="eyebrow">Flag Scan Failed</p>
         <h2 id="flag-game-over-title">탈락했습니다</h2>
         <p id="flag-game-over-summary" class="hero-copy">

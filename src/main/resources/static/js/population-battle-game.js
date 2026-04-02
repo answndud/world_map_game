@@ -60,13 +60,24 @@ function initPopulationBattlePlayPage() {
     const stageHint = document.getElementById("population-battle-stage-hint");
     const submitButton = document.getElementById("population-battle-submit-button");
     const gameOverModal = document.getElementById("population-battle-game-over-modal");
+    const gameOverPanel = gameOverModal?.querySelector(".game-over-modal__panel");
     const gameOverSummary = document.getElementById("population-battle-game-over-summary");
     const restartButton = document.getElementById("population-battle-restart-button");
+    const pageShell = document.querySelector(".page-shell");
+    const gameOverModalController = window.createGameOverModalController({
+        modal: gameOverModal,
+        panel: gameOverPanel,
+        summaryTarget: gameOverSummary,
+        restartButton,
+        pageShell,
+        buildSummaryText: (payload) =>
+            `하트를 모두 잃었습니다. 최종 점수 ${payload.totalScore}점으로 종료되었습니다.`
+    });
 
     let currentState = null;
     let interactionLocked = false;
 
-    window.addEventListener("pageshow", hideGameOverModal);
+    window.addEventListener("pageshow", gameOverModalController.hide);
     restartButton?.addEventListener("click", restartCurrentSession);
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -215,6 +226,7 @@ function initPopulationBattlePlayPage() {
             overlay.hidden = true;
             showPopulationBattleMessage(messageBox, "같은 세션을 Stage 1부터 다시 시작했습니다.", "success");
             await loadState();
+            focusFirstPlayableOption();
         } catch (error) {
             showPopulationBattleMessage(messageBox, error.message, "error");
         } finally {
@@ -231,6 +243,8 @@ function initPopulationBattlePlayPage() {
 
         return {
             stageNumber: currentState.stageNumber,
+            stageId: currentState.stageId,
+            expectedAttemptNumber: currentState.expectedAttemptNumber,
             selectedOptionNumber: Number(selectedOption.value)
         };
     }
@@ -344,18 +358,19 @@ function initPopulationBattlePlayPage() {
     }
 
     function showGameOverModal(payload) {
-        gameOverSummary.textContent = `하트를 모두 잃었습니다. 최종 점수 ${payload.totalScore}점으로 종료되었습니다.`;
-        gameOverModal.hidden = false;
+        gameOverModalController.show(payload);
     }
 
     function hideGameOverModal() {
-        if (gameOverModal) {
-            gameOverModal.hidden = true;
-        }
+        gameOverModalController.hide();
     }
 
     function hasCurrentSelection() {
         return Boolean(form.querySelector("input[name='population-battle-option']:checked"));
+    }
+
+    function focusFirstPlayableOption() {
+        optionsBox.querySelector("input[name='population-battle-option']:not([disabled])")?.focus();
     }
 }
 

@@ -34,6 +34,1686 @@
 - 면접용 30초 요약:
 ```
 
+## 2026-04-02 - README를 배포용 공개 소개 문서로 전면 재작성하기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 기존 [README.md](/Users/alex/project/worldmap/README.md)는 제품 소개 문서라기보다 설계 노트, 구현 우선순위, 규칙, 세부 게임 정책이 한 파일에 다 들어 있는 상태였다. 공개 저장소 첫 화면에서 읽기에는 너무 길고, `README / docs / blog` 역할도 섞여 있었다. 이번 조각의 목적은 README를 “배포용 소개 문서”로 다시 잘라서, 방문자가 제품을 빠르게 이해하고 실행/검증/문서 진입점을 찾게 만드는 것이다.
+- 변경 파일:
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 앱 런타임 코드는 바뀌지 않았다. 바뀐 것은 `방문자 -> README -> 빠른 실행/검증/문서 링크 -> 세부 docs/blog` 읽기 흐름이다. 예전 README는 `서비스 컨셉 -> MVP -> 게임 규칙 -> 추천 설계 -> 랭킹 설계 -> 아키텍처 -> 도메인 모델 -> 화면 초안 -> API 초안 -> 구현 우선순위`처럼 내부 설계 문서까지 끌어안고 있었는데, 지금은 `소개 -> 현재 범위 -> 아키텍처 -> 핵심 요청 흐름 -> 기술 스택 -> 로컬 실행 -> 검증 레일 -> 배포 상태 -> 문서 안내 -> 저장소 포인트 -> 현재 한계`만 남긴다. 즉 첫 화면은 소개와 진입점만 맡고, 세부 설명은 [docs/ARCHITECTURE_OVERVIEW.md](/Users/alex/project/worldmap/docs/ARCHITECTURE_OVERVIEW.md), [docs/REQUEST_FLOW_GUIDE.md](/Users/alex/project/worldmap/docs/REQUEST_FLOW_GUIDE.md), [blog/README.md](/Users/alex/project/worldmap/blog/README.md) 같은 전용 문서로 보낸다.
+- 데이터 / 상태 변화: DB, Redis, 세션, 브라우저 상태는 변하지 않는다. 대신 문서 상태는 크게 단순해졌다. README는 더 이상 단계별 구현 순서나 장문 게임 규칙을 담지 않고, public-facing 소개와 quickstart, verification, deployment readiness만 남긴다. 같은 사실을 [PORTFOLIO_PLAYBOOK.md](/Users/alex/project/worldmap/docs/PORTFOLIO_PLAYBOOK.md)에도 반영해 stage 10 산출물 중 README가 이제 `공개 소개 문서` 역할로 정리됐다고 기록했다.
+- 핵심 도메인 개념:
+  - `README 역할 분리`: README는 저장소 첫 화면 소개 문서이고, 세부 설계와 연대기는 `docs/`와 `blog/`가 맡는다.
+  - `public-facing contract`: 공개 문서에서는 현재 제품 범위, 핵심 아키텍처, 실행 방법, 검증 레일, 배포 상태만 빠르게 보여 주는 것이 중요하다.
+  - `documentation layering`: `README -> docs overview -> blog rebuild series -> playbook/worklog` 순서로 깊이를 나눠야 읽는 사람이 길을 잃지 않는다.
+- 예외 / 엣지 케이스:
+  - 소개 문서를 줄이면서도 현재 한계는 숨기면 안 된다. 그래서 공개 URL 미배포, runtime LLM 미사용, browser smoke 범위, 신규 게임 확장 여지를 README에 남겼다.
+  - README 링크는 GitHub에서 열려야 하므로 로컬 절대경로가 아니라 상대경로를 써야 한다.
+  - local demo bootstrap은 편리하지만 소개 문서에 계정/fixture 세부를 과하게 넣으면 다시 내부 문서처럼 보일 수 있어 링크만 남겼다.
+- 테스트:
+  - 없음. 이번 조각은 doc-only 편집 작업이다.
+  - `python3` one-off script로 `README.md`, `docs/*.md`, `blog/*.md` Markdown 링크 존재 여부 확인
+  - `git diff --check`
+- 블로그 반영 여부: 생략. 이번 작업은 기능 조각이 아니라 README 역할 정리이므로 `blog/`를 새로 수정하지 않았다.
+- 배운 점: README는 많이 설명하는 문서보다 “어디까지 설명하고 어디서 멈출지”를 잘 정하는 문서여야 한다. 구현 세부와 연대기를 한 파일에 다 넣으면 오히려 공개 소개 문서로서의 기능이 죽는다.
+- 아직 약한 부분: README는 많이 좋아졌지만, 실제 공개 URL이 생기면 상단에 live link와 production smoke 결과를 추가할 여지가 있다. 지금은 배포 준비 상태까지만 정직하게 적는 것이 맞다.
+- 면접용 30초 요약: 이번에는 기능이 아니라 README 역할을 다시 정리했습니다. 기존 README는 설계 노트와 구현 우선순위까지 다 담고 있어서 공개 소개 문서로는 너무 무거웠고, 지금은 제품 소개, 현재 범위, 아키텍처, 로컬 실행, 검증 레일, 배포 상태, 문서 링크만 남겼습니다. 그래서 저장소 첫 화면에서 바로 “이 프로젝트가 무엇이고, 어디서 실행하고, 어디서 더 깊게 읽어야 하는지”가 훨씬 선명해졌습니다.
+
+## 2026-04-01 - 본편 01~18의 증명 범위 언어를 마지막으로 수평 정리하기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 허브 문서, baseline `01~05`, core domain `06~10`, auth/read model/public lineup `11~15`, production-ready trilogy `16~18`를 각각 강화한 뒤에도, 전편을 한 번에 놓고 보면 어떤 글은 한계 고지가 강하고 어떤 글은 약한 편차가 남아 있었다. 이번 조각의 목적은 본편 `01~18` 전체가 같은 엄밀성으로 읽히게 만드는 것이다. 특히 [blog/18-production-verification-and-demo-interview-pack.md](/Users/alex/project/worldmap/blog/18-production-verification-and-demo-interview-pack.md)에 별도 `현재 구현의 한계` 구간을 추가하고, 플레이북에도 "전편 수평 검수 완료" 사실을 남겨 이제 모든 본편이 `코드로 존재하는 사실`, `대표 테스트가 직접 고정하는 범위`, `브라우저/운영에서 따로 확인해야 하는 범위`, `아직 남겨 둔 한계`를 같은 언어로 말하게 만드는 것이 목표였다.
+- 변경 파일:
+  - `blog/18-production-verification-and-demo-interview-pack.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 앱 런타임은 바뀌지 않았다. 바뀐 것은 `독자 -> blog 허브 -> 본편 01~18 -> 링크된 코드/테스트/운영 문서` 읽기 흐름이다. 이번엔 그 흐름 전체를 한 번 더 점검해서, 특히 `18`이 verification lane을 길게 설명하면서도 `browser smoke는 representative browser lane이지 full browser product proof는 아니다`, `public URL smoke의 local fallback timing은 production benchmark가 아니다`, `verify workflow와 required check는 함께 있어야 닫힌다`, `demo bootstrap은 local demo baseline이지 운영 seed가 아니다`를 따로 적게 만들었다. 그리고 [PORTFOLIO_PLAYBOOK.md](/Users/alex/project/worldmap/docs/PORTFOLIO_PLAYBOOK.md)에도 이제 본편 `01~18` 전체가 같은 규칙으로 증명 범위를 구분한다고 명시했다.
+- 데이터 / 상태 변화: DB, Redis, 세션, 브라우저 상태는 변하지 않는다. 대신 문서 상태는 바뀌었다. 이제 전편 기준으로 `자동 검증`, `브라우저 검증`, `수동 운영 절차`, `남은 한계`가 더 일관된 층위로 정리된다. 마지막 outlier였던 `18`도 production-ready bundle을 설명하면서 과장된 마감 선언 대신, 현재 레일이 어디까지 실제로 잡는지와 무엇이 아직 live URL/운영 환경에 남는지를 명시하게 됐다.
+- 핵심 도메인 개념:
+  - `horizontal documentation review`: 글 하나의 밀도보다 전편이 같은 약속 수준을 쓰는지가 중요하다.
+  - `representative lane`: browser smoke와 demo bootstrap은 전체 제품의 완전 증명이 아니라 핵심 위험을 대표하는 검증/시연 레일이다.
+  - `repo-controlled vs externally configured`: `verify.yml` 같은 저장소 안의 계약과 GitHub branch protection 같은 외부 설정은 같은 말이 아니다.
+  - `local baseline vs production fact`: local fallback timing, demo bootstrap fixture는 설명과 재현을 돕는 장치이지 production 실측/운영 사실 자체는 아니다.
+- 예외 / 엣지 케이스:
+  - `18`에 한계 섹션이 없으면, reader는 browser smoke가 public 전체를 다 본다고 오해하기 쉽다.
+  - `publicUrlSmokeTest`의 local fallback 결과를 production 성능 근거처럼 말하면 전편의 엄밀성이 무너진다.
+  - required check 강제는 저장소 코드 밖의 GitHub 설정이므로, workflow만 보고 "이미 merge gate가 닫혔다"고 쓰면 과장이다.
+  - demo bootstrap을 운영 seed처럼 설명하면 local demo 목적과 운영 데이터 목적이 섞인다.
+- 테스트:
+  - 없음. 이번 조각은 doc-only 편집 작업이다.
+  - `python3` one-off script로 `README.md`, `docs/*.md`, `blog/*.md` Markdown 링크 존재 여부 확인
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이번 작업 자체가 본편 전편의 증명 범위 언어를 수평 정리하는 조각이며, 실제 본문 변경은 `18`에 반영했다.
+- 배운 점: 긴 글을 자세히 쓰는 것만으로는 충분하지 않다. 한 글이라도 한계 고지가 빠지면, 독자는 거기만 읽고 제품 전체 보장 범위를 넓게 해석한다. 결국 재현형 시리즈는 각 글의 개별 품질뿐 아니라, 전편이 같은 약속 수준을 유지하는 것이 더 중요하다.
+- 아직 약한 부분: 이제 남은 건 구조보다 문장 polish에 가깝다. 전편의 보장 범위는 많이 정리됐지만, 이후에 글을 더 고칠 때도 `코드/테스트/수동 운영/한계` 네 층을 다시 섞지 않도록 계속 관리해야 한다.
+- 면접용 30초 요약: 이번에는 기능을 더 만든 게 아니라 블로그 전편의 약속 수준을 맞췄습니다. `01~18`이 모두 `무엇이 코드로 존재하는지`, `무엇이 테스트로 잠기는지`, `무엇을 브라우저나 운영에서 따로 확인해야 하는지`, `무엇이 아직 한계인지`를 같은 언어로 말하게 정리했고, 특히 production-ready 마지막 글도 browser smoke, public smoke, required check, demo bootstrap의 범위를 과장 없이 다시 적었습니다.
+
+## 2026-04-01 - 본편 11~15의 권한, read model, public lineup 설명 범위를 다시 정리하기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 앞선 허브 문서와 `01~10` 본편 cross-review에 이어, `11~15`도 같은 엄밀성으로 읽히게 만드는 것이 목적이었다. 이 다섯 글은 guest ownership, simple auth, `/mypage`와 `/stats` read model, `/dashboard` 운영 surface, public scope reset과 신규 게임 lineup처럼 제품의 "누가 무엇을 볼 수 있고, 어떤 범위까지 책임지는가"를 설명하는 구간이라, 설명을 조금만 넓게 써도 자동 테스트가 실제보다 더 많은 것을 증명하는 것처럼 보이기 쉬웠다. 이번 조각의 목적은 각 글의 `테스트`, `현재 구현의 한계`, `운영/권한/라인업 설명의 범위`를 다시 다듬어, 대표 테스트가 직접 잠그는 범위와 별도 브라우저 확인 또는 수동 운영 판단이 필요한 범위를 더 정직하게 구분하는 것이다.
+- 변경 파일:
+  - `blog/11-guest-session-ownership-and-progress-claim.md`
+  - `blog/12-simple-auth-member-session-and-admin-entry.md`
+  - `blog/13-mypage-and-public-stats-read-models.md`
+  - `blog/14-dashboard-admin-surface-and-operations-cards.md`
+  - `blog/15-public-scope-reset-and-new-games-lineup.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 앱 런타임은 바뀌지 않았다. 바뀐 것은 `독자 -> blog 허브 -> 11~15 본편 -> 링크된 코드/테스트/운영 문서` 읽기 흐름이다. `11`은 guest key lifecycle, claim, logout boundary, stale member fallback을 설명하면서 same-browser continuity와 ownership migration이 현재 테스트의 핵심이고, cross-device merge나 장기 guest identity recovery는 의도적으로 범위 밖이라는 점을 분명히 한다. `12`는 simple auth, session rotation, bootstrap admin, current-role 재검증이 현재 contract이지만 OAuth, email verification, 복잡한 RBAC까지 자동 보장하는 글이 아니라고 적는다. `13`은 `/mypage`와 `/stats`가 current read model을 어떻게 조합하는지 보여 주되, historical rank snapshot이나 장기 분석 계층까지는 아직 구현/증명 범위가 아니라는 점을 남긴다. `14`는 `/dashboard`가 read-only ops hub와 recommendation baseline surface를 설명하는 글이지, incident response나 write-heavy backoffice 전체를 다루는 글이 아니라는 점을 못 박는다. `15`는 public scope reset과 신규 게임 3종이 shared endless run contract와 home regrouping을 현재 public lineup으로 고정하는 단계이지만, 장기 난이도 밸런싱이나 asset pool expansion까지 자동 증명하는 것은 아니라고 정리한다.
+- 데이터 / 상태 변화: DB, Redis, 세션, 브라우저 상태는 변하지 않는다. 대신 문서 상태는 달라졌다. 이제 `11~15`는 모두 `대표 테스트가 직접 고정하는 범위`, `브라우저 E2E나 수동 운영 확인이 따로 필요한 범위`, `의도적으로 남겨 둔 제품 한계`를 같은 톤으로 설명한다. 그래서 ownership, auth, read model, admin surface, public lineup 글도 production-ready 삼부작과 비슷한 정직한 보장 범위를 갖게 됐다.
+- 핵심 도메인 개념:
+  - `same-browser ownership continuity`: guest ownership과 claim은 현재 브라우저 세션 연속성을 기준으로 설명해야 한다.
+  - `session snapshot vs current source of truth`: 세션 attribute는 편의를 위한 snapshot이고, 현재 member/role 판정은 별도 source를 다시 읽는다.
+  - `read model boundary`: `/mypage`, `/stats`, `/dashboard`는 source 일부를 공유해도 목적과 표현 책임이 다르다.
+  - `public lineup contract`: home의 public card 구성과 새 게임 3종은 현재 서비스 범위를 정의하는 계약이지, 콘텐츠 완결 선언이 아니다.
+- 예외 / 엣지 케이스:
+  - `11`은 logout 뒤 guest boundary rotation 코드가 명확해도, 그 경계를 dedicated end-to-end 흐름으로 완전히 닫은 것은 아니다.
+  - `12`는 admin role 재검증을 현재 DB role 기준으로 설명하지만, 조직/팀 단위 RBAC처럼 더 넓은 권한 체계는 현재 범위가 아니다.
+  - `13`에서 `currentRank`를 historical rank처럼 설명하면 현재 code/read model과 어긋난다.
+  - `14`를 `/stats`의 확장판으로만 설명하면 public-safe surface와 ops surface의 경계가 흐려진다.
+  - `15`를 "신규 게임 완료"로만 쓰면 rollback initializer, public regrouping, asset-pool 제약 같은 핵심 맥락이 빠진다.
+- 테스트:
+  - 없음. 이번 조각은 doc-only 편집 작업이다.
+  - `python3` one-off script로 `README.md`, `docs/*.md`, `blog/*.md` Markdown 링크 존재 여부 확인
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이번 작업 자체가 `11~15` 본편의 테스트/한계/범위 서술을 current hub 기준으로 다시 쓰는 조각이다.
+- 배운 점: ownership, auth, admin, lineup 같은 글은 구현보다 "무엇을 안 한다고 명시하는가"가 더 중요할 때가 많다. 현재 contract를 넓게 포장하면 독자는 representative integration test를 전체 제품 보장으로 읽고, 왜 browser E2E나 수동 운영 판단이 별도로 필요한지 놓치게 된다.
+- 아직 약한 부분: `11~15`까지 정리했지만, 다음에는 `01~18` 전체를 한 번 더 수평으로 훑어 첫머리, 테스트 섹션, 한계 고지가 같은 엄밀성을 유지하는지 최종 검수할 필요가 있다. 특히 이미 긴 글인 `16~18`은 자세할수록 표현 과장이 다시 생기기 쉽다.
+- 면접용 30초 요약: 이번에는 기능을 바꾸지 않고 본편 `11~15`의 설명 범위를 정리했습니다. guest ownership, simple auth, `/mypage`와 `/stats`, `/dashboard`, public lineup 글이 이제 모두 `현재 테스트가 직접 증명하는 것`, `브라우저나 운영에서 따로 확인해야 하는 것`, `아직 남겨 둔 한계`를 구분해서 말합니다. 그래서 블로그가 기능 나열보다 현재 코드가 실제로 어디까지 책임지는지를 더 정직하게 설명하게 됐습니다.
+
+## 2026-04-01 - 본편 06~10의 자동 검증 범위와 브라우저/운영 경계를 다시 정리하기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 허브와 baseline `01~05`에 이어, 대표 본편 `06~10`도 같은 엄밀성으로 읽히게 만드는 것이 목적이었다. 이 다섯 글은 공통 session contract, 대표 vertical slice, leaderboard, recommendation처럼 프로젝트 핵심을 설명하는 글이라, 테스트가 많다는 이유만으로 독자가 "다 자동으로 증명됐구나"라고 과대 해석하기 쉬웠다. 이번 조각의 목적은 각 글의 `테스트`, `현재 구현의 한계`, `브라우저/운영 검증과의 경계`를 다시 다듬어, 무엇이 representative integration test로 고정됐고 무엇은 별도 browser E2E나 수동 운영 절차와 함께 봐야 하는지 분명히 하는 것이다.
+- 변경 파일:
+  - `blog/06-game-package-structure-and-shared-session-contract.md`
+  - `blog/07-location-game-session-stage-attempt-loop.md`
+  - `blog/08-population-quiz-arcade-loop-and-option-generation.md`
+  - `blog/09-redis-leaderboard-and-ranking-page.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 앱 런타임은 바뀌지 않았다. 바뀐 것은 `독자 -> blog 허브 -> 06~10 본편 -> 링크된 코드/테스트/브라우저 레일/운영 문서` 읽기 흐름이다. `06`은 location/population 대표 flow test가 공통 stale-submit contract를 보여 주지만 모든 게임 모드의 answer path를 한 번에 자동 증명하는 것은 아니라는 점을 분명히 한다. `07`은 위치 게임 flow test가 서버 루프와 SSR shell 기준의 public contract를 고정하지만, 실제 WebGL 상호작용 체감은 [BrowserSmokeE2ETest.java](/Users/alex/project/worldmap/src/test/java/com/worldmap/e2e/BrowserSmokeE2ETest.java)와 함께 봐야 한다고 정리한다. `08`은 population flow test가 quiz loop와 shell/accessibility regression을 강하게 잡지만, modal keyboard contract는 별도 browser E2E와 함께 읽어야 한다고 적는다. `09`는 Redis unavailable fallback test가 `/api/rankings`, `/ranking`, `/stats`의 local public read path를 고정하지만, production scale latency와 관측 지표까지 자동으로 해결했다는 뜻은 아니라는 점을 적는다. `10`은 recommendation test 묶음이 deterministic top 3, feedback token 무결성, baseline/admin review 계산은 강하게 고정하지만, 실제 live 만족도 개선까지 자동 증명하지는 않는다고 구분한다.
+- 데이터 / 상태 변화: DB, Redis, 세션, 브라우저 상태는 변하지 않는다. 대신 문서 상태는 달라졌다. 이제 `06~10`은 모두 `대표 integration/unit test로 잠기는 범위`, `browser smoke나 E2E가 별도로 필요한 범위`, `수동 운영/실사용 품질 판단이 남는 범위`를 같은 톤으로 설명한다. 후반부 trilogy에서 잡은 `증명 범위` 규칙이 이제 core domain 글에도 수평 적용된 셈이다.
+- 핵심 도메인 개념:
+  - `representative test`: 핵심 위험을 대표하는 자동 테스트이지, 제품 전체를 무한히 일반화하는 증명은 아니다.
+  - `browser contract vs server loop`: 서버 루프와 SSR shell은 integration test가 잡을 수 있어도, 실제 keyboard trap이나 WebGL interaction은 browser E2E가 더 적합하다.
+  - `fallback proof`: Redis unavailable fallback은 local simulated 장애 계약을 고정하는 것이지, production traffic 특성 전체를 증명하는 것은 아니다.
+  - `offline quality floor`: recommendation baseline은 회귀 하한을 잡아 주지만, live 사용자 만족도 전체를 대체하지는 않는다.
+- 예외 / 엣지 케이스:
+  - `06`의 공통 contract 글은 대표 게임 2개(location/population) 테스트를 통해 공통성을 보여 주지만, capital/flag/population-battle까지 같은 테스트 묶음에서 직접 다루는 것은 아니다.
+  - `07` 위치 게임은 flow test가 강해도 실제 디바이스별 클릭 감도는 여전히 browser/runtime 체감 이슈가 남는다.
+  - `08` population 글에서 accessibility를 너무 넓게 쓰면, SSR shell regression과 실제 keyboard modal E2E를 혼동하게 된다.
+  - `09` fallback 테스트는 simulated Redis unavailable 기준이므로 production Redis 지연, warm backlog, observability 비용까지는 별도 문제다.
+  - `10` recommendation test가 deterministic top 3를 강하게 고정해도, helper copy와 scoring tweak 중 어느 요소가 실제 체감 개선을 만들었는지는 별도 분석이 필요하다.
+- 테스트:
+  - 없음. 이번 조각은 doc-only 편집 작업이다.
+  - `python3` one-off script로 `README.md`, `docs/*.md`, `blog/*.md` Markdown 링크 존재 여부 확인
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이번 작업 자체가 `06~10` 본편의 테스트/한계 서술을 current hub 기준으로 다시 쓰는 조각이다.
+- 배운 점: 설명이 길고 테스트가 많은 글일수록 오히려 "증명 범위"를 더 좁고 정직하게 써야 한다. 그렇지 않으면 독자는 representative flow test를 제품 전체 보장으로 읽고, browser E2E나 운영 절차가 왜 따로 필요한지 이해하지 못한다.
+- 아직 약한 부분: `06~10`도 많이 정리됐지만, 다음에는 [blog/11-guest-session-ownership-and-progress-claim.md](/Users/alex/project/worldmap/blog/11-guest-session-ownership-and-progress-claim.md)부터 [blog/15-public-scope-reset-and-new-games-lineup.md](/Users/alex/project/worldmap/blog/15-public-scope-reset-and-new-games-lineup.md) 구간을 같은 기준으로 다시 훑는 게 맞다. 특히 `11`, `12`, `14`는 운영/권한 설명이 섞여 있어 과대 해석 위험이 있다.
+- 면접용 30초 요약: 이번에는 핵심 본편 `06~10`의 검증 범위를 다시 정리했습니다. 공통 session contract, 위치/인구수 게임, 랭킹, 추천 글이 이제 `대표 테스트가 실제로 고정하는 범위`, `별도 browser E2E나 수동 운영 절차가 필요한 범위`, `아직 남은 한계`를 구분해서 말하게 됐고, 그래서 문서 전체가 "테스트가 많다 = 다 끝났다"는 식으로 과장되지 않게 맞춰졌습니다.
+
+## 2026-04-01 - baseline 본편 01~05의 검증 범위와 재현 약속을 허브 기준에 맞게 다시 정렬하기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 허브 문서에서 `재현형`의 의미를 `글 + 링크된 source of truth + 실제 증명 범위`로 다시 정의한 뒤, 앞쪽 baseline 글 `01~05`는 여전히 몇 군데에서 자동 검증과 수동 확인의 경계를 충분히 말하지 못하고 있었다. 이번 조각의 목적은 [blog/01-why-worldmap-server-driven-game-platform.md](/Users/alex/project/worldmap/blog/01-why-worldmap-server-driven-game-platform.md)부터 [blog/05-country-seed-and-reference-data-pipeline.md](/Users/alex/project/worldmap/blog/05-country-seed-and-reference-data-pipeline.md)까지의 `테스트`, `최종 도착 상태`, `현재 구현의 한계`를 다시 다듬어, baseline 파트도 같은 엄밀성으로 읽히게 만드는 것이다.
+- 변경 파일:
+  - `blog/01-why-worldmap-server-driven-game-platform.md`
+  - `blog/02-gradle-spring-boot-ssr-bootstrap.md`
+  - `blog/03-docker-postgres-redis-dev-environment.md`
+  - `blog/04-application-yml-and-profile-strategy.md`
+  - `blog/05-country-seed-and-reference-data-pipeline.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 앱 런타임은 바뀌지 않았다. 바뀐 것은 `독자 -> blog 허브 -> 01~05 본편 -> 링크된 코드/테스트/설정 파일` 읽기 경로다. 이제 `01`은 대표 테스트 몇 개가 제품 축의 존재를 보여 줄 뿐 전체 제품을 자동 증명하는 것은 아니라는 점을 분명히 한다. `02`는 `HomeControllerTest`가 baseline 핵심 증명이고 `bootRun`은 수동 smoke이며, `browserSmokeTest/publicUrlSmokeTest`는 current build entrypoint이지만 baseline 단계의 직접 증명 범위는 아니라는 점을 적는다. `03`은 local Compose 체감이 사람의 수동 확인에 더 가깝고 profile contract 자동 검증은 `04`에서 닫힌다는 점을 적는다. `04`는 config test가 `YAML 값과 wiring`을 고정할 뿐 실제 multi-task session persistence나 배포 readiness payload까지는 증명하지 않는다고 못 박고, `05`는 `CountrySeedIntegrationTest`가 runtime sync/API는 잡지만 외부 데이터 생성 스크립트의 live 네트워크 성공과 운영 갱신 절차까지 보장하지는 않는다고 정리한다.
+- 데이터 / 상태 변화: DB, Redis, 세션, 브라우저 상태는 변하지 않는다. 대신 문서 상태는 달라졌다. 앞쪽 다섯 글은 이제 baseline 파트에서도 `자동 테스트로 고정된 범위`, `사람이 직접 확인해야 하는 범위`, `외부 네트워크나 운영 절차에 남는 범위`를 더 정직하게 구분한다. 허브 문서에서 새로 정의한 재현 기준이 후반부 trilogy뿐 아니라 baseline 파트에도 수평 적용된 셈이다.
+- 핵심 도메인 개념:
+  - `증명 범위`: 글이 설명하는 구조와 테스트가 실제로 보장하는 범위는 다를 수 있다.
+  - `수동 smoke`: `bootRun`, `docker compose up`, `curl`, 브라우저 확인은 자동 테스트와 다른 층이다.
+  - `current build entrypoint`: 현재 build에 task가 존재한다고 해서, 그 task가 해당 글의 핵심 증명 범위라는 뜻은 아니다.
+  - `runtime sync vs external generation`: seed runtime loading을 고정하는 테스트와 외부 데이터 생성 스크립트의 성공은 다른 문제다.
+- 예외 / 엣지 케이스:
+  - `browserSmokeTest`, `publicUrlSmokeTest`가 현재 build에 있다고 해서 baseline 글이 production-ready 증명을 끝냈다고 읽으면 안 된다.
+  - local Compose 자동 기동은 Docker Desktop/CLI와 Spring Boot compose 지원이 가능한 머신이라는 전제가 있다.
+  - `RedisSessionConfigurationIntegrationTest`는 `prod` wiring test일 뿐 실제 scale-out session persistence smoke는 아니다.
+  - `CountrySeedIntegrationTest`는 외부 API live 상태나 seed 갱신 주기를 자동으로 보장하지 않는다.
+- 테스트:
+  - 없음. 이번 조각은 doc-only 편집 작업이다.
+  - `python3` one-off script로 `README.md`, `docs/*.md`, `blog/*.md` Markdown 링크 존재 여부 확인
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이번 작업 자체가 `01~05` 본편의 검증 범위와 한계 고지 문장을 current hub 기준으로 다시 쓰는 조각이다.
+- 배운 점: 후반부 production-ready 글만 엄밀하게 쓰는 것으로는 충분하지 않았다. 앞쪽 baseline 글이 여전히 넓게 약속하면, 독자는 "현재 build에 task가 있으니 baseline도 전부 자동 검증됐겠지" 같은 오해를 하게 된다. 결국 재현형 시리즈는 시작 글부터 끝 글까지 같은 `증명 범위` 규칙을 유지해야 한다.
+- 아직 약한 부분: `01~05`는 많이 정리됐지만, 다음에는 [blog/06-game-package-structure-and-shared-session-contract.md](/Users/alex/project/worldmap/blog/06-game-package-structure-and-shared-session-contract.md)부터 [blog/10-deterministic-recommendation-engine-and-feedback-loop.md](/Users/alex/project/worldmap/blog/10-deterministic-recommendation-engine-and-feedback-loop.md) 구간도 같은 기준으로 한 번 더 훑어야 한다. 특히 `07`, `09`, `10`은 설명이 길어서 읽는 사람이 자동 보장 범위를 과대 해석하기 쉽다.
+- 면접용 30초 요약: 이번에는 기능이 아니라 baseline 글의 약속 수준을 조정했습니다. `01~05`가 `자동 테스트`, `수동 smoke`, `운영 절차`, `외부 데이터 생성`을 섞어 말하지 않게 고쳐서, 이제 앞쪽 글들도 허브에서 정의한 재현 기준대로 "무엇이 실제로 증명됐고 무엇이 아직 사람 확인이나 후속 글에 남는가"를 더 정확히 설명합니다.
+
+## 2026-04-01 - blog 허브 문서의 재현 약속을 실제 증명 범위 기준으로 다시 맞추기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: `16~18` 본편을 실제 코드와 테스트가 보장하는 범위로 여러 번 낮춰 쓴 뒤에도, 허브 문서들은 여전히 `blog만 보면 다 재현된다`에 가까운 강한 문구를 남기고 있었다. 이번 조각의 목적은 [blog/README.md](/Users/alex/project/worldmap/blog/README.md), [blog/00_rebuild_guide.md](/Users/alex/project/worldmap/blog/00_rebuild_guide.md), [blog/00_series_plan.md](/Users/alex/project/worldmap/blog/00_series_plan.md), [blog/00_quality_checklist.md](/Users/alex/project/worldmap/blog/00_quality_checklist.md)가 같은 기대치를 말하게 만드는 것이다. 핵심은 `재현형`을 문서만 떼어 놓고 읽는다는 뜻이 아니라, `글 + 링크된 코드/테스트/설정 파일 + 실제 증명 범위`를 함께 따라가는 구조로 다시 정의하는 것이다.
+- 변경 파일:
+  - `blog/README.md`
+  - `blog/00_rebuild_guide.md`
+  - `blog/00_series_plan.md`
+  - `blog/00_quality_checklist.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 앱 런타임 코드는 바뀌지 않았다. 바뀐 것은 `독자 -> blog/README -> 00_rebuild_guide / 00_series_plan / 00_quality_checklist -> 본편 01~18` 읽기 경로다. 이제 허브 문서는 `blog가 저장소와 분리된 독립 교과서`라고 말하지 않고, 글이 실제 클래스, 테스트, 설정 파일을 먼저 열게 하는 재현 허브라고 정의한다.
+- 데이터 / 상태 변화: DB, Redis, 세션, 브라우저 상태는 변하지 않는다. 대신 문서 상태는 크게 달라졌다. [blog/README.md](/Users/alex/project/worldmap/blog/README.md)는 이제 `blog`의 역할을 `독자용 재현 허브`로 설명하고, `자동 검증`, `수동 운영 절차`, `남은 한계`를 섞지 말아야 한다는 약속을 새로 적는다. [blog/00_rebuild_guide.md](/Users/alex/project/worldmap/blog/00_rebuild_guide.md)는 재현성 기준에 `문서만으로 닫히는 것과 실제 source of truth를 함께 열어야 닫히는 것 구분`, `코드/테스트/수동 운영/한계` 4층 구분을 추가한다. [blog/00_series_plan.md](/Users/alex/project/worldmap/blog/00_series_plan.md)는 재현 단위를 `글 단독`이 아니라 `글 + 링크된 저장소 파일`로 못 박고, 각 글 종료 시 `무엇이 자동으로 증명됐고 무엇이 수동 운영에 남는가`까지 확인하게 만든다. [blog/00_quality_checklist.md](/Users/alex/project/worldmap/blog/00_quality_checklist.md)는 과장된 재현 약속, local fallback을 production 근거처럼 쓰는 실수, fixture와 live 환경을 같은 수준으로 설명하는 실수를 체크리스트에 올린다.
+- 핵심 도메인 개념:
+  - `재현 허브`: blog는 코드와 분리된 별도 정답지가 아니라, source of truth를 읽는 순서와 이유를 제공하는 계층이다.
+  - `증명 범위`: 코드로 존재하는 사실, 테스트로 자동 고정된 사실, 사람이 수동으로 해야 하는 운영 절차, 아직 남은 한계를 구분해 적어야 한다.
+  - `허브 문서 역할 분리`: `README`는 진입과 약속, `00_rebuild_guide`는 집필 규칙, `00_series_plan`은 읽기 순서, `00_quality_checklist`는 검수 기준을 맡는다.
+- 예외 / 엣지 케이스:
+  - `재현형`을 너무 강하게 쓰면 `문서만 읽고 저장소 없이 구현 완료`처럼 오해될 수 있다.
+  - `publicUrlSmokeTest` local fallback timing이나 fixture preflight 결과를 production 보장처럼 쓰면 허브부터 기준이 흔들린다.
+  - `16~18`처럼 긴 글은 더 자세히 써도 되지만, 허브가 여전히 모든 글을 균일하게 보라고 말하면 오히려 production-ready bundle 설명이 약해진다.
+- 테스트:
+  - 없음. 이번 조각은 doc-only 편집 작업이다.
+  - `python3` one-off script로 `README.md`, `docs/*.md`, `blog/*.md` Markdown 링크 존재 여부 확인
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이번 작업 자체가 blog 허브 문서 4개를 현재 본편 수준에 맞게 조정하는 조각이다.
+- 배운 점: 긴 본편 몇 편을 잘 쓰는 것만으로는 기준이 닫히지 않는다. 허브 문서가 여전히 과장된 약속을 하면 독자는 어떤 부분이 테스트로 고정됐고 어떤 부분이 수동 운영인지 구분하지 못한다. 결국 재현형 문서의 품질은 본편 밀도뿐 아니라 `기대치 관리`까지 포함한다.
+- 아직 약한 부분: 허브 기준은 많이 정리됐지만, 다음에는 `01~15` 본편 전체를 한 번 더 훑어 각 글의 첫머리와 검증 섹션이 같은 엄밀성을 유지하는지 수평 점검이 필요하다.
+- 면접용 30초 요약: 이번엔 기능이 아니라 블로그 허브 기준을 고쳤습니다. `blog`를 저장소와 분리된 교과서처럼 말하지 않고, 글이 실제 코드·테스트·설정 파일을 열게 하는 재현 허브로 다시 정의했습니다. 그래서 이제 문서도 `코드로 존재하는 사실`, `자동 테스트로 고정된 사실`, `사람이 수동으로 해야 하는 운영 절차`, `남은 한계`를 구분해 말하게 됐고, production-ready 글들의 보장 범위도 더 정직하게 읽힙니다.
+
+## 2026-04-01 - 13번 글을 `/mypage`와 공개 `/stats` read model 재현 가이드 수준으로 다시 쓰기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 기존 [blog/13-mypage-and-public-stats-read-models.md](/Users/alex/project/worldmap/blog/13-mypage-and-public-stats-read-models.md)는 `/mypage`와 `/stats`를 분리한 이유는 설명했지만, 실제로 `MyPageService`가 leaderboard row와 stage raw data를 어떻게 함께 읽는지, `/stats`가 어떤 source를 어디까지 public에만 노출하는지, `/dashboard`와 무엇이 다른지, 그리고 `/mypage`의 `currentRank`가 왜 historical rank가 아니라 current board 기준인지까지는 재현하기 어려웠다. 이번 조각의 목적은 글 13 하나만 읽어도 member read model과 public read model을 현재 코드 기준으로 다시 세울 수 있게 만드는 것이다.
+- 변경 파일:
+  - `blog/13-mypage-and-public-stats-read-models.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 앱 런타임 코드는 바뀌지 않았다. 바뀐 것은 `독자 -> 13번 글 -> SiteHeaderModelAdvice -> MyPageController -> MyPageService -> ServiceActivityService -> StatsPageController -> LeaderboardService -> AdminDashboardService` 이해 경로다. 글 안에서 current member 주입, `/mypage` dashboard 조합, `/stats` public aggregate + Top 3 조합, `/dashboard`와의 source 공유/표현 분리를 각각 시퀀스로 풀어, 누가 어떤 원본을 어떤 목적으로 읽는지 현재 코드 기준으로 따라갈 수 있게 만들었다.
+- 데이터 / 상태 변화: DB, Redis, 세션 runtime 상태는 변하지 않는다. 대신 문서 상태는 크게 바뀌었다. 새 글은 [MyPageService.java](/Users/alex/project/worldmap/src/main/java/com/worldmap/mypage/application/MyPageService.java)의 `totalCompletedRuns`, `bestRuns`, `modePerformances`, `recentPlays` 조합 경로, [MyPageDashboardView.java](/Users/alex/project/worldmap/src/main/java/com/worldmap/mypage/application/MyPageDashboardView.java)와 하위 view record 분리, [MyPageService.java](/Users/alex/project/worldmap/src/main/java/com/worldmap/mypage/application/MyPageService.java)의 `rankFor(...)`가 current board를 다시 정렬해 현재 순위를 계산한다는 점, [ServiceActivityService.java](/Users/alex/project/worldmap/src/main/java/com/worldmap/stats/application/ServiceActivityService.java)가 member/guest distinct start 수와 leaderboard completed run 수를 분리해 집계하는 규칙, [StatsPageController.java](/Users/alex/project/worldmap/src/main/java/com/worldmap/stats/web/StatsPageController.java)가 `ServiceActivityView + five-mode daily Top 3`만 public에 넘기고, [AdminDashboardService.java](/Users/alex/project/worldmap/src/main/java/com/worldmap/admin/application/AdminDashboardService.java)는 같은 activity source 위에 recommendation ops와 route/focus item을 얹는 차이까지 담는다.
+- 핵심 도메인 개념:
+  - write model과 read model은 다르다. `leaderboard_record`와 game session/stage row가 바로 화면 DTO는 아니다.
+  - `/mypage`는 user-centric read model이고 `/stats`는 public service metric read model이다.
+  - `bestRuns`와 `recentPlays`는 leaderboard 기준이지만, `modePerformances`는 clear된 stage raw data를 읽어야 한다.
+  - `/stats`와 `/dashboard`는 같은 `ServiceActivityView`를 써도 surface가 다르다.
+  - `/mypage`의 `currentRank`는 historical snapshot이 아니라 current board rank다.
+- 예외 / 엣지 케이스:
+  - 비로그인 `/mypage`는 redirect가 아니라 guest prompt shell을 보여 준다.
+  - 완료 run이 거의 없는 member는 best run/performance/recent play가 비어 있을 수 있고, 템플릿은 empty-state message를 보여 준다.
+  - `/stats`는 public-safe metrics만 노출해야 하므로 recommendation feedback summary나 admin focus item이 섞이면 설계 실패다.
+  - `currentRank`를 "기록 당시 순위"라고 설명하면 현재 코드와 어긋난다.
+  - `/stats`의 Top 3는 `LeaderboardService` fallback 계약을 따라 Redis unavailable 상황에서도 DB top record로 읽힐 수 있다.
+- 테스트:
+  - 문서 기준 검증만 수행
+  - `python3` one-off script로 `README.md`, `docs/*.md`, `blog/*.md` Markdown 링크 존재 여부 확인
+  - `git diff --check`
+  - `wc -l blog/13-mypage-and-public-stats-read-models.md`
+- 블로그 반영 여부: 반영. 이번 작업 자체가 13번 본편을 current code 기준 read-model 재현 가이드로 다시 쓰는 조각이다.
+- 배운 점: `/mypage`를 leaderboard 결과 화면의 연장선으로만 보면 설명이 빈약해진다. 실제로는 best run/recent play는 leaderboard를 읽고, performance는 stage raw data를 읽고, current member는 model advice에서 들어오며, `/stats`와 `/dashboard`는 같은 activity source를 공유해도 완전히 다른 surface를 만든다. 이 경계를 정확히 써야 "원본 데이터와 화면용 요약을 분리했다"는 설명이 진짜 된다.
+- 아직 약한 부분: `13`은 많이 강해졌지만, `14 dashboard admin surface`와 `15 public scope reset/new games`도 지금 수준으로 한 번 더 밀어야 trilogy 전반의 밀도가 맞는다. 특히 `14`는 `/stats`와의 경계, `15`는 public regrouping과 new-games scope 변화가 더 선명하게 드러나야 한다.
+- 면접용 30초 요약: WorldMap은 같은 게임 결과라도 읽는 사람이 다르다고 보고 `/mypage`와 `/stats`를 별도 read model로 분리했습니다. `/mypage`는 `MyPageService`가 leaderboard row와 stage raw data를 함께 읽어 best run, 최근 플레이, 1트 클리어율, 평균 시도 수를 member 기준으로 조합하고, `/stats`는 `ServiceActivityService`와 `LeaderboardService`가 오늘의 공개 활동량과 daily Top 3만 보여 줍니다. 또 `/dashboard`는 같은 activity source를 재사용해도 운영용 추천 지표와 route를 더 얹는 별도 surface라서, source 공유와 surface 분리를 동시에 설명할 수 있습니다.
+
+## 2026-04-01 - 12번 글을 simple auth, member session, admin entry 재현 가이드 수준으로 다시 쓰기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 기존 [blog/12-simple-auth-member-session-and-admin-entry.md](/Users/alex/project/worldmap/blog/12-simple-auth-member-session-and-admin-entry.md)는 왜 simple auth를 택했는지와 session fixation 대응의 필요성은 말했지만, 실제로 `member_account` 최소 모델, signup/login 규칙, `changeSessionId()`, `returnTo` 안전 redirect, bootstrap admin, `/dashboard` 접근 제어, current DB role 재검증이 어떤 순서로 이어지는지까지는 재현하기 어려웠다. 이번 조각의 목적은 글 12 하나만 읽어도 현재 저장소의 simple auth와 admin entry 구조를 다시 세울 수 있게 만드는 것이다.
+- 변경 파일:
+  - `blog/12-simple-auth-member-session-and-admin-entry.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 앱 런타임 코드는 바뀌지 않았다. 바뀐 것은 `독자 -> 12번 글 -> MemberAuthService -> MemberSessionManager -> AuthPageController -> AdminBootstrapService -> AdminAccessInterceptor/AdminAccessGuard -> CurrentMemberAccessService` 이해 경로다. 글 안에서 `signup`, `login`, `logout`, `bootstrap admin`, `/dashboard` 접근, role 강등 후 기존 admin session 차단까지 각각 시퀀스로 풀어, auth와 admin entry가 어디서 시작되고 어느 계층에서 상태가 바뀌는지 현재 코드 기준으로 따라갈 수 있게 만들었다.
+- 데이터 / 상태 변화: DB, Redis, 세션 runtime 상태는 변하지 않는다. 대신 문서 상태는 크게 바뀌었다. 새 글은 [Member.java](/Users/alex/project/worldmap/src/main/java/com/worldmap/auth/domain/Member.java)의 `nickname/passwordHash/role/lastLoginAt`, [MemberCredentialPolicy.java](/Users/alex/project/worldmap/src/main/java/com/worldmap/auth/application/MemberCredentialPolicy.java)의 nickname/password 정책, [MemberAuthService.java](/Users/alex/project/worldmap/src/main/java/com/worldmap/auth/application/MemberAuthService.java)의 signup/login 순서, [MemberSessionManager.java](/Users/alex/project/worldmap/src/main/java/com/worldmap/auth/application/MemberSessionManager.java)의 `changeSessionId()`와 session snapshot, [AuthPageController.java](/Users/alex/project/worldmap/src/main/java/com/worldmap/auth/web/AuthPageController.java)의 `returnTo` safe redirect, [AdminBootstrapProperties.java](/Users/alex/project/worldmap/src/main/java/com/worldmap/admin/application/AdminBootstrapProperties.java)와 [AdminBootstrapService.java](/Users/alex/project/worldmap/src/main/java/com/worldmap/admin/application/AdminBootstrapService.java)의 create-or-promote bootstrap admin, [AdminAccessInterceptor.java](/Users/alex/project/worldmap/src/main/java/com/worldmap/admin/web/AdminAccessInterceptor.java)와 [AdminAccessGuard.java](/Users/alex/project/worldmap/src/main/java/com/worldmap/auth/application/AdminAccessGuard.java)의 `/dashboard` 진입 제어를 한 편에서 묶는다.
+- 핵심 도메인 개념:
+  - `Member`는 커뮤니티 profile이 아니라 기록 ownership과 운영 진입을 위한 최소 계정 모델이다.
+  - 로그인 성공은 `MemberAuthService`의 credential 검증과 `MemberSessionManager`의 session rotation이 함께 있어야 완성된다.
+  - session의 `WORLDMAP_MEMBER_*` attribute는 권한의 최종 source of truth가 아니라 현재 요청 해석용 snapshot이다.
+  - bootstrap admin은 insert-only가 아니라 "기존 member 승격 또는 새 admin 생성" 규칙이다.
+  - `/dashboard` 접근은 로그인 여부와 admin 여부를 분리하고, admin 여부는 현재 DB role을 다시 읽어 판정한다.
+- 예외 / 엣지 케이스:
+  - 중복 nickname signup은 `IllegalStateException("이미 사용 중인 닉네임입니다.")`로 실패한다.
+  - 잘못된 비밀번호와 존재하지 않는 nickname은 같은 login error message로 묶어 user enumeration을 줄인다.
+  - `returnTo`가 외부 URL이거나 `//`로 시작하면 `/mypage`로 fallback한다.
+  - 비로그인 `/dashboard`는 `/login?returnTo=/dashboard`로 redirect되고, 일반 `USER`는 `403`을 받는다.
+  - 세션에는 `ADMIN`이 남아 있어도 DB role이 `USER`로 강등되면 `AdminAccessGuard`가 다시 막는다.
+  - bootstrap enabled인데 password가 비어 있으면 `AdminBootstrapService`가 조용히 넘어가지 않고 password 정책 예외를 던진다.
+- 테스트:
+  - 문서 기준 검증만 수행
+  - `python3` one-off script로 `README.md`, `docs/*.md`, `blog/*.md` Markdown 링크 존재 여부 확인
+  - `git diff --check`
+  - `wc -l blog/12-simple-auth-member-session-and-admin-entry.md`
+- 블로그 반영 여부: 반영. 이번 작업 자체가 12번 본편을 current code 기준 재현 가이드 수준으로 다시 쓰는 조각이다.
+- 배운 점: simple auth 글은 "OAuth 대신 이걸 썼다" 수준으로 쓰면 너무 쉽게 얕아진다. 실제로는 `credential policy`, `hash`, `session fixation`, `returnTo`, `bootstrap admin`, `current role revalidation`이 함께 있어야 `/mypage`와 `/dashboard`까지 설명이 닫힌다. 특히 admin entry는 bootstrap과 interceptor만이 아니라 `CurrentMemberAccessService`가 current DB role을 다시 읽는다는 점까지 써야 현재 코드와 맞는다.
+- 아직 약한 부분: `12`는 많이 강해졌지만, `13~15`도 같은 수준으로 cross-review가 남아 있다. 특히 `/mypage` read model, `/stats` public read model, public scope reset/new games 설명은 실패 시나리오와 테스트 맵을 더 촘촘히 적을 여지가 있다.
+- 면접용 30초 요약: WorldMap은 게임 기록 유지가 목적이라 `nickname + password + session` 기반 simple auth를 택했습니다. `MemberAuthService`가 signup/login 규칙과 password hash를 맡고, `MemberSessionManager`가 로그인 뒤 `changeSessionId()`로 세션 경계를 다시 만든 다음 id/nickname/role snapshot을 저장합니다. 운영자 계정은 `AdminBootstrapService`가 설정값으로 생성하거나 승격하고, `/dashboard`는 `AdminAccessInterceptor + AdminAccessGuard + CurrentMemberAccessService`로 현재 DB role을 다시 확인해 비로그인, 일반 user, 강등된 옛 admin session까지 구분해서 막습니다.
+
+## 2026-04-01 - 11번 글을 guest ownership과 progress claim 재현 가이드 수준으로 다시 쓰기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 기존 [blog/11-guest-session-ownership-and-progress-claim.md](/Users/alex/project/worldmap/blog/11-guest-session-ownership-and-progress-claim.md)는 guest를 허용하고 로그인 후 claim한다는 요점은 있었지만, 실제로 `guestSessionKey`가 언제 생성되고 언제 재사용되며, 다섯 게임과 leaderboard row에 어떻게 owner가 남고, signup/login 직후 어떤 순서로 `claim -> signIn(changeSessionId)`가 일어나며, logout과 stale member fallback이 ownership 경계를 어떻게 다시 여는지까지는 재현하기 어려웠다. 이번 조각의 목적은 글 11 하나만 읽어도 현재 브라우저 guest identity가 member ownership으로 승격되는 전체 흐름을 다시 구현할 수 있게 만드는 것이다.
+- 변경 파일:
+  - `blog/11-guest-session-ownership-and-progress-claim.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 앱 런타임 코드는 바뀌지 않았다. 바뀐 것은 `독자 -> 11번 글 -> GuestSessionKeyManager -> 5개 게임 start controller -> BaseGameSession/LeaderboardRecord -> GuestProgressClaimService -> AuthPageController -> MemberSessionManager -> CurrentMemberAccessService` 이해 경로다. 글 안에서 `guest start`, `guest run leaderboard 반영`, `signup/login claim`, `logout rotate`, `deleted member fallback`을 각각 시퀀스로 풀어, 현재 request가 어디서 시작되고 어느 계층에서 owner가 바뀌는지 다시 따라갈 수 있게 만들었다.
+- 데이터 / 상태 변화: DB, Redis, 세션 runtime 상태는 변하지 않는다. 대신 문서 상태는 크게 바뀌었다. 새 글은 `active guest`, `active member`, `stale member` 세 상태 표, `memberId/null + guestSessionKey/not null` ownership 표, 다섯 게임 start API 표, `claim 전후 memberId/guestSessionKey/playerNickname` 변화 표, `signup/login/logout/deleted-member-fallback` 흐름을 모두 현재 코드 기준으로 담는다. 특히 [GuestProgressClaimService.java](/Users/alex/project/worldmap/src/main/java/com/worldmap/auth/application/GuestProgressClaimService.java)가 5개 게임 session과 [LeaderboardRecord.java](/Users/alex/project/worldmap/src/main/java/com/worldmap/ranking/domain/LeaderboardRecord.java)를 함께 claim한다는 사실, [MemberSessionManager.java](/Users/alex/project/worldmap/src/main/java/com/worldmap/auth/application/MemberSessionManager.java)의 `changeSessionId()`, [CurrentMemberAccessService.java](/Users/alex/project/worldmap/src/main/java/com/worldmap/auth/application/CurrentMemberAccessService.java)의 stale session 정리가 이제 하나의 ownership 스토리로 이어진다.
+- 핵심 도메인 개념:
+  - guest는 익명이지만 무소유가 아니다. owner는 `guestSessionKey`다.
+  - member login 뒤 ownership migration은 "복사"가 아니라 `memberId` 승격 + `guestSessionKey` 제거다.
+  - claim의 범위는 다섯 게임 session row와 leaderboard row 전체다.
+  - `CurrentMemberAccessService`는 auth 보조 유틸이 아니라, 새 게임이 guest owner로 시작할지 member owner로 시작할지를 최종 판정하는 current-member source다.
+  - logout은 단순 sign-out이 아니라 새 guest boundary를 여는 `rotateGuestSessionKey` 작업까지 포함한다.
+- 예외 / 엣지 케이스:
+  - `currentGuestSessionKey`가 비어 있으면 signup/login claim은 no-op로 끝난다.
+  - `memberId == null` 또는 blank guest key면 `claimGuestRecords(...)`는 repository 조회 없이 바로 반환한다.
+  - claim 조회가 `findAllByGuestSessionKeyAndMemberIdIsNull(...)`를 쓰기 때문에 이미 claim된 row는 다시 건드리지 않는다.
+  - 현재 저장소에는 logout 뒤 guest key가 실제로 바뀌는지 dedicated integration test는 아직 없다. 코드는 명확하지만 테스트 한계는 글 안에 그대로 남겼다.
+  - cross-device guest merge는 의도적으로 지원하지 않는다. current browser session continuity까지만 책임진다.
+- 테스트:
+  - 문서 기준 검증만 수행
+  - `python3` one-off script로 `README.md`, `docs/*.md`, `blog/*.md` Markdown 링크 존재 여부 확인
+  - `git diff --check`
+  - `wc -l blog/11-guest-session-ownership-and-progress-claim.md`
+- 블로그 반영 여부: 반영. 이번 작업 자체가 11번 본편을 재현 가이드 수준으로 다시 쓰는 조각이라 blog가 산출물 중심이다.
+- 배운 점: guest ownership 글은 auth 소개 글처럼 쓰면 금방 얕아진다. 실제로는 `identity source`, `owner field`, `claim orchestration`, `session fixation 대응`, `logout boundary`, `stale member fallback`이 모두 묶여 있어야 현재 코드가 설명된다. 특히 `guestSessionKey`를 발급하는 순간과 `changeSessionId()`를 호출하는 순간을 같은 문단에서 정확히 분리해 써야 구현 순서까지 재현할 수 있다.
+- 아직 약한 부분: `11`은 많이 강해졌지만, `12~15`도 같은 수준으로 cross-review가 한 번 더 필요하다. 특히 `12 simple auth`, `13 mypage/stats`, `14 dashboard`, `15 public scope reset/new games`는 지금보다 더 강한 실패 시나리오 표와 재현 체크리스트가 들어갈 여지가 있다.
+- 면접용 30초 요약: WorldMap은 guest도 바로 플레이하게 하되, 현재 브라우저에 `guestSessionKey`를 발급해 다섯 게임 session과 leaderboard row에 owner를 남깁니다. 그리고 signup/login 직후 `GuestProgressClaimService`가 현재 브라우저 guest 기록만 `memberId`로 승격하고, `MemberSessionManager`가 `changeSessionId()`로 member session을 심으며, logout과 stale member fallback은 다시 guest boundary를 열어 ownership을 일관되게 유지하도록 설계했습니다.
+
+## 2026-04-01 - 16~18 강화 이후 허브 문서 규칙을 production-ready trilogy 기준으로 다시 맞추기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: `16`, `17`, `18`을 runtime / hardening / verification 대표 글로 크게 보강한 뒤, 허브 문서가 오히려 뒤처지기 시작했다. 특히 [blog/00_rebuild_guide.md](/Users/alex/project/worldmap/blog/00_rebuild_guide.md)는 여전히 `19개 섹션`을 고정형처럼 설명하고 있었고, [blog/README.md](/Users/alex/project/worldmap/blog/README.md)와 [blog/00_series_plan.md](/Users/alex/project/worldmap/blog/00_series_plan.md)도 `16 -> 17 -> 18`을 production-ready bundle로 읽어야 한다는 사실을 충분히 드러내지 못했다. 이번 조각의 목적은 본편을 또 늘리는 것이 아니라, 허브와 품질 기준을 현재 본편 수준에 맞게 다시 정렬하는 것이다.
+- 변경 파일:
+  - `blog/README.md`
+  - `blog/00_rebuild_guide.md`
+  - `blog/00_series_plan.md`
+  - `blog/00_quality_checklist.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 앱 런타임은 바뀌지 않았다. 바뀐 것은 `독자 -> blog/README -> 00_rebuild_guide / 00_series_plan / 00_quality_checklist -> 16 -> 17 -> 18` 읽기 경로다. 이제 허브 문서는 `19개 섹션 = 최대 개수`가 아니라 `최소 teaching skeleton`이라고 분명히 말하고, production-ready 파트는 `16 runtime -> 17 integrity/current member/current role -> 18 verification/demo/interview pack` 순서의 trilogy로 읽히게 정리했다.
+- 데이터 / 상태 변화: 코드의 runtime 상태는 바뀌지 않는다. 바뀐 것은 blog information architecture의 규칙 문장이다. [blog/00_rebuild_guide.md](/Users/alex/project/worldmap/blog/00_rebuild_guide.md)는 후반부 대표 글이 표/테스트 맵/운영 순서 때문에 19개를 초과할 수 있다는 기준을 추가했고, [blog/00_quality_checklist.md](/Users/alex/project/worldmap/blog/00_quality_checklist.md)는 긴 글의 길 찾기와 `16~18` production-ready bundle 일관성을 점검 항목에 넣었다. [blog/00_series_plan.md](/Users/alex/project/worldmap/blog/00_series_plan.md)과 [blog/README.md](/Users/alex/project/worldmap/blog/README.md)는 `16 -> 17 -> 18` 묶음 읽기 순서를 독자용으로 더 명확하게 드러낸다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 `후반부 본편이 좋아지면 허브 규칙도 같이 바뀌어야 한다`는 점이다. 이전 허브는 `짧고 균일한 본편`을 전제로 한 규칙이었지만, 현재 `16~18`은 runtime contract 표, hardening failure taxonomy, verification lane/demobaseline/interview pack까지 다루는 깊은 글이 됐다. 그래서 허브도 “섹션 수를 맞추는 것”보다 “길어져도 길을 잃지 않게 하는 것”을 우선으로 설명하도록 바뀌었다.
+- 예외 / 엣지 케이스:
+  - 이번 작업은 허브/규칙 문서 개편이라 애플리케이션 코드는 건드리지 않았다.
+  - `19개 섹션` 규칙을 없앤 것은 아니다. 최소 skeleton은 유지하되, 후반부 대표 글에서는 확장 섹션이 허용된다는 뜻으로 재정의한 것이다.
+  - `16~18 trilogy`를 강조했지만, 이는 독자용 권장 읽기 순서이지 파일 병합이나 단계 합치기를 의미하지는 않는다.
+- 테스트:
+  - `python3` one-off script로 `README.md`, `docs/*.md`, `blog/*.md` Markdown 링크 존재 여부 확인
+  - `git diff --check`
+  - `wc -l blog/16-production-runtime-redis-session-and-ecs-deploy-prep.md blog/17-game-integrity-current-member-and-role-revalidation.md blog/18-production-verification-and-demo-interview-pack.md blog/00_rebuild_guide.md`
+- 블로그 반영 여부: 반영. 이번 작업 자체가 blog 허브 문서와 quality rule 업데이트다.
+- 배운 점: 좋은 긴 글을 쓰는 것만으로는 부족하다. 허브 문서가 여전히 “짧고 균일해야 좋은 글”처럼 말하면, 오히려 잘 보강한 대표 글이 구조 위반처럼 보인다. 특히 production-ready 파트처럼 runtime, hardening, verification이 엮이는 구간은 `섹션 수`보다 `읽는 순서`, `표`, `테스트 맵`, `운영 체크포인트`가 더 중요하다는 점을 허브 수준에서 명시해야 한다.
+- 아직 약한 부분: 허브 규칙은 많이 좋아졌지만, 실제 본편 전체가 이제 같은 수준으로 유지되는지에 대한 전편 cross-review는 아직 남아 있다. 특히 `11~15` 구간도 지금처럼 “이 글만 읽고 재현 가능한가” 기준으로 다시 한 번 일괄 점검할 여지는 있다.
+- 면접용 30초 요약: 이번에는 본편이 아니라 블로그 허브 규칙을 production-ready 수준에 맞게 다시 정리했습니다. `19개 섹션`을 최소 teaching skeleton로 재정의하고, `16 -> 17 -> 18`을 runtime, hardening, verification을 순서대로 닫는 trilogy로 명확히 보여 줘서, 긴 대표 글들이 규칙 밖 예외가 아니라 현재 WorldMap 시리즈의 표준 구조로 읽히게 만들었습니다.
+
+## 2026-04-01 - 17번 글을 game integrity와 current member/current role hardening 가이드 수준으로 다시 쓰기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 기존 `17`은 방향은 맞았지만 여전히 “ownership을 다시 본다”, “stale submit을 막는다”, “admin role을 재검증한다” 수준의 요약에 가까웠다. 이 상태로는 실제로 어떤 클래스가 어떤 순서로 ownership을 풀고, result를 terminal resource로 만들고, stale submit을 `409`로 끊고, current member/current role을 다시 읽고, public 헤더와 admin 라우트가 같은 기준을 보게 하는지 재현하기 어려웠다. 이번 조각의 목적은 대표 글 `17`을 현재 hardening 경로 전체를 다시 세울 수 있는 수준으로 다시 쓰는 것이다.
+- 변경 파일:
+  - `blog/17-game-integrity-current-member-and-role-revalidation.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 앱 런타임은 바뀌지 않았다. 바뀐 것은 `독자 -> 17 integrity 본편 -> GameSessionAccessContext / Resolver / CurrentMemberAccessService / AdminAccessGuard / AdminAccessInterceptor / SiteHeaderModelAdvice / 각 게임 service / LeaderboardService` 읽기 경로다. 새 글은 `request -> current browser ownership resolve -> getSession/findByIdForUpdate -> assertCanAccess -> GameSubmissionGuard -> terminal result gate -> leaderboard dedupe`, 그리고 `request -> currentMember(request) -> current DB member sync -> AdminAccessGuard -> dashboard allow/forbid + header visibility`까지 한 흐름으로 따라가게 다시 썼다.
+- 데이터 / 상태 변화: 코드의 런타임 상태는 바뀌지 않는다. 바뀐 것은 integrity 설명 밀도다. 이번 글은 `GameSessionAccessContext.assertCanAccess`, `GameSessionAccessContextResolver.resolve`, 각 게임 service의 `getSession/getSessionForUpdate/assertResultAccessible`, `GameSubmissionGuard.assertFreshSubmission`, `GlobalApiExceptionHandler`의 `409/403/404` 매핑, `LeaderboardService.recordResult`의 `runSignature` dedupe, `CurrentMemberAccessService.currentMember(request/session)`의 current row 재조회와 request cache, `AdminAccessGuard.authorize`, `AdminAccessInterceptor.preHandle`, `RecommendationFeedbackApiController.requireAdmin`, `SiteHeaderModelAdvice.populateCurrentMember`까지 현재 코드 기준으로 연결한다.
+- 핵심 도메인 개념:
+  - ownership은 `sessionId`가 아니라 현재 브라우저의 `memberId` 또는 `guestSessionKey`다.
+  - result는 진행 중에도 읽을 수 있는 상태가 아니라 terminal resource다.
+  - stale submit은 프런트 실수가 아니라 서버가 `409 Conflict`로 끊어야 하는 무결성 문제다.
+  - current member/current role은 세션 문자열보다 현재 DB row를 더 신뢰한다.
+  - public `Dashboard` 링크와 `/dashboard/**` 접근 제어는 같은 current-member source를 봐야 한다.
+- 예외 / 엣지 케이스:
+  - 이번 작업은 문서 보강이므로 애플리케이션 코드는 건드리지 않았다.
+  - stale-submit hardening은 public 클라이언트가 `stageId`, `expectedAttemptNumber`를 echo해 준다는 전제 위에서 가장 강하게 작동한다. request DTO 자체는 nullable이라 API 타입만 보면 완전 강제가 아니라는 점을 글에 정직하게 남겼다.
+  - SSR header visibility는 `CurrentMemberAccessService`라는 같은 source는 쓰지만, `AdminAccessGuard` 메서드를 직접 공유하는 것은 아니라서 “같은 policy method까지 완전히 재사용한다”고 과장하지 않았다.
+  - current-member cache는 request attribute cache라서 request 안에서는 DB 1회 read지만, 새로운 request마다 다시 조회한다는 점도 적었다.
+  - malformed session cleanup도 완전히 같은 결이 아니다. invalid enum role처럼 예외가 나는 경우는 sign-out까지 가지만, 단순한 missing attribute는 비로그인처럼 취급되는 수준이라는 한계를 함께 적었다.
+- 테스트:
+  - `python3` one-off script로 `README.md`, `docs/*.md`, `blog/*.md` Markdown 링크 존재 여부 확인
+  - `git diff --check`
+  - 글 본문에는 현재 hardening 검증 명령으로 `GameSessionAccessContextTest`, `GameSessionAccessContextResolverTest`, `CurrentMemberAccessServiceTest`, `AdminAccessGuardTest`, `SiteHeaderIntegrationTest`, `AdminPageIntegrationTest`, `RecommendationFeedbackIntegrationTest`, 그리고 5개 게임 `*FlowIntegrationTest`를 연결
+- 블로그 반영 여부: 반영. 이번 작업 자체가 대표 글 `17` 재작성이다.
+- 배운 점: hardening 글에서 정말 중요한 건 “막았다”가 아니라 “무엇을 current source of truth로 보고, 어떤 HTTP status로 구분하며, 어떤 테스트가 그 계약을 고정하는가”다. 특히 `403 ownership mismatch`, `404 non-terminal result`, `409 stale submit`, `403 revoked admin`을 한꺼번에 설명하되 서로 섞지 않는 것이 teaching quality에 큰 차이를 만든다.
+- 아직 약한 부분: 17번 글도 많이 좋아졌지만, 장기적으로는 restart nonce/run generation token 같은 후속 hardening 아이디어를 실제 코드로 닫기 전까지는 stale-submit 방어의 남은 확장 지점이 있다. 또 SSR header visibility는 같은 current-member source를 쓰지만 policy 호출 레벨까지 완전히 공용화된 것은 아니다.
+- 면접용 30초 요약: 이번에는 hardening 대표 글을 실제 보안/무결성 가이드 수준으로 다시 썼습니다. `GameSessionAccessContext`로 current browser ownership을 풀고, 각 게임 service가 `findByIdForUpdate + assertCanAccess + GameSubmissionGuard + terminal result gate`로 state transition을 지키며, `CurrentMemberAccessService`와 `AdminAccessGuard`가 current DB member/role을 다시 읽어 `/dashboard/**`, admin summary API, public 헤더 `Dashboard` 링크를 같은 기준으로 통제하는 구조를 한 편에서 설명하게 만들었습니다.
+
+## 2026-04-01 - 18번 글을 production verification과 demo/interview 운영 가이드 수준으로 다시 쓰기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 기존 `18`은 production-ready 마감의 방향은 맞았지만, 여전히 “검증 레일이 있다” 수준의 요약에 가까웠다. 이 상태로는 `test`, `browserSmokeTest`, `publicUrlSmokeTest`의 정확한 책임 경계, browser-smoke profile의 의미, Redis fallback과 public URL fallback의 차이, verify workflow와 GitHub required check의 역할 분리, local demo bootstrap의 실제 baseline, 면접용 문서 세트의 읽기 순서를 재현하기 어려웠다. 이번 조각의 목적은 대표 글 `18`을 현재 저장소의 마지막 검증/시연 패키지를 다시 세울 수 있는 수준으로 다시 쓰는 것이다.
+- 변경 파일:
+  - `blog/18-production-verification-and-demo-interview-pack.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 앱 런타임은 바뀌지 않았다. 바뀐 것은 `독자 -> 18 production verification 본편 -> build.gradle / browser-smoke profile / BrowserSmokeE2ETest / PublicUrlSmokeE2ETest / verify.yml / DemoBootstrapService / LOCAL_DEMO_BOOTSTRAP / 발표 문서 세트` 읽기 경로다. 새 글은 `./gradlew test -> ./gradlew browserSmokeTest -> deploy 후 WORLDMAP_PUBLIC_BASE_URL=... ./gradlew publicUrlSmokeTest`, 그리고 `local profile startup -> demo bootstrap -> stats/ranking/mypage/dashboard/demo review`까지 한 흐름으로 따라가게 다시 썼다.
+- 데이터 / 상태 변화: 코드의 runtime 상태는 바뀌지 않는다. 바뀐 것은 production-ready 설명 밀도다. 이번 글은 `test`가 `browser-smoke`와 `public-url-smoke` 태그를 제외한다는 사실, `browserSmokeTest`가 `@Tag("browser-smoke")`만 실행한다는 사실, `publicUrlSmokeTest`가 public base URL이 없으면 local random-port 서버로 붙는다는 사실, `LeaderboardService`의 Redis unavailable DB fallback, `verify.yml`이 `test`/`browser-smoke` 두 job만 가진다는 사실, local demo baseline의 `worldmap_admin`, `orbit_runner`, finished run 5개, guest live session `demo-guest-live`, current recommendation feedback sample까지 현재 코드와 문서 기준으로 연결한다.
+- 핵심 도메인 개념:
+  - verification lane은 하나가 아니라 `코드 회귀`, `브라우저 계약`, `공개 URL 확인`으로 나뉜다.
+  - browser/public smoke의 URL fallback과 ranking/stats의 Redis fallback은 전혀 다른 문제다.
+  - `verify.yml`은 repo 안의 workflow 정의이고, required check는 GitHub branch protection의 운영 설정이다.
+  - demo bootstrap은 더미 데이터가 아니라 local read model과 운영 데모를 위한 baseline이다.
+  - interview pack은 `LOCAL_DEMO_BOOTSTRAP`, `ARCHITECTURE_OVERVIEW`, `ERD`, `REQUEST_FLOW_GUIDE`, `PRESENTATION_PREP`로 구성되며, `DEPLOYMENT_RUNBOOK_AWS_ECS`는 ops appendix로 보는 편이 더 정확하다.
+- 예외 / 엣지 케이스:
+  - 이번 작업은 문서 보강이므로 애플리케이션 코드는 건드리지 않았다.
+  - `browserSmokeTest`는 5개 게임 full browser playthrough가 아니라, 대부분 service로 terminal 직전 상태를 준비한 뒤 마지막 오답과 modal keyboard contract만 실제 브라우저로 확인한다는 한계를 글에 명시했다.
+  - `publicUrlSmokeTest`는 아직 CI job이 아니고, 실제 production 주소가 없으면 local fallback으로만 검증된다는 점도 정직하게 남겼다.
+  - local demo bootstrap은 idempotent rebuild를 목표로 하지만, 그 근거는 `runSignature`, `guestSessionKey`, current feedback count 규칙과 `DemoBootstrapIntegrationTest`에 있다는 점을 같이 적었다.
+- 테스트:
+  - `python3` one-off script로 `README.md`, `docs/*.md`, `blog/*.md` Markdown 링크 존재 여부 확인
+  - `wc -l blog/18-production-verification-and-demo-interview-pack.md`
+  - `git diff --check`
+  - 글 본문에는 현재 검증 명령으로 `./gradlew test`, `./gradlew browserSmokeTest`, `./gradlew publicUrlSmokeTest`, `./gradlew test --tests com.worldmap.demo.DemoBootstrapIntegrationTest`를 연결
+- 블로그 반영 여부: 반영. 이번 작업 자체가 대표 글 `18` 재작성이다.
+- 배운 점: production-ready 글에서 중요한 것은 “좋은 레일이 있다”가 아니라 “각 레일이 정확히 무엇을 보고 무엇은 의도적으로 안 보는가”를 구분하는 것이다. 특히 Redis fallback과 public URL fallback, workflow job과 required check, local demo bootstrap과 presentation docs의 역할을 섞지 않고 나눠 적어야 재현성과 teaching quality가 동시에 올라간다.
+- 아직 약한 부분: 이제 `18`도 많이 좋아졌지만, 전체 blog를 정말 ERP 수준으로 끌어올리려면 표/다이어그램/질문-답변 스크립트 밀도를 대표 글 전반에 더 일관되게 맞출 여지는 남아 있다.
+- 면접용 30초 요약: 이번에는 production-ready 마지막 글을 실제 운영 가이드 수준으로 다시 썼습니다. `test`, `browserSmokeTest`, `publicUrlSmokeTest`의 역할 분리, browser-smoke profile의 Redis-free 전제, ranking/stats의 Redis fallback, `verify.yml`과 branch protection의 역할 차이, local demo baseline의 정확한 계정/샘플 run/guest session/feedback, 그리고 architecture·ERD·request flow·presentation docs를 하나의 마감 패키지로 설명할 수 있게 정리했습니다.
+
+## 2026-04-01 - verification 대표 글 18의 보장 범위를 실제 레일 수준으로 더 낮추기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: `18-production-verification-and-demo-interview-pack`은 이미 구조가 좋았지만, browser smoke와 public URL smoke, local demo baseline 일부 표현은 여전히 “현재 레일이 실제로 보는 범위”보다 조금 넓게 읽힐 여지가 있었다. 이번 조각의 목적은 browser smoke가 안 보는 것, local fallback timing의 의미, demo feedback의 fresh-vs-rerun 차이를 실제 코드와 테스트 범위로 낮추는 것이다.
+- 변경 파일:
+  - `blog/18-production-verification-and-demo-interview-pack.md`
+  - `docs/LOCAL_DEMO_BOOTSTRAP.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 앱 런타임은 바뀌지 않았다. 바뀐 것은 `독자 -> 18 production verification 본편 -> BrowserSmokeE2ETest / PublicUrlSmokeE2ETest / verify.yml / DemoBootstrapService / LOCAL_DEMO_BOOTSTRAP` 읽기 경로다.
+- 데이터 / 상태 변화: DB, Redis, 세션 상태 변화는 없다. 대신 문서 모델에서 `BrowserSmokeE2ETest`가 현재 실제로 보는 범위가 `대표 public 진입 경로 + ranking/stats shell + terminal modal keyboard contract`라는 점, `PublicUrlSmokeE2ETest`의 local fallback timing report는 레일 sanity artifact일 뿐 production 성능 근거는 아니라는 점, demo feedback 샘플은 fresh DB 기준으로는 5개/평균 4.4지만 rerun에서는 `>= 5`로 읽어야 한다는 점이 더 분명해졌다.
+- 핵심 도메인 개념:
+  - `selected browser smoke coverage`: 브라우저 레일은 대표 경로를 고정하지만 로그인 후 auth flow, mypage/dashboard, full playthrough까지는 아직 보지 않는다.
+  - `navigation-level public smoke`: public URL smoke는 heading/title/status/timing까지만 본다.
+  - `fresh-vs-rerun demo baseline`: finished run 5개는 runSignature로 고정되지만, current recommendation feedback sample은 target count 5를 기준으로 부족분만 보충한다.
+- 예외 / 엣지 케이스:
+  - local fallback timing report를 production timing evidence처럼 말하면 안 된다.
+  - verify workflow는 trigger 3개를 가지지만 job은 `test`, `browser-smoke` 둘뿐이다.
+  - demo feedback baseline은 fresh DB 기준과 rerun 이후 상태를 구분해서 읽어야 한다.
+- 테스트:
+  - 없음. 이번 조각은 doc-only 편집 작업이다.
+  - 문서 링크 검사 `missing 0`
+  - `git diff --check`
+- 배운 점: verification 문서는 “무엇을 막는다”보다 “무엇을 아직 안 본다”를 같이 적어야 설득력이 생긴다. 특히 smoke 류 레일은 범위를 넓게 묘사하는 순간 바로 부정확해진다.
+- 아직 약한 부분: 이제 production trilogy의 범위 표현은 꽤 정리됐지만, 다음 단계에서는 필요하다면 본편 전체에 같은 수준의 “보장 범위 표기”를 수평 적용하는 최종 리뷰가 남는다.
+- 면접용 30초 요약: verification 글을 다시 다듬으면서, browser smoke와 public URL smoke가 실제로 어디까지 보는지를 더 엄격하게 적었습니다. 이제 문서는 `BrowserSmokeE2ETest`가 대표 public 경로와 terminal modal keyboard contract까지만 고정하고, `PublicUrlSmokeE2ETest`는 navigation-level smoke와 timing snapshot까지만 보며, demo feedback baseline도 fresh DB와 rerun 상태를 구분해 읽어야 한다고 더 정확히 설명합니다.
+
+## 2026-04-01 - production runtime 대표 글 16을 실제 첫 배포 재현 가이드 수준으로 다시 쓰기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 기존 `16`은 production runtime의 방향은 맞았지만, 실제로는 "Dockerfile과 ECS workflow가 있다" 수준의 설명에 가까웠다. 이 상태로는 어떤 값이 prod contract이고, 어떤 값이 GitHub repo variable이며, 무엇이 task definition fixed env이고, 어디까지 자동화되고 어디서 사람이 수동으로 맞춰야 하는지 재현하기 어렵다. 이번 조각의 목적은 대표 글 `16`을 현재 배포 준비 상태 전체를 다시 세울 수 있는 수준으로 다시 쓰는 것이다.
+- 변경 파일:
+  - `blog/16-production-runtime-redis-session-and-ecs-deploy-prep.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 앱 런타임 자체는 바뀌지 않았다. 바뀐 것은 `독자 -> 16 production runtime 본편 -> Dockerfile / prod YAML / RedisSessionProdConfiguration / deploy workflow / task template / render script / preflight report` 읽기 경로다. 새 글은 `local/test servlet session -> prod Redis session`, `workflow_dispatch -> gradle test -> ECR push -> render -> ECS deploy`, `preflight -> vars.* 추출 -> report Ready YES/NO`, `배포 후 ALB DNS -> publicUrlSmokeTest`까지 현재 저장소 기준으로 따라가게 다시 썼다.
+- 데이터 / 상태 변화: 코드의 runtime 상태는 바뀌지 않는다. 바뀐 것은 운영 설명 밀도다. 이번 글은 `application.yml`, `application-local.yml`, `application-test.yml`, `application-prod.yml`, `Dockerfile`, `.dockerignore`, `RedisSessionProdConfiguration`, `deploy-prod-ecs.yml`, `task-definition.prod.sample.json`, `render_ecs_task_definition.py`, `check_prod_deploy_preflight.py`, 그리고 대응 테스트들을 한 글에서 연결한다.
+- 핵심 도메인 개념:
+  - runtime contract는 도메인 규칙이 아니라 운영 환경과 애플리케이션이 맺는 약속이다. 현재 prod contract는 Java 25 JRE, non-root `spring` user, port `8080`, `SIGTERM`, `JAVA_RUNTIME_OPTS`, `ddl-auto=validate`, `sql.init.mode=never`, `forward-headers-strategy=native`, `graceful shutdown`, `WMSESSION`, readiness `db+redis+ping`으로 정리된다.
+  - prod-only Redis session은 `RedisSessionProdConfiguration`과 prod cookie 설정, local/test의 `SessionAutoConfiguration` exclude가 함께 있어야 설명이 닫힌다.
+  - ECS deploy 준비는 Dockerfile 하나가 아니라 `task-definition sample + render script + workflow + preflight report`의 조합이다.
+  - preflight script가 현재 workflow에서 읽는 required GitHub repo variable 수는 13개다. 다만 `Ready: YES/NO` 자체는 live GitHub variables나 fixture 입력 상태에 따라 달라지는 외부 상태다.
+- 예외 / 엣지 케이스:
+  - task definition sample에는 `WORLDMAP_DEMO_BOOTSTRAP_ENABLED=false`가 있지만, prod YAML도 이미 demo bootstrap을 false로 고정하므로 설명상 redundant safety belt라는 점을 적었다.
+  - workflow는 ECS service stability만 기다릴 뿐, sample task definition에는 container health check가 없으므로 ALB target group path를 `/actuator/health/readiness`로 수동 지정해야 하는 현재 한계를 글에 명시했다.
+  - Redis session integration test는 bean wiring만 증명하고, 다중 task에서 session survival까지는 아직 smoke하지 못한다는 점을 정직하게 남겼다.
+  - preflight는 vars/file 존재만 검사할 뿐 AWS 리소스 실존, network reachability, ALB wiring은 검사하지 않는다는 점도 적었다.
+- 테스트:
+  - `python3` one-off script로 `README.md`, `docs/*.md`, `blog/*.md` Markdown 링크 존재 여부 확인
+  - `git diff --check`
+  - 글 본문에는 현재 운영 검증 명령으로 `ProdProfileConfigTest`, `ActuatorHealthEndpointIntegrationTest`, `RedisSessionConfigurationIntegrationTest`, `RenderEcsTaskDefinitionScriptTest`, `GitHubActionsDeployWorkflowTemplateTest`, `ProdDeployPreflightScriptTest`, `publicUrlSmokeTest`를 연결
+- 블로그 반영 여부: 반영. 이번 작업 자체가 대표 글 `16` 재작성이다.
+- 배운 점: production runtime 글에서 진짜 중요한 건 AWS 서비스 이름이 아니라 입력 경계와 자동화의 한계다. 특히 현재 저장소는 `배포 준비 코드`는 충분히 있지만, `workflow input 13개`, `ALB health path 수동 지정`, `Redis session 다중 task smoke 부재`처럼 아직 남은 빈칸도 분명히 적어야 재현형 문서가 된다.
+- 아직 약한 부분: 다음 우선순위는 `18`이다. verify workflow, browser smoke, public URL smoke, required check, 실제 공개 URL smoke까지 이어지는 검증 파이프라인도 이미 좋지만, 지금 수준으로는 "운영 규칙 + 실제 post-deploy verification" 쪽을 더 표 중심으로 밀어붙일 여지가 있다.
+- 면접용 30초 요약: 이번에는 production runtime 대표 글을 현재 저장소 그대로 다시 따라 만들 수 있게 다시 썼습니다. Java 25 multi-stage image, prod-only Redis session, `WMSESSION`/`worldmap:session` 규칙, ECS task definition env/secrets matrix, GitHub workflow 13개 변수, preflight의 fixture/live 해석 범위, ALB readiness path 수동 지정, `publicUrlSmokeTest`까지 first deploy 재현 흐름 전체를 한 편에 담았습니다.
+
+## 2026-04-01 - 추천 엔진 대표 글 10을 현재 운영 루프까지 포함한 재현형 가이드로 다시 쓰기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 추천 파트는 기존에도 중요한 기능이었지만, survivor 구조로 압축한 뒤에도 여전히 "deterministic engine이 있다" 수준의 설명에 머물렀다. 이 상태로는 설문/프로필/source of truth, feedback token, admin summary, offline baseline, tuning 기준을 실제 코드와 테스트 기준으로 재현하기 어려웠다. 이번 조각의 목적은 대표 글 `10`을 현재 recommendation 계약 전체를 다시 세울 수 있는 수준으로 다시 쓰는 것이다.
+- 변경 파일:
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 앱 런타임은 그대로다. 바뀐 것은 `독자 -> 10 추천 본편 -> 실제 코드/테스트/운영 화면` 읽기 경로다. 새 글은 `GET /recommendation/survey -> RecommendationSurveyForm 20개 enum 바인딩 -> RecommendationSurveyService.recommend() -> result SSR + feedbackToken/session context 저장 -> POST /api/recommendation/feedback -> recommendation_feedback 저장 -> /dashboard/recommendation/feedback + /dashboard/recommendation/persona-baseline` 흐름을 현재 컨트롤러/서비스/엔티티/테스트 기준으로 따라간다.
+- 데이터 / 상태 변화: 코드의 런타임 상태는 바뀌지 않는다. 바뀐 것은 recommendation 설명 밀도다. 이번 글은 `RecommendationSurveyAnswers`, `RecommendationSurveyForm`, `RecommendationQuestionCatalog`, `RecommendationCountryProfileCatalog`, `RecommendationSurveyService`, `RecommendationFeedbackSessionStore`, `RecommendationFeedbackService`, `RecommendationFeedback`, `AdminRecommendationOpsReviewService`, `AdminPersonaBaselineService`와 대응 통합 테스트를 한 글 안에서 연결한다.
+- 핵심 도메인 개념:
+  - recommendation의 source of truth는 프런트 문항 상수나 hidden field가 아니라 `RecommendationSurveyService` 버전 상수와 서버 catalog다.
+  - `RecommendationCountryProfileCatalog`의 30개 profile은 최종 결과가 아니라 후보 집합이고, 실제 결과는 `CountryRepository.findAllByOrderByNameKrAsc()` seed row와 ISO3 join된 국가만 surface된다.
+  - feedback는 결과 row 전체를 저장하는 구조가 아니라 `surveyVersion + engineVersion + 20개 답변 snapshot + satisfactionScore`를 durable row로 남기는 구조다.
+  - 품질 루프는 feedback 저장에서 끝나지 않고, `AdminRecommendationOpsReviewService`의 `MIN_RESPONSES_FOR_TUNING = 5`, `LOW_SATISFACTION_THRESHOLD = 3.80`, weak/anchor-drift/active-signal 분류, 18개 offline persona baseline까지 포함한다.
+- 예외 / 엣지 케이스:
+  - feedback token은 session에서 one-time consume되므로 재사용/위조 시 `400`이 난다.
+  - `RecommendationSurveyForm`의 20개 `@NotNull` enum 필드가 비면 survey 화면으로 다시 돌아가고 선택 상태를 유지한다.
+  - profile ISO3가 seed country에 없으면 `RecommendationSurveyService`가 candidate를 `null`로 버린다.
+  - summary API와 admin 화면은 current member role 기준 admin만 접근 가능하다.
+- 테스트:
+  - `python3` one-off script로 `README.md`, `docs/*.md`, `blog/*.md` Markdown 링크 존재 여부 확인
+  - `git diff --check`
+  - 글 본문에는 현재 recommendation 검증 명령으로 `RecommendationPageIntegrationTest`, `RecommendationFeedbackIntegrationTest`, `RecommendationSurveyServiceTest`, `RecommendationCountryProfileCatalogTest`, `RecommendationOfflinePersonaCoverageTest`, `RecommendationOfflinePersonaSnapshotTest`, `AdminPersonaBaselineServiceIntegrationTest`, `AdminRecommendationOpsReviewServiceIntegrationTest`를 연결
+- 블로그 반영 여부: 반영. 이번 작업 자체가 대표 글 `10` 재작성이다.
+- 배운 점: recommendation은 "AI 느낌"이 아니라 운영 가능한 deterministic loop로 설명해야 강하다. 특히 현재 버전 상수가 service에 있고, token 기반 feedback가 한번만 consume되며, 18개 persona baseline과 admin ops review가 함께 있어야 "추천 품질을 어떻게 유지하느냐"를 포트폴리오에서 설득력 있게 말할 수 있다.
+- 아직 약한 부분: 다음 우선순위는 `16`, `17`, `18` 쪽이다. production runtime, integrity, verification 글도 이미 길지만, 지금 수준으로는 운영 기준과 테스트 결과를 더 표와 체크포인트 중심으로 밀어붙일 수 있다.
+- 면접용 30초 요약: 이번에는 추천 엔진 대표 글을 현재 코드 그대로 다시 구현할 수 있는 수준으로 다시 썼습니다. `survey-v4 / engine-v20`, 20문항 enum form binding, 30개 seed-backed country profile join, one-time feedback token, `recommendation_feedback` answer snapshot 저장, admin feedback summary, 18개 persona baseline coverage/snapshot까지 recommendation의 전체 품질 루프를 한 편에서 설명하게 만들었습니다.
+
+## 2026-04-01 - 대표 앵커 글 07과 09를 현재 계약 기준 재현형 가이드로 다시 쓰기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: baseline 글 보강 후에도 대표 앵커 글 `07`, `09`는 여전히 "현재 저장소를 다시 만드는 사람" 관점에서 얇은 구간이 남아 있었다. `07`은 지구본 UI의 화려함에 비해 ownership, stale submit, result 공개 규칙이 충분히 드러나지 않았고, `09`는 read model / Redis / fallback / initial SSR defer 전략을 현재 코드 수준으로 끝까지 설명하지 못했다. 이번 조각의 목적은 두 글을 흡수된 로그가 아니라 재현형 대표 챕터로 다시 쓰는 것이다.
+- 변경 파일:
+  - `blog/07-location-game-session-stage-attempt-loop.md`
+  - `blog/09-redis-leaderboard-and-ranking-page.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 앱 런타임은 그대로다. 바뀐 것은 `독자 -> 07 위치 게임 -> 09 랭킹` 읽기 경로다. `07`은 이제 `start -> state -> answer -> next stage/game over -> result` 흐름에서 ownership 검사, stale submit guard, terminal result contract, result 노출 정책까지 현재 service/controller/JS 기준으로 따라가고, `09`는 `게임 종료 -> LeaderboardRecord 저장 -> afterCommit Redis sync -> /ranking initial SSR -> active board polling -> Redis fallback` 흐름을 현재 `LeaderboardService`와 `ranking.js` 기준으로 설명한다.
+- 데이터 / 상태 변화: 코드의 런타임 상태는 바뀌지 않는다. 바뀐 것은 두 대표 글의 도메인 설명 밀도다. `07`은 `LocationGameSession/Stage/Attempt`, `LocationGameDifficultyPolicy`, `LocationGameScoringPolicy`, `GameSessionAccessContext`, `GameSubmissionGuard`, `location-game.js`, `LocationGameFlowIntegrationTest`까지 현재 계약을 한 글에서 닫고, `09`는 `LeaderboardRecord`, `LeaderboardRankingPolicy`, `LeaderboardService`, `LeaderboardPageController`, `ranking/index.html`, `ranking.js`, `StatsPageController`, `stats/index.html`, `RedisUnavailableLeaderboardFallbackIntegrationTest`, `StatsPageControllerTest`까지 read model 전체를 현재 코드 기준으로 정리한다.
+- 핵심 도메인 개념:
+  - `07`: 위치 게임의 핵심은 WebGL이 아니라 `server-owned endless run contract`다. session/stage/attempt 분리만이 아니라 ownership, stale submit, terminal result, restart, leaderboard 반영까지 같은 서버 상태 기계 안에서 설명되어야 한다.
+  - `09`: 랭킹의 핵심은 `쓰기 모델과 읽기 모델 분리`다. `LeaderboardRecord`는 durable final run row, Redis는 top-N index/cache, `/ranking`은 initial SSR 한 보드 + active board polling, `/stats`는 같은 read path를 재사용하는 public read model이라는 점을 분명히 적었다. 또 5개 게임 service가 terminal 상태에서만 `record{GameMode}Result(...)`를 호출한다는 write contract도 현재 callsite 기준으로 연결했다.
+- 예외 / 엣지 케이스:
+  - 이번 작업은 문서 보강이므로 애플리케이션 코드는 건드리지 않았다.
+  - `07`은 과거의 단순 location vertical slice가 아니라, 현재 저장소의 hardening 이후 계약을 기준으로 썼다. 그래서 다른 브라우저 접근 차단, duplicate submit conflict, result 접근 제한, result에서의 과도한 정답 노출 제한까지 포함한다.
+  - `09`는 Redis를 source of truth처럼 보이게 하지 않기 위해, Redis miss와 DataAccessException 시의 DB fallback, key rebuild/warm, duplicate terminal submit no-op를 명시적으로 적었다.
+- 테스트:
+  - `python3` one-off script로 `README.md`, `docs/*.md`, `blog/*.md` Markdown 링크 존재 여부 확인
+  - `wc -l blog/07-location-game-session-stage-attempt-loop.md blog/09-redis-leaderboard-and-ranking-page.md`
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이번 작업 자체가 `07`, `09` 대표 글 재작성이다.
+- 배운 점: 앵커 글은 길다고 좋은 게 아니라, 지금 코드의 핵심 계약을 끝까지 따라갈 수 있어야 한다. 위치 게임은 단순 stage/attempt 분리보다 ownership/stale submit/result 규칙을 같이 설명해야 하고, 랭킹은 단순 Redis 사용보다 durable row, duplicate write 방지, fallback, initial SSR 전략까지 한 흐름에서 닫아야 teaching quality가 높아진다.
+- 아직 약한 부분: 다음 우선순위는 `10`과 `16`이다. 추천 엔진과 production runtime 글도 이미 길지만, 현재 기준으로는 실험 흔적보다 "어떤 입력과 테스트로 지금 시스템을 다시 세우는가" 쪽을 더 밀어야 한다.
+- 면접용 30초 요약: 이번에는 WorldMap blog의 대표 글 두 편을 다시 썼습니다. 위치 게임 글은 지구본 UI보다 서버가 소유하는 endless run 계약, ownership, stale submit, terminal result를 중심으로 재구성했고, 랭킹 글은 `LeaderboardRecord`, Redis Sorted Set, DB fallback, initial SSR 한 보드, active board polling까지 현재 코드 그대로 재현할 수 있게 정리했습니다.
+
+## 2026-04-01 - baseline/data/game foundation blog 6편을 재현형 본편 수준으로 전면 보강
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 직전 개편으로 `blog/`의 survivor 구조와 후반부 핵심 본편은 ERP형 재현 시리즈에 가까워졌지만, 사용자가 지적한 약점은 여전히 남아 있었다. 특히 `02~06`, `08`은 파일 수는 정리됐어도 내용 밀도가 낮아서 "왜 이 구조를 택했고, 정확히 어떤 코드와 테스트를 따라가야 하는가"를 충분히 설명하지 못했다. 이번 조각의 목적은 baseline/data/game foundation 축 여섯 편을 현재 코드 기준으로 다시 써서, 앞쪽 챕터만 읽어도 bootstrap, dev runtime, profile contract, country seed, shared game contract, population vertical slice를 실제로 재구현할 수 있게 만드는 것이다.
+- 변경 파일:
+  - `blog/02-gradle-spring-boot-ssr-bootstrap.md`
+  - `blog/03-docker-postgres-redis-dev-environment.md`
+  - `blog/04-application-yml-and-profile-strategy.md`
+  - `blog/05-country-seed-and-reference-data-pipeline.md`
+  - `blog/06-game-package-structure-and-shared-session-contract.md`
+  - `blog/08-population-quiz-arcade-loop-and-option-generation.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 앱 런타임 자체는 바뀌지 않았다. 바뀐 흐름은 `독자 -> blog/README.md -> 02~06, 08 본편 -> 실제 코드 파일/테스트/명령`이다. 예를 들어 `02`는 `settings.gradle -> build.gradle -> WorldMapApplication -> HomeController -> GlobalApiExceptionHandler` 흐름으로 bootstrap을 설명하고, `04`는 `application.yml -> local/test/browser-smoke/prod overlay -> RedisSessionProdConfiguration -> config tests`, `08`은 `PopulationGamePageController/API -> PopulationGameService -> Session/Stage/Attempt -> JS modal contract` 흐름을 그대로 따라가게 다시 썼다.
+- 데이터 / 상태 변화: DB, Redis, 세션, 게임 상태는 바뀌지 않는다. 바뀐 것은 blog 본편의 teaching quality와 재현성이다. `02~06`, `08`은 이제 모두 `이번 글에서 풀 문제`, `최종 도착 상태`, `핵심 도메인 모델 / 상태`, `요청 흐름 / 상태 변화`, `실패 케이스 / 예외 처리`, `테스트`, `구현 체크리스트`, `실행 / 검증 명령`까지 포함하는 같은 구조를 따르고, 각 글이 실제 저장소 파일과 테스트 이름을 current source of truth로 삼는다.
+- 핵심 도메인 개념:
+  - `02`: build baseline도 하나의 계약이다. `build.gradle`은 의존성 목록이 아니라 verification lane까지 품는 런타임 entry다.
+  - `03`: local/test는 "값이 다른 설정 파일"이 아니라 사용자가 다른 runtime contract다.
+  - `04`: profile은 YAML 묶음이 아니라 실행 목적이며, base/local/test/browser-smoke/prod의 책임이 달라야 한다.
+  - `05`: `Country`는 lookup table이 아니라 전체 플랫폼의 reference entity이고, seed는 insert-only가 아니라 sync 대상이다.
+  - `06`: game platform은 개별 게임보다 먼저 `BaseGameSession`, ownership context, stale submit guard 같은 공통 계약으로 설명돼야 한다.
+  - `08`: population quiz는 위치 게임의 공통 loop가 4지선다 UI에도 그대로 재사용됨을 증명하는 vertical slice다.
+- 예외 / 엣지 케이스:
+  - 이번 작업은 문서 보강이라 앱 코드는 건드리지 않았다.
+  - `03`처럼 Compose runtime 글은 현재 저장소에 전용 JUnit 테스트가 거의 없으므로, manual smoke와 다음 글의 config tests를 정직하게 분리해 설명했다.
+  - `04`는 현재 코드 기준으로 base에서 local default가 제거된 상태를 source of truth로 삼고, 과거 설정은 역사 설명에서 제외했다.
+  - `06`과 `08`은 later hardening 이후의 ownership/stale submit/accessibility 현실을 포함하되, 그 규칙이 어디서 온 것인지 공통 contract 관점으로 다시 정리했다.
+- 테스트:
+  - `python3` one-off script로 `README.md`, `docs/*.md`, `blog/*.md` Markdown 링크 존재 여부 확인
+  - `find blog -maxdepth 1 -type f | wc -l`
+  - `wc -l blog/02-gradle-spring-boot-ssr-bootstrap.md blog/03-docker-postgres-redis-dev-environment.md blog/04-application-yml-and-profile-strategy.md blog/05-country-seed-and-reference-data-pipeline.md blog/06-game-package-structure-and-shared-session-contract.md blog/08-population-quiz-arcade-loop-and-option-generation.md`
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이번 작업 자체가 `blog/` 본편 여섯 편 전면 보강이다.
+- 배운 점: 파일 경계만 ERP형으로 바꿔서는 충분하지 않았다. 실제 teaching quality는 "어떤 파일부터 열고, 어디서 상태가 바뀌고, 어떤 테스트가 어떤 리스크를 막는지"를 반복 가능한 포맷으로 적어야 나온다. 특히 baseline 글이 약하면 뒤의 hardening/runtime 글이 아무리 좋아도 독자는 전체 프로젝트를 다시 세우기 어렵다.
+- 아직 약한 부분: 이번에 `02~06`, `08`은 크게 보강했지만, 남은 본편들도 ERP 수준의 before/after 비교표나 구현 선택지 비교를 더 넣으면 더 좋아질 수 있다. 특히 `07`, `09`, `10`, `16~18`은 이미 긴 글이지만, 표와 다이어그램 측면에서는 추가 polish 여지가 있다.
+- 면접용 30초 요약: 이번에는 WorldMap blog에서 가장 약했던 baseline/data/game foundation 축 여섯 편을 현재 코드 기준으로 다시 썼습니다. Spring Boot bootstrap, Docker Compose dev runtime, profile strategy, country seed sync, shared game contract, population quiz vertical slice를 모두 `문제 -> 도메인 모델 -> 요청 흐름 -> 실패 케이스 -> 테스트 -> 구현 체크리스트` 구조로 보강해서, 앞부분만 읽어도 프로젝트의 핵심 뼈대를 실제로 재구현할 수 있게 만들었습니다.
+
+## 2026-04-01 - ERP 수준 기준으로 blog 파일 경계와 핵심 본편 밀도를 최종 재정렬
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 앞선 개편으로 `blog/` 파일 수와 허브 구조는 어느 정도 정리됐지만, 사용자가 지적한 핵심은 여전히 맞았다. "파일 수가 줄었다"와 "이 블로그만 읽고 프로젝트를 다시 구현할 수 있다"는 다른 문제였다. 이번 조각의 목적은 ERP blog처럼 실제 문제 단위로 survivor 파일 경계를 다시 자르고, 허브 문서와 핵심 본편(특히 `07`, `09`, `10`, `11~18`)을 재현형 섹션 기준으로 다시 쓰는 것이다.
+- 변경 파일:
+  - `blog/README.md`
+  - `blog/00_quality_checklist.md`
+  - `blog/00_rebuild_guide.md`
+  - `blog/00_series_plan.md`
+  - `blog/06-game-package-structure-and-shared-session-contract.md`
+  - `blog/07-location-game-session-stage-attempt-loop.md`
+  - `blog/08-population-quiz-arcade-loop-and-option-generation.md`
+  - `blog/09-redis-leaderboard-and-ranking-page.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
+  - `blog/11-guest-session-ownership-and-progress-claim.md`
+  - `blog/12-simple-auth-member-session-and-admin-entry.md`
+  - `blog/13-mypage-and-public-stats-read-models.md`
+  - `blog/14-dashboard-admin-surface-and-operations-cards.md`
+  - `blog/15-public-scope-reset-and-new-games-lineup.md`
+  - `blog/16-production-runtime-redis-session-and-ecs-deploy-prep.md`
+  - `blog/17-game-integrity-current-member-and-role-revalidation.md`
+  - `blog/18-production-verification-and-demo-interview-pack.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 앱 런타임 요청은 바뀌지 않았다. 바뀐 것은 독자 흐름이다. 이제 `blog/README.md -> 00_series_plan -> 00_rebuild_guide -> 본편 01~18`이 기본 진입이고, 본편도 ERP처럼 "문제 하나를 닫는 글" 기준으로 다시 나뉜다. 예를 들어 auth는 `11 guest ownership`, `12 simple auth/member session`, `13 mypage/stats`, `14 dashboard`로 쪼개고, 마지막 production-ready 구간은 `16 runtime`, `17 integrity`, `18 verification + demo`로 정리했다.
+- 데이터 / 상태 변화: DB, Redis, 세션, 게임 상태는 바뀌지 않는다. 바뀐 것은 `blog/`의 information architecture와 본편 밀도다. top-level은 여전히 `22파일`이지만, 이제 `허브 4개 + 본편 18개`라는 파일 구조와 각 글의 문제 경계가 일관되게 맞고, 핵심 챕터는 `최종 도착 상태`, `핵심 도메인 모델 / 상태`, `실패 케이스 / 예외 처리`, `실행 / 검증 명령`까지 포함하는 재현형 포맷을 따른다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 `블로그도 read model처럼 목적별 경계가 필요하다`는 점이다. 이전 구조는 파일 수는 줄었지만 `guest ownership + simple auth`, `mypage + stats + dashboard`, `runtime + integrity + verification`처럼 읽는 사람이 다른 내용을 한 글에 묶고 있었다. 그래서 이번에는 실제 제품 구조에 맞춰 `사용자 소유권`, `계정/세션`, `public read model`, `admin surface`, `scope reset + 라인업`, `운영 런타임`, `hardening`, `verification + demo`로 다시 자르고, 그 경계에 맞게 글도 다시 썼다.
+- 예외 / 엣지 케이스:
+  - 이번 작업은 문서 전면 개편이라 앱 코드는 건드리지 않았다.
+  - 과거 `WORKLOG` 항목에는 역사 기록상 옛 구조 설명이 남아 있을 수 있지만, blog 링크 경로는 현재 survivor 파일로 다시 맞췄다.
+  - 아직 전체 본편이 ERP의 600~700줄급 밀도까지 간 것은 아니지만, 최소한 핵심 챕터는 "프로젝트를 다시 구현하고 면접에서 설명하는 데 필요한 정보"를 우선 담는 방향으로 재작성했다.
+- 테스트:
+  - `find blog -maxdepth 1 -type f | wc -l`
+  - `wc -l blog/*.md`
+  - `python3` one-off script로 `README.md`, `docs/*.md`, `blog/*.md` 링크 존재 여부 확인
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이번 작업 자체가 blog survivor 구조와 핵심 본편 재작성이다.
+- 배운 점: 파일 수를 줄이는 것만으로는 ERP 수준의 teaching quality가 나오지 않는다. 진짜 중요한 것은 `문제 경계`, `먼저 볼 파일`, `실패 케이스`, `검증 명령`, `면접 답변`이 같은 구조로 반복되게 만드는 것이다.
+- 아직 약한 부분: 일부 baseline 글(`02~06`, `08`)은 허브와 후반 본편만큼 상세하지 않다. 다음 보강이 필요하다면 그 구간을 같은 19섹션 포맷으로 다시 쓰는 것이 맞다.
+- 면접용 30초 요약: 이번에는 WorldMap blog를 ERP 수준 기준으로 다시 잘랐습니다. `blog/`는 이제 허브 4개와 본편 18개로 유지하되, auth/read model/runtime/verification 경계를 실제 제품 구조에 맞게 다시 나눴고, 핵심 글에는 `최종 상태`, `도메인 모델`, `실패 케이스`, `검증 명령`을 넣어 이 블로그만으로도 현재 코드를 더 현실적으로 재구현하고 설명할 수 있게 만들었습니다.
+
+## 2026-04-01 - ERP형 재현 시리즈 기준으로 blog 파일 구조와 본편 18편을 전면 개편
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 사용자가 지적한 핵심은 “파일 수 압축”이 아니라 “ERP blog 수준의 재현성과 teaching quality”였다. 기존 WorldMap blog는 survivor 글 몇 편을 길게 붙였지만, ERP처럼 `허브 문서 + Part 인덱스 + 품질 체크리스트 + 재현형 섹션 규칙 + 세분화된 본편` 구조를 갖고 있지 않았다. 이번 조각의 목적은 파일 구조부터 다시 짜서, WorldMap blog를 `허브 4개 + 본편 18개`의 재현형 시리즈로 재편하는 것이다.
+- 변경 파일:
+  - `blog/README.md`
+  - `blog/00_quality_checklist.md`
+  - `blog/00_rebuild_guide.md`
+  - `blog/00_series_plan.md`
+  - `blog/01-why-worldmap-server-driven-game-platform.md`
+  - `blog/02-gradle-spring-boot-ssr-bootstrap.md`
+  - `blog/03-docker-postgres-redis-dev-environment.md`
+  - `blog/04-application-yml-and-profile-strategy.md`
+  - `blog/05-country-seed-and-reference-data-pipeline.md`
+  - `blog/06-game-package-structure-and-shared-session-contract.md`
+  - `blog/07-location-game-session-stage-attempt-loop.md`
+  - `blog/08-population-quiz-arcade-loop-and-option-generation.md`
+  - `blog/09-redis-leaderboard-and-ranking-page.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
+  - `blog/11-guest-session-ownership-and-progress-claim.md`
+  - `blog/13-mypage-and-public-stats-read-models.md`
+  - `blog/15-public-scope-reset-and-new-games-lineup.md`
+  - `blog/15-public-scope-reset-and-new-games-lineup.md`
+  - `blog/16-production-runtime-redis-session-and-ecs-deploy-prep.md`
+  - `blog/17-game-integrity-current-member-and-role-revalidation.md`
+  - `blog/18-production-verification-and-demo-interview-pack.md`
+  - `blog/18-production-verification-and-demo-interview-pack.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 앱 런타임 요청은 바뀌지 않았다. 바뀐 것은 `독자 -> blog/README.md -> 00_series_plan/00_rebuild_guide/00_quality_checklist -> Part A~G 본편` 흐름이다. 이전에는 `README -> 몇 개 대표 글` 수준이었다면, 지금은 ERP blog처럼 먼저 시리즈의 목적과 품질 기준을 읽고, 그다음 각 Part를 따라가며 baseline, data, game loop, leaderboard, recommendation, auth, read model, runtime, integrity, verification, demo를 순서대로 재구현할 수 있게 했다.
+- 데이터 / 상태 변화: DB, Redis, 세션, 게임 상태는 바뀌지 않는다. 바뀐 것은 `blog/`의 information architecture다. top-level은 `README + 00_quality_checklist + 00_rebuild_guide + 00_series_plan + 본편 18편`으로 총 22파일이 됐고, 기존 `00-series-roadmap`, `00-rebuild-playbook`, `01~11` 구조는 모두 새 ERP형 시리즈 파일명으로 대체됐다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 `블로그도 패키지 구조처럼 관심사 분리가 필요하다`는 점이다. 허브 문서는 “어떻게 읽고, 어떻게 쓰고, 어떻게 평가할 것인가”를 담당하고, 본편은 각 문제를 하나씩 닫는다. 그래서 ERP blog의 강점을 그대로 가져왔다. `문제 정의`, `먼저 알아둘 개념`, `이번 글에서 다룰 파일`, `설계 구상`, `코드 설명`, `실제 흐름`, `테스트`, `회고`, `취업 포인트`, `시작 상태`, `구현 체크리스트`, `산출물 체크리스트`, `자주 막히는 지점`이 기본 포맷이 됐다.
+- 예외 / 엣지 케이스:
+  - 이번 작업은 문서 구조 개편이므로 앱 코드는 건드리지 않았다.
+  - top-level 파일 수는 줄이는 대신 다시 늘었다. 하지만 이는 무분별한 증가가 아니라, ERP 수준의 teaching quality를 위해 너무 넓게 합쳐 두었던 글을 baseline/data/game/read model/auth/runtime/demo 단위로 다시 분해한 결과다.
+  - 예전 blog 파일명은 대부분 제거했기 때문에, `WORKLOG`와 `PORTFOLIO_PLAYBOOK` 안의 blog 링크는 새 파일명으로 다시 매핑했다.
+- 테스트:
+  - `rg -n "blog/.*\\.md"`로 old blog 경로 잔존 여부와 치환 범위 확인
+  - `python3` one-off script로 `README.md`, `docs/*.md`, `blog/*.md` Markdown 링크 존재 여부 확인
+  - `find blog -maxdepth 1 -type f | wc -l`
+  - `wc -l blog/*.md`
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이번 작업 자체가 blog 전면 구조 개편이다.
+- 배운 점: 내용이 빈약한 긴 글 몇 편보다, 단계가 분리된 탄탄한 시리즈가 재현성과 teaching quality를 더 잘 만든다. 특히 ERP blog처럼 “허브 문서가 편집 규칙을 잡고, 본편이 같은 템플릿을 반복하는 구조”가 있어야 독자가 중간 체크포인트를 스스로 구현해 볼 수 있다.
+- 아직 약한 부분: 구조와 포맷은 ERP에 훨씬 가까워졌지만, 일부 본편은 ERP의 500~700줄급 밀도까지는 아직 가지 않았다. 특히 `07`, `09`, `10`, `15`, `17`, `18`은 실제 코드 스니펫과 before/after 비교표를 더 넣어도 좋다.
+- 면접용 30초 요약: 이번에는 WorldMap blog를 survivor 글 몇 편이 아니라 ERP형 재현 시리즈로 다시 짰습니다. `README`, `시리즈 인덱스`, `재현 가이드`, `품질 체크리스트`를 허브로 두고, 본편을 baseline, data, game loop, leaderboard, recommendation, auth, read model, runtime, integrity, verification, demo까지 18편으로 다시 나눴습니다. 덕분에 이제는 글만 읽어도 어떤 순서로 파일을 만들고 어떤 테스트를 돌려야 하는지 더 선명하게 따라갈 수 있습니다.
+
+## 2026-04-01 - ERP 수준 기준으로 blog 구조와 본편 포맷을 다시 세우기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 직전 개편으로 파일 수와 읽기 경로는 정리됐지만, 사용자가 보기에 여전히 ERP blog만큼의 재현성과 teaching quality가 나오지 않았다. 핵심 원인은 허브 문서가 약하고, 본편 글도 ERP처럼 `문제 -> 설계 -> 코드 -> 테스트 -> 포트폴리오 답변 -> 시작 상태/체크리스트` 구조를 강하게 갖고 있지 않았다는 점이다. 이번 조각의 목적은 WorldMap blog를 ERP 수준의 재현형 시리즈에 더 가깝게 끌어올리는 것이다.
+- 변경 파일:
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/00_rebuild_guide.md`
+  - `blog/00_quality_checklist.md`
+  - `blog/01-why-worldmap-server-driven-game-platform.md`
+  - `blog/02-gradle-spring-boot-ssr-bootstrap.md`
+  - `blog/05-country-seed-and-reference-data-pipeline.md`
+  - `blog/07-location-game-session-stage-attempt-loop.md`
+  - `blog/09-redis-leaderboard-and-ranking-page.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
+  - `blog/11-guest-session-ownership-and-progress-claim.md`
+  - `blog/15-public-scope-reset-and-new-games-lineup.md`
+  - `blog/16-production-runtime-redis-session-and-ecs-deploy-prep.md`
+  - `blog/17-game-integrity-current-member-and-role-revalidation.md`
+  - `blog/18-production-verification-and-demo-interview-pack.md`
+  - `blog/18-production-verification-and-demo-interview-pack.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 앱 런타임 요청은 바뀌지 않았다. 바뀐 것은 독자 흐름과 편집 규칙이다. 이제 `blog/README.md`는 ERP blog처럼 `Blog Workspace` 역할을 하고, `00-series-roadmap.md`는 Part 기반 인덱스, `00-rebuild-playbook.md`는 재현형 글 공통 규칙, `00_quality_checklist.md`는 품질 기준이 된다. 본편은 `01~12`로 보고, 각 글 하단에는 `취업 포인트`, `시작 상태`, `이번 글에서 바뀌는 파일`, `구현 체크리스트`, `실행/검증 명령`, `산출물 체크리스트`, `글 종료 체크포인트`, `자주 막히는 지점`을 붙여 ERP식 읽기/재현 흐름에 가깝게 맞췄다.
+- 데이터 / 상태 변화: DB, Redis, 세션, 게임 상태는 바뀌지 않는다. 바뀐 것은 `blog/`의 파일 역할과 본문 템플릿이다. top-level은 `README + 00* 허브 3개 + quality checklist 1개 + 본편 12개`로 총 16파일이 됐고, 독자는 이제 허브 문서만 읽어도 시리즈가 어떤 규칙으로 쓰였는지 먼저 이해할 수 있다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 `blog도 information architecture가 필요하다`는 점이다. 단순히 좋은 글 몇 개가 아니라, 허브 문서가 편집 규칙과 품질 기준을 잡고, 본편이 같은 템플릿으로 반복돼야 재현성이 생긴다. 그래서 ERP blog에서 강했던 요소를 WorldMap에도 가져왔다. `품질 체크리스트`, `재현형 섹션`, `Part 인덱스`, `취업 포인트`, `시작 상태/산출물 체크리스트`가 그 핵심이다.
+- 예외 / 엣지 케이스:
+  - 이번에도 앱 코드 자체는 바뀌지 않았다. 따라서 애플리케이션 테스트를 새로 돌리기보다, 문서가 실제 코드 경로와 맞는지 검증하는 데 집중했다.
+  - 본편 12개가 모두 ERP의 600~700줄급 밀도까지 간 것은 아니다. 대신 이번 턴에서는 시리즈 전체에 같은 재현형 포맷과 허브 규칙을 먼저 세웠고, 이후에는 특정 본편을 더 깊게 확장할 수 있는 기반이 생겼다.
+  - `12-demo-architecture-and-interview-pack.md`를 새로 추가해, WorldMap도 ERP처럼 시연/면접 마감 글이 있는 구조로 맞췄다.
+- 테스트:
+  - `python3` one-off script로 `README.md`, `docs/*.md`, `blog/*.md` 링크 존재 여부 확인
+  - `find blog -maxdepth 1 -type f | wc -l`
+  - `wc -l blog/*.md`
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이번 작업 자체가 blog 구조와 본편 포맷 전면 개편이다.
+- 배운 점: 파일 수를 줄이고 긴 설명을 넣는 것만으로는 ERP 같은 teaching quality가 나오지 않는다. 중요한 건 허브 문서가 시리즈 규칙을 잡고, 본편이 같은 재현형 섹션을 반복해 독자가 자기 저장소 상태와 직접 대조하게 만드는 것이다.
+- 아직 약한 부분: 현재 구조는 ERP식 정보 구조에 훨씬 가까워졌지만, 일부 본편은 여전히 분량과 사례가 더 필요할 수 있다. 특히 실제 code block 예시와 before/after 비교표는 후속 보강 여지가 남아 있다.
+- 면접용 30초 요약: 이번에는 WorldMap blog를 ERP 수준의 재현형 시리즈에 맞추기 위해 허브 문서와 본편 포맷을 다시 세웠습니다. `README`, `series roadmap`, `rebuild playbook`, `quality checklist`를 중심으로 정보 구조를 잡고, 본편 12개에는 `취업 포인트`, `시작 상태`, `구현 체크리스트`, `산출물 체크리스트`, `막히는 지점`을 붙여 글만 읽어도 구현과 설명 순서를 더 선명하게 따라가게 만들었습니다.
+
+## 2026-04-01 - blog 본편 11개를 재구현 가능한 수준으로 전면 재집필
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 이전 턴까지는 `blog/`의 파일 수를 줄이고 읽기 경로를 정리하는 데 집중했다. 하지만 사용자가 지적한 핵심은 맞았다. 파일 수가 14개여도, 본편 밀도가 낮으면 여전히 “현재 프로젝트를 다시 구현할 수 있는 시리즈”라고 부르기 어렵다. 이번 조각의 목적은 새 파일을 더 늘리지 않고, 허브 3개와 본편 11개를 실제 재현 문서 수준으로 다시 쓰는 것이다.
+- 변경 파일:
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/00_rebuild_guide.md`
+  - `blog/01-why-worldmap-server-driven-game-platform.md`
+  - `blog/02-gradle-spring-boot-ssr-bootstrap.md`
+  - `blog/05-country-seed-and-reference-data-pipeline.md`
+  - `blog/07-location-game-session-stage-attempt-loop.md`
+  - `blog/09-redis-leaderboard-and-ranking-page.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
+  - `blog/11-guest-session-ownership-and-progress-claim.md`
+  - `blog/15-public-scope-reset-and-new-games-lineup.md`
+  - `blog/16-production-runtime-redis-session-and-ecs-deploy-prep.md`
+  - `blog/17-game-integrity-current-member-and-role-revalidation.md`
+  - `blog/18-production-verification-and-demo-interview-pack.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 앱 런타임 요청은 바뀌지 않았다. 바뀐 것은 `독자 -> README -> roadmap 또는 rebuild playbook -> 01~11 본편` 흐름이다. 이번에는 그 읽기 흐름 안에 “구현 순서”와 “검증 순서”를 실제로 넣었다. 예를 들어 `00-rebuild-playbook.md`는 phase별로 먼저 볼 파일, 구현 순서, 최소 검증을 적고, 각 본편은 `최종 도착 상태`, `먼저 볼 파일`, `요청 흐름`, `왜 이 계층에 있어야 하는가`, `재현 순서`, `실패 케이스`, `최소 검증`을 고정 섹션으로 갖게 바꿨다.
+- 데이터 / 상태 변화: DB, Redis, 세션, 게임 상태는 바뀌지 않는다. 바뀐 것은 `blog/` 문서 구조의 해상도다. 이전에는 “읽기 쉬운 개요”에 가깝던 글들이 이제는 실제 클래스와 테스트, API 경로를 파일 단위로 짚으며 현재 코드베이스를 어떤 순서로 다시 만들어야 하는지 안내한다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 `blog도 read model이어야 한다`는 점이다. `WORKLOG`는 작업 기록이지만, `blog`는 외부 독자가 현재 제품 구조를 이해하고 재현하는 데 필요한 도구다. 그래서 이번에는 소개 문장을 늘리는 대신, 각 글을 `문제 정의 -> source of truth 파일 -> 요청/운영 흐름 -> 구현 순서 -> 실패 케이스 -> 테스트` 구조로 다시 썼다. 특히 `04`, `05`, `06`, `07`, `09`, `10`, `11`은 각각 게임 루프, 랭킹, 추천, auth/read model, prod runtime, integrity, verification을 재구현 가능한 단위로 설명하게 했다.
+- 예외 / 엣지 케이스:
+  - 이번 작업은 의도적으로 새 numbered post를 늘리지 않았다. 파일 수 압축을 유지한 상태에서 내용 밀도만 올리는 것이 목표였기 때문이다.
+  - 블로그가 코드를 완전히 대체하지는 않는다. 하지만 각 글이 최소한 “어떤 파일부터 읽고 어떤 테스트를 돌리면 현재 구조를 다시 세울 수 있는가”까지는 안내하도록 기준을 올렸다.
+  - root `README.md`는 public 제품 소개 문서라서 이번 턴에는 건드리지 않았다. 바뀐 것은 프로젝트 기능이 아니라 블로그 본편의 설명 밀도이기 때문이다.
+- 테스트:
+  - `python3` one-off script로 `README.md`, `docs/*.md`, `blog/*.md`의 Markdown 링크 존재 여부 재확인
+  - `find blog -maxdepth 1 -type f | wc -l`
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이번 작업 자체가 블로그 본편 전면 재집필이다.
+- 배운 점: 파일 수를 줄이는 것과 재구현 가능성을 높이는 것은 다른 작업이다. 진짜 품질을 올리려면 허브 문서만 깔끔하게 만들면 안 되고, 각 본편이 실제 클래스, API, 상태 전이, 테스트를 기준으로 “어떤 순서로 구현해야 하는가”를 안내해야 했다.
+- 아직 약한 부분: 이 시리즈가 현재 코드베이스 재현에는 훨씬 강해졌지만, 실제 production URL smoke report가 생기면 `11-browser-verification-pipeline.md`에 실측 예시를 한 번 더 넣는 편이 좋다. 또한 배포 후 회고까지 포함한 운영 글은 아직 없다.
+- 면접용 30초 요약: 이번에는 블로그를 소개 글 수준이 아니라 재현 가능한 기술 시리즈로 다시 썼습니다. 파일 수는 14개로 유지하되, 허브와 본편 11개 전부에 `최종 상태`, `먼저 볼 파일`, `요청/운영 흐름`, `구현 순서`, `실패 케이스`, `최소 검증`을 넣어, 이 글들만 따라가도 현재 WorldMap 코드를 어떤 순서로 읽고 다시 만들어야 하는지 보이도록 만들었습니다.
+
+## 2026-04-01 - blog를 14개 재현 중심 시리즈로 전면 재작성
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 이전 `blog/`는 파일 수만 줄여도 여전히 “합쳐진 작업 로그”에 가까웠고, 독자가 이 블로그만 읽고 현재 코드베이스를 파악하거나 재현하기에는 부족했다. 이번 조각의 목적은 survivor 파일을 유지하는 수준이 아니라, 파일 이름부터 본문 구조까지 전부 다시 설계해서 `읽기용 기술 시리즈`로 바꾸는 것이다.
+- 변경 파일:
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/00_rebuild_guide.md`
+  - `blog/01-why-worldmap-server-driven-game-platform.md`
+  - `blog/02-gradle-spring-boot-ssr-bootstrap.md`
+  - `blog/05-country-seed-and-reference-data-pipeline.md`
+  - `blog/07-location-game-session-stage-attempt-loop.md`
+  - `blog/09-redis-leaderboard-and-ranking-page.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
+  - `blog/11-guest-session-ownership-and-progress-claim.md`
+  - `blog/15-public-scope-reset-and-new-games-lineup.md`
+  - `blog/16-production-runtime-redis-session-and-ecs-deploy-prep.md`
+  - `blog/17-game-integrity-current-member-and-role-revalidation.md`
+  - `blog/18-production-verification-and-demo-interview-pack.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 이번에도 앱 런타임 요청은 바뀌지 않았다. 바뀐 것은 독자 흐름이다. 이제 시작점은 `blog/README.md`이고, 거기서 독자는 `빠른 파악`, `현재 코드 재현`, `production-ready` 중 하나의 경로를 고른다. 재현 경로는 `blog/00_rebuild_guide.md -> 02 -> 11` 순서고, 제품/면접 설명 경로는 `README -> 01 -> 04 -> 05 -> 06 -> 07 -> 10 -> 11` 순서다.
+- 데이터 / 상태 변화: DB, Redis, 세션, 게임 상태는 바뀌지 않는다. 바뀐 것은 `blog/` 파일 시스템과 문서 의미 구조다. 기존 top-level survivor 20개를 지우고, 허브 3개 + 본편 11개 = 총 14개 파일로 다시 만들었다. 옛 micro-post 링크는 새 대표 글 경로로 전환해 `WORKLOG`와 `PLAYBOOK`에서도 끊긴 경로가 없게 맞췄다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “블로그도 최종 read model이어야 한다”는 점이다. `WORKLOG`는 작업 기록이고, `blog`는 독자가 현재 코드를 이해하고 재현하도록 돕는 출판물이다. 그래서 새 글은 전부 같은 포맷으로 맞췄다. `이 글이 답하는 질문`, `먼저 볼 파일`, `요청 흐름`, `왜 이 로직이 그 계층에 있는가`, `재현 순서`, `최소 검증`, `여기까지 끝나면 설명할 수 있어야 하는 것`을 각 글의 고정 골격으로 두었다.
+- 예외 / 엣지 케이스:
+  - 옛 micro-post 본문 자체는 더 이상 `blog/` top-level에 남지 않는다. 이제는 역사 기록보다 현재 코드 재현을 우선한 구조다.
+  - `docs/WORKLOG.md`의 과거 조각들은 원래 시점 설명을 보존하기 위해 일부 옛 번호 표현을 텍스트로는 남길 수 있지만, 링크 경로는 모두 현재 survivor 글로 연결되게 정리했다.
+  - 이 블로그가 코드를 완전히 대체하는 것은 아니다. 목표는 “코드를 빨리 읽고 재현하게 만드는 안내서”지 “코드 없이 전부 복원하는 책”은 아니다.
+- 테스트:
+  - `find blog -maxdepth 1 -type f | wc -l`로 top-level 파일 수 `14` 확인
+  - `python3` one-off script로 `README.md`, `docs/*.md`, `blog/*.md` 안의 절대 blog 링크 존재 여부 확인
+  - `rg`로 삭제된 top-level blog 경로 잔존 여부 확인
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이번 작업 자체가 블로그 전면 재작성이라 별도 numbered post를 추가하지 않고 `blog/` 전체를 새 시리즈 세트로 교체했다.
+- 배운 점: 파일 수를 줄이는 것과 재현성을 높이는 것은 다른 문제다. 진짜 품질을 올리려면 survivor 글을 그냥 길게 붙이는 게 아니라, 각 글이 “지금 어떤 코드부터 읽고 어떤 테스트를 돌리면 되는가”를 같은 형식으로 안내해야 한다.
+- 아직 약한 부분: 지금 구조는 충분히 읽기 좋아졌지만, 실제 공개 URL이 생긴 뒤엔 `11-browser-verification-pipeline.md`에 production smoke 결과 예시를 한 번 더 보강하는 편이 좋다.
+- 면접용 30초 요약: 이번에는 블로그를 단순 압축이 아니라 전면 재작성했습니다. 허브 3개와 본편 11개, 총 14파일만 남기고 각 글을 `문제 정의 -> 먼저 볼 코드 -> 요청 흐름 -> 계층 책임 -> 재현 순서 -> 검증` 구조로 통일해서, 이 블로그만 따라가도 현재 WorldMap 코드베이스를 어떤 순서로 읽고 설명해야 하는지 보이도록 만들었습니다.
+
+## 2026-03-31 - 첫 ECS 배포 전에 빠진 입력을 한 번에 찾는 preflight 스크립트 추가하기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 공개 URL이 없는 상태에서 다음 단계는 첫 ECS 배포인데, 지금 저장소는 `deploy-prod-ecs.yml`과 sample task definition은 있어도 “배포 버튼을 누르기 전에 뭐가 빠졌는지”를 한 번에 알려 주는 장치가 없었다. 현재 repo는 GitHub repository variables도 0개라서, 첫 실행을 누르면 workflow 안에서야 비로소 실패한다. 이번 조각은 첫 배포 전에 빠진 입력을 바로 찾을 수 있게 `check_prod_deploy_preflight.py` 스크립트를 추가하는 데 집중했다.
+- 변경 파일:
+  - `scripts/check_prod_deploy_preflight.py`
+  - `src/test/java/com/worldmap/common/config/ProdDeployPreflightScriptTest.java`
+  - `README.md`
+  - `docs/DEPLOYMENT_RUNBOOK_AWS_ECS.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/09-redis-leaderboard-and-ranking-page.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+- 요청 흐름: 시작점은 `python3 scripts/check_prod_deploy_preflight.py --repo answndud/world_map_game`이다. 스크립트는 먼저 [.github/workflows/deploy-prod-ecs.yml](/Users/alex/project/worldmap/.github/workflows/deploy-prod-ecs.yml)을 읽어 `vars.*` 참조 목록을 source of truth로 추출한다. 그다음 `gh api repos/<repo>/actions/variables`로 현재 GitHub repository variables를 읽고, `workflow_dispatch` 존재 여부와 [task-definition.prod.sample.json](/Users/alex/project/worldmap/deploy/ecs/task-definition.prod.sample.json), [render_ecs_task_definition.py](/Users/alex/project/worldmap/scripts/render_ecs_task_definition.py) 같은 필수 파일도 같이 확인한다. 마지막에는 `build/reports/deploy-preflight/prod-deploy-preflight.md`를 생성해 missing variable과 다음 액션을 Markdown으로 남긴다.
+- 데이터 / 상태 변화: 운영 DB, Redis, ECS 리소스 자체는 바뀌지 않는다. 새로 생기는 것은 배포 readiness report다. 현재 실제 repo 상태로 실행하면 GitHub repository variables가 0개라서, `AWS_REGION`, `AWS_ACCOUNT_ID`, `ECS_CLUSTER`, `RDS_ENDPOINT` 등 13개 missing 변수 목록이 report에 남는다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “배포 workflow가 있다”와 “배포를 눌러도 될 만큼 입력이 준비됐다”는 다른 말이라는 점이다. 첫 배포 전 preflight는 앱 도메인이 아니라 운영 입력 계약을 검증하는 단계이므로, source of truth도 배포 workflow 파일이어야 한다. 그래서 required variable 목록을 스크립트에 다시 하드코딩하지 않고, workflow의 `${{ vars.NAME }}` 참조를 읽어 계산하도록 만들었다.
+- 예외 / 엣지 케이스:
+  - `gh`가 없거나 인증이 안 되어 있으면 스크립트는 실패한다. 대신 테스트에서는 `--variables-json`으로 fake GitHub API 응답을 주입할 수 있게 만들어 외부 의존 없이 통과/실패 경로를 둘 다 고정했다.
+  - 현재 repo는 실제로 variables가 0개라서 스크립트가 실패하는 것이 정상이다. 이 실패는 버그가 아니라 “첫 배포 전에 아직 채워야 할 입력이 남았다”는 신호다.
+  - 공개 URL은 여전히 첫 배포 이후 ALB DNS로 생긴다. 즉 이번 조각은 production smoke 자체가 아니라, 그 직전 단계인 “배포 입력 준비 확인”이다.
+- 테스트:
+  - `python3 -m py_compile scripts/check_prod_deploy_preflight.py`
+  - `./gradlew test --tests com.worldmap.common.config.ProdDeployPreflightScriptTest --tests com.worldmap.common.config.GitHubActionsDeployWorkflowTemplateTest --tests com.worldmap.common.config.RenderEcsTaskDefinitionScriptTest`
+  - `python3 scripts/check_prod_deploy_preflight.py --repo answndud/world_map_game`
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이번 조각은 단순 문서 추가가 아니라 첫 배포 readiness를 코드로 검증하는 작은 feature slice라서, source of truth를 workflow에서 읽는 이유와 report 구조를 설명할 가치가 있다.
+- 배운 점: production-ready에서 가장 답답한 순간은 “뭐가 안 돼서 막힌 건지”를 너무 늦게 아는 경우다. 첫 배포 전에는 배포 자체를 서두르기보다, 누락된 입력을 미리 드러내는 preflight가 오히려 더 가치 있다.
+- 아직 약한 부분: 이 스크립트는 GitHub repository variables와 필수 파일만 본다. AWS 안쪽 리소스(ECR repository, ECS cluster, ALB, ACM, Route 53)가 실제로 존재하는지는 아직 검증하지 않는다.
+- 면접용 30초 요약: 첫 ECS 배포 전에 GitHub Actions 입력이 다 준비됐는지 보는 preflight 스크립트를 추가했습니다. 핵심은 필요한 변수 목록을 따로 복사하지 않고 `deploy-prod-ecs.yml`의 실제 `vars.*` 참조를 읽어서, 현재 repository variables와 비교하도록 만든 점입니다. 그래서 이제는 배포 버튼을 누르기 전에 뭐가 빠졌는지 Markdown report로 바로 설명할 수 있습니다.
+
+## 2026-03-31 - 실제 공개 URL smoke와 초기 진입 수치를 재는 전용 레일 추가하기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: production-ready 마감에서 남은 핵심은 “실제 배포 URL에서 public 화면이 잘 뜨는가”와 “첫 진입이 어느 정도 빠른가”를 같은 형식으로 남기는 일이었다. 그런데 현재 저장소와 GitHub metadata에는 실제 공개 URL이 없어서, 곧바로 production을 찍는 것보다 먼저 측정 레일 자체를 코드로 고정하는 편이 맞았다. 이번 조각은 `publicUrlSmokeTest`를 추가해, URL만 주면 public read-only 화면의 상태와 browser-side `TTFB / DOMContentLoaded / load`를 바로 report로 남길 수 있게 만드는 데 집중했다.
+- 변경 파일:
+  - `build.gradle`
+  - `src/test/java/com/worldmap/e2e/PublicUrlSmokeE2ETest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/18-production-verification-and-demo-interview-pack.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+- 요청 흐름: 이 조각의 시작점은 사용자 요청이나 게임 API가 아니라 `./gradlew publicUrlSmokeTest`다. task는 `public-url-smoke` tag만 실행하고, [PublicUrlSmokeE2ETest.java](/Users/alex/project/worldmap/src/test/java/com/worldmap/e2e/PublicUrlSmokeE2ETest.java)가 Playwright Chromium으로 `/`, `/stats`, `/ranking`, `/login`, `/signup`, `/recommendation/survey`, `/games/capital/start`를 차례로 연다. 실제 URL이 있으면 `WORLDMAP_PUBLIC_BASE_URL` 또는 `-Dworldmap.publicBaseUrl=...`를 쓰고, 없으면 `test + browser-smoke` 내장 서버의 random port를 기본값으로 쓴다. 각 페이지는 응답 status, title, 대표 `h1`, Navigation Timing의 `responseStart / domContentLoadedEventEnd / loadEventEnd`를 읽고, 마지막에 `build/reports/public-url-smoke/public-url-smoke.md`로 report를 남긴다.
+- 데이터 / 상태 변화: 운영 DB나 Redis 스키마 변화는 없다. 새로 생긴 것은 verification lane과 report 산출물이다. 이 레일은 read-only public 페이지만 연다. 실제 write path를 건드리지 않기 때문에 production에 붙여도 랭킹이나 추천 데이터를 오염시키지 않는다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “실제 측정 자체”보다 “측정을 반복 가능한 코드로 만든다”는 점이다. production-ready 품질은 한 번 체감으로 보는 것보다, 같은 경로와 같은 지표를 다시 잴 수 있어야 설명 가능하다. 그래서 public URL smoke는 ad-hoc curl 모음이 아니라 별도 Test task로 두고, 측정 대상도 public read-only surface로 한정했다.
+- 예외 / 엣지 케이스:
+  - 실제 공개 URL은 현재 저장소/GitHub metadata에서 찾지 못했다. `homepageUrl`은 비어 있고, GitHub deployment/environment도 없어서 production 실행까지는 아직 URL 입력이 필요하다.
+  - 그래서 이 레일은 URL이 없을 때 내장 `test + browser-smoke` 서버로 자동 fallback한다. 이번 검증에서 생성된 local report는 `Base URL: http://127.0.0.1:56776` 기준으로 `/` TTFB `309ms`, `/stats` `307ms`, `/ranking` `19ms`, `/login` `18ms`, `/signup` `9ms`, `/recommendation/survey` `14ms`, `/games/capital/start` `6ms`였다.
+  - metric 이름은 `TTFB`로 적었지만, 실제 값은 browser-side Navigation Timing `responseStart` 근사치다. 즉 server-only `curl time_starttransfer`와는 약간 다를 수 있다.
+- 테스트:
+  - `./gradlew compileTestJava`
+  - `./gradlew publicUrlSmokeTest --tests com.worldmap.e2e.PublicUrlSmokeE2ETest`
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이번 조각은 단순 문구 수정이 아니라 production-ready 후속 verification lane을 하나 더 추가한 것이고, request flow와 report 구조를 설명할 가치가 있다.
+- 배운 점: 배포 smoke는 “URL만 알면 그때 가서 수동으로 본다”가 아니라, URL이 생겼을 때 바로 재사용할 수 있는 측정 레일을 먼저 만들어 두는 편이 훨씬 설명 가능했다. 특히 TTFB와 체감 성능은 숫자와 경로가 함께 남아야 나중에 개선 전후 비교도 가능하다.
+- 아직 약한 부분: 실제 ECS/ALB 공개 URL로 이 레일을 한 번 돌린 report는 아직 없다. repository metadata에 배포 URL이나 deployment record가 없어서, 첫 production report는 URL을 확보한 뒤 한 번 더 남겨야 한다.
+- 면접용 30초 요약: 이번에는 공개 URL smoke와 초기 진입 수치를 재는 전용 레일을 추가했습니다. `publicUrlSmokeTest`를 실행하면 `/`, `/stats`, `/ranking`, `/login`, `/signup`, `/recommendation/survey`, `/games/capital/start`를 실제 Chromium으로 열고, 상태와 `TTFB(responseStart) / DOMContentLoaded / load`를 Markdown report로 남깁니다. 핵심은 production URL이 생기면 같은 명령으로 바로 실측을 남길 수 있게 한 점입니다.
+
+## 2026-03-31 - 홈, 랭킹, Stats public shell 문구 밀도 줄이기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: verify 레일과 modal/browser smoke까지 닫고 나니, 남은 production-ready 과제는 구조보다는 “첫 화면에서 얼마나 빨리 읽히는가”에 가까워졌다. 홈, `/ranking`, `/stats`는 정보 구조는 괜찮았지만 같은 의미를 반복하는 설명 문장이 아직 길었다. 이번 조각은 서버 책임이나 화면 구조는 그대로 두고, public shell의 hero/panel/helper copy를 더 짧게 줄여 읽기 부담을 낮추는 데 집중했다.
+- 변경 파일:
+  - `src/main/resources/templates/home.html`
+  - `src/main/resources/templates/ranking/index.html`
+  - `src/main/resources/templates/stats/index.html`
+  - `src/main/java/com/worldmap/web/HomeController.java`
+  - `src/test/java/com/worldmap/web/HomeControllerTest.java`
+  - `src/test/java/com/worldmap/ranking/LeaderboardPageControllerTest.java`
+  - `src/test/java/com/worldmap/ranking/LeaderboardIntegrationTest.java`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 런타임 요청 경로는 바뀌지 않는다. 홈은 계속 `GET / -> HomeController -> home.html`, 랭킹은 `GET /ranking -> ranking/index.html + ranking.js`, Stats는 `GET /stats -> StatsPageController -> stats/index.html`로 간다. 이번 조각에서 바뀐 것은 이 요청 끝에서 브라우저가 읽는 SSR copy다. 홈은 `HomeController`가 내려 주는 게임 카드 설명과 입문/기록 메모를 더 짧게 만들고, `/ranking`, `/stats`는 템플릿 안의 hero/panel/helper 문구를 줄였다.
+- 데이터 / 상태 변화: DB, Redis, 세션 상태 변화는 없다. 바뀐 것은 public SSR shell이 화면에 노출하는 텍스트뿐이다. `/ranking`의 `data-copy`, placeholder, `/stats`의 stat-card-copy, 홈의 mode card description이 더 짧아졌지만, API 응답과 도메인 상태 전이는 그대로다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “설명은 충분하지만 반복은 줄인다”는 것이다. 서버 주도 게임 플랫폼이라는 제품 설명은 이미 충분히 남아 있으므로, public shell에서는 구조를 다시 바꾸기보다 한 번에 읽히는 밀도를 맞추는 편이 production-ready 마감에 더 적합했다. 홈 카드 설명처럼 여러 화면에서 재사용되는 카피는 여전히 `HomeController`가 source of truth를 갖고, `/ranking`과 `/stats`의 page-local 설명은 각 템플릿이 맡는다.
+- 예외 / 엣지 케이스:
+  - 홈 설명 문구를 줄이면서도 `게임`이라는 표현과 추천 이름 `나에게 어울리는 국가 찾기`는 유지했다. 이전 턴에서 정리한 정보 구조를 다시 흔들지 않기 위해서다.
+  - `/ranking` placeholder는 “최신 랭킹”과 “기준 날짜”를 반복 설명하던 문장을 `보드를 열면 랭킹을 불러옵니다.` 수준으로 줄였다. 실제 상세 정보는 활성 보드 제목과 scope 버튼이 이미 충분히 말해 주기 때문이다.
+  - 이번 조각은 UI copy polish라서 블로그는 생략했다. API, 도메인 모델, 테스트 전략 자체가 바뀐 기능 조각은 아니기 때문이다.
+- 테스트:
+  - `./gradlew test --tests com.worldmap.web.HomeControllerTest --tests com.worldmap.ranking.LeaderboardPageControllerTest --tests com.worldmap.stats.StatsPageControllerTest`
+  - `redis-server --save '' --appendonly no --port 6379`
+  - `./gradlew test --tests com.worldmap.ranking.LeaderboardIntegrationTest`
+  - `git diff --check`
+- 블로그 반영 여부: 생략. public shell 문구 밀도 조정은 구현 설명 글을 새로 쓸 만큼의 API/도메인 변화가 없어서, WORKLOG와 PLAYBOOK에만 반영했다.
+- 배운 점: production-ready 마감에서는 새로운 기능을 더하는 것보다, 이미 있는 구조가 “얼마나 빨리 읽히는가”를 다듬는 작업도 중요하다. 특히 홈/랭킹/Stats처럼 제품을 처음 설명하는 화면은 같은 뜻을 반복하는 한 문장만 줄여도 전체 인상이 꽤 달라진다.
+- 아직 약한 부분: public shell copy는 더 좋아졌지만, 실제 배포 URL 기준의 체감 성능과 TTFB를 수치로 남긴 것은 아니다. 또한 국기 게임 난이도/자산 확장 전략은 아직 제품 정책으로 더 정리할 여지가 있다.
+- 면접용 30초 요약: 이번에는 홈, 랭킹, Stats의 public shell 문구를 줄였습니다. 핵심은 구조나 서버 책임은 그대로 두고, 첫 화면에서 반복되던 설명 문장을 줄여 사용자와 면접관이 핵심을 더 빨리 읽게 만든 점입니다. 홈 카드 설명은 `HomeController`가 계속 관리하고, `/ranking`과 `/stats`는 템플릿 로컬 copy만 줄여서 요청 흐름이나 도메인 규칙은 건드리지 않았습니다.
+
+## 2026-03-31 - 게임오버 모달 focus 규칙을 공용 helper로 정리하기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: public 게임 5종의 modal browser E2E를 모두 닫고 나니, `inert / Tab trap / Escape / restart entry focus` 로직이 다섯 게임 JS에 거의 같은 형태로 반복되고 있었다. production-ready 기준에서는 테스트가 있는 것만큼 “같은 규칙이 한 곳에 모여 있는가”도 중요하다. 이번 조각은 modal keyboard contract를 공용 helper 하나로 모아, 이후 수정이 한 군데에서 끝나게 만드는 데 집중했다.
+- 변경 파일:
+  - `src/main/resources/static/js/game-over-modal.js`
+  - `src/main/resources/static/js/capital-game.js`
+  - `src/main/resources/static/js/population-game.js`
+  - `src/main/resources/static/js/flag-game.js`
+  - `src/main/resources/static/js/population-battle-game.js`
+  - `src/main/resources/static/js/location-game.js`
+  - `src/main/resources/templates/capital-game/start.html`
+  - `src/main/resources/templates/capital-game/play.html`
+  - `src/main/resources/templates/population-game/start.html`
+  - `src/main/resources/templates/population-game/play.html`
+  - `src/main/resources/templates/flag-game/start.html`
+  - `src/main/resources/templates/flag-game/play.html`
+  - `src/main/resources/templates/population-battle-game/start.html`
+  - `src/main/resources/templates/population-battle-game/play.html`
+  - `src/main/resources/templates/location-game/start.html`
+  - `src/main/resources/templates/location-game/play.html`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/18-production-verification-and-demo-interview-pack.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+- 요청 흐름: 런타임 흐름은 바뀌지 않는다. 여전히 각 게임 play page JS가 `POST /answer`에서 `GAME_OVER`를 받으면 modal을 연다. 바뀐 점은 브라우저 표현 계층 안에서, 각 게임 JS가 직접 keydown trap을 구현하지 않고 `window.createGameOverModalController(...)`를 호출해 `modal / panel / summary / restartButton / pageShell / buildSummaryText`를 넘긴다는 점이다. restart 성공 뒤 `focusFirstPlayableOption()`이나 `focusPrimaryPlaySurface()`는 각 게임이 계속 맡고, modal open/close와 keyboard trap 계약만 helper가 공통으로 처리한다.
+- 데이터 / 상태 변화: 서버 도메인 상태나 DB/Redis 스키마 변화는 없다. 바뀐 것은 브라우저 계층의 책임 분리다. 이전에는 다섯 게임 JS가 각각 `showGameOverModal`, `hideGameOverModal`, `handleGameOverModalKeydown`, `getGameOverFocusableElements`를 들고 있었고, 지금은 공통 helper가 그 규칙을 맡는다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “공용화는 테스트가 닫힌 뒤에 해야 설명 가능하다”는 점이다. 먼저 real-browser E2E로 modal contract를 고정했기 때문에, 이제 그 contract를 helper로 올려도 behavior regression을 바로 잡아낼 수 있다. 즉 추상화를 먼저 넣지 않고, 계약을 확인한 다음 공통 seam으로 올린 것이다.
+- 예외 / 엣지 케이스:
+  - helper는 summary 문구와 entry focus target만 각 게임에서 주입받고, restart 뒤 primary play surface focus는 각 게임이 그대로 맡는다. location은 `#globe-stage`, 나머지는 첫 playable option input으로 돌아가야 하기 때문이다.
+  - start page도 같은 JS 파일을 쓰기 때문에, play 템플릿뿐 아니라 start 템플릿의 asset version도 함께 올려 캐시를 끊었다.
+  - helper는 `game-over-modal.js`를 play 템플릿에서 game JS보다 먼저 로드한다. start 페이지는 helper를 로드하지 않지만, page guard 때문에 `initPlayPage()`가 실행되지 않아 문제가 없다.
+- 테스트:
+  - `node --check src/main/resources/static/js/game-over-modal.js`
+  - `node --check src/main/resources/static/js/capital-game.js`
+  - `node --check src/main/resources/static/js/population-game.js`
+  - `node --check src/main/resources/static/js/flag-game.js`
+  - `node --check src/main/resources/static/js/population-battle-game.js`
+  - `node --check src/main/resources/static/js/location-game.js`
+  - `./gradlew browserSmokeTest`
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이번 조각은 단순 중복 제거가 아니라, real-browser E2E로 고정한 modal 접근성 계약을 어떤 기준으로 helper seam으로 올렸는지 설명 가치가 있다.
+- 배운 점: 공용 helper는 빨리 만드는 것보다, “무엇이 공통 contract이고 무엇이 게임별 차이인가”가 먼저 선명해야 제대로 뽑힌다. 이번에는 modal open/close와 keyboard trap은 공통, summary 문구와 restart 뒤 focus surface는 게임별 차이라는 기준이 분명해진 뒤에 helper로 올렸기 때문에 설명하기 쉬워졌다.
+- 아직 약한 부분: 국기 게임 난이도/자산 전략과 홈/랭킹/Stats 문구 밀도는 아직 별도 판단이 남아 있다. 또한 이 helper는 public 게임 5종에만 적용했고, 다른 future modal까지 전역 규칙으로 일반화한 것은 아니다.
+- 면접용 30초 요약: public 게임 5종의 game-over modal keyboard 규칙을 `game-over-modal.js` helper로 공통화했습니다. 핵심은 먼저 Playwright로 `Tab / Shift+Tab / Escape / restart 후 focus return` 계약을 고정한 뒤, 그 계약이 확인된 부분만 helper로 올렸다는 점입니다. 그래서 이제는 모달 접근성 규칙을 한 곳에서 수정할 수 있고, summary 문구와 restart 뒤 focus target만 게임별로 다르게 유지한다고 설명할 수 있습니다.
+
+## 2026-03-31 - GitHub verify 레일을 실제 required check로 강제하기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: browser smoke와 `test` 레일은 이미 코드와 workflow 파일 안에 있었지만, GitHub에서 실제 merge gate로 묶이지 않으면 production-ready라고 말하기 애매했다. 이번 조각의 목적은 `main` 브랜치 protection에 verify 레일을 실제 required status check로 걸어, 테스트 전략이 문서 설명이 아니라 운영 규칙으로 동작하게 만드는 것이다.
+- 변경 파일:
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 시작점은 로컬 코드가 아니라 GitHub 운영 설정이다. `gh repo view`로 기본 브랜치가 `main`인지 확인하고, `gh api repos/answndud/world_map_game/branches/main/protection`으로 현재 protection이 비어 있음을 확인한 뒤, 같은 REST endpoint에 `required_status_checks.strict=true`, `contexts=["test","browser-smoke"]`를 넣어 branch protection을 적용했다. 마지막에는 `gh api .../protection --jq '{strict,contexts}'`로 실제 적용 결과를 다시 읽었다.
+- 데이터 / 상태 변화: 애플리케이션 DB나 Redis에는 변화가 없다. 바뀐 것은 GitHub 저장소의 `main` 브랜치 protection 설정이다. 이제 `test`, `browser-smoke`가 초록이 아니면 main merge가 막히고, 브랜치 최신화도 `strict=true` 기준을 따른다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “verify workflow가 존재한다”와 “그 workflow가 실제 merge gate다”는 다른 말이라는 점이다. production-ready 품질을 설명하려면 테스트 레일을 만드는 것에서 끝나지 않고, 그 레일이 실제 배포 전 관문으로 동작해야 한다.
+- 예외 / 엣지 케이스:
+  - GitHub App connector는 collaborator permission 조회에서 `403 Resource not accessible by integration`이 나왔지만, owner 계정의 `gh` 토큰으로는 branch protection 변경이 가능했다. 즉 이번 조각은 connector보다 `gh api`가 더 맞는 범위였다.
+  - 현재 required check는 `main`에만 걸었다. 다른 장기 유지 브랜치가 생기면 별도 규칙이 필요하다.
+  - 이번 조각은 저장소 외부 설정 변경이라, 블로그는 생략했다. 코드/테스트 구조를 설명하는 글보다 WORKLOG와 PLAYBOOK에 운영 규칙만 정확히 남기는 편이 맞았다.
+- 테스트:
+  - `gh repo view answndud/world_map_game --json defaultBranchRef,nameWithOwner,isPrivate`
+  - `gh api repos/answndud/world_map_game/branches/main/protection`
+  - `gh api --method PUT repos/answndud/world_map_game/branches/main/protection ...`
+  - `gh api repos/answndud/world_map_game/branches/main/protection --jq '{strict:.required_status_checks.strict, contexts:.required_status_checks.contexts}'`
+- 블로그 반영 여부: 생략. 저장소 외부 GitHub 설정 변경이고, 새 코드나 테스트 구현이 없어서 구현 글로 풀기에는 설명 가치가 낮다.
+- 배운 점: CI는 workflow YAML을 만드는 순간 끝나는 게 아니었다. required check로 연결되지 않으면 실제 운영 규칙이 아니라 참고용 자동화에 가깝다. 이번에는 verification lane을 merge gate로 묶으면서, 테스트 전략이 코드 밖의 운영 정책까지 닿아야 production-ready라고 말할 수 있다는 점이 더 선명해졌다.
+- 아직 약한 부분: required check는 걸었지만, 반복된 modal focus 로직 공용화 여부나 국기 난이도/자산 확장 전략은 아직 남아 있다. 또한 브랜치 protection 전체 정책을 코드로 관리하는 Terraform 같은 수준은 아니다.
+- 면접용 30초 요약: verify workflow를 만든 뒤 `main` 브랜치 protection에 `test`, `browser-smoke`를 실제 required check로 걸었습니다. 핵심은 테스트 레일이 존재하는 것에서 끝나지 않고, production-ready 검증이 실제 merge gate로 동작하게 만든 점입니다. 이제는 브라우저 스모크와 통합 테스트가 초록이 아니면 main으로 합쳐지지 않는다고 설명할 수 있습니다.
+
+## 2026-03-31 - flag 게임오버 모달 키보드 흐름도 실제 브라우저 E2E로 고정하기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: location까지 붙인 뒤에도 `flag`는 아직 modal browser E2E가 비어 있었다. flag는 radio 기반 4-choice quiz처럼 보이지만, 실제로는 이미지 자산 로딩과 선택 카드 셸이 끼어 있어서 다른 대표 표본 하나로 볼 가치가 있었다. 이번 조각은 `flag`까지 real-browser keyboard 흐름을 닫아, public 게임 5종의 terminal modal contract를 모두 실제 Chromium으로 설명 가능한 상태로 만드는 데 집중했다.
+- 변경 파일:
+  - `src/test/java/com/worldmap/e2e/BrowserSmokeE2ETest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/18-production-verification-and-demo-interview-pack.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+- 요청 흐름: 브라우저는 먼저 `GET /games/flag/start -> POST /api/games/flag/sessions -> GET /games/flag/play/{sessionId}`로 실제 세션을 연다. 이후 테스트는 같은 세션의 `guestSessionKey`를 읽어 서버 `FlagGameService.submitAnswer(...)`로 lives를 1개 남은 상태까지 준비한다. 그 다음 브라우저가 마지막 오답 보기를 실제로 선택해 제출하고 `flag-game-over-modal`을 열며, Playwright가 `Tab`, `Shift+Tab`, `Escape`, `restart`를 보내 마지막에는 첫 번째 `flag-option` input으로 focus가 돌아오는지 확인한다.
+- 데이터 / 상태 변화: 운영 DB/Redis 스키마 변화는 없다. test runtime 안에서 flag game session / stage / attempt row가 생성되고, 서버 도메인 API 두 번 호출로 lives가 `3 -> 1`이 된다. 마지막 오답은 브라우저 submit으로 들어가 `GAME_OVER`와 modal open을 만들고, restart 후에는 같은 sessionId가 Stage 1 state로 리셋된다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “대표 browser modal E2E를 한 표면 더 추가한다”가 아니라 “public 게임 5종 전체를 다 닫는다”는 점이다. 이제 location, capital, population, population-battle, flag가 모두 같은 terminal modal keyboard contract를 real browser에서 공유한다고 말할 수 있다.
+- 예외 / 엣지 케이스:
+  - 이번에도 modal 품질이 핵심이라, 앞부분의 반복 오답 전체를 브라우저로 밟지 않고 서버 도메인 API로 lives 1 상태를 준비한 뒤 마지막 오답과 modal keyboard 흐름만 브라우저로 검증했다.
+  - `Escape`는 flag에서도 dismiss가 아니라 restart button focus return 규칙을 유지한다.
+  - 이제 public 게임 5종 modal E2E는 모두 닫혔지만, verify workflow는 아직 GitHub에서 required check로 강제되지 않는다.
+- 테스트:
+  - `./gradlew compileTestJava`
+  - `./gradlew browserSmokeTest --tests com.worldmap.e2e.BrowserSmokeE2ETest.flagGameOverModalSupportsKeyboardTrapAndRestartFocusReturn`
+  - `./gradlew browserSmokeTest`
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이번 조각은 마지막 modal 표본을 닫아 public 게임 5종 전체의 real-browser keyboard contract를 설명 가능하게 만든 milestone이라 블로그 가치가 있다.
+- 배운 점: browser E2E는 표본 하나씩 늘리다 보면 어느 순간 “대표 검증”이 아니라 “제품 범위 닫기”로 바뀐다. 이번 flag 조각이 그 지점이었다. 이제는 modal coverage를 더 늘리는 것보다, 이 레일을 운영 규칙에 어떻게 연결할지가 더 중요한 질문이 됐다.
+- 아직 약한 부분: verify workflow는 이미 있지만 GitHub에서 required check로 강제한 상태는 아니다. 또한 반복된 modal focus 로직을 공용 helper로 올릴지, 게임별 script 안에 유지할지는 아직 결정하지 않았다.
+- 면접용 30초 요약: flag 게임도 game-over modal keyboard E2E를 붙였습니다. 브라우저가 세션을 실제로 만든 뒤 서버 도메인 API로 lives를 1개 남은 상태까지 준비하고, 마지막 오답과 `Tab / Shift+Tab / Escape / restart 후 focus return`만 실제 Chromium으로 검증하게 했습니다. 이로써 location, capital, population, population-battle, flag까지 public 게임 5종의 terminal modal keyboard contract를 모두 real browser로 설명할 수 있게 됐습니다.
+
+## 2026-03-31 - location 게임오버 모달 키보드 흐름도 실제 브라우저 E2E로 고정하기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: capital, population, population-battle까지 modal browser E2E를 붙인 뒤에도, 위치 찾기 게임은 WebGL 지구본 표면 때문에 아직 real-browser keyboard 검증에서 비어 있었다. `location`은 radio/card shell이 아니라 3D globe selection을 쓰므로, modal contract 자체를 검증하면서도 클릭 좌표 flaky함에 끌려가면 안 됐다. 이번 조각은 지구본 표면의 테스트 seam을 최소한으로 잡아, location 셸에서도 같은 game-over modal keyboard 규칙이 유지되는지 실제 Chromium으로 고정하는 데 집중했다.
+- 변경 파일:
+  - `src/test/java/com/worldmap/e2e/BrowserSmokeE2ETest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/18-production-verification-and-demo-interview-pack.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+- 요청 흐름: 브라우저는 먼저 `GET /games/location/start -> POST /api/games/location/sessions -> GET /games/location/play/{sessionId}`로 실제 세션을 연다. Playwright init script는 location play page가 `window.Globe`로 지구본을 만들 때 polygon click handler를 잡아 `window.__worldmapBrowserSmoke`에 저장한다. 이후 테스트는 같은 세션의 `guestSessionKey`를 읽어 서버 `LocationGameService.submitAnswer(...)`로 lives를 1개 남은 상태까지 준비하고, 마지막 오답 선택은 브라우저 안에서 그 polygon click handler를 호출해 만든다. 그 다음 브라우저가 제출 버튼을 눌러 `location-game-over-modal`을 열고, `Tab`, `Shift+Tab`, `Escape`, `restart`를 보내 마지막에는 `#globe-stage`로 focus가 돌아오는지 확인한다.
+- 데이터 / 상태 변화: 운영 DB/Redis 스키마 변화는 없다. test runtime 안에서 location game session / stage / attempt row가 생성되고, 서버 도메인 API 두 번 호출로 lives가 `3 -> 1`이 된다. 마지막 오답은 브라우저 submit으로 들어가 `GAME_OVER`와 modal open을 만들고, restart 후에는 같은 sessionId가 Stage 1 state로 리셋된다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “WebGL 셸도 modal browser E2E를 포기하지 말되, 검증 대상과 flaky한 렌더링 좌표는 분리해야 한다”는 점이다. location 게임에서 중요한 생산물은 modal keyboard contract이지 픽셀 좌표 클릭 자체가 아니다. 그래서 지구본 선택은 브라우저 안의 polygon click handler를 재사용하고, 상태 준비는 서버 서비스에 두는 편이 더 설명 가능하고 안정적이다.
+- 예외 / 엣지 케이스:
+  - 마지막 오답을 만들기 위해 production JS를 바꾸지 않고, Playwright init script에서만 `window.Globe`를 감싸 polygon click handler를 잡았다. 즉 사용자 코드 경로는 그대로고, browser test만 deterministic selection seam을 가진다.
+  - restart 뒤 focus return은 radio input이 아니라 `#globe-stage`다. location 셸의 primary play surface가 지구본이기 때문이다.
+  - 아직 flag modal은 real-browser E2E가 없다. 즉 modal keyboard 품질을 대표 4개 표면까지는 닫았지만 전 게임 전체는 아니다.
+- 테스트:
+  - `./gradlew compileTestJava`
+  - `./gradlew browserSmokeTest --tests com.worldmap.e2e.BrowserSmokeE2ETest.locationGameOverModalSupportsKeyboardTrapAndRestartFocusReturn`
+  - `./gradlew browserSmokeTest`
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이번 조각은 새 기능이 아니라 verification 확대지만, 왜 location만은 클릭 좌표 대신 globe hook seam이 필요했는지와 왜 이 seam이 서버/브라우저 책임을 흐리지 않는지 설명 가치가 있다.
+- 배운 점: real-browser E2E는 “진짜 브라우저를 돌린다”와 “픽셀 좌표까지 무식하게 클릭한다”가 같은 말이 아니었다. 중요한 contract가 modal keyboard 흐름이라면, 3D 표면에서는 브라우저 안의 실제 handler를 재사용하는 seam을 두는 편이 더 안정적이고 설명 가능했다.
+- 아직 약한 부분: flag modal은 아직 real-browser E2E가 없다. 또한 verify workflow는 이미 있지만 GitHub에서 required check로 강제한 상태는 아니다.
+- 면접용 30초 요약: location 게임도 game-over modal keyboard E2E를 붙였습니다. 핵심은 브라우저가 세션을 실제로 만들고 서버 도메인 API로 lives를 1개 남은 상태까지 준비한 뒤, 마지막 오답 선택은 Playwright init script가 잡아 둔 `Globe` polygon click handler를 브라우저 안에서 재사용하게 한 점입니다. 덕분에 WebGL 지구본 셸에서도 `Tab / Shift+Tab / Escape / restart 후 focus return`이 실제 Chromium에서 유지된다고 설명할 수 있게 됐습니다.
+
+## 2026-03-31 - population 게임오버 모달 키보드 흐름도 실제 브라우저 E2E로 고정하기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: capital과 population-battle까지 browser modal E2E를 붙인 뒤에도, 아직 `population`처럼 4-choice endless quiz shell 하나는 실제 Chromium으로 닫히지 않은 상태였다. capital은 fact quiz, population은 range estimation arcade라 입력은 비슷해 보여도 HUD copy와 restart 뒤 다시 돌아와야 하는 surface가 다르다. 이번 조각은 production-ready 설명을 더 단단하게 만들기 위해, `population`에서도 같은 modal keyboard contract가 유지되는지 실제 브라우저로 고정하는 데 집중했다.
+- 변경 파일:
+  - `src/test/java/com/worldmap/e2e/BrowserSmokeE2ETest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/18-production-verification-and-demo-interview-pack.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+- 요청 흐름: 브라우저는 먼저 `GET /games/population/start -> POST /api/games/population/sessions -> GET /games/population/play/{sessionId}`로 실제 세션을 연다. 이후 테스트는 같은 세션의 `guestSessionKey`를 읽어 서버 `PopulationGameService.submitAnswer(...)`로 lives를 1개 남은 상태까지 준비한다. 그 다음 브라우저가 마지막 오답 1회를 실제로 제출해 `population-game-over-modal`을 열고, Playwright가 `Tab`, `Shift+Tab`, `Escape`, `restart`를 보내 마지막에는 첫 번째 `population-option` input으로 focus가 돌아오는지 확인한다.
+- 데이터 / 상태 변화: 운영 DB/Redis 스키마 변화는 없다. test runtime 안에서 population game session / stage / attempt row가 생성되고, 서버 도메인 API 두 번 호출로 lives가 `3 -> 1`이 된다. 마지막 오답은 브라우저 submit으로 들어가 `GAME_OVER`와 modal open을 만들고, restart 후에는 같은 sessionId가 Stage 1 state로 리셋된다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “browser modal E2E는 한두 게임으로 끝내지 말고, 서로 다른 플레이 셸의 대표 표본으로 늘려야 한다”는 점이다. capital은 정답 텍스트 quiz, population은 범위 추정형 endless quiz라 둘 다 4-choice여도 play surface가 다르다. 즉 같은 modal 규칙이 다른 HUD/선택 surface에서도 유지되는지를 실제 브라우저에서 확인하는 게 목적이다.
+- 예외 / 엣지 케이스:
+  - 이번에도 modal 품질이 핵심이라, 앞부분의 반복 오답 전체를 브라우저로 밟지 않고 서버 도메인 API로 lives 1 상태를 준비한 뒤 마지막 오답과 modal keyboard 흐름만 브라우저로 검증했다.
+  - `Escape`는 population에서도 dismiss가 아니라 restart button focus return 규칙을 유지한다.
+  - 아직 location / flag modal은 real-browser E2E가 없다. 즉 modal keyboard 품질을 representative 3개 표면까지는 닫았지만 전 게임 전체는 아니다.
+- 테스트:
+  - `./gradlew compileTestJava`
+  - `./gradlew browserSmokeTest --tests com.worldmap.e2e.BrowserSmokeE2ETest.populationGameOverModalSupportsKeyboardTrapAndRestartFocusReturn`
+  - `./gradlew browserSmokeTest`
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이번 조각은 UI 기능 추가가 아니라 verification 확대지만, 왜 population을 다음 대표 표본으로 골랐는지와 왜 서버 도메인 API로 마지막 직전 state를 준비하는지 설명 가치가 있다.
+- 배운 점: representative browser E2E는 단순히 modal 개수를 늘리는 작업이 아니었다. capital, population, population-battle처럼 서로 다른 play shell 세 종류를 고르면, keyboard modal 품질을 어떤 표면까지 닫았는지 훨씬 설명하기 쉬워진다.
+- 아직 약한 부분: location과 flag modal은 아직 real-browser E2E가 없다. 또한 verify workflow는 이미 있지만 GitHub에서 required check로 강제한 상태는 아니다.
+- 면접용 30초 요약: capital과 population-battle에 이어 population도 game-over modal keyboard E2E를 붙였습니다. 브라우저가 세션을 실제로 만든 뒤 서버 도메인 API로 lives를 1개 남은 상태까지 준비하고, 마지막 오답과 `Tab / Shift+Tab / Escape / restart 후 focus return`만 실제 Chromium으로 검증하게 했습니다. 덕분에 quiz/battle 두 축뿐 아니라 range estimation arcade 셸에서도 같은 modal 접근성 규칙이 유지된다고 설명할 수 있게 됐습니다.
+
+## 2026-03-31 - population-battle 게임오버 모달 키보드 흐름도 실제 브라우저 E2E로 고정하기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 직전 조각으로 capital 대표 게임의 game-over modal keyboard flow는 실제 Chromium에서 고정됐지만, 그건 4-choice quiz 계열 표본 하나뿐이었다. production-ready 설명을 더 탄탄하게 하려면 2-choice endless battle 계열에서도 같은 modal 규칙이 실제 브라우저에서 유지되는지 확인할 필요가 있었다. 이번 조각은 `population-battle` 하나를 더 붙여 browser smoke의 대표 표본을 넓히는 데 집중했다.
+- 변경 파일:
+  - `src/test/java/com/worldmap/e2e/BrowserSmokeE2ETest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/18-production-verification-and-demo-interview-pack.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+- 요청 흐름: 브라우저는 먼저 `GET /games/population-battle/start -> POST /api/games/population-battle/sessions -> GET /games/population-battle/play/{sessionId}`로 실제 배틀 세션을 연다. 이후 테스트는 같은 세션의 `guestSessionKey`를 읽어 서버 `PopulationBattleGameService.submitAnswer(...)`로 lives를 1개 남은 상태까지 줄인다. 그 다음 브라우저가 마지막 오답 1회를 실제로 제출해 `population-battle-game-over-modal`을 열고, Playwright가 `Tab`, `Shift+Tab`, `Escape`, `restart`를 보내 마지막에는 첫 번째 좌우 선택 input으로 focus가 돌아오는지 확인한다.
+- 데이터 / 상태 변화: 운영 DB/Redis 스키마 변화는 없다. test runtime 안에서 population-battle session / stage / attempt row가 생성되고, 서버 도메인 API 두 번 호출로 lives가 `3 -> 1`이 된다. 마지막 오답은 브라우저 submit으로 들어가 `GAME_OVER`와 modal open을 만들고, restart 후에는 같은 sessionId가 초기 state로 리셋된다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “modal keyboard E2E도 한 게임에서 끝내지 말고, 서로 다른 UI 패턴의 대표 표본을 몇 개 가져가야 한다”는 점이다. capital은 4-choice quiz, population-battle은 2-choice compare game이라 play shell 구조가 조금 다르지만, modal contract는 같다. 즉 같은 규칙이 다른 게임 셸에서도 유지되는지를 실제 브라우저에서 확인하는 게 목적이다.
+- 예외 / 엣지 케이스:
+  - 이번에도 앞부분의 반복 오답 전체를 브라우저로 밟지 않고, 서버 도메인 API로 lives 1 상태를 준비한 뒤 마지막 오답과 modal keyboard 흐름만 브라우저로 검증했다. 목표가 modal 품질이기 때문이다.
+  - `Escape`는 battle에서도 dismiss가 아니라 restart button focus return 규칙을 유지한다.
+  - 아직 location / population / flag modal은 browser E2E가 없다. 즉 modal keyboard 품질을 “서로 다른 두 표면”까지는 닫았지만 전 게임 전체는 아니다.
+- 테스트:
+  - `./gradlew compileTestJava`
+  - `./gradlew browserSmokeTest --tests com.worldmap.e2e.BrowserSmokeE2ETest.populationBattleGameOverModalSupportsKeyboardTrapAndRestartFocusReturn`
+  - `./gradlew browserSmokeTest`
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이번 조각은 새 기능보다 verification 확대지만, 왜 capital 하나로 멈추지 않고 battle 표본까지 추가했는지와 왜 서버 도메인 API로 state를 준비하는지 설명 가치가 있다.
+- 배운 점: browser E2E는 개수가 많다고 좋은 게 아니라, 어떤 UI 패턴을 대표하는 표본을 어떻게 고르느냐가 더 중요했다. capital과 population-battle까지 닫아 두면 4-choice quiz와 2-choice compare 두 축에서 modal focus 규칙을 설명하기가 훨씬 쉬워진다.
+- 아직 약한 부분: 아직 location / population / flag modal은 real-browser E2E가 없다. verify workflow는 이미 있지만 browser smoke 범위는 여전히 대표 경로 중심이라, 전 게임 modal까지 다 막아 주는 수준은 아니다.
+- 면접용 30초 요약: capital에 이어 population-battle도 game-over modal keyboard E2E를 붙였습니다. 브라우저가 세션을 만든 뒤 서버 도메인 API로 lives를 1개 남은 상태까지 준비하고, 마지막 오답과 `Tab / Shift+Tab / Escape / restart 후 focus return`만 실제 Chromium으로 검증하게 했습니다. 덕분에 4-choice quiz뿐 아니라 2-choice battle 셸에서도 같은 modal 접근성 규칙이 유지된다고 설명할 수 있게 됐습니다.
+
+## 2026-03-31 - GitHub Actions에 `test -> browserSmokeTest` verify 레일 올리기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: browser smoke와 일반 테스트 레일이 로컬에서는 설명 가능해졌지만, 아직 GitHub Actions에서 자동으로 막아 주는 verification workflow는 없었다. production-ready 품질을 한 단계 더 올리려면 PR이나 main push에서 `./gradlew test`와 `./gradlew browserSmokeTest`가 같은 계약으로 재현되어야 했다. 이번 조각은 verify workflow를 추가하고, 그 과정에서 드러난 self-contained하지 않은 테스트까지 같이 정리하는 데 집중했다.
+- 변경 파일:
+  - `.github/workflows/verify.yml`
+  - `src/test/java/com/worldmap/common/config/RedisSessionConfigurationIntegrationTest.java`
+  - `src/test/java/com/worldmap/game/location/LocationGameFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/game/capital/CapitalGameFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/game/population/PopulationGameFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/game/flag/FlagGameFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/game/populationbattle/PopulationBattleGameFlowIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+- 요청 흐름: GitHub Actions의 시작점은 이제 `.github/workflows/verify.yml`이다. `test` job은 checkout 뒤 Java 25를 세팅하고 Redis service(`6379`)를 띄운 뒤 `./gradlew test`를 실행한다. `browser-smoke` job은 `needs: test` 뒤에 checkout, Java 25, Node 22, `npx playwright install --with-deps chromium`, `./gradlew browserSmokeTest` 순으로 간다. 즉 CI도 로컬과 같은 구조를 따라, 일반 통합 테스트는 Redis-backed 전제를 명시적으로 제공하고, browser smoke는 계속 `browser-smoke` profile 위에서 Redis-free로 돈다.
+- 데이터 / 상태 변화: 운영 DB/Redis 스키마 변화는 없다. GitHub Actions에서만 ephemeral Redis service가 `test` job 동안 살아 있고, browser smoke는 여전히 H2 + empty Redis 6390 설정으로 돈다. 테스트 코드 쪽에서는 `RedisSessionConfigurationIntegrationTest`가 prod session config만 보도록 schema 생성 override를 추가했고, 여러 게임 flow test는 현재 하트 규칙 기준으로 `game over`와 `restart` 기대값을 바로잡았다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “verification lane도 전제를 숨기지 말아야 한다”는 점이다. `test`는 실제로 Redis가 필요한 통합 테스트고, `browserSmokeTest`는 반대로 Redis-free browser lane이다. 이 둘을 한 workflow에 올리더라도 서로 다른 전제를 같은 job에서 얼버무리지 않고, job 경계와 service/profile로 명시하는 편이 더 설명 가능하다.
+- 예외 / 엣지 케이스:
+  - 처음에는 workflow만 추가하면 될 것 같았지만, `./gradlew test`를 CI 전제대로 다시 돌려 보니 `RedisSessionConfigurationIntegrationTest`가 prod schema validation까지 끌고 와 context가 뜨지 않는 문제와, 일부 game flow test가 현재 하트 규칙보다 예전 기대값을 들고 있는 문제가 함께 드러났다.
+  - 그래서 이번 조각은 workflow YAML만이 아니라 “CI에서 실제로 초록색이 되는 baseline”까지 닫는 범위로 마무리했다.
+  - browser smoke job은 Playwright Chromium 설치가 필요하므로 일반 test job보다 느리다. 그래서 `needs: test` 뒤로 배치해, core test가 깨졌을 때 브라우저 비용을 먼저 쓰지 않게 했다.
+- 테스트:
+  - `ruby -e 'require "yaml"; data = YAML.load_file(".github/workflows/verify.yml"); abort("missing jobs") unless data["jobs"]; puts data["jobs"].keys.join(",")'`
+  - `./gradlew test`
+  - `./gradlew browserSmokeTest`
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이번 조각은 단순 CI YAML 추가가 아니라 왜 `test`와 `browserSmokeTest`를 다른 전제로 분리해야 하는지, 그리고 workflow를 추가하면서 기존 테스트를 어떻게 self-contained하게 다시 맞췄는지 설명 가치가 있다.
+- 배운 점: CI는 “이미 맞는 테스트를 옮겨 담는 곳”이 아니라, 숨겨진 전제와 오래된 기대값을 드러내는 장치였다. 이번에는 Redis service가 필요한 통합 테스트와 Redis-free browser smoke를 분리하고, workflow를 만들면서 깨진 테스트까지 같이 정리해야 진짜 green baseline이 만들어졌다.
+- 아직 약한 부분: verify workflow는 생겼지만 아직 GitHub에서 required check로 묶지는 않았다. 또한 browser smoke는 대표 경로 중심이라, 다른 게임 modal keyboard E2E나 더 깊은 client interaction까지는 아직 포함하지 않는다.
+- 면접용 30초 요약: 이번에는 `test`와 `browserSmokeTest`를 GitHub Actions verify workflow로 올렸습니다. 핵심은 두 레일의 전제를 분리해, 일반 통합 테스트는 Redis service를 명시적으로 띄우고 browser smoke는 계속 Redis-free profile로 돌리게 한 점입니다. 그 과정에서 prod session config 테스트와 여러 게임 flow 테스트의 오래된 기대값도 같이 정리해서, CI에서 실제로 초록색이 되는 verification baseline을 만들었습니다.
+
+## 2026-03-31 - capital 게임오버 모달 키보드 흐름을 실제 브라우저 E2E로 고정하기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: public 게임들의 game-over modal은 이미 `aria-describedby`, `inert`, focus trap, restart 후 focus return`까지 붙어 있었지만, 그동안은 SSR 마크업이나 JS 존재만 통합 테스트로 확인했다. production-ready 품질을 더 올리려면 “실제 Chromium에서 Tab, Shift+Tab, Escape, restart 후 focus return이 끝까지 유지되는가”를 한 번은 자동으로 밟아야 했다. 이번 조각은 대표 게임 하나를 골라 그 흐름을 browser smoke 레일에 넣는 데 집중했다.
+- 변경 파일:
+  - `src/test/java/com/worldmap/e2e/BrowserSmokeE2ETest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/18-production-verification-and-demo-interview-pack.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+- 요청 흐름: 브라우저는 먼저 `GET /games/capital/start -> POST /api/games/capital/sessions -> GET /games/capital/play/{sessionId}`로 실제 capital 세션을 연다. 그 다음 테스트는 같은 세션의 `guestSessionKey`를 읽어 서버 쪽 `CapitalGameService.submitAnswer(...)`로 lives를 1개 남은 상태까지 먼저 줄인다. 이후 브라우저가 play page를 다시 로드하고 마지막 오답 1회를 제출하면 `capital-game-over-modal`이 열린다. 여기서 Playwright가 `Tab`, `Shift+Tab`, `Escape`, `restart button click`을 실제로 보내고, 마지막에는 첫 번째 수도 보기 input으로 focus가 돌아오는지 확인한다.
+- 데이터 / 상태 변화: 운영 DB/Redis 스키마 변화는 없다. test DB에서는 capital session과 stage, attempt row가 생성되고, 서버 쪽 도메인 API 두 번 호출로 lives가 `3 -> 1`까지 줄어든다. 마지막 오답 1회는 브라우저 submit으로 들어가 `GAME_OVER`와 modal open, restart 뒤 state reset을 만든다. 즉 이번 조각의 상태 변화는 모두 test runtime 안에서만 일어난다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “E2E도 모든 상태를 브라우저 클릭으로만 만들 필요는 없고, 검증하려는 위험에 맞춰 서버 도메인과 브라우저 책임을 분리할 수 있다”는 점이다. modal keyboard 품질을 보려는 테스트라면, 앞부분의 두 번 오답 루프는 서버 API로 축약하고 마지막 modal 진입과 keyboard 상호작용만 브라우저로 밟는 편이 더 안정적이고 설명 가능하다.
+- 예외 / 엣지 케이스:
+  - 세 번 연속 오답을 전부 브라우저로 밟는 방식은 UI 타이밍에 흔들릴 수 있어, 이번에는 대표 게임 modal 검증의 초점을 keyboard flow에만 두었다.
+  - `Escape`는 modal을 닫지 않고 restart button으로 focus를 되돌리는 현재 규칙을 검증한다. 즉 일반적인 “Escape dismiss”가 아니라 이 제품의 game-over UX 규칙을 고정한 것이다.
+  - 이번 조각은 capital 대표 게임 1개만 닫았다. 나머지 위치/인구수/국기/배틀 모달은 JS 구조가 유사하지만, 실제 브라우저 E2E는 후속 조각으로 넓혀야 한다.
+- 테스트:
+  - `./gradlew compileTestJava`
+  - `./gradlew browserSmokeTest --tests com.worldmap.e2e.BrowserSmokeE2ETest.capitalGameOverModalSupportsKeyboardTrapAndRestartFocusReturn`
+  - `./gradlew browserSmokeTest --tests com.worldmap.e2e.BrowserSmokeE2ETest`
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이번 조각은 기능 추가보다 verification 강화지만, 왜 modal keyboard flow를 “브라우저에서 직접” 고정해야 하는지와 왜 앞쪽 상태 준비는 서버 도메인 API로 줄였는지를 설명할 가치가 있다.
+- 배운 점: production-ready 테스트는 “최대한 현실적으로”와 “회귀 신호가 안정적으로 유지되게” 사이의 균형이 중요했다. 마지막 위험이 modal keyboard라면, 거기까지 가는 반복 플레이 전체를 브라우저로 강제하는 것보다 서버 상태를 일부 준비하고 브라우저는 핵심 상호작용만 맡는 편이 더 설계 의도에 맞다.
+- 아직 약한 부분: capital 1개 modal은 닫았지만, 다른 게임 modal도 실제 브라우저 E2E로 넓히는 작업이 남아 있다. 그리고 현재 browser smoke는 로컬/수동 verification lane이지, 아직 CI에서 자동으로 막아 주는 레일까지는 아니다.
+- 면접용 30초 요약: 모달 접근성 로직이 코드에 있다는 것만으로는 부족해서, 이번에는 capital 게임의 game-over modal을 실제 Chromium에서 검증하도록 browser smoke를 넓혔습니다. 브라우저가 세션을 만든 뒤 서버 도메인 API로 lives를 1개 남은 상태까지 먼저 줄이고, 마지막 오답과 `Tab / Shift+Tab / Escape / restart 후 focus return`만 브라우저로 밟게 해서, keyboard 품질을 회귀 없이 설명 가능한 레일로 고정했습니다.
+
+## 2026-03-31 - Redis가 없어도 `/ranking`, `/stats` public read path를 DB fallback으로 유지하기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 직전 조각으로 browser smoke는 local Redis 없이도 뜨는 profile을 얻었지만, `/ranking`, `/stats`, `/api/rankings/*`는 여전히 `LeaderboardService`가 Redis를 직접 읽다가 실패하면 500으로 번질 수 있었다. production-ready 품질을 올리려면 public leaderboard read path는 Redis 장애를 cache miss처럼 다루고, RDB top run fallback으로 계속 읽히게 만들어야 했다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/ranking/application/LeaderboardService.java`
+  - `src/test/java/com/worldmap/ranking/RedisUnavailableLeaderboardFallbackIntegrationTest.java`
+  - `src/test/java/com/worldmap/e2e/BrowserSmokeE2ETest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/09-redis-leaderboard-and-ranking-page.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+- 요청 흐름: `GET /ranking`, `GET /stats`, `GET /api/rankings/{gameMode}`는 모두 `LeaderboardService.getLeaderboard(...)`를 거친다. 이제 이 서비스는 먼저 Redis ZSET에서 상위 record id를 읽되, 여기서 `DataAccessException`이 나면 즉시 빈 결과처럼 보고 `leaderboard_record`의 상위 run을 RDB에서 읽는다. 이후 Redis 재구성이나 warm-up도 계속 시도하지만, 그 단계 역시 best-effort로만 처리해 public 응답은 그대로 내려간다. 그래서 `browser-smoke` profile처럼 Redis가 일부러 비어 있는 `127.0.0.1:6390`이어도 `/ranking`, `/stats`와 랭킹 API는 계속 열린다.
+- 데이터 / 상태 변화: source of truth는 여전히 `leaderboard_record`다. 이번 조각은 새 테이블이나 컬럼을 만들지 않았다. 바뀐 것은 read path의 실패 처리다. Redis는 계속 leaderboard read model과 warm cache 역할을 맡지만, public read에서 Redis 장애는 이제 “캐시 miss + 재수화 실패”로 취급되고, DB fallback이 우선 응답을 책임진다.
+- 핵심 도메인 개념: 이 조각의 핵심은 “Redis leaderboard는 read model이지 유일한 진실이 아니다”라는 점을 public read 경로에서도 끝까지 지키는 것이다. Redis 읽기 실패를 컨트롤러마다 잡으면 `/ranking`, `/stats`, `/api/rankings/*`의 계약이 달라질 수 있다. 반면 `LeaderboardService`에서 Redis 경계를 감싸면, 어떤 public surface가 leaderboard를 읽더라도 같은 fallback 규칙을 쓴다.
+- 예외 / 엣지 케이스:
+  - `gameMode`, `scope`, `limit` 파싱 오류는 여전히 서비스 밖 검증 흐름을 타므로 400이어야 한다. 이번 조각은 `getLeaderboard(...)` 전체를 감싼 것이 아니라 Redis 접근 경계만 best-effort로 바꿨다.
+  - Redis read는 실패했지만 DB fallback은 성공할 수 있고, 반대로 DB fallback 뒤 Redis warm/rebuild가 또 실패할 수도 있다. 이번 조각은 두 경우 모두 public 응답은 살리고, 로그로만 남긴다.
+  - write path는 이전부터 DB 저장 뒤 Redis sync 실패를 무시하고 있었기 때문에, 이번 조각은 read path를 같은 철학으로 맞춘 셈이다.
+- 테스트:
+  - `./gradlew compileTestJava`
+  - `./gradlew test --tests com.worldmap.ranking.RedisUnavailableLeaderboardFallbackIntegrationTest`
+  - `./gradlew browserSmokeTest --tests com.worldmap.e2e.BrowserSmokeE2ETest`
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이번 조각은 단순 설정 변경이 아니라 public read model의 장애 계약을 바꾼 것이고, 왜 fallback 규칙이 컨트롤러가 아니라 `LeaderboardService`에 있어야 하는지 설명 가치가 있다.
+- 배운 점: “Redis를 쓴다”와 “Redis가 없으면 public 화면이 죽는다”는 같은 말이 아니다. source of truth가 RDB라면, 장애 시나리오에서도 그 철학이 read path에 그대로 드러나야 production-ready 설명이 선명해진다.
+- 아직 약한 부분: 이번에는 `/ranking`, `/stats`가 Redis 없이도 뜨는 것까지 닫았지만, 모달 키보드 흐름이나 더 깊은 상호작용은 아직 browser smoke가 아니라 통합 테스트 수준에 머물러 있다. 다음 production-ready 조각은 실제 브라우저 E2E 범위를 `Tab / Shift+Tab / Escape / focus return`까지 넓히거나, 이 browser smoke 레일을 CI verification job으로 올리는 쪽이 맞다.
+- 면접용 30초 요약: Redis를 랭킹 read model로 쓰고 있어도 public 화면이 Redis에만 매달리면 production-ready라고 보기 어렵습니다. 그래서 이번에는 `LeaderboardService`가 Redis read 실패를 cache miss처럼 보고 DB 상위 run으로 바로 fallback하도록 바꿨습니다. 덕분에 `/api/rankings`, `/ranking`, `/stats`가 Redis unavailable 상황에서도 계속 뜨고, Playwright browser smoke도 local Redis 없이 이 경로들까지 검증할 수 있게 됐습니다.
+
+## 2026-03-30 - browser smoke를 local Redis 없이도 뜨는 profile로 분리하기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 직전 조각으로 Playwright 기반 browser smoke 레일은 생겼지만, 실제로는 `application-test.yml`의 `worldmap.legacy.rollback.enabled=true` 때문에 startup에서 `GameLevelRollbackInitializer`가 Redis를 건드리고 있었다. 즉 이 머신에서는 Redis가 살아 있어서 지나갔지만, 깨끗한 환경에서 truly self-contained한 브라우저 smoke라고 말하기 어려웠다. 이번 조각은 browser smoke가 현재 범위의 `home / capital / recommendation` 흐름만큼은 local Redis 없이도 뜨는 profile 경계를 만드는 데 집중했다.
+- 변경 파일:
+  - `src/main/resources/application-browser-smoke.yml`
+  - `src/test/java/com/worldmap/e2e/BrowserSmokeE2ETest.java`
+  - `src/test/java/com/worldmap/common/config/BrowserSmokeProfileConfigTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/18-production-verification-and-demo-interview-pack.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+- 요청 흐름: `./gradlew browserSmokeTest`는 그대로 `BrowserSmokeE2ETest`를 실행하지만, 이제 테스트 클래스는 `@ActiveProfiles({"test", "browser-smoke"})`를 사용한다. `application-browser-smoke.yml`은 `worldmap.legacy.rollback.enabled=false`로 startup rollback initializer bean 자체를 비활성화하고, Redis는 의도적으로 비어 있는 `127.0.0.1:6390`으로 돌린다. 그래서 `GET /`, `GET /games/capital/start -> POST /api/games/capital/sessions -> GET /games/capital/play/{sessionId}`, `GET /recommendation/survey -> POST /recommendation/survey` 흐름이 통과하면, 적어도 현재 smoke 범위는 local Redis 6379에 기대지 않는다는 뜻이 된다.
+- 데이터 / 상태 변화: 운영 DB/Redis 스키마 변화는 없다. 바뀐 것은 브라우저 smoke의 runtime profile이다. browser smoke는 여전히 H2 기반 test DB에서만 임시 세션과 추천 결과를 만들고 끝난다. 차이는 이제 startup 시점에 legacy rollback이 Redis `keys/delete`를 치지 않고, Redis host/port도 의도적으로 실제 개발 포트와 분리된다는 점이다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “테스트 레일도 자신이 검증하지 않는 외부 의존은 명시적으로 끊어야 한다”는 점이다. browser smoke의 목적은 public user flow 검증이지 legacy Level 2 rollback이나 leaderboard Redis 동작 검증이 아니다. 그래서 이 의존을 같은 `test` profile에 섞어 두기보다 `browser-smoke` profile로 분리해, 브라우저 레일이 무엇을 전제로 하는지 코드에서 드러내는 편이 더 설명 가능하다.
+- 예외 / 엣지 케이스:
+  - 이번 조각은 `/stats`, `/ranking`을 해결한 것은 아니다. 그 경로는 여전히 `LeaderboardService`가 Redis를 직접 읽으므로, browser smoke에 넣으려면 별도 후속 조각이 필요하다.
+  - Redis를 `127.0.0.1:6390`으로 돌렸기 때문에, browser smoke 안에서 의도치 않게 leaderboard 경로를 호출하면 바로 실패한다. 지금은 이것이 오히려 “현재 smoke 범위가 정말 Redis-free인가”를 확인하는 안전장치다.
+  - `GameLevelRollbackInitializerIntegrationTest`는 여전히 `worldmap.legacy.rollback.enabled=true`를 명시해 rollback 동작 자체를 별도로 검증한다. 즉 기능을 없앤 것이 아니라, browser smoke에서만 비활성화한 것이다.
+- 테스트:
+  - `./gradlew compileTestJava`
+  - `./gradlew test --tests com.worldmap.common.config.BrowserSmokeProfileConfigTest`
+  - `./gradlew browserSmokeTest --tests com.worldmap.e2e.BrowserSmokeE2ETest`
+- 블로그 반영 여부: 반영. 이번 조각은 단순 설정값 수정이 아니라 “왜 브라우저 smoke는 자기 범위 밖 Redis startup 의존을 끊어야 하는가”를 설명할 가치가 있다.
+- 배운 점: browser smoke는 존재 자체보다도 “어떤 외부 의존을 일부러 끊었는가”가 중요했다. 브라우저 테스트가 한 번 통과하는 것보다, 그 테스트가 무엇에 의존하지 않도록 설계됐는지를 남겨야 production-ready 품질 설명이 선명해진다.
+- 아직 약한 부분: `/stats`, `/ranking` browser smoke는 여전히 남아 있다. 이쪽은 Redis read model을 실제로 쓰는 public 화면이라, 다음 조각에서 fake leaderboard source를 둘지, ephemeral Redis를 테스트 레일에 얹을지 판단해야 한다.
+- 면접용 30초 요약: Playwright smoke를 붙인 것만으로는 충분하지 않았습니다. 기존 test profile은 startup rollback initializer가 Redis를 건드려서, 로컬 Redis가 살아 있어서 통과하는 상태였기 때문입니다. 그래서 이번에는 `browser-smoke` profile을 따로 만들고 legacy rollback을 끄고, Redis를 일부러 비어 있는 `127.0.0.1:6390`으로 돌렸습니다. 덕분에 현재 home, 수도 게임 start -> play, 추천 설문 -> 결과 브라우저 smoke는 local Redis 없이도 뜨는 self-contained 레일이 됐습니다.
+
+## 2026-03-30 - public 핵심 흐름용 브라우저 스모크 테스트 레일 추가하기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 지금까지의 테스트는 대부분 MockMvc와 서비스 통합 테스트라서, 실제 브라우저에서 public shell이 뜨고 JS start form이 세션을 열고 추천 설문이 제출되는 흐름까지는 자동으로 확인하지 못했다. production-ready 품질을 올리려면 “실제 Chromium에서 핵심 유저 경로가 한 번은 돈다”는 최소 smoke 레일이 필요했다. 이번 조각은 그 첫 범위를 `home`, `capital start -> play`, `recommendation survey -> result`로 좁혀 추가하는 데 집중했다.
+- 변경 파일:
+  - `build.gradle`
+  - `src/test/java/com/worldmap/e2e/BrowserSmokeE2ETest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/18-production-verification-and-demo-interview-pack.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+- 요청 흐름: 브라우저 레일의 시작점은 `./gradlew browserSmokeTest`다. Gradle은 `browser-smoke` tag만 골라 별도 `Test` task에서 실행하고, `BrowserSmokeE2ETest`는 `@SpringBootTest(webEnvironment = RANDOM_PORT)`로 실제 서버를 띄운다. 그 위에서 Playwright Chromium이 `GET /` home shell을 연 뒤, 별도 테스트에서 `GET /games/capital/start -> POST /api/games/capital/sessions -> GET /games/capital/play/{sessionId}` 흐름과 `GET /recommendation/survey -> POST /recommendation/survey -> recommendation/result view` 흐름을 실제 브라우저 상호작용으로 밟는다.
+- 데이터 / 상태 변화: 운영 DB나 Redis 스키마는 바뀌지 않았다. 바뀐 것은 검증 레일이다. 브라우저 스모크는 test profile의 H2 위에서 임시 게임 세션 row와 추천 결과 view만 만들고 종료 시 함께 사라진다. `test` task는 여전히 빠른 단위/통합 피드백 레일로 남고, browser startup과 Playwright 브라우저 다운로드 비용은 `browserSmokeTest`에만 격리된다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “브라우저 검증도 verification lane으로 분리된 read model처럼 다뤄야 한다”는 점이다. public 제품의 핵심 위험은 서버 로직 자체뿐 아니라 `SSR + defer JS + form submit + redirect`가 실제 브라우저에서 이어지느냐에 있다. 하지만 이 비용을 모든 `test` 실행에 얹으면 피드백 루프가 무거워진다. 그래서 `build.gradle`이 `browser-smoke` tag만 별도 task로 실행하도록 분리하는 편이 설명 가능하다.
+- 예외 / 엣지 케이스:
+  - Playwright는 첫 실행에 브라우저 바이너리를 다운로드할 수 있으므로, 최초 `browserSmokeTest`는 일반 테스트보다 오래 걸릴 수 있다.
+  - 이번 첫 조각은 `/stats`, `/ranking`, location globe를 일부러 넣지 않았다. `stats/ranking`은 현재 test profile의 Redis 의존을 건드릴 수 있고, location은 WebGL/지구본 렌더 surface가 일반 퀴즈보다 더 flaky하다.
+  - 즉 이 레일은 “모든 public surface 전체”가 아니라 “가장 안전한 핵심 흐름 3개”부터 닫은 상태다.
+- 테스트:
+  - `./gradlew compileTestJava`
+  - `./gradlew browserSmokeTest --tests com.worldmap.e2e.BrowserSmokeE2ETest`
+  - `./gradlew test --tests com.worldmap.web.HomeControllerTest`
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이번 조각은 테스트 인프라 추가지만, 왜 `MockMvc`만으로는 부족했고 왜 브라우저 레일을 기본 `test`와 분리했는지 설명 가치가 있다.
+- 배운 점: production-ready 품질 개선은 무조건 큰 인프라 작업부터가 아니라, “실제 사용자 경로를 자동으로 한 번 밟는가”를 별도 레일로 고정하는 것부터 시작해도 된다. 특히 브라우저 테스트는 도입 자체보다 어디까지를 첫 smoke 범위로 잡을지가 더 중요했다.
+- 아직 약한 부분: 현재 `browserSmokeTest`는 이 머신에서 Redis가 살아 있어서 무리 없이 떴다. 하지만 `application-test.yml`의 Redis 의존을 완전히 떼지는 못했기 때문에, 깨끗한 CI/개발 환경에서 self-contained하게 돌리려면 다음 조각에서 test profile 격리를 더 해야 한다.
+- 면접용 30초 요약: MockMvc와 서비스 통합 테스트만으로는 실제 브라우저에서 SSR 화면, defer JS, form submit, redirect가 이어지는지까지는 확인하기 어렵습니다. 그래서 이번에는 `build.gradle`에 `browserSmokeTest`를 따로 만들고, `BrowserSmokeE2ETest`에서 headless Chromium으로 home, 수도 게임 start -> play, 추천 설문 -> 결과 흐름을 직접 밟게 했습니다. 핵심은 브라우저 검증을 추가하되, 기본 `test` 레일은 빠르게 유지하도록 분리했다는 점입니다.
+
+## 2026-03-30 - current member 재검증을 request당 한 번만 하도록 정리하기
+
+- 단계: 8. 인증, 전적, 마이페이지
+- 목적: 직전 조각으로 `CurrentMemberAccessService`를 public/auth SSR과 게임 시작 경로의 공통 source로 올렸지만, 같은 request 안에서 `SiteHeaderModelAdvice`, auth 컨트롤러, `GameSessionAccessContextResolver`, `AdminAccessInterceptor`, 운영 summary API가 현재 회원을 두 번 이상 다시 읽는 경로가 남아 있었다. 규칙은 맞지만 `/login`, `/signup`, `/dashboard`, 게임 play/result SSR, 일부 API에서 세션 파싱과 `member_account` 재조회가 request당 중복될 수 있었다. 이번 조각은 “현재 회원 재검증은 유지하되, 같은 HTTP request 안에서는 한 번만 푼다”는 경계 정리에 집중했다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/auth/application/CurrentMemberAccessService.java`
+  - `src/main/java/com/worldmap/auth/application/AdminAccessGuard.java`
+  - `src/main/java/com/worldmap/auth/application/GameSessionAccessContextResolver.java`
+  - `src/main/java/com/worldmap/auth/web/AuthPageController.java`
+  - `src/main/java/com/worldmap/admin/web/AdminAccessInterceptor.java`
+  - `src/main/java/com/worldmap/recommendation/web/RecommendationFeedbackApiController.java`
+  - `src/main/java/com/worldmap/web/SiteHeaderModelAdvice.java`
+  - `src/main/java/com/worldmap/game/location/web/LocationGameApiController.java`
+  - `src/main/java/com/worldmap/game/population/web/PopulationGameApiController.java`
+  - `src/main/java/com/worldmap/game/capital/web/CapitalGameApiController.java`
+  - `src/main/java/com/worldmap/game/flag/web/FlagGameApiController.java`
+  - `src/main/java/com/worldmap/game/populationbattle/web/PopulationBattleGameApiController.java`
+  - `src/test/java/com/worldmap/auth/application/CurrentMemberAccessServiceTest.java`
+  - `src/test/java/com/worldmap/auth/application/AdminAccessGuardTest.java`
+  - `src/test/java/com/worldmap/auth/application/GameSessionAccessContextResolverTest.java`
+  - `src/test/java/com/worldmap/web/HomeControllerTest.java`
+  - `src/test/java/com/worldmap/web/MyPageControllerTest.java`
+  - `src/test/java/com/worldmap/stats/StatsPageControllerTest.java`
+  - `src/test/java/com/worldmap/ranking/LeaderboardPageControllerTest.java`
+  - `src/test/java/com/worldmap/auth/AuthFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/admin/AdminPageIntegrationTest.java`
+  - `src/test/java/com/worldmap/recommendation/RecommendationFeedbackIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/17-game-integrity-current-member-and-role-revalidation.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+- 요청 흐름: 이제 `CurrentMemberAccessService.currentMember(HttpServletRequest)`가 request attribute를 먼저 보고, 없을 때만 `session -> MemberRepository.findById()` 경로를 탄다. `SiteHeaderModelAdvice`, `/login`·`/signup` GET, 5개 게임 세션 시작 API, `GameSessionAccessContextResolver`, `AdminAccessInterceptor`, `/api/recommendation/feedback/summary`는 모두 이 request 오버로드를 공유한다. 즉 `GET /dashboard`에서는 interceptor가 current member를 한 번 풀고, 뒤이어 advice가 헤더용 `currentMember/showDashboardLink`를 만들 때 같은 request cache를 재사용한다. `GET /games/location/play/{sessionId}` 같은 SSR page도 advice와 access context resolver가 같은 resolved member를 같이 쓴다.
+- 데이터 / 상태 변화: 새 테이블이나 세션 필드는 없다. 바뀐 것은 “현재 회원을 어디에 잠시 기억하는가”이다. 세션은 여전히 identity hint이고, 현재 회원의 source of truth는 DB row다. 다만 같은 request 안에서는 request attribute cache를 써서 이미 확인한 `AuthenticatedMemberSession` 또는 “없음” sentinel을 다시 쓴다. 그래서 삭제된 회원/강등된 admin을 막는 규칙은 유지하면서도 같은 request의 중복 DB read는 줄었다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 `session cache`와 `request cache`를 구분하는 것이다. 세션에 남아 있는 값은 오래된 힌트일 수 있어서 매 request마다 DB와 대조해야 한다. 반면 같은 request 안에서 이미 대조가 끝난 current member는 다시 DB를 읽을 필요가 없다. 즉 source of truth는 여전히 DB지만, request 범위에서는 확인된 identity를 공유하는 게 맞다.
+- 예외 / 엣지 케이스:
+  - 비로그인 request는 `request.getSession(false)` 기준으로 empty가 캐시되므로, advice/interceptor/controller가 같은 request에서 여러 번 current member를 물어도 세션을 새로 만들지 않는다.
+  - 삭제된 회원이나 malformed role 세션은 첫 current member 해석 시 세션이 비워지고, 같은 request 안의 나머지 계층은 cached empty를 그대로 받는다.
+  - admin 경로도 `AdminAccessGuard.authorize(request)`를 통해 request cache를 쓰므로, interceptor와 SSR advice가 같은 request에서 서로 다른 current member 결과를 만들 여지가 줄었다.
+- 테스트:
+  - `./gradlew test --tests com.worldmap.auth.application.CurrentMemberAccessServiceTest --tests com.worldmap.auth.application.GameSessionAccessContextResolverTest --tests com.worldmap.auth.application.AdminAccessGuardTest --tests com.worldmap.web.HomeControllerTest --tests com.worldmap.web.MyPageControllerTest --tests com.worldmap.stats.StatsPageControllerTest --tests com.worldmap.ranking.LeaderboardPageControllerTest --tests com.worldmap.auth.AuthFlowIntegrationTest --tests com.worldmap.admin.AdminPageIntegrationTest --tests com.worldmap.recommendation.RecommendationFeedbackIntegrationTest`
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이 조각은 UI copy 변경이 아니라 인증 경계의 request flow를 다듬는 구조 개선이고, “왜 DB 재검증은 유지하면서 request당 중복 조회는 줄일 수 있는가”를 설명할 가치가 있다.
+- 배운 점: current member를 DB에서 다시 읽는 규칙과, 같은 request에서 그 결과를 재사용하는 일은 충돌하지 않는다. 인증 source of truth는 DB에 두되, request 범위에서는 이미 확인된 identity를 공유해야 interceptor/advice/controller가 같은 사용자 상태를 같은 비용으로 본다.
+- 아직 약한 부분: 이 캐시는 HTTP request 경계 안에서만 유효하다. 이후 client-side polling이나 별도 fetch가 늘어나면, 그 요청들은 다시 current member를 확인해야 하고 그게 맞다. 어느 범위까지 같은 identity를 공유할지 기준을 계속 선명하게 유지해야 한다.
+- 면접용 30초 요약: stale 세션을 막으려고 current member를 매 request마다 DB로 다시 확인하게 바꿨지만, 그러면 같은 request 안에서 interceptor, advice, controller가 같은 회원을 반복 조회할 수 있습니다. 그래서 이번에는 `CurrentMemberAccessService`에 request-scope 캐시를 넣고, 이미 한 번 확인한 current member를 같은 HTTP request 안에서는 재사용하게 만들었습니다. source of truth는 계속 DB에 두면서도 중복 read를 줄여, `/dashboard`, auth page, 게임 play/result SSR이 같은 사용자 상태를 더 일관되게 봅니다.
+
+## 2026-03-30 - public/auth SSR과 게임 시작도 현재 회원 기준으로 stale 세션 UI를 정리하기
+
+- 단계: 8. 인증, 전적, 마이페이지
+- 목적: 직전 조각으로 public 헤더의 `Dashboard` 링크는 현재 DB role 기준으로 맞췄지만, 홈 hero의 계정 연결 CTA와 `/login`·`/signup`·`/mypage`, 5개 게임 시작 페이지, 새 게임 세션 시작 API는 여전히 세션 캐시만 믿는 경로가 남아 있었다. 이 상태에서는 회원 row가 이미 삭제돼도 홈에는 계정 연결 완료 UI가 남고, 시작 페이지에는 stale 닉네임이 보일 수 있으며, 새 게임도 member-owned로 생성될 수 있었다. 이번 조각은 admin 여부가 아니라 “지금 이 세션이 실제 회원을 가리키는가”를 public/auth SSR과 게임 시작 경로 전체에서 다시 확인하는 데 집중했다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/auth/application/CurrentMemberAccessService.java`
+  - `src/main/java/com/worldmap/auth/application/AdminAccessGuard.java`
+  - `src/main/java/com/worldmap/auth/application/GameSessionAccessContextResolver.java`
+  - `src/main/java/com/worldmap/web/HomeController.java`
+  - `src/main/resources/templates/home.html`
+  - `src/main/java/com/worldmap/auth/web/AuthPageController.java`
+  - `src/main/java/com/worldmap/web/MyPageController.java`
+  - `src/main/java/com/worldmap/web/SiteHeaderModelAdvice.java`
+  - `src/main/java/com/worldmap/game/location/web/LocationGameApiController.java`
+  - `src/main/java/com/worldmap/game/location/web/LocationGamePageController.java`
+  - `src/main/java/com/worldmap/game/capital/web/CapitalGameApiController.java`
+  - `src/main/java/com/worldmap/game/capital/web/CapitalGamePageController.java`
+  - `src/main/java/com/worldmap/game/population/web/PopulationGameApiController.java`
+  - `src/main/java/com/worldmap/game/population/web/PopulationGamePageController.java`
+  - `src/main/java/com/worldmap/game/flag/web/FlagGameApiController.java`
+  - `src/main/java/com/worldmap/game/flag/web/FlagGamePageController.java`
+  - `src/main/java/com/worldmap/game/populationbattle/web/PopulationBattleGameApiController.java`
+  - `src/main/java/com/worldmap/game/populationbattle/web/PopulationBattleGamePageController.java`
+  - `src/test/java/com/worldmap/auth/application/CurrentMemberAccessServiceTest.java`
+  - `src/test/java/com/worldmap/auth/application/AdminAccessGuardTest.java`
+  - `src/test/java/com/worldmap/auth/application/GameSessionAccessContextResolverTest.java`
+  - `src/test/java/com/worldmap/web/HomeControllerTest.java`
+  - `src/test/java/com/worldmap/web/MyPageControllerTest.java`
+  - `src/test/java/com/worldmap/stats/StatsPageControllerTest.java`
+  - `src/test/java/com/worldmap/ranking/LeaderboardPageControllerTest.java`
+  - `src/test/java/com/worldmap/auth/AuthFlowIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/17-game-integrity-current-member-and-role-revalidation.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+- 요청 흐름: `GET /`, `GET /login`, `GET /signup`, `GET /mypage`, `GET /games/*/start`, `POST /api/games/*/sessions`는 이제 `CurrentMemberAccessService.currentMember(session)`를 공통으로 거친다. 이 서비스는 `MemberSessionManager.currentMember()`로 세션의 `memberId`를 읽고, `MemberRepository.findById()`로 현재 회원 row를 다시 조회한다. 회원이 존재하면 세션 닉네임/role을 현재 DB 값으로 동기화하고, 존재하지 않으면 세션을 비운 뒤 guest처럼 처리한다. public/auth SSR은 이 값을 `currentMember`와 `authenticatedNickname` 모델로 써서 화면 분기를 정하고, 게임 시작 API는 member start와 guest start 중 어느 쪽으로 세션을 만들지 이 값으로 결정한다. `GameSessionAccessContextResolver`도 같은 current member source를 쓰므로 stale memberId가 이후 `state / answer / restart / result` 접근 컨텍스트로 다시 흘러가지 않는다.
+- 데이터 / 상태 변화: 새 테이블은 없다. 바뀐 것은 public/auth SSR과 게임 시작 경로의 로그인 판별 source다. 삭제된 회원 세션은 홈/마이페이지/로그인/게임 시작 페이지를 치거나 새 게임을 시작하는 순간 `WORLDMAP_MEMBER_ID`, `WORLDMAP_MEMBER_NICKNAME`, `WORLDMAP_MEMBER_ROLE`이 같이 지워지고 guest 상태로 떨어진다. 그 결과 새 게임 세션은 member ownership이 아니라 guest ownership으로 생성된다. 반대로 닉네임이나 role이 바뀐 회원은 SSR/게임 시작 분기 전에 세션 캐시가 현재 값으로 다시 맞춰진다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “현재 회원 확인”과 “admin 권한 확인”을 구분하면서도, 둘 다 같은 current member source를 공유하게 만드는 것이다. admin 여부는 `AdminAccessGuard`, 일반 로그인 존재 여부와 member-owned 새 게임 시작 여부는 `CurrentMemberAccessService`가 맡는다. 삭제된 회원 세션을 guest처럼 정리하는 로직을 홈 템플릿, auth 컨트롤러, start page 컨트롤러, start API에 흩뿌리지 않고 서비스로 묶어 둬야 public/auth SSR과 게임 시작 경로가 같은 기준으로 움직인다.
+- 예외 / 엣지 케이스:
+  - 세션은 남아 있지만 DB에서 회원이 삭제된 경우, 홈은 로그인/회원가입 CTA로 돌아가고 `/login`도 다시 열리며 `/mypage`는 guest 안내 화면으로 떨어진다.
+  - 같은 삭제된 회원 세션으로 `/games/*/start`를 열면 stale nickname 대신 guest 안내 문구가 보이고, `POST /api/games/*/sessions`는 member-owned가 아니라 guest-owned 세션을 만든다.
+  - 세션 role 문자열이 malformed여도 `CurrentMemberAccessService`가 세션을 비우고 empty를 반환하므로 public/auth SSR에서 500으로 번지지 않는다.
+- 테스트:
+  - `./gradlew compileJava compileTestJava`
+  - `./gradlew test --tests com.worldmap.auth.application.CurrentMemberAccessServiceTest --tests com.worldmap.auth.application.GameSessionAccessContextResolverTest --tests com.worldmap.web.HomeControllerTest --tests com.worldmap.web.MyPageControllerTest --tests com.worldmap.stats.StatsPageControllerTest --tests com.worldmap.ranking.LeaderboardPageControllerTest --tests com.worldmap.auth.AuthFlowIntegrationTest --tests com.worldmap.web.SiteHeaderIntegrationTest`
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이 조각은 단순 copy 교체가 아니라 public/auth SSR이 stale session을 어떻게 정리해야 하는지, 그리고 current member 확인을 왜 서비스로 모으는지 설명할 수 있는 auth/UI 경계 변경이다.
+- 배운 점: “로그인 상태처럼 보이는가”와 “새 게임을 누구 소유로 시작하는가”는 같은 current member 판정에서 갈라져야 한다. 세션에 값이 남아 있다는 이유만으로 홈 CTA, 로그인 redirect, 게임 시작 ownership을 결정하면 실제 회원 row와 제품 동작이 어긋난다. admin 권한과 별개로 current member existence를 다시 확인하는 층이 있어야 public/auth SSR과 session start가 자연스럽게 동작한다.
+- 아직 약한 부분: 이번 조각은 SSR과 session start API까지 current member source를 맞췄다. 앞으로 client-side fragment나 완전한 CSR 화면이 더 늘어나면, 브라우저 쪽 비동기 진입점도 같은 기준을 어떻게 재사용할지 한 번 더 정리해야 한다.
+- 면접용 30초 요약: admin 링크만 현재 DB 기준으로 맞춰도 홈 계정 CTA, 로그인 redirect, 게임 시작 API가 세션 캐시를 그대로 믿으면 stale 로그인 UI가 남거나 삭제된 회원 세션이 member-owned 새 게임을 만들 수 있습니다. 그래서 `CurrentMemberAccessService`를 공통 current-member source로 두고 홈·로그인·회원가입·마이페이지·게임 시작 페이지·세션 시작 API가 세션의 memberId로 현재 회원을 다시 확인하도록 바꿨습니다. 회원 row가 없으면 세션을 비우고 guest처럼 처리해서, 보이는 화면과 실제 ownership이 어긋나지 않게 맞췄습니다.
+
+## 2026-03-30 - public SSR 헤더도 현재 DB role 기준으로 Dashboard 링크를 맞추기
+
+- 단계: 8. 인증, 전적, 마이페이지
+- 목적: 직전 조각으로 `/dashboard/**`와 운영 summary API는 현재 DB role 기준으로 막히게 됐지만, public `site-header`는 여전히 세션의 `WORLDMAP_MEMBER_ROLE` 문자열만 보고 `Dashboard` 링크를 렌더링하고 있었다. 그래서 권한이 회수된 직후 홈/Stats/Ranking/My Page 헤더에는 stale admin 링크가 잠깐 남을 수 있었다. 이번 조각은 전역 SSR shell도 실제 admin route와 같은 기준을 쓰게 맞추는 데 집중했다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/web/SiteHeaderModelAdvice.java`
+  - `src/main/resources/templates/fragments/site-header.html`
+  - `src/test/java/com/worldmap/web/HomeControllerTest.java`
+  - `src/test/java/com/worldmap/stats/StatsPageControllerTest.java`
+  - `src/test/java/com/worldmap/web/MyPageControllerTest.java`
+  - `src/test/java/com/worldmap/ranking/LeaderboardPageControllerTest.java`
+  - `src/test/java/com/worldmap/web/SiteHeaderIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/17-game-integrity-current-member-and-role-revalidation.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+- 요청 흐름: public SSR 요청이 `GET /`, `GET /stats`, `GET /ranking`, `GET /mypage`처럼 들어오면 이제 `SiteHeaderModelAdvice`가 먼저 `AdminAccessGuard.authorize(request.getSession(false))`를 호출해 `showDashboardLink` 모델 값을 만든다. `site-header.html`은 더 이상 `session.WORLDMAP_MEMBER_ROLE == 'ADMIN'`을 직접 보지 않고 이 값을 사용해 `Dashboard` 링크를 렌더링한다. 즉 페이지 shell의 링크 노출과 실제 `/dashboard/**` 접근 규칙이 같은 guard를 공유한다.
+- 데이터 / 상태 변화: 새 테이블이나 API는 없다. 바뀐 것은 SSR model 계산 방식이다. `AdminAccessGuard`가 현재 회원 row를 다시 조회하면서 세션 nickname/role도 같이 동기화하기 때문에, admin 권한이 `USER -> ADMIN` 또는 `ADMIN -> USER`로 바뀌면 public 헤더도 다음 요청에서 바로 같은 값으로 맞춰진다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “보여 주는 권한 힌트도 실제 authorization source와 같아야 한다”는 점이다. 헤더 링크는 단순 UI처럼 보여도, 사용자가 제품에서 어떤 경로를 기대하게 만드는 entry point라서 session cache와 실제 route guard가 서로 다른 기준을 쓰면 설명과 동작이 어긋난다. 그래서 fragment 안에 권한 분기를 박지 않고, 전역 advice가 `AdminAccessGuard`를 재사용하게 뒀다.
+- 예외 / 엣지 케이스:
+  - 비로그인 요청은 `request.getSession(false)`를 쓰므로, 헤더 렌더링 때문에 불필요한 세션을 새로 만들지 않는다.
+  - 권한이 강등된 세션은 다음 public SSR 요청에서 `Dashboard` 링크가 바로 사라지고, 세션 role 캐시도 현재 DB 값으로 덮인다.
+  - 권한이 새로 승격된 세션도 재로그인 전까지 숨겨 두지 않고, 다음 public SSR 요청에서 바로 `Dashboard` 링크가 나타난다.
+- 테스트:
+  - `./gradlew test --tests com.worldmap.web.HomeControllerTest --tests com.worldmap.stats.StatsPageControllerTest --tests com.worldmap.web.MyPageControllerTest --tests com.worldmap.ranking.LeaderboardPageControllerTest --tests com.worldmap.web.SiteHeaderIntegrationTest`
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이 조각은 단순 텍스트 조건문 수정이 아니라 SSR 공통 셸이 authorization source를 어떻게 따라가야 하는지와 request flow를 설명할 수 있는 auth/UI 경계 정리라서 글로 남길 가치가 있다.
+- 배운 점: 보안은 “막는 라우트”만 맞춘다고 끝나지 않는다. public shell이 stale 권한 힌트를 계속 보여 주면 실제 접근은 막혀도 제품 설명이 어긋난다. route guard와 entry-point rendering이 같은 source of truth를 공유해야 사용자가 보는 화면과 실제 권한이 일치한다.
+- 아직 약한 부분: 이번 조각은 SSR 헤더까지만 맞췄다. 앞으로 client-side hydration이나 비동기 fragment가 더 생기면, 그쪽도 같은 기준을 어떻게 재사용할지 한 번 더 정리해야 한다.
+- 면접용 30초 요약: `/dashboard` 접근은 이미 DB role 기준으로 막고 있었지만, public 헤더는 세션에 남아 있는 `ADMIN` 문자열만 보고 `Dashboard` 링크를 보여 주고 있었습니다. 그래서 전역 `SiteHeaderModelAdvice`가 모든 SSR 요청에서 `AdminAccessGuard`를 그대로 호출해 `showDashboardLink`를 계산하도록 바꿨습니다. 이제 홈, Stats, Ranking, My Page에서 보이는 링크와 실제 admin route가 같은 현재 DB role 기준을 쓰게 됐습니다.
+
+## 2026-03-30 - admin 운영 접근을 현재 DB role로 다시 검증하기
+
+- 단계: 8. 인증, 전적, 마이페이지
+- 목적: 남아 있던 보안 리스크는 admin 권한이 세션 문자열에만 고정돼 있다는 점이었다. 한 번 `ADMIN`으로 로그인한 세션은 DB에서 권한이 `USER`로 내려가도 살아 있는 동안 계속 `/dashboard`와 추천 운영 summary API에 접근할 수 있었다. 이번 조각은 “admin 허용 여부는 매 요청마다 현재 회원 role을 다시 본다”는 규칙을 작게 추가하는 데 집중했다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/auth/application/AdminAccessGuard.java`
+  - `src/main/java/com/worldmap/auth/application/MemberSessionManager.java`
+  - `src/main/java/com/worldmap/admin/web/AdminAccessInterceptor.java`
+  - `src/main/java/com/worldmap/recommendation/web/RecommendationFeedbackApiController.java`
+  - `src/main/resources/templates/admin/index.html`
+  - `src/test/java/com/worldmap/admin/AdminPageIntegrationTest.java`
+  - `src/test/java/com/worldmap/auth/application/AdminAccessGuardTest.java`
+  - `src/test/java/com/worldmap/recommendation/RecommendationFeedbackIntegrationTest.java`
+  - `src/test/java/com/worldmap/auth/application/MemberSessionManagerTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/09-redis-leaderboard-and-ranking-page.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+- 요청 흐름: `GET /dashboard`와 `GET /api/recommendation/feedback/summary`는 이제 먼저 `AdminAccessGuard.authorize(session)`를 지난다. guard는 `MemberSessionManager.currentMember()`로 세션의 `memberId`를 읽고, `MemberRepository.findById()`로 현재 회원을 다시 조회한다. 회원이 사라졌으면 세션을 비우고 비로그인으로 처리하고, 회원이 남아 있으면 세션 닉네임/role을 현재 DB 값으로 다시 맞춘 뒤 `ADMIN`일 때만 통과시킨다.
+- 데이터 / 상태 변화: 새로운 엔티티나 테이블은 없다. 대신 admin 경로를 치는 순간 session의 `WORLDMAP_MEMBER_NICKNAME`, `WORLDMAP_MEMBER_ROLE`이 현재 `member_account` 값으로 동기화된다. 즉 role이 `ADMIN -> USER`로 바뀐 뒤 예전 세션이 남아 있어도 다음 admin 요청에서 바로 `403`이 나고, 세션 role 캐시도 `USER`로 덮인다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “세션은 identity 힌트이고, admin authorization의 source of truth는 현재 member row”라는 점이다. 컨트롤러는 여전히 진입점만 맡고, 실제 권한 판정은 `AdminAccessGuard`가 맡는다. 이 로직이 인터셉터/컨트롤러 안에 흩어지면 admin 페이지와 운영 API가 서로 다른 기준으로 열릴 수 있기 때문이다.
+- 예외 / 엣지 케이스:
+  - 세션에는 memberId가 있지만 DB row가 이미 삭제된 경우, guard는 세션을 지우고 비로그인처럼 취급한다.
+  - 세션 role이 여전히 `ADMIN`이어도 DB role이 `USER`면 `/dashboard/**`와 `/api/recommendation/feedback/summary`는 둘 다 막힌다.
+  - 세션 role 문자열이 깨졌거나 enum으로 파싱할 수 없으면 guard가 세션을 비우고 비로그인처럼 처리한다. 즉 malformed session 때문에 admin 경로가 500으로 터지지 않게 막았다.
+  - 공개 화면 헤더의 `Dashboard` 링크 노출은 아직 session role 문자열을 보고 있어, 권한 회수 직후 admin 경로를 한 번 치기 전까지는 stale link가 보일 수 있다. 실제 접근은 이번 조각에서 막았지만, 전역 표시 일관성은 후속 polish 대상이다.
+- 테스트:
+  - `./gradlew test --tests com.worldmap.admin.AdminPageIntegrationTest --tests com.worldmap.recommendation.RecommendationFeedbackIntegrationTest --tests com.worldmap.auth.application.MemberSessionManagerTest --tests com.worldmap.auth.application.AdminAccessGuardTest`
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이 조각은 admin 요청 흐름과 권한 source of truth를 실제로 바꾸는 auth slice라서, 왜 session role만 믿지 않고 DB role을 다시 보는지 설명 가치가 충분하다.
+- 배운 점: 세션에 `role`을 넣는 건 화면 렌더링과 간단한 분기에는 편하지만, 운영 권한처럼 회수 가능성이 있는 값은 그대로 권한 source of truth가 되면 안 된다. identity 캐시와 authorization source를 분리해야 뒤늦은 role 변경도 안전하게 먹힌다.
+- 아직 약한 부분: 이번 조각은 admin 경로와 운영 summary API까지만 current role 재검증을 붙였다. 전역 SSR shell까지 완전히 같은 기준으로 맞추려면 현재 member resolver를 더 넓게 쓸지, 헤더 표시만 별도 모델로 분리할지 한 번 더 정리해야 한다.
+- 면접용 30초 요약: 운영 권한을 세션 문자열만 믿으면 role이 회수된 뒤에도 기존 세션이 계속 admin처럼 동작할 수 있습니다. 그래서 이번에는 `AdminAccessGuard`를 두고, `/dashboard`와 추천 운영 summary API가 들어올 때마다 session의 memberId로 현재 회원을 다시 조회하도록 바꿨습니다. DB role이 `ADMIN`일 때만 통과시키고, 아니면 바로 `403`을 내리면서 세션 role 캐시도 현재 값으로 덮어써 권한 회수 반영을 즉시 맞췄습니다.
+
+## 2026-03-30 - `/ranking` 첫 SSR을 기본 보드 1개만 읽는 구조로 줄이기
+
+- 단계: 5. Redis 랭킹 시스템 보완
+- 목적: 직전 조각에서 polling fan-out은 active board 1개로 줄였지만, `GET /ranking` 자체는 여전히 전체/일간 10개 보드를 모두 서비스에서 읽고 있었다. 즉 브라우저 주기 비용은 줄였어도, 첫 진입 TTFB와 SSR 모델 적재 비용은 그대로 남아 있었다. 이번 조각은 초기 랭킹 화면이 기본 보드 `location:ALL` 하나만 먼저 렌더링하고, 나머지는 첫 전환 시 가져오도록 줄이는 데 집중했다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/ranking/web/LeaderboardPageController.java`
+  - `src/main/resources/templates/ranking/index.html`
+  - `src/main/resources/static/js/ranking.js`
+  - `src/test/java/com/worldmap/ranking/LeaderboardPageControllerTest.java`
+  - `src/test/java/com/worldmap/ranking/LeaderboardIntegrationTest.java`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/09-redis-leaderboard-and-ranking-page.md`
+- 요청 흐름: 시작점은 그대로 `GET /ranking`이다. 다만 `LeaderboardPageController`는 이제 `leaderboardService.getLeaderboard(LOCATION, ALL, 10)` 한 번만 호출하고, 템플릿은 `location:ALL`만 실제 row를 SSR로 렌더링한다. capital/flag/population/population-battle와 모든 daily 보드는 placeholder 행과 `data-initial-rendered="false"`로만 내려가고, 브라우저의 `ranking.js`가 사용자가 그 보드를 처음 열었을 때 기존 `/api/rankings/{gameMode}`를 호출해 실제 row를 채운다.
+- 데이터 / 상태 변화: `leaderboard_record`, Redis Sorted Set, 정렬 규칙은 바뀌지 않았다. 바뀐 것은 `/ranking` SSR이 들고 있는 초기 read model 범위다. `boardRefreshMeta`도 이제 모든 보드를 무조건 `SSR 초기 로드`로 취급하지 않고, 기본 보드만 그 상태로 두고 나머지는 `아직 불러오지 않음` 상태에서 시작한다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “기본 보드 SSR, 나머지 보드는 defer”라는 read model 전략이다. 랭킹 계산은 여전히 서버 책임이고, 컨트롤러는 첫 화면에서 어떤 board snapshot을 바로 보여줄지만 결정한다. 즉, 컨트롤러는 source of truth를 바꾸지 않고도 SSR cost를 줄일 수 있고, 브라우저 JS는 그 이후의 board hydration만 맡는다.
+- 예외 / 엣지 케이스:
+  - 사용자가 non-default 보드를 처음 열면 `lastUpdated`는 일단 `아직 불러오지 않음`을 보이고, fetch가 끝난 뒤 실제 갱신 시각으로 바뀐다.
+  - JS가 비활성화돼도 기본 보드 `location:ALL`은 그대로 읽을 수 있고, 다른 보드 버튼은 원래도 동작하지 않았기 때문에 no-JS baseline을 크게 해치지 않는다.
+  - daily 보드는 SSR 시점 `targetDate`를 더 이상 갖고 있지 않으므로, 첫 fetch 전 copy는 generic 문구이고 fetch 후에만 실제 기준 날짜를 붙인다.
+- 테스트:
+  - `node --check src/main/resources/static/js/ranking.js`
+  - `./gradlew test --tests com.worldmap.ranking.LeaderboardPageControllerTest --tests com.worldmap.ranking.LeaderboardIntegrationTest`
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이 조각은 단순 렌더링 미세 조정이 아니라 `/ranking` 첫 SSR request flow와 controller 책임을 실제로 바꾼 slice라서, 왜 “전체 SSR” 대신 “기본 보드 SSR + defer load”로 나눴는지 설명 가치가 충분하다.
+- 배운 점: polling fan-out을 줄였다고 해서 첫 화면 비용까지 자동으로 줄어들지는 않는다. SSR 페이지에서는 “초기 HTML에 꼭 필요한 snapshot이 무엇인가”를 다시 정의해야 하고, 그 판단이 controller 모델 적재 수를 직접 줄인다.
+- 아직 약한 부분: 지금은 기본 보드를 `location:ALL`로 고정하고 있다. 나중에 제품 기본 보드가 바뀌면 controller와 템플릿의 초기 active key를 함께 수정해야 한다. 이 값을 완전히 설정화할지까지는 이번 턴에 닫지 않았다.
+- 면접용 30초 요약: 랭킹 페이지는 active board polling으로 주기 비용은 줄였지만, 첫 SSR은 여전히 10개 보드를 다 읽고 있었습니다. 그래서 이번에는 컨트롤러가 기본 보드 `location:ALL` 한 번만 읽고, 나머지 보드는 placeholder만 내려보낸 뒤 첫 전환 시 기존 랭킹 API로 채우도록 바꿨습니다. 서버 정렬 규칙은 그대로 두고, SSR snapshot 범위만 줄여 초기 진입 비용을 낮춘 조각입니다.
+
+## 2026-03-30 - 랭킹 자동 갱신을 active board 1개 기준으로 줄이고 국기 카드 surface fallback을 같이 정리
+
+- 단계: 5. Redis 랭킹 시스템 보완 / 11. 신규 게임 확장 보조 UI 정리
+- 목적: `/ranking`은 화면에 보이는 보드가 1개뿐인데도 15초마다 숨겨진 9개 보드까지 전부 다시 호출하고 있었다. 게다가 일간 보드 설명 문구의 `기준 날짜`는 SSR 시점 값에 머물러, polling으로 rows는 갱신돼도 상단 설명이 stale해질 수 있었다. 여기에 더해 국기 플레이/결과 화면은 정의되지 않은 CSS 토큰을 참조해 카드 프레임이 테마에 따라 무테두리처럼 보일 수 있었다. 이번 조각은 브라우저가 정말 필요한 active board만 다시 읽게 만들고, 남아 있던 국기 카드 surface 버그까지 같이 닫는 데 집중했다.
+- 변경 파일:
+  - `src/main/resources/static/js/ranking.js`
+  - `src/main/resources/templates/ranking/index.html`
+  - `src/main/resources/static/css/site.css`
+  - `src/main/resources/templates/flag-game/play.html`
+  - `src/main/resources/templates/flag-game/result.html`
+  - `src/test/java/com/worldmap/ranking/LeaderboardIntegrationTest.java`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/09-redis-leaderboard-and-ranking-page.md`
+- 요청 흐름: 요청 시작점은 그대로 `GET /ranking` SSR이다. 서버는 여전히 다섯 게임의 전체/일간 보드를 렌더링하고, 브라우저의 `ranking.js`가 이후 갱신 타이밍을 맡는다. 바뀐 점은 `setInterval -> queueRefresh(currentBoardKey()) -> GET /api/rankings/{gameMode}?scope={scope}&limit=10 -> renderLeaderboardRows()` 흐름이 이제 현재 보드 1개에만 적용된다는 것이다. 사용자가 모드/범위를 바꾸면 `switchMode/switchScope`가 즉시 새 active board를 fetch하고, 응답의 `targetDate`로 daily panel의 `data-copy`까지 다시 맞춘다. 국기 화면은 `flag-game/play.html`, `flag-game/result.html`이 새 CSS 버전을 로드하고, `site.css`의 fallback token으로 카드 프레임을 안정적으로 계산한다.
+- 데이터 / 상태 변화: DB, Redis, `leaderboard_record` 상태는 바뀌지 않았다. 바뀐 것은 브라우저 메모리 안의 랭킹 read state와 국기 카드의 계산된 surface 스타일이다. 페이지는 board key별 마지막 갱신 시각을 따로 기억하고, auto-refresh 상태도 “전체 polling”이 아니라 “현재 보드 polling”으로 바뀌었다. 호출량 관점에서는 visible tab 기준 `15초마다 10회`에서 `15초마다 1회` 수준으로 줄었다. 국기 카드 쪽은 undefined token이어도 `line`, `nested-panel-surface`, `panel-strong` fallback으로 border/background가 유지된다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “active board read model”이다. 랭킹 정렬 규칙과 집계는 계속 서버가 맡고, 프런트는 필터 상태가 가리키는 read target 하나만 갱신한다. 즉, 컨트롤러/서비스를 새로 쪼개지 않고도, 표현 계층이 어떤 read model을 지금 보여주고 있는지 분명히 하면 fan-out을 크게 줄일 수 있다.
+- 예외 / 엣지 케이스:
+  - 새 보드로 전환하는 동안 이전 fetch가 아직 끝나지 않았으면 `queuedRefresh`로 다음 active board 갱신을 이어서 처리한다.
+  - 서버가 non-JSON 오류 응답을 주더라도 `response.json()` parser error를 그대로 터뜨리지 않고, 사용자에게는 일반 새로고침 오류 문구만 보여준다.
+  - daily board는 row뿐 아니라 설명 카피의 `기준 날짜`도 polling 응답의 `targetDate`로 다시 맞춘다.
+  - 국기 카드 surface는 공통 토큰이 비어 있더라도 local fallback으로 테마별 배경과 테두리를 잃지 않는다.
+- 테스트:
+  - `node --check src/main/resources/static/js/ranking.js`
+  - `./gradlew test --tests com.worldmap.ranking.LeaderboardIntegrationTest --tests com.worldmap.game.flag.FlagGameFlowIntegrationTest.playPageRendersAccessibleGameOverDialogShell`
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이 조각의 중심은 ranking polling 전략과 화면 메타데이터 동기화 규칙이고, 국기 카드 fallback은 같은 글에서 “같이 닫은 작은 잔여 버그”로만 다뤘다.
+- 배운 점: “폴링을 쓴다”와 “비효율적인 폴링을 그대로 둔다”는 다른 문제다. 실시간 전달을 당장 SSE로 바꾸지 않더라도, 현재 화면이 실제로 어떤 read target 하나만 보고 있는지 분명하면 프런트 쪽 fan-out만으로도 비용을 크게 줄일 수 있다.
+- 아직 약한 부분: `/ranking` 첫 SSR은 여전히 10개 보드를 전부 렌더링한다. 즉 주기적 갱신 비용은 줄였지만, 초기 HTML/모델 적재 비용까지 줄인 것은 아니다. 브라우저 네트워크 fan-out은 정리했지만, initial render를 on-demand로 더 줄일지는 실제 측정값을 보고 다음 조각에서 판단해야 한다.
+- 면접용 30초 요약: 랭킹 페이지는 한 번에 보드 하나만 보여주는데도 15초마다 숨겨진 9개 보드까지 전부 다시 불러오고 있었습니다. 이번에는 서버 API를 건드리지 않고 `ranking.js`만 바꿔서 현재 보고 있는 active board만 자동 갱신하게 만들고, 모드/범위 전환 직후에는 그 보드만 즉시 fetch하도록 정리했습니다. 또 일간 랭킹 설명의 기준 날짜도 polling 응답의 `targetDate`로 다시 맞추고, 국기 카드가 테마에 따라 무테두리처럼 깨지던 CSS token 버그도 fallback으로 같이 닫았습니다.
+
+## 2026-03-30 - flag 화면이 정의되지 않은 soft surface 토큰에 의존하지 않도록 fallback 정리
+
+- 단계: 11. 신규 게임 확장 보조 화면 polish
+- 목적: `flag-display-card`, `flag-display-image`는 공통 CSS에서 실제로 정의되지 않은 `--line-soft`, `--surface-soft`, `--surface-strong` 토큰을 직접 참조하고 있었다. 이 상태에서는 테마 토큰이 정리된 뒤에도 flag 화면만 배경/테두리 표면이 깨질 수 있었다. 이번 조각은 flag play/result가 공통 panel 토큰으로 안전하게 fallback하도록 만들고, 두 페이지가 새 CSS 버전을 확실히 읽게 맞추는 데 집중했다.
+- 변경 파일:
+  - `src/main/resources/static/css/site.css`
+  - `src/main/resources/templates/flag-game/play.html`
+  - `src/main/resources/templates/flag-game/result.html`
+  - `src/test/java/com/worldmap/game/flag/FlagGameFlowIntegrationTest.java`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 요청 자체는 바뀌지 않았다. `GET /games/flag/play/{sessionId}`와 `GET /games/flag/result/{sessionId}`가 기존처럼 SSR 템플릿을 렌더링하고, 브라우저는 공통 `site.css`를 읽는다. 이번에 바뀐 점은 flag display 영역이 soft token이 비어 있어도 `var(--line, ...)`, `var(--nested-panel-surface, ...)`, `var(--panel-strong, ...)` 계열 fallback을 따라가도록 CSS가 바뀌었다는 것이다.
+- 데이터 / 상태 변화: 게임 세션, 시도, 점수, 랭킹 데이터는 바뀌지 않았다. 이번 조각의 상태 변화는 표현 계층에만 있다. flag play/result의 국기 표시 카드가 토큰 부재 상황에서도 비어 보이거나 잘못된 대비로 무너지는 대신, 공통 panel surface 위계로 안전하게 렌더링된다.
+- 핵심 도메인 개념: 이 조각의 핵심은 “화면별 예외 surface도 공통 theme contract를 어기지 않아야 한다”는 것이다. flag 전용 카드가 독립 토큰을 새로 만들기보다, 이미 있는 panel line/surface로 fallback하는 편이 현재 테마 구조와 설명 모델에 더 맞는다.
+- 예외 / 엣지 케이스: soft token이 나중에 다시 정식 정의되더라도 현재 fallback은 첫 번째 값을 그대로 우선 사용하므로 충돌하지 않는다. play/result 둘 다 새 CSS 버전을 읽어야 해서 두 템플릿의 asset query string도 함께 올렸다.
+- 테스트:
+  - `./gradlew test --tests com.worldmap.game.flag.FlagGameFlowIntegrationTest.playPageRendersAccessibleGameOverDialogShell --tests com.worldmap.game.flag.FlagGameFlowIntegrationTest.resultPageUsesCurrentSiteCssAssetVersionAfterGameOver`
+  - `git diff --check`
+- 블로그 반영 여부: 생략. 이번 조각은 request flow나 도메인 규칙이 바뀐 feature slice가 아니라, 정의되지 않은 CSS 토큰 의존과 asset cache만 정리한 작은 residual bug fix다.
+- 배운 점: 공통 theme를 오래 다루다 보면 “정의됐다고 가정한 토큰”이 화면 하나에만 남아 있는 경우가 있다. 이런 문제는 새 색을 더 만드는 것보다, 기존 contract 안에서 fallback 경로를 분명히 하는 편이 설명도 유지보수도 쉽다.
+- 아직 약한 부분: 이 검증은 SSR 페이지가 새 CSS 버전을 읽는지와 HTML 회귀까지만 잡는다. 실제 브라우저에서 light/dark 전환 시 flag card 대비가 의도대로 보이는지는 시각 확인이 한 번 더 필요하다.
+- 면접용 30초 요약: flag 게임 화면은 공통 테마에 없는 soft 토큰을 직접 잡고 있어서, 테마 정리 후에 표면이 깨질 위험이 있었습니다. 그래서 `site.css`에서 flag display가 공통 panel 토큰으로 fallback하도록 바꾸고, play/result 템플릿이 새 CSS 버전을 읽게 맞췄습니다. 게임 로직은 건드리지 않고 화면 contract만 안정화한 작은 residual bug 조각입니다.
+
+## 2026-03-30 - 남은 4개 게임오버 모달에도 같은 keyboard focus scope를 적용
+
+- 단계: 11. 신규 게임 확장 보조 접근성 정리
+- 목적: 직전 조각에서 `population-battle`만 게임오버 모달의 focus scope를 바로잡았고, `location / population / capital / flag`는 여전히 dialog가 떠도 뒤쪽 화면으로 tab이 빠질 수 있었다. 이번 조각은 다섯 게임의 terminal modal 규칙을 같은 수준으로 맞추는 데 집중했다.
+- 변경 파일:
+  - `src/main/resources/templates/location-game/play.html`
+  - `src/main/resources/templates/population-game/play.html`
+  - `src/main/resources/templates/capital-game/play.html`
+  - `src/main/resources/templates/flag-game/play.html`
+  - `src/main/resources/static/js/location-game.js`
+  - `src/main/resources/static/js/population-game.js`
+  - `src/main/resources/static/js/capital-game.js`
+  - `src/main/resources/static/js/flag-game.js`
+  - `src/main/resources/static/css/site.css`
+  - `src/test/java/com/worldmap/game/location/LocationGameFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/game/population/PopulationGameFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/game/capital/CapitalGameFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/game/flag/FlagGameFlowIntegrationTest.java`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/18-production-verification-and-demo-interview-pack.md`
+- 요청 흐름: 각 게임의 흐름은 그대로 `POST /api/games/.../sessions/{sessionId}/answer -> GAME_OVER 응답 -> play.js의 showGameOverModal()`이다. 이번에 바뀐 점은 `showGameOverModal()`이 이제 공통적으로 modal panel에 focus를 넣고 `.page-shell`을 `inert` 처리하며 `keydown`에서 `Tab / Shift+Tab / Escape`를 잡는다는 것이다. `restartCurrentSession()`이 성공한 뒤에는 location은 `globe-stage` anchor로, population/capital/flag는 첫 번째 enabled option input으로 focus를 되돌린다.
+- 데이터 / 상태 변화: 게임 세션, stage, attempt, 점수 정책은 바뀌지 않았다. 이번 조각의 상태 변화는 순수하게 브라우저 표현 계층에 있다. `GAME_OVER` modal open/close 시점에 focus 범위와 배경 화면의 interactability만 달라졌다.
+- 핵심 도메인 개념: terminal modal은 단순 안내 레이어가 아니라 “다음 행동을 고를 때까지 현재 흐름을 붙잡는 UI 상태”다. 그래서 서버 도메인은 그대로 두더라도, 브라우저 계층이 그 상태를 실제 focus scope로 표현해야 의미가 맞는다. 이 책임은 컨트롤러가 아니라 SSR 템플릿과 페이지별 JS에 있다.
+- 예외 / 엣지 케이스: `Escape`는 다섯 게임 모두 modal을 닫지 않는다. 이 modal은 dismissible helper가 아니라 restart/home 선택을 요구하는 terminal modal이기 때문이다. location은 지구본 자체가 아직 키보드 조작형 게임은 아니어서, restart 후 focus를 `globe-stage` anchor로만 돌린다. 즉 이번 조각은 “focus가 hidden modal에 남지 않게 한다” 수준까지 닫은 것이고, location game 전체 키보드 플레이 지원까지는 아니다.
+- 테스트: `git diff --check` 통과. `node --check src/main/resources/static/js/location-game.js` 통과. `node --check src/main/resources/static/js/population-game.js` 통과. `node --check src/main/resources/static/js/capital-game.js` 통과. `node --check src/main/resources/static/js/flag-game.js` 통과. `./gradlew test --tests com.worldmap.game.location.LocationGameFlowIntegrationTest.playPageRendersAccessibleGameOverDialogShell --tests com.worldmap.game.population.PopulationGameFlowIntegrationTest.playPageRendersAccessibleGameOverDialogShell --tests com.worldmap.game.capital.CapitalGameFlowIntegrationTest.playPageRendersAccessibleGameOverDialogShell --tests com.worldmap.game.flag.FlagGameFlowIntegrationTest.playPageRendersAccessibleGameOverDialogShell` 통과.
+- 배운 점: 같은 제품 안에서 modal 동작 규칙이 게임마다 달라지면, 설명도 QA도 같이 어려워진다. 이런 경우 공통 helper를 서두르기보다 먼저 각 화면의 동작 규칙을 같게 맞추고, 그다음 공통화 여부를 판단하는 편이 더 안전하다.
+- 아직 약한 부분: 지금은 다섯 게임이 같은 키보드 규칙을 가지지만, 브라우저에서 실제 `Tab/Shift+Tab`과 restart 후 focus 복귀를 확인하는 E2E는 없다. 또 로직이 각 게임 JS에 반복돼 있어, 다음 조각에서 helper 추출 여부를 다시 판단해야 한다.
+- 면접용 30초 요약: population-battle에서 먼저 잡은 게임오버 모달 포커스 규칙을 위치/인구수/수도/국기까지 확장했습니다. 다섯 게임 모두 modal이 뜨면 배경 화면을 `inert`로 막고, dialog 안에서만 tab이 돌고, restart가 끝나면 다시 플레이 가능한 surface로 focus가 돌아가도록 맞췄습니다. 서버 게임 로직은 그대로 두고, SSR 템플릿과 페이지 JS에서 terminal UI 상태를 실제 focus scope로 표현한 조각입니다.
+
+## 2026-03-30 - 추천 만족도 입력과 population-battle 게임오버 모달의 키보드 접근성 1차 보강
+
+- 단계: 6. 설문 기반 추천 엔진 / 11. 신규 게임 확장 보조 접근성 정리
+- 목적: 추천 결과 화면의 만족도 입력은 `radiogroup`처럼 보여도 실제로는 `button + aria-pressed` 묶음이라 스크린리더 문맥과 키보드 이동이 어색했고, population-battle 게임오버 모달은 열려도 focus가 들어가지 않고 뒤쪽 header/nav로 tab이 빠질 수 있었다. 이번 조각은 “키보드와 보조기술에서도 지금 UI가 실제 입력/모달처럼 동작하는가”를 바로잡는 데 집중했다.
+- 변경 파일:
+  - `src/main/resources/templates/recommendation/result.html`
+  - `src/main/resources/static/js/recommendation-feedback.js`
+  - `src/main/resources/templates/population-battle-game/play.html`
+  - `src/main/resources/static/js/population-battle-game.js`
+  - `src/main/resources/static/css/site.css`
+  - `src/test/java/com/worldmap/recommendation/RecommendationPageIntegrationTest.java`
+  - `src/test/java/com/worldmap/game/populationbattle/PopulationBattleGameFlowIntegrationTest.java`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/18-production-verification-and-demo-interview-pack.md`
+- 요청 흐름: 추천 결과는 여전히 `POST /recommendation/survey -> RecommendationPageController -> recommendation/result.html`로 렌더링된다. 바뀐 점은 결과 페이지가 만족도 입력을 hidden score + button click 상태로 처리하지 않고, `fieldset + radio`를 서버가 그대로 렌더링한다는 것이다. 브라우저의 `recommendation-feedback.js`는 radio change를 받아 submit 활성화와 선택 스타일만 맞춘다. population-battle는 `POST /api/games/population-battle/sessions/{sessionId}/answer` 결과가 `GAME_OVER`일 때 `showGameOverModal()`이 열리며, 이제 이 시점에 modal로 focus를 이동시키고 `.page-shell`을 `inert` 처리해 focus 범위를 dialog 안으로 한정한다.
+- 데이터 / 상태 변화: 추천 만족도 저장 API나 recommendation feedback 도메인 모델은 바뀌지 않았다. 서버에 저장되는 것은 여전히 `feedbackToken + satisfactionScore` 기반 피드백이고, 이번 조각에서 바뀐 것은 브라우저 쪽 입력 semantics와 메시지 공지 방식이다. population-battle도 게임 상태 전이 규칙은 그대로고, `GAME_OVER` UI 상태가 실제 포커스 스코프를 갖는 표현 계층 규칙만 추가됐다.
+- 핵심 도메인 개념: 이번 조각은 서버 판정 로직이 아니라 “표현 계층도 도메인 의미를 거짓말하지 말아야 한다”는 규칙이다. 만족도는 실제로 단일 선택 점수 입력이므로 radio가 맞고, 게임오버 모달은 실제로 다음 행동을 강제하는 terminal UI이므로 focus scope를 직접 가져야 한다. 그래서 컨트롤러나 서비스가 아니라 SSR 템플릿과 브라우저 JS에서 semantics와 포커스 흐름을 책임지게 했다.
+- 예외 / 엣지 케이스: 만족도 점수를 고르지 않고 submit하면 기존처럼 막되, 이제 메시지는 live region으로 공지된다. population-battle 게임오버 모달은 `Escape`로 닫히지 않는다. 이 상태는 terminal action 선택이 필요한 모달이기 때문이다. 다만 이번 턴은 population-battle만 고쳤고, location/capital/flag/population의 게임오버 모달은 같은 규칙으로 아직 공통화하지 않았다.
+- 테스트: `git diff --check` 통과. `node --check src/main/resources/static/js/recommendation-feedback.js` 통과. `node --check src/main/resources/static/js/population-battle-game.js` 통과. `./gradlew test --tests com.worldmap.recommendation.RecommendationPageIntegrationTest --tests com.worldmap.game.populationbattle.PopulationBattleGameFlowIntegrationTest.playPageRendersAccessibleGameOverDialogShell` 통과. 참고로 `PopulationBattleGameFlowIntegrationTest` 전체 클래스에는 이번 조각과 무관한 기존 restart/result 기대 불일치가 남아 있어 이번 턴 검증 범위에서 제외했다.
+- 배운 점: 다크/라이트 색을 아무리 다듬어도, 입력이 실제 semantics를 못 가지면 “보이는 UI”와 “동작하는 UI”가 서로 어긋난다. 특히 별점처럼 보이는 점수 입력은 커스텀 버튼보다 네이티브 radio를 쓰는 편이 구현도 더 단순하고 설명도 쉽다.
+- 아직 약한 부분: 이번에는 population-battle 하나만 모달 focus를 고쳤다. 다른 4개 게임도 같은 패턴이라 공통 helper로 묶을지, 각 게임 JS 안에서 같은 규칙을 반복할지 다음 조각에서 정리해야 한다. 또 브라우저 포커스 동작은 현재 통합 테스트 대신 HTML 회귀 + JS syntax check로만 보고 있으므로, 실제 키보드 E2E가 붙어 있지는 않다.
+- 면접용 30초 요약: 추천 만족도 입력은 화면상으로는 단일 선택인데 실제 구현은 토글 버튼 묶음이어서 접근성이 어긋나고 있었습니다. 그래서 결과 페이지를 `fieldset + radio`로 바꾸고, 메시지는 live region으로 공지되게 정리했습니다. 또 population-battle 게임오버 모달은 열렸을 때 `inert`와 focus trap을 걸어 뒤쪽 화면으로 tab이 빠지지 않게 했습니다. 서버 도메인 규칙은 그대로 두고, SSR 템플릿과 브라우저 JS에서 입력 semantics와 focus scope만 바로잡은 조각입니다.
+
+## 2026-03-30 - 추천 피드백 문맥을 session token으로 묶고 summary API를 admin 전용으로 제한
+
+- 단계: 6. 설문 기반 추천 엔진
+- 목적: 추천 결과 페이지가 `surveyVersion`, `engineVersion`, 20개 답변 스냅샷을 hidden field로 그대로 내리고 있었고, `POST /api/recommendation/feedback`는 그 값을 다시 신뢰해 저장하고 있었다. 또 버전별 만족도 요약 API도 public으로 열려 있었다. 이번 조각은 “피드백은 결과 1회분에만 연결되고, 운영 집계는 admin만 본다”는 경계를 서버 쪽에서 고정하는 데 집중했다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationFeedbackContext.java`
+  - `src/main/java/com/worldmap/recommendation/web/RecommendationFeedbackSessionStore.java`
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationSurveyResultView.java`
+  - `src/main/java/com/worldmap/recommendation/application/RecommendationSurveyService.java`
+  - `src/main/java/com/worldmap/recommendation/web/RecommendationPageController.java`
+  - `src/main/java/com/worldmap/recommendation/web/RecommendationFeedbackRequest.java`
+  - `src/main/java/com/worldmap/recommendation/web/RecommendationFeedbackApiController.java`
+  - `src/main/resources/templates/recommendation/result.html`
+  - `src/test/java/com/worldmap/recommendation/RecommendationPageIntegrationTest.java`
+  - `src/test/java/com/worldmap/recommendation/RecommendationFeedbackIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/09-redis-leaderboard-and-ranking-page.md`
+- 요청 흐름 / 데이터 흐름: `POST /recommendation/survey`는 여전히 `RecommendationPageController -> RecommendationSurveyService.recommend()`로 추천 결과를 계산한다. 바뀐 점은 컨트롤러가 `RecommendationFeedbackSessionStore`에 `feedbackToken -> RecommendationFeedbackContext`를 현재 `HttpSession`에 저장하고, 결과 페이지에는 token만 hidden field로 내린다는 것이다. 사용자가 만족도를 보내면 `POST /api/recommendation/feedback`는 token과 점수만 받고, 서버가 세션에서 문맥을 꺼내 `RecommendationFeedbackSubmission`을 조립해 저장한다.
+- 데이터 / 상태 변화: 추천 결과 top 3는 여전히 저장하지 않는다. `recommendation_feedback`에 저장되는 값은 이전과 같은 `surveyVersion`, `engineVersion`, `satisfactionScore`, 20개 답변 스냅샷이지만, 이제 그 값의 source of truth는 클라이언트 hidden field가 아니라 서버 세션에 있는 `RecommendationFeedbackContext`다. 성공적으로 저장한 token은 세션에서 제거해 재사용되지 않게 했다.
+- 핵심 도메인 개념: 이번 조각의 핵심은 “피드백은 추천 결과 1회분의 서버 문맥에 연결된다”는 규칙이다. 그래서 컨트롤러는 설문 결과를 계산하고 token을 발급하는 입구만 맡고, 실제로 어떤 문맥을 어떻게 소비해 저장할지는 `RecommendationFeedbackSessionStore`와 `RecommendationFeedbackService` 경계에서 처리한다. 운영 요약은 같은 서비스 집계를 쓰되, `/api/recommendation/feedback/summary`는 admin session이 아니면 열리지 않게 막아 공개 surface와 운영 surface를 다시 분리했다.
+- 예외 / 엣지 케이스: token이 없거나 이미 사용됐거나 다른 세션에서 가져온 값이면 `400`으로 거절한다. 만족도 점수 `1~5` validation은 기존처럼 request 계층에서 먼저 막는다. 진짜 “당시 보여준 top 3”까지 감사 로그처럼 남기고 싶다면 별도 결과 snapshot 저장소가 더 필요하지만, 이번 조각에서는 저장 범위를 늘리지 않았다.
+- 테스트: `git diff --check` 통과. `./gradlew test --tests com.worldmap.recommendation.RecommendationPageIntegrationTest --tests com.worldmap.recommendation.RecommendationFeedbackIntegrationTest --tests com.worldmap.admin.AdminPageIntegrationTest` 통과.
+- 배운 점: “추천 결과는 저장하지 않는다”와 “클라이언트가 결과 문맥을 다시 보내도 된다”는 다른 문제다. 결과 자체를 DB에 남기지 않더라도, 피드백이 어떤 설문/엔진 문맥에서 나온 것인지는 서버가 한 번 더 붙잡고 있어야 무결성이 생긴다.
+- 아직 약한 부분: 지금은 결과 문맥을 `HttpSession`에만 보관하므로, 세션이 만료되면 오래된 탭의 피드백은 거절된다. 이게 현재 제품 범위에는 맞지만, 나중에 추천 결과 공유나 결과 재방문 기능이 생기면 별도 persistent result token 설계를 다시 해야 한다.
+- 면접용 30초 요약: 추천 결과는 여전히 저장하지 않지만, 피드백 저장에 필요한 문맥은 이제 클라이언트 hidden field가 아니라 서버 세션이 들고 있습니다. 설문 제출 직후 서버가 `feedbackToken`과 함께 `surveyVersion`, `engineVersion`, 답변 스냅샷을 세션에 보관하고, 피드백 API는 token과 점수만 받아 그 문맥을 복원해 저장합니다. 또 버전별 만족도 요약 API도 admin session으로 제한해 public surface와 운영 surface의 경계를 다시 맞췄습니다.
+
+## 2026-03-30 - `/mypage` read model을 5개 게임 기준으로 재정렬하고 rank 의미를 바로잡기
+
+- 단계: 8. 인증, 전적, 마이페이지
+- 목적: guest claim을 5개 게임 전체로 확장한 뒤에도 `/mypage`는 여전히 위치/인구수 두 게임만 `best/performance`를 보여주고 있었다. 게다가 최근 플레이의 `rankAtRecordTime`은 이름과 달리 저장된 당시 순위가 아니라 read 시점에 다시 계산한 현재 순위였다. 이번 조각은 `/mypage`를 현재 제품 범위와 맞추고, 잘못된 랭크 의미를 정리하는 데 집중했다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/mypage/application/MyPageDashboardView.java`
+  - `src/main/java/com/worldmap/mypage/application/MyPageBestRunView.java`
+  - `src/main/java/com/worldmap/mypage/application/MyPageRecentPlayView.java`
+  - `src/main/java/com/worldmap/mypage/application/MyPageService.java`
+  - `src/main/resources/templates/mypage.html`
+  - `src/test/java/com/worldmap/mypage/MyPageServiceIntegrationTest.java`
+  - `src/test/java/com/worldmap/web/MyPageControllerTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/11-guest-session-ownership-and-progress-claim.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/11-guest-session-ownership-and-progress-claim.md`
+- 요청 흐름 / 데이터 흐름: `GET /mypage`는 그대로 `MyPageController -> MyPageService.loadDashboard(memberId)`에서 시작한다. 바뀐 점은 서비스가 고정 필드 `locationBest/populationBest`를 만들지 않고, `leaderboard_record`에서 5개 게임의 `bestRuns`와 `recentPlays`를 리스트로 만들고, 각 게임의 finished stage 집계에서 `modePerformances`도 같은 리스트 구조로 만든다는 점이다. 템플릿은 이 리스트를 iteration으로 렌더링한다.
+- 데이터 / 상태 변화: write model은 바뀌지 않았다. `leaderboard_record`에 새 컬럼을 추가하지도 않았다. 대신 `/mypage` read model이 위치/수도/국기/인구 비교/인구수 5개 게임을 모두 읽게 되었고, 최근 플레이/베스트 카드의 rank도 “저장된 당시 순위”가 아니라 read 시점에 다시 계산한 현재 전체 순위라는 의미로 이름과 카피를 맞췄다.
+- 핵심 도메인 개념: `/mypage`는 여전히 두 층 read model이다. 결과 요약은 `leaderboard_record`, 플레이 성향은 raw stage 집계에서 나온다. 이번 조각에서 중요한 건 이 두 층을 유지한 채 고정 2모드 필드를 per-mode 리스트로 일반화했다는 점이다. 그래야 새 게임을 추가해도 템플릿 분기와 DTO 필드를 계속 복붙하지 않고 서비스의 source of truth에서 제품 범위를 설명할 수 있다.
+- 예외 / 엣지 케이스: 완료 run이 없는 사용자는 `bestRuns`, `modePerformances`, `recentPlays`가 빈 리스트가 될 수 있으므로, 템플릿은 empty-state 메시지를 계속 보여 준다. rank는 현재 전체 순위를 다시 계산하므로 과거 run의 숫자가 시간이 지나며 바뀔 수 있다. 진짜 “당시 순위”가 필요하면 `leaderboard_record`에 별도 snapshot을 저장하는 write model 확장이 필요하다.
+- 테스트: `git diff --check` 통과. `./gradlew test --tests com.worldmap.mypage.MyPageServiceIntegrationTest --tests com.worldmap.web.MyPageControllerTest --tests com.worldmap.auth.AuthFlowIntegrationTest` 통과.
+- 배운 점: 새 게임을 추가한 뒤 read model을 같이 확장하지 않으면, write path와 계정 귀속이 맞아도 사용자가 보는 기록 허브는 계속 옛 제품 범위에 머무른다. 또 DTO 필드 이름 하나가 실제 도메인 의미와 다르면 문서/면접 설명까지 같이 틀어지므로, 이번처럼 read model 의미를 바로잡는 작업이 꼭 필요했다.
+- 아직 약한 부분: 지금은 현재 전체 순위를 read 시점에 다시 계산하므로 데이터가 많아지면 비용이 커질 수 있다. 진짜로 record-time rank snapshot을 남길지, 현재처럼 read-time 계산으로 둘지, 그리고 일간/전체를 함께 보여 줄지 다음 조각에서 판단이 더 필요하다.
+- 면접용 30초 요약: `/mypage`가 새 게임 3종 추가 뒤에도 위치/인구수 두 게임만 요약하던 상태라, 제품 범위와 기록 허브가 어긋나고 있었습니다. 그래서 `MyPageDashboardView`를 고정 필드 대신 per-mode 리스트 구조로 바꾸고, `leaderboard_record` 기반 최고 기록/최근 플레이와 raw stage 기반 성향 요약을 5개 게임 전체로 일반화했습니다. 또 recent rank는 저장된 당시 순위가 아니라 현재 전체 순위라는 실제 동작에 맞춰 이름과 카피를 정리했습니다.
+
+## 2026-03-30 - guest 기록 귀속 범위를 5개 게임 전체로 확장
+
+- 단계: 8. 인증, 전적, 마이페이지
+- 목적: 수도/국기/인구 비교 퀵 배틀이 들어온 뒤에도 `GuestProgressClaimService`는 여전히 위치/인구수만 claim하고 있었다. 그래서 같은 브라우저에서 새 게임 3종을 guest로 시작한 뒤 회원가입/로그인을 하면, 일부 세션만 member 소유로 바뀌고 나머지는 guest로 남는 불일치가 생길 수 있었다. 이번 조각은 ownership 전환 규칙을 5개 게임 전체로 맞추는 데 집중했다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/auth/application/GuestProgressClaimService.java`
+  - `src/test/java/com/worldmap/auth/AuthFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/auth/GuestSessionOwnershipIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/11-guest-session-ownership-and-progress-claim.md`
+- 요청 흐름: `POST /signup` 또는 `POST /login`은 `AuthPageController`에서 시작한다. 인증이 성공하면 컨트롤러가 현재 브라우저의 `guestSessionKey`를 읽고 `GuestProgressClaimService.claimGuestRecords(memberId, guestSessionKey)`를 호출한다. 이제 이 서비스는 위치/인구수뿐 아니라 수도/국기/인구 비교 퀵 배틀 repository까지 함께 조회해 아직 `memberId`가 없는 세션을 모두 `claimOwnership(memberId)`로 전환한다. 마지막에 `MemberSessionManager`가 로그인 세션을 유지한다.
+- 데이터 / 상태 변화: claim 전에는 각 게임 세션이 `memberId = null`, `guestSessionKey = 현재 브라우저 키` 상태다. claim 후에는 다섯 게임 세션과 `leaderboard_record`가 모두 `memberId = 로그인 사용자`, `guestSessionKey = null`로 바뀐다. `playerNickname` snapshot은 그대로 유지되므로 과거 플레이 당시 이름은 바뀌지 않는다.
+- 핵심 도메인 개념: guest 기록 귀속은 특정 게임 컨트롤러의 예외 처리 로직이 아니라 “ownership 전환 규칙”이다. 그래서 `AuthPageController`는 guest key를 읽고 서비스를 호출만 하고, 실제로 어떤 레코드를 어떤 규칙으로 member 소유로 바꾸는지는 `GuestProgressClaimService`와 각 엔티티의 `claimOwnership()`이 맡는다.
+- 예외 / 엣지 케이스: guest key가 없거나 비어 있으면 claim은 no-op다. 이미 `memberId`가 채워진 세션은 다시 건드리지 않는다. 현재도 귀속 범위는 “현재 브라우저 세션의 guest 기록만”이며, 다른 브라우저나 과거 세션 복구까지 하지는 않는다.
+- 테스트: `git diff --check` 통과. `./gradlew test --tests com.worldmap.auth.GuestSessionOwnershipIntegrationTest --tests com.worldmap.auth.AuthFlowIntegrationTest` 통과.
+- 배운 점: 계정 기능은 로그인 폼만 붙인다고 닫히지 않는다. 새 게임을 추가할 때 ownership 전환 규칙도 같은 범위로 확장하지 않으면, `/mypage`와 기록 귀속에서 제품 범위가 서로 어긋날 수 있다.
+- 아직 약한 부분: 이번 조각은 세션 ownership claim까지만 닫았다. `/mypage` read model은 아직 새 게임 3종의 최근 플레이와 성향 지표를 충분히 보여주지 못하므로, 다음 조각에서 읽기 모델을 제품 범위와 다시 맞춰야 한다.
+- 면접용 30초 요약: 단순 계정 구조에서 guest 기록 귀속은 현재 브라우저의 `guestSessionKey`를 기준으로 일어납니다. 그런데 새 게임 3종을 추가한 뒤 claim 서비스가 여전히 위치/인구수만 보고 있어서, 회원가입이나 로그인 후 일부 게임 세션만 계정 소유로 바뀌는 틈이 남아 있었습니다. 그래서 `GuestProgressClaimService`를 5개 게임 전체 repository로 확장하고, signup/login 통합 테스트로 같은 브라우저에서 시작한 모든 guest 세션이 한 번에 같은 `memberId`로 귀속되는지 고정했습니다.
+
+## 2026-03-30 - prod 설정 안전화와 legacy rollback startup 범위 제한
+
+- 단계: 10. 포트폴리오 정리와 발표 준비 보조 운영 안정화
+- 목적: ECS 배포 기준을 다시 보니 `application.yml`이 기본으로 local을 강제했고, prod는 `ddl-auto=update`, readiness는 DB만 보고, `GameLevelRollbackInitializer`는 startup 때 실제 DB/Redis를 건드릴 수 있는 상태였다. 이번 조각은 운영에서 “부팅하면서 자동 수정되는 것”을 줄이는 데 집중했다.
+- 변경 파일:
+  - `src/main/resources/application.yml`
+  - `src/main/resources/application-local.yml`
+  - `src/main/resources/application-test.yml`
+  - `src/main/resources/application-prod.yml`
+  - `src/main/java/com/worldmap/common/config/GameLevelRollbackInitializer.java`
+  - `src/test/java/com/worldmap/common/config/ApplicationConfigTest.java`
+  - `src/test/java/com/worldmap/common/config/ProdProfileConfigTest.java`
+  - `src/test/java/com/worldmap/common/config/ActuatorHealthEndpointIntegrationTest.java`
+  - `src/test/java/com/worldmap/common/config/GameLevelRollbackInitializerIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/16-production-runtime-redis-session-and-ecs-deploy-prep.md`
+- 요청 흐름: 이번 조각은 사용자 요청 흐름보다 startup 흐름이 핵심이다. 애플리케이션이 부팅되면 이제 base config는 local을 기본값으로 강제하지 않고, prod는 schema를 validate만 하며, actuator readiness는 Redis까지 본다. `GameLevelRollbackInitializer`는 `worldmap.legacy.rollback.enabled=true`일 때만 bean으로 등록되어 local/test에서만 실행된다.
+- 데이터 / 상태 변화: DB 스키마나 도메인 모델을 직접 바꾸지는 않았다. 대신 prod가 startup 때 스키마를 자동 update하지 않게 되었고, rollback initializer도 prod에서 실행되지 않는다. readiness는 이제 Redis가 내려가 있으면 ready가 아니라고 판단한다.
+- 핵심 도메인 개념: 운영 안전성도 결국 “어디서 상태가 바뀌는가”의 문제다. schema 변경과 legacy data purge는 request-time 비즈니스 로직이 아니라 startup-time 운영 책임이기 때문에, prod에서는 자동 실행을 줄이고 local/test에서만 명시적으로 허용하는 편이 설명 가능하다.
+- 예외 / 엣지 케이스: `ddl-auto=validate`로 바꾸면 prod 스키마가 엔티티와 안 맞을 때 부팅이 바로 실패한다. 이건 의도된 fail-fast다. 대신 앞으로는 migration 경로를 따로 가져가야 한다. readiness에 Redis를 넣었기 때문에 Redis 장애 시 `/actuator/health/readiness`가 내려갈 수 있다.
+- 테스트: `git diff --check` 통과. `./gradlew test --tests com.worldmap.common.config.ApplicationConfigTest --tests com.worldmap.common.config.ProdProfileConfigTest --tests com.worldmap.common.config.ActuatorHealthEndpointIntegrationTest --tests com.worldmap.common.config.GameLevelRollbackInitializerIntegrationTest` 통과.
+- 배운 점: 운영 사고를 줄이는 첫 단계는 화려한 인프라가 아니라 “앱이 부팅하면서 무엇을 자동으로 해도 되는가”를 줄이는 것이다. 특히 `ddl-auto=update`나 startup initializer 같은 자동 변경 경로는 편하지만, 책임 경계가 흐려지기 쉽다.
+- 아직 약한 부분: 이번 조각은 validate와 startup guard까지 넣었지만, 아직 Flyway/Liquibase 같은 migration 경로는 없다. 즉 “자동 변경을 막은 뒤 어떤 절차로 schema를 바꿀지”는 다음 운영 조각에서 더 명확히 해야 한다.
+- 면접용 30초 요약: ECS 배포 준비를 하면서 운영 설정을 다시 보니 base config가 local을 기본으로 강제하고, prod가 `ddl-auto=update`와 startup rollback initializer를 그대로 들고 있는 상태였습니다. 그래서 base에서는 local default를 제거하고, prod는 schema를 validate만 하게 바꾸고, legacy rollback initializer는 property gate로 local/test에서만 켜지게 제한했습니다. 또 readiness에는 Redis도 포함시켜 실제로 요청을 받을 준비가 된 뒤에만 트래픽을 받게 정리했습니다.
+
+## 2026-03-30 - 게임 write 직렬화와 stale submit 방어
+
+- 단계: 8. 인증, 전적, 마이페이지
+- 목적: 세션 ownership을 막은 뒤에도 같은 Stage에 대한 중복 submit과 duplicate restart가 남아 있었다. 특히 같은 오답 payload가 다시 오면 life가 두 번 줄 수 있고, terminal submit race에서는 leaderboard unique 충돌이 500으로 번질 수 있었다. 이번 조각은 `submit / restart / leaderboard 기록`을 한 번만 반영되게 만드는 무결성 1차에 집중했다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/game/common/application/GameSubmissionGuard.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameService.java`
+  - `src/main/java/com/worldmap/game/capital/application/CapitalGameService.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationGameService.java`
+  - `src/main/java/com/worldmap/game/flag/application/FlagGameService.java`
+  - `src/main/java/com/worldmap/game/populationbattle/application/PopulationBattleGameService.java`
+  - `src/main/java/com/worldmap/game/location/domain/LocationGameSessionRepository.java`
+  - `src/main/java/com/worldmap/game/capital/domain/CapitalGameSessionRepository.java`
+  - `src/main/java/com/worldmap/game/population/domain/PopulationGameSessionRepository.java`
+  - `src/main/java/com/worldmap/game/flag/domain/FlagGameSessionRepository.java`
+  - `src/main/java/com/worldmap/game/populationbattle/domain/PopulationBattleGameSessionRepository.java`
+  - 각 게임의 `*StateView`, `Submit*AnswerRequest`, `*ApiController`
+  - `src/main/java/com/worldmap/ranking/application/LeaderboardService.java`
+  - `src/main/resources/static/js/location-game.js`
+  - `src/main/resources/static/js/capital-game.js`
+  - `src/main/resources/static/js/population-game.js`
+  - `src/main/resources/static/js/flag-game.js`
+  - `src/main/resources/static/js/population-battle-game.js`
+  - `src/test/java/com/worldmap/game/location/LocationGameFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/game/capital/CapitalGameFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/game/population/PopulationGameFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/game/flag/FlagGameFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/game/populationbattle/PopulationBattleGameFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/ranking/LeaderboardIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+  - `blog/16-production-runtime-redis-session-and-ecs-deploy-prep.md`
+- 요청 흐름: 플레이 화면은 먼저 `GET /state`로 `stageId`, `expectedAttemptNumber`까지 받은 뒤, `POST /answer`에서 그 값을 같이 보낸다. 컨트롤러는 request를 서비스로 넘기고, 서비스는 `findByIdForUpdate()`로 session row를 잠근 뒤 현재 stage와 토큰을 비교한다. 토큰이 stale이면 `409`, fresh하면 attempt 저장 -> 상태 전이 -> 종료 시 leaderboard 반영 순서로 진행한다.
+- 데이터 / 상태 변화: DB 스키마는 그대로 두고, write path의 순서와 해석만 바꿨다. session row lock이 같은 `sessionId`의 write를 직렬화하고, stage는 현재 `nextAttemptNumber`와 클라이언트가 보낸 `expectedAttemptNumber`가 일치할 때만 진행된다. leaderboard는 `runSignature` unique 충돌을 “이미 반영된 종료 run”으로 해석해 no-op 처리한다.
+- 핵심 도메인 개념: `sessionId` ownership 검사만으로는 충분하지 않다. 게임은 같은 session 안에서도 `어느 Stage의 몇 번째 시도인가`가 맞아야 안전하다. 그래서 이번 조각의 핵심은 `session row lock + stage token(stageId, expectedAttemptNumber)` 조합으로 현재 write가 최신 게임 상태와 맞는지 확인하는 것이다. 이 검사는 컨트롤러보다 서비스에 있어야 한다. 실제 상태 전이와 attempt 번호 계산이 서비스/도메인에 있기 때문이다.
+- 예외 / 엣지 케이스: 같은 오답 payload가 다시 오면 이제 stale submit으로 `409`가 반환되고, life는 한 번만 줄어든다. terminal 상태의 duplicate submit은 leaderboard unique 충돌이 나더라도 no-op로 끝난다. 아직 restart 직후 늦게 도착한 오래된 packet을 완전히 구분하는 run generation token은 없다. 이번 조각은 그 전 단계로 write 직렬화와 stale stage token까지만 넣었다.
+- 테스트: `./gradlew compileJava` 통과. `./gradlew compileTestJava` 통과. `node --check src/main/resources/static/js/location-game.js && node --check src/main/resources/static/js/capital-game.js && node --check src/main/resources/static/js/population-game.js && node --check src/main/resources/static/js/flag-game.js && node --check src/main/resources/static/js/population-battle-game.js` 통과. `git diff --check` 통과. `./gradlew test --tests com.worldmap.game.location.LocationGameFlowIntegrationTest.staleDuplicateWrongAnswerIsRejectedWithoutConsumingExtraLife --tests com.worldmap.game.capital.CapitalGameFlowIntegrationTest.staleDuplicateWrongAnswerIsRejectedWithoutConsumingExtraLife --tests com.worldmap.game.population.PopulationGameFlowIntegrationTest.staleDuplicateWrongAnswerIsRejectedWithoutConsumingExtraLife --tests com.worldmap.game.flag.FlagGameFlowIntegrationTest.staleDuplicateWrongAnswerIsRejectedWithoutConsumingExtraLife --tests com.worldmap.game.populationbattle.PopulationBattleGameFlowIntegrationTest.staleDuplicateWrongAnswerIsRejectedWithoutConsumingExtraLife --tests com.worldmap.game.location.LocationGameFlowIntegrationTest.duplicateCorrectAnswerIsRejectedAfterStageAdvances --tests com.worldmap.game.capital.CapitalGameFlowIntegrationTest.duplicateCorrectAnswerIsRejectedAfterStageAdvances --tests com.worldmap.game.population.PopulationGameFlowIntegrationTest.duplicateCorrectAnswerIsRejectedAfterStageAdvances --tests com.worldmap.game.flag.FlagGameFlowIntegrationTest.duplicateCorrectAnswerIsRejectedAfterStageAdvances --tests com.worldmap.game.populationbattle.PopulationBattleGameFlowIntegrationTest.duplicateCorrectAnswerIsRejectedAfterStageAdvances --tests com.worldmap.ranking.LeaderboardIntegrationTest.gameOverRecordsLocationLeaderboardAndRendersRankingPage` 통과.
+- 배운 점: 게임의 중복 요청 방어는 “한 번 더 if문 체크”로 끝나지 않는다. 현재 Stage와 시도 번호를 서버가 source of truth로 들고 있고, 같은 session의 write를 한 줄로 세워야 제대로 설명 가능한 무결성이 나온다.
+- 아직 약한 부분: 이번 조각은 stale submit과 terminal duplicate submit까지는 막았지만, restart 뒤에 늦게 도착한 오래된 packet을 완전히 식별하는 run generation token은 아직 없다. 또 진짜 멀티스레드 동시성 재현 테스트를 서비스 계층에서 직접 붙이지는 못했다.
+- 면접용 30초 요약: 게임 무결성 1차에서는 각 게임의 `submitAnswer`와 `restartGame`이 session row를 잠근 뒤 처리되게 바꿨고, 플레이 화면이 받은 `stageId`와 `expectedAttemptNumber`를 답안 제출 때 다시 보내도록 만들었습니다. 서버는 이 토큰이 stale면 `409`로 끊어 같은 오답 payload가 재전송돼도 life가 두 번 줄지 않게 했고, terminal submit race에서 leaderboard unique 충돌이 나도 no-op로 처리해 기록이 한 번만 남도록 정리했습니다.
+
+## 2026-03-30 - 게임 세션 접근 보호와 조기 결과 노출 차단
+
+- 단계: 8. 인증, 전적, 마이페이지
+- 목적: 게임 세션이 `sessionId`만 알면 다른 브라우저에서도 조회/답안 제출/재시작/결과 확인이 가능했고, 진행 중인 세션도 `/result`로 정답과 시도 기록을 읽을 수 있었다. 이번 조각은 현재 브라우저 ownership만 허용하고, 결과는 종료된 run에만 존재하는 리소스로 다시 정의해 치팅과 세션 탈취형 오남용을 먼저 막는 데 집중했다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/auth/application/GuestSessionKeyManager.java`
+  - `src/main/java/com/worldmap/auth/application/GameSessionAccessContextResolver.java`
+  - `src/main/java/com/worldmap/auth/application/MemberSessionManager.java`
+  - `src/main/java/com/worldmap/auth/web/AuthPageController.java`
+  - `src/main/java/com/worldmap/common/exception/GlobalApiExceptionHandler.java`
+  - `src/main/java/com/worldmap/common/exception/SessionAccessDeniedException.java`
+  - `src/main/java/com/worldmap/game/common/application/GameSessionAccessContext.java`
+  - `src/main/java/com/worldmap/game/location/application/LocationGameService.java`
+  - `src/main/java/com/worldmap/game/capital/application/CapitalGameService.java`
+  - `src/main/java/com/worldmap/game/population/application/PopulationGameService.java`
+  - `src/main/java/com/worldmap/game/flag/application/FlagGameService.java`
+  - `src/main/java/com/worldmap/game/populationbattle/application/PopulationBattleGameService.java`
+  - `src/main/java/com/worldmap/game/location/web/LocationGameApiController.java`
+  - `src/main/java/com/worldmap/game/capital/web/CapitalGameApiController.java`
+  - `src/main/java/com/worldmap/game/population/web/PopulationGameApiController.java`
+  - `src/main/java/com/worldmap/game/flag/web/FlagGameApiController.java`
+  - `src/main/java/com/worldmap/game/populationbattle/web/PopulationBattleGameApiController.java`
+  - `src/main/java/com/worldmap/game/location/web/LocationGamePageController.java`
+  - `src/main/java/com/worldmap/game/capital/web/CapitalGamePageController.java`
+  - `src/main/java/com/worldmap/game/population/web/PopulationGamePageController.java`
+  - `src/main/java/com/worldmap/game/flag/web/FlagGamePageController.java`
+  - `src/main/java/com/worldmap/game/populationbattle/web/PopulationBattleGamePageController.java`
+  - `src/test/java/com/worldmap/auth/AuthFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/auth/application/MemberSessionManagerTest.java`
+  - `src/test/java/com/worldmap/auth/application/GameSessionAccessContextResolverTest.java`
+  - `src/test/java/com/worldmap/game/common/application/GameSessionAccessContextTest.java`
+  - `src/test/java/com/worldmap/game/location/LocationGameFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/game/capital/CapitalGameFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/game/population/PopulationGameFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/game/flag/FlagGameFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/game/populationbattle/PopulationBattleGameFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/mypage/MyPageServiceIntegrationTest.java`
+  - `README.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/README.md`
+  - `blog/09-redis-leaderboard-and-ranking-page.md`
+- 요청 흐름: 보호 대상 요청은 이제 `HttpServletRequest -> GameSessionAccessContextResolver -> *GameApiController / *GamePageController -> *GameService` 순서로 흐른다. 서비스는 `memberId` 또는 `guestSessionKey` ownership이 현재 브라우저의 access context와 맞는지 확인한 뒤에만 state / answer / restart / result 로직을 수행한다.
+- 데이터 / 상태 변화: DB 스키마를 추가로 바꾸지는 않았다. 대신 이미 저장돼 있던 `memberId`, `guestSessionKey` ownership 필드를 읽는 방식이 바뀌었고, `READY`나 `IN_PROGRESS` 상태의 세션은 결과 리소스를 아직 가지지 않는 것으로 해석한다. 회원가입/로그인 성공 시에는 같은 세션 객체 안에서 session id만 회전한다.
+- 핵심 도메인 개념: `sessionId`는 리소스 식별자일 뿐 접근 권한이 아니다. 실제 소유자는 `memberId` 또는 `guestSessionKey`이고, 현재 요청은 그것을 대표하는 access context를 가진다. 또 `result`는 단순 상태 조회가 아니라 “종료된 run 요약”이므로 terminal 상태에서만 열리는 리소스로 보는 편이 더 자연스럽다.
+- 예외 / 엣지 케이스: 세션이 없거나 다른 브라우저의 `guestSessionKey`로 들어오면 `403`을 반환한다. 진행 중 세션의 `/result` API와 결과 페이지는 `404`로 막아 결과 리소스 존재 자체를 숨긴다. 단순 세션 로그인 구조를 유지하고 있기 때문에 로그인/회원가입 성공 순간 `changeSessionId()`를 호출해 session fixation 위험을 줄였다.
+- 테스트: `./gradlew compileJava compileTestJava --rerun-tasks` 통과. `./gradlew test --tests com.worldmap.game.common.application.GameSessionAccessContextTest --tests com.worldmap.auth.application.MemberSessionManagerTest --tests com.worldmap.auth.application.GameSessionAccessContextResolverTest` 통과. `AuthFlowIntegrationTest`, 각 게임 flow integration test는 로컬 Redis가 없어 실행 실패했다. 현재 테스트 profile이 `localhost:6379` Redis에 의존한다는 점도 같이 확인했다.
+- 배운 점: guest 플레이를 허용하는 구조에서도 “현재 브라우저가 이 세션의 owner인가”를 따로 확인해야 한다. 식별자와 권한을 분리하지 않으면 UUID를 알기만 해도 타인의 세션을 건드릴 수 있다.
+- 아직 약한 부분: 이번 조각은 대표 흐름과 unit test는 고정했지만, Redis 없는 환경에서 전체 통합 테스트를 자동으로 돌릴 수 있게 만들지는 못했다. 다음 운영 안정화 조각에서 test Redis 의존도도 같이 정리해야 한다.
+- 면접용 30초 요약: 게임 세션은 `sessionId`만으로 열리면 안 되기 때문에, 현재 브라우저의 `memberId` 또는 `guestSessionKey`를 access context로 만든 뒤 서비스 진입 시 ownership을 다시 검사하도록 바꿨습니다. 또 `/result`는 종료된 run에만 존재하는 리소스로 재정의해 진행 중 세션에서 정답이 노출되던 치팅 경로를 닫았고, 로그인과 회원가입 성공 시에는 `changeSessionId()`로 session fixation 위험도 함께 줄였습니다.
+
 ## 2026-03-25 - 라이트 테마 입체감 보강
 
 - 단계: 6. 설문 기반 추천 엔진 보조 UI 조각
@@ -165,7 +1845,7 @@
   - `README.md`
   - `docs/PORTFOLIO_PLAYBOOK.md`
   - `docs/WORKLOG.md`
-  - `blog/02-spring-boot-bootstrap.md`
+  - `blog/02-gradle-spring-boot-ssr-bootstrap.md`
 - 요청 흐름 / 데이터 흐름: HTTP 요청 흐름과 게임/추천 상태 흐름은 전혀 바뀌지 않는다. 바뀐 것은 `build.gradle -> java.toolchain.languageVersion` 기준과, 개발자가 로컬에서 어떤 JDK로 컴파일/실행하는가다.
 - 데이터 / 상태 변화: DB, Redis, 세션, 게임 상태, 추천 결과에는 변화가 없다. 빌드 시 사용되는 JDK 기준만 `Java 25`로 올라갔다.
 - 핵심 도메인 개념: 이 변경은 컨트롤러나 서비스 책임이 아니라 프로젝트 뼈대 책임이다. 기능 코드가 멀쩡해도 toolchain 기준이 맞지 않으면 서버 자체가 뜨지 않기 때문에, 이 조각은 애플리케이션 로직보다 먼저 정리해야 하는 실행 기반에 속한다.
@@ -429,8 +2109,8 @@
   - `blog/README.md`
   - `blog/00_series_plan.md`
   - `blog/00_rebuild_guide.md`
-  - `blog/_post_template.md`
-  - `blog/01-why-worldmap-game-platform-domain.md`
+  - `blog/README.md`
+  - `blog/01-why-worldmap-server-driven-game-platform.md`
   - `docs/PORTFOLIO_PLAYBOOK.md`
   - `docs/WORKLOG.md`
 - 요청 흐름: 아직 애플리케이션 요청은 없고, 개발용 문서와 공개용 설명 문서를 분리하는 흐름을 먼저 만들었다.
@@ -536,7 +2216,7 @@
   - `README.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/02-spring-boot-bootstrap.md`
+  - `blog/02-gradle-spring-boot-ssr-bootstrap.md`
   - `docs/WORKLOG.md`
 - 요청 흐름: 사용자가 `/`로 접근하면 `HomeController`가 모드 카드, 핵심 원칙, 로드맵 데이터를 모델에 담아 `home.html`을 렌더링한다. 아직 영속 상태 변화는 없고, 현재 단계는 서버 뼈대와 렌더링 구조를 고정하는 데 집중했다.
 - 데이터 / 상태 변화: 로컬 실행에서는 Docker Compose 기반 PostgreSQL / Redis를 붙일 수 있는 상태가 되었고, 테스트에서는 H2 메모리 DB를 사용하도록 분리했다. 프로젝트 상태는 `문서 전용 저장소`에서 `실행 가능한 Spring Boot 3 애플리케이션` 단계로 올라갔다.
@@ -576,7 +2256,7 @@
   - `README.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/03-country-seed-loading.md`
+  - `blog/05-country-seed-and-reference-data-pipeline.md`
   - `docs/WORKLOG.md`
 - 요청 흐름: 애플리케이션 시작 시 `CountrySeedInitializer`가 `country` 테이블이 비어 있는지 확인하고, 비어 있으면 JSON 시드 파일을 읽는다. `CountrySeedValidator`가 ISO 코드 중복, 좌표 범위, 필수값을 검증한 뒤 `CountryRepository`로 저장한다. 이후 사용자는 `GET /api/countries`와 `GET /api/countries/{iso3Code}`로 출제 가능한 국가 데이터를 조회할 수 있다.
 - 데이터 / 상태 변화: 처음 실행 시 `country` 테이블에 17개 국가가 적재되고, 이후 재실행에서는 기존 데이터가 있으면 시드를 다시 넣지 않는다. 위치 게임용 좌표는 현재 `대표 좌표 1개` 구조이며, 실제 국경 폴리곤 데이터는 아직 도입하지 않았다.
@@ -622,7 +2302,7 @@
   - `README.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/04-location-game-level-1.md`
+  - `blog/07-location-game-session-stage-attempt-loop.md`
   - `docs/WORKLOG.md`
 - 요청 흐름: 사용자가 시작 페이지에서 닉네임을 입력하면 `POST /api/games/location/sessions`가 세션과 라운드들을 만든다. 플레이 페이지는 `GET /round`로 현재 문제를 받고, 좌표와 `roundNumber`를 함께 `POST /answer`로 보낸다. 서버는 현재 라운드와 요청 라운드를 비교해 중복 제출을 막고, 거리 계산과 점수 계산을 수행한 뒤 세션과 라운드를 함께 갱신한다. 마지막 라운드가 끝나면 결과 페이지에서 세션 요약과 라운드별 기록을 보여준다.
 - 데이터 / 상태 변화: 새로 `location_game_session`, `location_game_round` 테이블이 생기고, 상태는 `READY -> IN_PROGRESS -> FINISHED`로 바뀐다. 각 답안 제출 시 세션 총점과 완료 라운드 수가 증가하고, 라운드에는 제출 좌표, 거리, 판정, 점수가 저장된다.
@@ -676,7 +2356,7 @@
   - `README.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/05-population-game-level-1.md`
+  - `blog/07-location-game-session-stage-attempt-loop.md`
   - `docs/WORKLOG.md`
 - 요청 흐름: 사용자가 시작 페이지에서 닉네임을 입력하면 `POST /api/games/population/sessions`가 세션과 라운드를 만든다. 라운드 생성 시 서버는 `PopulationGameOptionGenerator`로 보기 4개를 만들고, 플레이 페이지는 `GET /round`로 문제와 보기를 받아 렌더링한다. 사용자가 `selectedOptionNumber`를 제출하면 서버는 정답 여부와 점수를 계산하고 세션/라운드를 함께 갱신한다. 마지막 라운드가 끝나면 결과 페이지에서 라운드별 선택값과 정답값을 보여준다.
 - 데이터 / 상태 변화: `population_game_session`, `population_game_round` 테이블이 추가됐고, 위치 게임과 인구수 게임 모두 `BaseGameSession`의 공통 세션 구조를 사용하게 됐다. 각 인구수 라운드에는 정답 인구수, 보기 4개, 정답 보기 번호, 사용자가 선택한 보기 번호, 점수가 저장된다.
@@ -712,8 +2392,8 @@
   - `src/test/java/com/worldmap/game/location/LocationGameFlowIntegrationTest.java`
   - `docs/PORTFOLIO_PLAYBOOK.md`
   - `README.md`
-  - `blog/04-location-game-level-1.md`
-  - `blog/05-population-game-level-1.md`
+  - `blog/07-location-game-session-stage-attempt-loop.md`
+  - `blog/07-location-game-session-stage-attempt-loop.md`
   - `docs/WORKLOG.md`
 - 요청 흐름: 사용자가 시작 페이지에서 닉네임을 입력하면 `POST /api/games/location/sessions`가 세션과 라운드를 만든다. 플레이 페이지는 `GET /round`로 현재 문제 국가명을 받고, 동시에 `/api/countries`와 `/data/world-countries.geojson`을 내려받아 지구본에 활성 국가를 표시한다. 사용자가 국가 폴리곤을 클릭하면 프론트는 `selectedCountryIso3Code`를 선택 상태로 들고 있다가 `roundNumber`와 함께 `POST /answer`로 보낸다. 서버는 현재 라운드와 요청 라운드를 비교하고, 선택한 ISO3가 실제 시드 국가인지 검증한 뒤 세션과 라운드를 갱신한다.
 - 데이터 / 상태 변화: `location_game_round`는 이제 제출 좌표와 거리 대신 `selectedCountryIso3Code`, `selectedCountryName`, `correct`, `awardedScore`를 저장한다. `targetLatitude`, `targetLongitude`는 향후 Level 2나 다른 시각화 확장을 위해 남겨뒀지만, 현재 Level 1 판정에는 사용하지 않는다. 프론트 정적 자산으로 GeoJSON과 지구 텍스처가 추가됐다.
@@ -733,7 +2413,7 @@
   - `src/main/resources/static/data/active-countries.geojson`
   - `README.md`
   - `docs/PORTFOLIO_PLAYBOOK.md`
-  - `blog/04-location-game-level-1.md`
+  - `blog/07-location-game-session-stage-attempt-loop.md`
   - `docs/WORKLOG.md`
 - 요청 흐름: 플레이 페이지 진입 시 프론트는 더 이상 전 세계 고해상도 폴리곤 전체를 내려받지 않는다. `/api/countries`로 활성 국가 목록을 받고, `/data/active-countries.geojson`으로 현재 시드 국가만 담은 경량 자산을 내려받아 지구본을 렌더링한다.
 - 데이터 / 상태 변화: 정적 자산이 `world-countries.geojson` 중심에서 `active-countries.geojson` 중심으로 바뀌었다. 새 자산은 시드 17개 국가만 포함하고 좌표 정밀도를 낮춰 파일 크기를 줄였다.
@@ -859,8 +2539,8 @@
   - `README.md`
   - `docs/PORTFOLIO_PLAYBOOK.md`
   - `docs/LOCATION_GAME_ARCADE_REBOOT.md`
-  - `blog/03-country-seed-loading.md`
-  - `blog/04-location-game-level-1.md`
+  - `blog/05-country-seed-and-reference-data-pipeline.md`
+  - `blog/07-location-game-session-stage-attempt-loop.md`
   - `docs/WORKLOG.md`
 - 요청 흐름: 애플리케이션 시작 시 `CountrySeedInitializer`가 `countries.json`을 읽고 검증한 뒤, 기존 `country` 테이블을 ISO3 기준으로 조회한다. 이후 시드에 있는 국가는 추가 또는 갱신하고, 시드에 없는 국가는 삭제해 DB 범위를 현재 정적 자산 범위와 맞춘다. 플레이 화면은 계속 `/api/countries`와 `/data/active-countries.geojson`을 함께 읽는데, 이제 두 경로 모두 독립국 194개를 기준으로 응답한다.
 - 데이터 / 상태 변화: 국가 시드는 `World Bank API + REST Countries` 조합으로 다시 만들었고, 인구수는 2024 기준 최신치에 맞췄다. `active-countries.geojson`도 독립국 194개만 포함하도록 다시 생성했다. 기존 “빈 테이블이면 적재, 아니면 생략” 구조에서 “앱 시작 시 현재 시드와 동기화” 구조로 바뀌면서 로컬 DB에 17개만 남아 있던 상태도 자동으로 194개로 확장된다.
@@ -1376,8 +3056,8 @@
   - `docs/AI_AGENT_OPERATING_MODEL.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/06-redis-leaderboard-vertical-slice.md`
-  - `blog/07-leaderboard-polling-refresh.md`
+  - `blog/09-redis-leaderboard-and-ranking-page.md`
+  - `blog/09-redis-leaderboard-and-ranking-page.md`
   - `docs/WORKLOG.md`
 - 요청 흐름 / 데이터 흐름: 이번 변경은 애플리케이션 런타임 흐름을 바꾸지 않는다. 대신 저장소의 문서 흐름을 바꾼다. 앞으로 의미 있는 기능 조각이 끝나면 `코드 + 테스트 + docs + blog`를 같은 턴 기본값으로 삼고, `worldmap-doc-sync`도 그 기준으로 문서 영향 범위를 판단한다. 동시에 랭킹 관련 blog 글은 이미 구현된 `LeaderboardService`, `/api/rankings/*`, `/ranking`, `ranking.js` 흐름을 각각 “저장/조회 구조”와 “화면 갱신 구조”로 나눠 설명한다.
 - 데이터 / 상태 변화: DB 스키마나 Redis 키는 바뀌지 않았다. 바뀐 것은 저장소의 기록 정책이다. `docs/`는 내부 SSOT 역할을 유지하고, `blog/`는 의미 있는 기능 조각마다 같은 턴에 따라오는 공개 설명 레이어로 기준이 강화됐다.
@@ -1401,7 +3081,7 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/08-ranking-filter-and-tie-rule.md`
+  - `blog/09-redis-leaderboard-and-ranking-page.md`
 - 요청 흐름 / 데이터 흐름: `/ranking`은 여전히 SSR로 처음 렌더링되고, 브라우저는 `ranking.js`에서 15초마다 기존 `/api/rankings/location`, `/api/rankings/population` API를 다시 호출한다. 달라진 점은 UI가 이제 active 보드 하나만 보여준다는 것이다. `위치/인구수`, `전체/일간` 버튼은 프론트 로컬 상태만 바꾸고, 폴링은 같은 API 응답으로 각 `tbody`를 갱신한다. 즉 정렬 결과 계산은 계속 서버가 맡고, 어떤 보드를 보여줄지는 프론트가 맡는다.
 - 데이터 / 상태 변화: DB 스키마와 Redis 키 전략은 바뀌지 않았다. `leaderboard_record`, `rankingScore`, Redis Sorted Set 구조도 그대로 유지된다. 바뀐 것은 `/ranking`의 표현 구조와 안내 정보다. 화면에 동점 규칙을 직접 적어, `rankingScore desc -> finishedAt asc` 기준이 UI에서도 읽히게 만들었다.
 - 핵심 도메인 개념: 이번 변경은 도메인 변경이 아니라 표현 변경이다. 중요한 점은 “필터 전환은 프론트가 해도 되지만, 정렬과 동점 처리 규칙은 서버가 계속 가져가야 한다”는 경계를 지킨 것이다. 그래서 새 API를 늘리지 않고 기존 랭킹 API를 재사용했고, SSR 템플릿은 4개 보드를 준비하되 active 보드만 노출하도록 바꿨다.
@@ -1421,7 +3101,7 @@
   - `README.md`
   - `docs/PORTFOLIO_PLAYBOOK.md`
   - `docs/WORKLOG.md`
-  - `blog/07-leaderboard-polling-refresh.md`
+  - `blog/09-redis-leaderboard-and-ranking-page.md`
 - 요청 흐름 / 데이터 흐름: 런타임 데이터 흐름은 바뀌지 않는다. `/ranking`은 여전히 SSR 후 15초마다 랭킹 API를 다시 읽는다. 이번 변경은 그 선택을 제품에 명시한 것이다. 사용자는 화면 상단에서 현재 전달 방식이 `15초 Polling`임을 바로 읽을 수 있고, 문서상으로도 SSE/WebSocket은 `9단계 실시간성 고도화`로 넘긴다고 정리했다.
 - 데이터 / 상태 변화: DB 스키마, Redis 키, API 응답은 바뀌지 않았다. 바뀐 것은 단계 상태와 설명 문구다. 플레이북에서는 5단계를 `Done`으로 닫고, 실시간 전송 고도화는 9단계로 이관했다.
 - 핵심 도메인 개념: 지금 중요한 것은 “실시간 같아 보이는 랭킹 체감”이지, 가장 복잡한 실시간 기술을 먼저 붙이는 것이 아니다. 현재 구조에서는 polling이 이미 Redis read model과 잘 맞고, 설명도 쉽다. 따라서 지금은 polling으로 마감하고, 실제로 더 낮은 지연이나 서버 push가 필요해질 때만 SSE/WebSocket으로 올리는 판단이 더 합리적이다.
@@ -1460,7 +3140,7 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/09-survey-recommendation-engine.md`
+  - `blog/09-redis-leaderboard-and-ranking-page.md`
 - 요청 흐름 / 데이터 흐름: 사용자는 `GET /recommendation/survey`로 설문 페이지를 열고 6개 문항을 고른 뒤 `POST /recommendation/survey`를 보낸다. 컨트롤러는 `RecommendationSurveyForm`으로 입력을 검증하고, 이를 `RecommendationSurveyAnswers` 불변 객체로 바꿔 `RecommendationSurveyService.recommend()`에 넘긴다. 서비스는 `CountryRepository`의 기본 국가 정보와 `RecommendationCountryProfileCatalog`의 추천 전용 속성을 합쳐 점수를 계산하고, 상위 3개 결과를 `RecommendationSurveyResultView`로 만들어 SSR 결과 페이지에 넘긴다.
 - 데이터 / 상태 변화: 아직 DB 스키마는 바뀌지 않았다. 이번 단계의 “답변 저장 구조”는 DB 엔티티가 아니라 `폼 객체 -> 불변 답변 객체` 구조다. 이유는 지금 단계의 핵심이 추천 규칙 확정이기 때문이다. 국가 기본 데이터는 기존 `country` 테이블을 재사용하고, 추천용 속성만 별도 프로필 카탈로그로 시작했다.
 - 핵심 도메인 개념: 추천 계산은 LLM이 아니라 서버가 해야 한다. 그래서 설문 입력 자체도 enum 기반으로 타입을 고정했고, 추천 후보 비교는 기후/생활 속도/물가/환경/영어/최우선 기준을 점수화해 deterministic하게 처리했다. 즉 이번 결과 화면은 “자연어 설명”이 아니라 “서버가 계산한 근거”를 먼저 보여주는 1차 엔진이다.
@@ -1594,8 +3274,8 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/09-survey-recommendation-engine.md`
-  - `blog/10-expand-recommendation-candidate-pool.md`
+  - `blog/09-redis-leaderboard-and-ranking-page.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
 - 요청 흐름 / 데이터 흐름: 추천 요청 흐름 자체는 그대로다. 사용자가 설문을 제출하면 `RecommendationSurveyForm -> RecommendationSurveyAnswers -> RecommendationSurveyService.recommend()` 순서로 흐른다. 달라진 점은 서비스가 순회하는 `RecommendationCountryProfileCatalog`의 데이터 폭이다. 이제 북미, 유럽, 동아시아, 동남아, 중동, 남미, 아프리카, 오세아니아까지 포함한 30개 프로필을 비교 대상으로 사용한다.
 - 데이터 / 상태 변화: DB 스키마는 바뀌지 않았다. 이번 단계의 변화는 추천 전용 카탈로그 데이터다. `country` 테이블은 여전히 국가 기본 정보 source of truth로 남고, 추천 속성만 별도 프로필 카탈로그에 더 풍부하게 채워 넣었다.
 - 핵심 도메인 개념: 추천 품질은 계산 공식뿐 아니라 “어떤 후보 데이터를 비교하느냐”에 크게 의존한다. 그래서 이번 단계에서는 가중치 수식을 먼저 뒤엎지 않고, 동일한 점수 계산 구조가 더 넓은 후보 풀을 평가하도록 만들어 추천 결과의 다양성을 키웠다.
@@ -1629,7 +3309,7 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/12-collect-recommendation-feedback.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
 - 요청 흐름 / 데이터 흐름: 사용자는 `POST /recommendation/survey`로 추천 결과 페이지를 받는다. 이때 서버는 `RecommendationSurveyResultView` 안에 `surveyVersion`, `engineVersion`, 그리고 선택한 6개 답변 코드로 이루어진 feedback payload를 같이 넣어 준다. 결과 페이지에서 사용자가 만족도 1~5점을 고르면 브라우저가 `POST /api/recommendation/feedback`를 호출하고, 서버는 `RecommendationFeedbackRequest -> RecommendationFeedbackSubmission -> RecommendationFeedbackService` 순서로 익명 피드백 레코드를 저장한다.
 - 데이터 / 상태 변화: 추천 결과 top 3 자체는 저장하지 않는다. 저장되는 것은 `surveyVersion`, `engineVersion`, `satisfactionScore`, 그리고 6개 답변 enum 스냅샷이다. 즉 “결과 저장”이 아니라 “설문 개선 신호 저장”으로 범위를 제한했다.
 - 핵심 도메인 개념: 이번 설계의 핵심은 “추천 결과를 기록하지 않아도 설문을 개선할 수 있다”는 점이다. 어떤 설문 버전과 엔진 버전에서 만족도가 높거나 낮았는지, 그리고 어떤 답변 조합에서 만족도가 낮은지를 보려면 결과 자체보다 `답변 스냅샷 + 만족도 점수`가 더 중요할 수 있다. 그래서 결과 저장은 생략하고, 개선용 피드백만 최소 구조로 남겼다.
@@ -1658,8 +3338,8 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/12-collect-recommendation-feedback.md`
-  - `blog/13-recommendation-feedback-insights.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
 - 요청 흐름 / 데이터 흐름: 사용자는 만족도 제출 뒤 내부적으로 `GET /api/recommendation/feedback/summary` 또는 `GET /recommendation/feedback-insights`를 통해 버전별 집계를 본다. 컨트롤러는 진입만 처리하고, 실제 집계는 `RecommendationFeedbackRepository.summarizeByVersion() -> RecommendationFeedbackService.summarizeByVersion()` 순서로 수행된다.
 - 데이터 / 상태 변화: 이번 단계에서는 새 데이터를 더 저장하지 않는다. 이미 저장하던 `RecommendationFeedback`만 읽고, `surveyVersion + engineVersion` 그룹 기준으로 `responseCount`, `averageSatisfaction`, `score1~5Count`, `lastSubmittedAt`를 계산해 view로 바꾼다.
 - 핵심 도메인 개념: 추천 결과를 저장하지 않더라도 설문 품질을 개선할 수 있는 핵심 단위는 `버전 조합`이다. 같은 `surveyVersion`과 `engineVersion`이 얼마나 만족도를 받았는지, 응답 수가 충분한지, 낮은 점수 분포가 몰려 있는지를 보면 “어느 버전을 유지/폐기할지” 판단할 수 있다.
@@ -1681,8 +3361,8 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/10-expand-recommendation-candidate-pool.md`
-  - `blog/11-recommendation-weight-tuning.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
 - 요청 흐름 / 데이터 흐름: 추천 요청 흐름은 그대로 `RecommendationSurveyForm -> RecommendationSurveyAnswers -> RecommendationSurveyService.recommend()`이다. 바뀐 것은 서비스 내부 점수 계산과 정렬 규칙이다. 서비스는 각 후보에 대해 기후/속도/물가/도시성/영어/우선순위 점수를 계산한 뒤, 이제는 `정확 일치 보너스`, `초과 물가 패널티`, `핵심 생활 조건 coherence bonus`까지 합산하고, 동점 시에는 `강한 신호 개수 -> 정확 일치 개수 -> 국가명` 순으로 정렬한다.
 - 데이터 / 상태 변화: DB와 설문 입력 구조는 바뀌지 않았다. 변한 것은 추천 계산식과 view 모델에 실어 두는 보조 비교 정보다. `RecommendationCandidateView`에는 이제 `strongSignalCount`, `exactMatchCount`도 함께 담긴다.
 - 핵심 도메인 개념: 추천 품질은 후보 데이터뿐 아니라 경계값 설계에도 크게 좌우된다. 특히 물가처럼 사용자 제약에 가까운 항목은 단순한 거리 점수만으로는 부족하므로, “허용 범위를 초과했는가” 같은 규칙을 별도 패널티로 드러내는 편이 더 설명 가능하고 납득 가능한 결과를 만든다.
@@ -1708,10 +3388,10 @@
   - `blog/README.md`
   - `blog/00_series_plan.md`
   - `blog/00_rebuild_guide.md`
-  - `blog/01-why-worldmap-game-platform-domain.md`
-  - `blog/09-survey-recommendation-engine.md`
-  - `blog/13-recommendation-feedback-insights.md`
-  - `blog/14-offline-ai-survey-improvement-loop.md`
+  - `blog/01-why-worldmap-server-driven-game-platform.md`
+  - `blog/09-redis-leaderboard-and-ranking-page.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
 - 요청 흐름 / 데이터 흐름: 사용자 런타임 요청 흐름은 바뀌지 않는다. 추천은 여전히 `GET /recommendation/survey -> POST /recommendation/survey -> POST /api/recommendation/feedback`로 동작하고, 서버가 top 3를 deterministic하게 계산한다. 새로 고정한 것은 오프라인 개선 흐름이다. 이제는 `만족도 집계 확인 -> 페르소나 시나리오 비교 -> 서브 에이전트로 문항/시나리오 초안 생성 -> 사람 검수 -> 다음 surveyVersion 반영` 순서로 개선한다.
 - 데이터 / 상태 변화: 런타임 엔티티는 추가하지 않았다. 대신 `docs/recommendation/PERSONA_EVAL_SET.md`와 `docs/recommendation/OFFLINE_AI_SURVEY_IMPROVEMENT.md`를 새 자산으로 두고, `surveyVersion`과 `engineVersion`을 오프라인 개선 루프의 비교 기준으로 쓰도록 명확히 했다.
 - 핵심 도메인 개념: 추천 품질을 높인다고 해서 사용자 요청마다 외부 LLM을 호출할 필요는 없다. 이 프로젝트에서는 “결정은 서버가 하고, AI는 설문 품질을 더 빨리 개선하는 오프라인 도구로만 사용한다”는 분리를 택했다. 그래서 과금과 비결정성을 줄이면서도 AI의 생산성 이점은 가져갈 수 있다.
@@ -1734,8 +3414,8 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/14-offline-ai-survey-improvement-loop.md`
-  - `blog/15-survey-v2-proposal-from-persona-eval.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
 - 요청 흐름 / 데이터 흐름: 이번 단계는 런타임 기능 추가가 아니라 오프라인 평가 흐름 보강이다. 테스트는 `RecommendationOfflinePersonaFixtures`의 14개 시나리오를 `RecommendationSurveyService.recommend()`에 통과시키고, 현재 엔진이 기대 후보를 얼마나 포함하는지 본다. 그 결과를 바탕으로 `docs/recommendation/SURVEY_V2_PROPOSAL.md`에 다음 버전 개정안을 적는다.
 - 데이터 / 상태 변화: 운영 DB나 추천 API는 바뀌지 않았다. 새로 생긴 것은 테스트 자산과 평가 문서다. baseline은 “14개 중 11개 시나리오에서 기대 후보 1개 이상이 top 3에 포함”으로 고정했고, `P04`, `P06`, `P13`을 우선 개선 대상 시나리오로 명시했다.
 - 핵심 도메인 개념: 설문 개선도 결국 “평가 자산 + 품질 하한 + 개정안”이 있어야 설명 가능하다. 그래서 Markdown 시나리오 표만 두지 않고 테스트 코드에도 같은 시나리오를 옮겨 baseline을 고정했다. 이렇게 해야 이후 `engine-v2` 실험에서 무엇이 좋아지고 무엇이 깨졌는지 바로 비교할 수 있다.
@@ -1756,8 +3436,8 @@
   - `docs/recommendation/SURVEY_V2_PROPOSAL.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/15-survey-v2-proposal-from-persona-eval.md`
-  - `blog/16-freeze-persona-top3-snapshot.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
 - 요청 흐름 / 데이터 흐름: 런타임 요청 흐름은 바뀌지 않았다. 이번 단계는 오프라인 평가 테스트 보강이다. `RecommendationOfflinePersonaSnapshotTest`는 14개 시나리오를 `RecommendationSurveyService.recommend()`에 통과시켜 현재 top 3 국가 순서가 snapshot과 정확히 같은지 본다.
 - 데이터 / 상태 변화: 운영 데이터와 추천 API는 그대로다. 새로 추가한 것은 “현재 엔진의 exact top 3 출력”을 테스트 자산으로 고정한 것이다. coverage test가 “기대 후보가 하나라도 들어오는가”를 본다면, snapshot test는 “정확히 어떤 순서로 나오는가”까지 함께 본다.
 - 핵심 도메인 개념: 추천 품질 실험은 coverage 숫자만으로 보면 부족하다. 어떤 시나리오는 기대 후보가 top 3에 들어와도, 1위/2위가 계속 이상한 나라일 수 있다. 그래서 다음 `engine-v2` 실험 전에는 exact snapshot도 같이 고정해 두는 편이 더 설명 가능하다.
@@ -1791,7 +3471,7 @@
   - `docs/recommendation/SURVEY_V2_PROPOSAL.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/17-expand-recommendation-survey-question-set.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
 - 요청 흐름 / 데이터 흐름: 기본 추천 흐름은 그대로 `GET /recommendation/survey -> POST /recommendation/survey -> RecommendationSurveyService.recommend()`이다. 다만 입력이 6개 enum에서 8개 enum으로 늘었다. 결과 페이지는 `RecommendationSurveyResultView` 안에 8개 답변 스냅샷을 담은 `feedbackPayload`를 같이 내려주고, 만족도 제출은 `RecommendationFeedbackRequest -> RecommendationFeedbackSubmission -> RecommendationFeedbackService` 순서로 저장된다.
 - 데이터 / 상태 변화: 추천 결과 top 3 자체는 여전히 저장하지 않는다. 저장되는 것은 `surveyVersion=survey-v2`, `engineVersion=engine-v2`, `satisfactionScore`, 그리고 8개 답변 스냅샷이다. 기존 feedback 요약 쿼리는 버전/점수 집계만 보기 때문에 그대로 유지된다.
 - 핵심 도메인 개념: 문항 수를 늘리는 것은 단순 UI 변경이 아니다. 새 질문이 추천 순위에 영향을 주는 순간, 그 질문은 `RecommendationSurveyAnswers`와 `RecommendationSurveyService`가 책임져야 하는 서버 도메인 규칙이 된다. 이번에는 새 프로필 필드를 대거 추가하지 않고, 기존 국가 프로필 값(도시성, 속도, 안전, 복지, 영어, 다양성)을 조합해 두 질문을 흡수했다.
@@ -1815,7 +3495,7 @@
   - `docs/recommendation/SURVEY_V2_PROPOSAL.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/18-activate-new-recommendation-signals-in-persona-eval.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
 - 요청 흐름 / 데이터 흐름: 런타임 추천 흐름은 그대로 `RecommendationSurveyService.recommend()`다. 이번 단계는 오프라인 평가 자산 보강이다. `RecommendationOfflinePersonaFixtures`에 `P15~P18`을 추가하고, `CoverageTest`는 18개 시나리오 기준 품질 하한을 본다. `SnapshotTest`는 같은 18개 시나리오의 exact top 3를 고정해 이후 가중치 실험에서 새 문항 때문에 어떤 후보가 바뀌었는지 바로 비교할 수 있게 한다.
 - 데이터 / 상태 변화: 운영 DB나 추천 페이지는 바뀌지 않았다. 바뀐 것은 평가 자산과 기준선이다. baseline은 기존 14개 중립 시나리오 + 새 문항을 적극적으로 쓰는 4개 active-signal 시나리오로 나뉜다. 현재 품질 하한은 `18개 중 15개 시나리오에서 기대 후보 1개 이상이 top 3에 포함`으로 올렸다.
 - 핵심 도메인 개념: 새 설문 문항을 추가했다면 오프라인 품질 평가도 그 문항을 실제로 써야 한다. 그렇지 않으면 추천 엔진이 새 답변을 제대로 읽는지 설명할 수 없다. 이번에는 같은 기본 취향에서 `EXPERIENCE / TRANSIT_FIRST`와 `STABILITY / SPACE_FIRST`만 바꿔, top 3의 2~3위 후보 구성이 실제로 달라지는 페어 시나리오를 만들었다.
@@ -1860,7 +3540,7 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/19-refresh-public-copy-before-admin-split.md`
+  - `blog/09-redis-leaderboard-and-ranking-page.md`
 - 요청 흐름 / 데이터 흐름: 요청 흐름과 상태 변화는 바뀌지 않았다. 홈은 여전히 `HomeController -> home.html`, 추천은 `RecommendationPageController -> survey/result`, 랭킹은 `LeaderboardPageController -> ranking/index.html`로 간다. 이번 단계는 같은 요청 흐름 위에서 public copy만 다시 썼다. 추천 결과 화면에서는 `feedback-insights`로 가는 링크를 제거해, 플레이어가 내부 운영 페이지로 진입하지 않게 했다.
 - 데이터 / 상태 변화: DB, 엔티티, API 응답 구조는 그대로다. 바뀐 것은 public 템플릿과 홈 화면 view model의 언어다. 추천 결과 hidden payload의 `surveyVersion`, `engineVersion`은 피드백 API 용도로만 유지되고, 화면 설명에서는 노출하지 않는다.
 - 핵심 도메인 개념: “무엇을 계산하느냐”와 “그 계산을 사용자에게 어떤 언어로 보여 주느냐”는 별개다. 추천 집계와 랭킹 계산은 그대로 서버가 맡더라도, public 화면은 플레이어의 행동과 보상 중심 언어로 다시 써야 제품처럼 보인다. 그래서 이번에는 서비스 로직을 건드리지 않고 copy와 view model만 손봤다.
@@ -1891,7 +3571,7 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/20-move-ops-insights-into-admin-surface.md`
+  - `blog/11-guest-session-ownership-and-progress-claim.md`
 - 요청 흐름 / 데이터 흐름: `GET /admin`은 `AdminPageController.dashboard() -> AdminDashboardService.loadDashboard()` 흐름으로 들어간다. 여기서 서비스가 `RecommendationFeedbackService.summarizeByVersion()`, `RecommendationQuestionCatalog.questions()`, `RecommendationCountryProfileCatalog.profiles()`를 묶어 운영 요약 모델을 만든다. `GET /admin/recommendation/feedback`은 `AdminPageController.recommendationFeedback()`에서 대시보드 요약과 `feedbackInsights` 집계를 같이 템플릿에 넘긴다. 기존 `GET /recommendation/feedback-insights`는 이제 `redirect:/admin/recommendation/feedback`만 수행한다.
 - 데이터 / 상태 변화: 운영 DB 스키마나 추천 계산 로직은 바뀌지 않았다. 바뀐 것은 읽기 모델의 노출 위치다. 만족도 집계는 여전히 `RecommendationFeedbackService`가 계산하고, admin 화면은 그 값을 운영 문맥으로 보여 준다. public 화면은 더 이상 만족도 집계 SSR view를 직접 가지지 않는다.
 - 핵심 도메인 개념: 운영 화면도 하나의 읽기 모델이다. survey version, engine version, 문항 수, 후보 국가 수, 만족도 응답 수를 한 화면에서 보여 주는 것은 단순 템플릿 조립이 아니라 “운영 요약”을 만드는 일이라서 `AdminDashboardService`로 분리했다. 집계 계산 자체는 기존 추천 서비스가 맡고, admin 서비스는 여러 도메인 값을 한 문맥으로 묶는 역할만 한다.
@@ -1923,7 +3603,7 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/21-add-admin-persona-baseline-and-simplify-public-header.md`
+  - `blog/11-guest-session-ownership-and-progress-claim.md`
 - 요청 흐름 / 데이터 흐름: `GET /admin/recommendation/persona-baseline`은 `AdminPageController.recommendationPersonaBaseline() -> AdminDashboardService.loadDashboard() + AdminPersonaBaselineService.loadBaseline()` 흐름으로 처리된다. `AdminPersonaBaselineService`는 baseline 18개, 현재 하한 `15 / 18`, weak scenario 3개, active-signal 4개를 운영 화면 모델로 묶는다. `GET /mypage`는 `MyPageController.myPage()`가 placeholder 템플릿만 렌더링한다. public 헤더는 이제 모든 public 페이지에서 `Home`, `My Page`만 보여 주고, 게임별 이동은 본문 CTA에 남긴다.
 - 데이터 / 상태 변화: 운영 DB나 추천 계산 자체는 바뀌지 않았다. 새로 생긴 것은 운영 읽기 모델과 public shell 구조다. `My Page`는 아직 사용자 데이터 저장이나 조회가 없고, 다음 8단계에서 auth/전적 기능이 들어올 자리만 먼저 고정한 상태다.
 - 핵심 도메인 개념: admin baseline 화면은 테스트 자산 전체를 노출하는 것이 아니라, 운영자가 봐야 하는 “현재 품질 하한 / weak scenario / active-signal 비교”만 읽기 모델로 다시 묶는다. 그래서 이 조합 책임은 컨트롤러보다 `AdminPersonaBaselineService`가 맡는다. 반면 `My Page`는 지금 상태 변화가 전혀 없으므로 서비스 없이 컨트롤러와 SSR 템플릿만 둔다.
@@ -1943,7 +3623,7 @@
   - `docs/SIMPLE_ACCOUNT_PROGRESS_PLAN.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/22-guest-session-to-simple-account-plan.md`
+  - `blog/11-guest-session-ownership-and-progress-claim.md`
 - 요청 흐름 / 데이터 흐름: 이번 단계는 구현이 아니라 설계 고정이다. 기본 흐름은 `비회원 플레이 -> guestSessionKey로 세션/랭킹 기록 저장 -> 회원가입 또는 로그인 -> 현재 guestSessionKey 기록을 memberId에 귀속 -> /mypage 이동`으로 잡았다. public 게임 요청 흐름은 계속 비회원도 그대로 들어오고, 인증은 기록 유지와 마이페이지 조회를 위한 확장 레이어로 붙인다.
 - 데이터 / 상태 변화: 실제 테이블 변경은 아직 없다. 설계 기준만 먼저 고정했다. 핵심은 `member` 테이블을 `nickname + passwordHash + role` 수준으로 단순화하고, 기존 게임 세션과 랭킹 레코드에는 `memberId` 또는 `guestSessionKey` 둘 중 하나로 소유자를 표시하는 것이다. 추천 결과 자체는 계정 단계에서도 저장하지 않고, 만족도 피드백만 익명으로 유지한다.
 - 핵심 도메인 개념: 게스트와 회원을 동시에 다루려면 “현재 플레이 소유자”를 설명할 공통 기준이 필요하다. 그래서 `memberId`와 `guestSessionKey`를 같이 두는 모델이 필요하다. 이렇게 하면 비회원 플레이는 유지하면서도, 로그인 시 현재 브라우저 세션의 기록만 계정으로 자연스럽게 귀속시킬 수 있다.
@@ -1976,7 +3656,7 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/23-add-guest-session-ownership-foundation.md`
+  - `blog/11-guest-session-ownership-and-progress-claim.md`
 - 요청 흐름 / 데이터 흐름: 위치/인구수 게임 시작 요청은 `LocationGameApiController` 또는 `PopulationGameApiController`에서 시작한다. 컨트롤러는 `HttpSession`에서 `GuestSessionKeyManager.ensureGuestSessionKey()`를 호출해 현재 브라우저 세션의 guest key를 확보하고, 그 값을 서비스에 전달한다. 서비스는 게임 세션을 만들 때 `memberId = null`, `guestSessionKey = ...`로 저장한다. 이후 게임오버로 랭킹 기록이 만들어질 때 `LeaderboardService`가 세션 ownership을 그대로 넘겨 `leaderboard_record`에도 같은 `guestSessionKey`를 기록한다.
 - 데이터 / 상태 변화: 이제 `LocationGameSession`, `PopulationGameSession`, `LeaderboardRecord`는 모두 `memberId`와 `guestSessionKey`를 가진다. 아직 로그인은 없으므로 현재 단계에서는 항상 `memberId = null`이고, 같은 브라우저 세션에서 시작한 게임들은 같은 `guestSessionKey`를 공유한다. 즉, “게스트 기록을 나중에 계정으로 귀속할 수 있는 최소 키”가 실제 데이터에 남기 시작했다.
 - 핵심 도메인 개념: 로그인 기능보다 먼저 ownership을 심은 이유는, 나중에 회원가입 성공 후 현재 브라우저의 guest 기록만 안전하게 계정으로 옮기려면 모든 기록이 이미 공통 식별자(`guestSessionKey`)를 갖고 있어야 하기 때문이다. 이 책임은 컨트롤러보다 서비스/도메인에 가깝다. 컨트롤러는 `HttpSession`에서 key를 꺼내 전달만 하고, 실제로 게임 세션과 랭킹 레코드에 ownership을 남기는 규칙은 세션 생성 서비스와 랭킹 서비스가 맡는다.
@@ -2020,7 +3700,7 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/24-add-simple-auth-and-member-owned-game-starts.md`
+  - `blog/11-guest-session-ownership-and-progress-claim.md`
 - 요청 흐름 / 데이터 흐름: 회원가입/로그인은 `AuthPageController`에서 시작한다. `POST /signup`, `POST /login`은 form validation 후 `MemberAuthService`가 닉네임 정규화, 중복 확인, BCrypt 해시 검증, `lastLoginAt` 갱신을 처리하고, 성공하면 `MemberSessionManager`가 현재 `HttpSession`에 `memberId`, `nickname`, `role`을 저장한다. 이후 위치/인구수 게임 시작 API는 컨트롤러에서 현재 로그인 사용자를 먼저 확인하고, 로그인 상태면 guest key 대신 `startMemberGame(memberId, nickname)`으로 들어가 새 게임 세션을 만든다. 게임오버 시 `LeaderboardService`는 기존처럼 세션 ownership을 복사하므로 랭킹 레코드도 `memberId` 소유가 된다.
 - 데이터 / 상태 변화: `member_account` 테이블을 실제로 쓰기 시작했고, 비밀번호는 평문이 아니라 BCrypt hash로 저장한다. 로그인 상태에서는 `HttpSession`에 member 정보가 올라가고, 그 세션에서 새로 시작한 게임 기록은 `guestSessionKey = null`, `memberId = ...`로 저장된다. 반대로 기존 guest 기록을 로그인 직후 계정으로 옮기는 동작은 아직 없다.
 - 핵심 도메인 개념: 이번 단계의 핵심은 “인증”보다 “현재 플레이 소유자 전환”이다. 컨트롤러는 HTTP form과 `HttpSession`을 다루고, `MemberAuthService`는 회원가입/로그인의 규칙을 담당한다. 게임 서비스가 별도 `startMemberGame`, `startGuestGame` 경로를 가지는 이유는, 로그인 여부에 따라 소유자와 닉네임 결정 규칙이 달라지는 것이 게임 도메인 진입 규칙이기 때문이다. `My Page`도 완전 보호보다 먼저 guest 유도 / member shell 분기로 시작해, 헤더는 단순하게 두면서 로그인 진입점을 자연스럽게 만든다.
@@ -2051,7 +3731,7 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/25-claim-current-guest-progress-after-login.md`
+  - `blog/09-redis-leaderboard-and-ranking-page.md`
 - 요청 흐름 / 데이터 흐름: `POST /signup` 또는 `POST /login`은 `AuthPageController`에서 시작한다. 컨트롤러는 `MemberAuthService`로 회원가입/로그인을 성공시킨 뒤, `GuestSessionKeyManager.currentGuestSessionKey()`로 현재 브라우저의 guest key를 읽는다. 그 key가 있으면 `GuestProgressClaimService.claimGuestRecords(memberId, guestSessionKey)`를 호출한다. 이 서비스는 `LocationGameSessionRepository`, `PopulationGameSessionRepository`, `LeaderboardRecordRepository`에서 `guestSessionKey`를 가진 미귀속 레코드만 조회해 `claimOwnership(memberId)`를 호출한다. claim이 끝난 뒤 `MemberSessionManager`가 로그인 세션을 유지한다.
 - 데이터 / 상태 변화: claim 전에는 guest 기록이 `memberId = null`, `guestSessionKey = ...` 상태다. claim 후에는 동일 레코드가 `memberId = 로그인 사용자`, `guestSessionKey = null`로 바뀐다. 중요한 점은 `playerNickname` snapshot은 바꾸지 않는다는 것이다. 즉, 소유자는 계정으로 바뀌지만 당시 표시 이름은 그대로 남겨 과거 랭킹/전적 표시를 안정적으로 유지한다.
 - 핵심 도메인 개념: guest 기록 귀속은 인증 UI의 부가 기능이 아니라 ownership 전환 규칙이다. 그래서 이 로직은 컨트롤러에 직접 쓰지 않고 `GuestProgressClaimService`로 뺐다. 컨트롤러는 현재 guest key를 읽고 서비스를 호출할 뿐이고, 실제로 어떤 레코드를 어떤 규칙으로 `memberId`로 바꾸는지는 서비스와 엔티티(`claimOwnership`)가 맡는다.
@@ -2080,7 +3760,7 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/26-build-mypage-from-member-leaderboard-runs.md`
+  - `blog/11-guest-session-ownership-and-progress-claim.md`
 - 요청 흐름 / 데이터 흐름: `GET /mypage`는 `MyPageController.myPage()`에서 시작한다. 컨트롤러는 `MemberSessionManager.currentMember()`로 로그인 사용자를 확인하고, 로그인 상태면 `MyPageService.loadDashboard(memberId)`를 호출한다. `MyPageService`는 `LeaderboardRecordRepository`에서 현재 member의 완료 run 개수, 모드별 최고 기록, 최근 완료 run 10개를 읽고 `MyPageDashboardView`로 묶어 템플릿에 넘긴다. 따라서 public 요청은 그대로 SSR이지만, 실제 상태 조회는 `leaderboard_record` 집계 계층에서 이루어진다.
 - 데이터 / 상태 변화: 이번 단계는 새로운 상태 전이보다 “어떤 완료 기록을 먼저 보여줄지”를 정하는 read 모델 추가다. `leaderboard_record`는 이미 게임오버 시점 점수, 시도 수, 클리어 Stage, 모드, ownership을 한 행에 담고 있으므로 `/mypage` 첫 버전에서 다시 원본 세션을 조립하지 않아도 된다. 로그인 사용자의 경우 `memberId` 기준으로만 읽고, guest 사용자는 여전히 로그인 유도 화면을 본다.
 - 핵심 도메인 개념: `/mypage` 첫 구현을 raw 게임 세션이 아니라 `leaderboard_record`에서 시작한 이유는 “완료된 run 단위의 설명 가능성” 때문이다. 최고 점수, 최고 랭킹, 최근 플레이는 모두 완료된 run 집계이므로 이미 정규화된 랭킹 레코드를 읽는 편이 서비스 책임이 더 명확하다. 컨트롤러는 로그인 여부와 뷰 분기만 맡고, 최고 기록 선택과 랭킹 계산, 최근 플레이 조합은 `MyPageService`가 맡는다.
@@ -2107,7 +3787,7 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/27-protect-admin-routes-with-session-role.md`
+  - `blog/17-game-integrity-current-member-and-role-revalidation.md`
 - 요청 흐름 / 데이터 흐름: admin 요청은 `AdminPageController`에 닿기 전에 `AdminAccessInterceptor`를 먼저 지난다. 인터셉터는 `HttpSession`에서 `MemberSessionManager.currentMember()`를 읽어 현재 로그인 사용자를 확인한다. 세션이 없거나 로그인 상태가 아니면 `/login?returnTo=...`로 리다이렉트하고, 로그인은 되어 있지만 role이 `ADMIN`이 아니면 403으로 막는다. `ADMIN`인 경우에만 실제 `AdminPageController -> AdminDashboardService / RecommendationFeedbackService / AdminPersonaBaselineService` 흐름으로 들어간다.
 - 데이터 / 상태 변화: 이번 단계는 새로운 테이블보다 요청 진입 규칙을 추가한 것이다. 로그인 성공 시 세션에 이미 저장하던 `memberId / nickname / role` 중 `role`을 이제 admin 라우트 guard에서 실제로 사용한다. 로그인 페이지는 `returnTo`를 받아, 운영자가 로그인 후 원래 보려던 admin 경로로 바로 돌아갈 수 있게 했다.
 - 핵심 도메인 개념: admin 접근 제어는 컨트롤러 액션마다 반복할 규칙이 아니라 라우트 입구의 공통 정책이다. 그래서 서비스보다 먼저, 컨트롤러보다 앞선 web interceptor에 두는 것이 맞다. 반면 로그인 검증과 세션 저장 자체는 여전히 `MemberAuthService`, `MemberSessionManager`가 맡는다. 즉, 인증과 권한 체크를 같은 곳에 섞지 않고 역할을 분리했다.
@@ -2136,7 +3816,7 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/28-add-mypage-stage-performance-metrics.md`
+  - `blog/11-guest-session-ownership-and-progress-claim.md`
 - 요청 흐름 / 데이터 흐름: `GET /mypage`는 여전히 `MyPageController -> MyPageService.loadDashboard(memberId)`로 시작한다. 다만 이번에는 서비스가 `leaderboard_record`만 읽지 않고, 위치/인구수 stage repository를 함께 읽는다. `leaderboard_record`는 완료 run 요약(총 완료 플레이 수, 최고 점수, 최근 플레이)을 만들고, raw stage 집계는 모드별 `클리어 Stage 수`, `1트 클리어율`, `평균 시도 수`를 만든다. 즉, 한 화면 안에서도 서로 다른 read model을 목적에 맞게 쓴다.
 - 데이터 / 상태 변화: 새 테이블은 없고 read model만 확장됐다. 중요한 점은 플레이 성향 지표가 “finished session에 속한 CLEARED stage”만 대상으로 한다는 것이다. 아직 끝나지 않은 진행 중 세션이나 재시작되며 지워질 수 있는 임시 stage는 포함하지 않는다.
 - 핵심 도메인 개념: `/mypage`의 최고 점수/최근 플레이는 `leaderboard_record`가 가장 자연스럽지만, `1트 클리어율`과 `평균 시도 수`는 run 요약만으로는 설명이 안 된다. 그래서 이 지표는 다시 raw stage 집계로 내려가야 한다. 컨트롤러는 여전히 로그인 여부와 뷰 분기만 맡고, 어떤 저장소를 조합해 어떤 read model을 만들지는 `MyPageService`가 맡는다.
@@ -2165,7 +3845,7 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/29-bootstrap-admin-account-from-env.md`
+  - `blog/11-guest-session-ownership-and-progress-claim.md`
 - 요청 흐름 / 데이터 흐름: 이번 단계의 진입점은 HTTP 컨트롤러가 아니라 애플리케이션 시작이다. 서버가 올라오면 `AdminBootstrapInitializer.run()`이 실행되고, 여기서 `AdminBootstrapService.ensureBootstrapAdmin()`을 호출한다. 서비스는 `AdminBootstrapProperties`에서 `enabled / nickname / password`를 읽고, `MemberCredentialPolicy`로 닉네임과 비밀번호를 검증한 뒤 `MemberRepository.findByNicknameIgnoreCase()`로 기존 계정을 조회한다. 계정이 없으면 `Member.create(..., ADMIN)`으로 새 admin을 저장하고, 계정이 있으면 `provisionAdmin()`으로 비밀번호 hash를 갱신하고 role을 `ADMIN`으로 승격한다.
 - 데이터 / 상태 변화: 새 테이블은 없고 기존 `member_account`를 재사용한다. 이번 단계부터는 `WORLDMAP_ADMIN_BOOTSTRAP_ENABLED=true`, `WORLDMAP_ADMIN_BOOTSTRAP_NICKNAME=...`, `WORLDMAP_ADMIN_BOOTSTRAP_PASSWORD=...`를 주고 서버를 시작하면, 해당 닉네임 member가 없을 때는 새 `ADMIN` 계정이 생기고, 이미 있으면 `USER -> ADMIN` 승격과 비밀번호 갱신이 일어난다. 테스트 프로파일에서는 기본적으로 bootstrap을 꺼 두어 기존 인증 테스트와 충돌하지 않게 했다.
 - 핵심 도메인 개념: 운영용 admin 계정 provisioning은 공개 회원가입 흐름이 아니라 배포 환경의 운영 규칙이다. 그래서 signup 컨트롤러에 얹지 않고 `ApplicationRunner + Service` 조합으로 둔다. `AdminBootstrapInitializer`는 시작 시점만 잡고, 실제 생성/승격 규칙은 `AdminBootstrapService`가 맡는다. 또 회원가입과 bootstrap이 서로 다른 자격 증명 규칙을 가지지 않게 `MemberCredentialPolicy`를 분리해 닉네임/비밀번호 정책을 함께 재사용했다.
@@ -2200,7 +3880,7 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/30-rename-admin-surface-to-dashboard.md`
+  - `blog/11-guest-session-ownership-and-progress-claim.md`
 - 요청 흐름 / 데이터 흐름: public 헤더는 이제 `site-header` fragment에서 현재 세션의 `WORLDMAP_MEMBER_ROLE`을 직접 읽고, `ADMIN`일 때만 `Dashboard` 링크를 렌더링한다. 운영 화면 요청은 `GET /dashboard/** -> AdminAccessInterceptor -> MemberSessionManager.currentMember() -> AdminPageController` 흐름으로 들어간다. 기존 `GET /admin/**`는 `LegacyAdminRedirectController`가 받아 `/dashboard/**`로 redirect만 수행한다. public의 legacy route인 `GET /recommendation/feedback-insights`도 이제 `/dashboard/recommendation/feedback`으로 redirect한다.
 - 데이터 / 상태 변화: 이번 단계는 새로운 테이블이나 계정 상태 전이를 추가하지 않는다. 바뀐 것은 운영 화면의 주소 체계와 shell 노출 규칙이다. 권한 모델은 그대로 `ADMIN`, `USER`를 유지하고, public 헤더에서는 `ADMIN` 세션일 때만 `Dashboard` 버튼이 보인다. 운영 화면 내부 링크도 모두 `/dashboard`, `/dashboard/recommendation/feedback`, `/dashboard/recommendation/persona-baseline` 기준으로 맞췄다.
 - 핵심 도메인 개념: 이번 단계의 핵심은 “권한은 admin이지만, 표면 언어는 dashboard로 바꾼다”는 것이다. 헤더 노출 규칙은 컨트롤러마다 model flag를 넣기보다 fragment가 session role을 직접 읽는 편이 더 단순하다. 반면 운영 화면 접근 권한은 여전히 라우트 입구의 공통 정책이라 interceptor가 맡는 것이 맞다. 또 `/admin`을 바로 지우지 않고 redirect controller를 두어 북마크와 옛 문서 링크를 안전하게 이전하도록 했다.
@@ -2227,7 +3907,7 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/31-add-dashboard-activity-metrics.md`
+  - `blog/11-guest-session-ownership-and-progress-claim.md`
 - 요청 흐름 / 데이터 흐름: `GET /dashboard`는 그대로 `AdminAccessInterceptor -> AdminPageController.dashboard() -> AdminDashboardService.loadDashboard()`로 들어간다. 이번에는 서비스가 `MemberRepository.count()`로 총 회원 수를 읽고, 위치/인구수 게임 세션 repository에서 `startedAt` 기준 오늘 시작 세션 수와 distinct `memberId`, distinct `guestSessionKey`를 읽는다. 그 다음 `LeaderboardRecordRepository`에서 `finishedAt` 기준 오늘 완료 run 수와 모드별 완료 수를 읽어 `AdminDashboardActivityView`로 묶고, 최종적으로 `AdminDashboardView`에 넣어 SSR 템플릿으로 보낸다.
 - 데이터 / 상태 변화: 새 테이블은 없고 read model만 확장됐다. 중요한 점은 모든 수치를 한 테이블에서 읽지 않았다는 것이다. 총 회원 수는 `member_account`, 오늘 활성은 각 게임 세션의 `startedAt`, 오늘 완료 수는 `leaderboard_record.finishedAt`를 source of truth로 사용한다. 즉, “가입자 수”, “오늘 시작된 플레이”, “오늘 끝난 게임”은 각각 다른 도메인 이벤트를 기준으로 본다.
 - 핵심 도메인 개념: dashboard 카드도 결국 read model이다. 회원 수와 플레이 완료 수를 같은 저장소에서 억지로 읽으면 설명이 꼬이기 때문에, `MemberRepository`, `LocationGameSessionRepository`, `PopulationGameSessionRepository`, `LeaderboardRecordRepository`를 목적별로 분리해 쓴다. 컨트롤러는 `/dashboard` 진입만 맡고, 두 게임 repository의 distinct 사용자 목록을 합쳐 오늘 활성 수를 만드는 책임은 `AdminDashboardService`가 맡는다.
@@ -2264,8 +3944,8 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/32-make-public-stats-page-from-dashboard-metrics.md`
-  - `blog/33-bootstrap-local-demo-accounts-and-sample-runs.md`
+  - `blog/11-guest-session-ownership-and-progress-claim.md`
+  - `blog/11-guest-session-ownership-and-progress-claim.md`
 - 요청 흐름 / 데이터 흐름: 공개 통계는 `GET /stats -> StatsPageController -> ServiceActivityService.loadTodayActivity() + LeaderboardService.getLeaderboard(...) -> stats/index.html` 흐름으로 렌더링된다. Dashboard도 같은 `ServiceActivityService`를 재사용하므로, 공개 숫자와 운영 숫자가 서로 다른 기준으로 어긋나지 않는다. local demo 데이터는 HTTP가 아니라 애플리케이션 시작에서 들어온다. 서버가 local profile로 뜨면 `CountrySeedInitializer -> AdminBootstrapInitializer -> DemoBootstrapInitializer` 순서로 실행되고, `DemoBootstrapService`가 `orbit_runner` 계정, 샘플 leaderboard run 2개, 진행 중 guest 세션 1개를 보장한다.
 - 데이터 / 상태 변화: 이번 단계는 새 공개 페이지와 local용 재현 데이터 추가가 핵심이다. `/stats`는 `member_account`, 각 게임 세션의 `startedAt`, `leaderboard_record.finishedAt`를 읽어 총 가입자 수 / 오늘 활성 플레이어 수 / 오늘 시작된 세션 수 / 오늘 완료된 run 수 / 오늘 모드별 완료 수 / 일간 Top 3를 보여 준다. local demo bootstrap은 `member_account`에 `worldmap_admin(ADMIN)`, `orbit_runner(USER)`를 만들고, `leaderboard_record`에 demo 위치 run / demo 인구수 run을 저장하며, 위치 게임 세션 테이블에는 `demo-guest-live` 진행 중 세션을 남긴다.
 - 핵심 도메인 개념: `/stats`와 `/dashboard`를 같은 화면으로 합치지 않은 이유는 공개 정보와 운영 정보의 목적이 다르기 때문이다. `/stats`는 사회적 증거와 서비스 활성 감각을 주는 public read model이고, `/dashboard`는 추천 품질과 운영 판단용 내부 read model이다. 또 local demo 계정 생성은 signup이나 SQL 초기 스크립트가 아니라 startup runner + service 조합으로 두었다. 현재 구조에서는 국가 시드가 준비된 뒤 도메인 규칙을 이용해 session / stage / attempt / leaderboard record를 설명 가능한 상태로 만드는 편이 더 자연스럽기 때문이다.
@@ -2306,7 +3986,7 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/34-add-home-auth-entry-points.md`
+  - `blog/11-guest-session-ownership-and-progress-claim.md`
 - 요청 흐름 / 데이터 흐름: `GET / -> HomeController -> home.html` 흐름은 그대로다. 이번에는 `home.html`이 현재 `HttpSession`을 직접 읽어, guest면 `로그인 / 회원가입` CTA를 렌더링하고, 로그인 상태면 세션에 들어 있는 `WORLDMAP_MEMBER_NICKNAME`을 표시하면서 `My Page / 로그아웃` 블록을 렌더링한다. 로그아웃은 새 흐름을 만들지 않고 기존 `POST /logout -> AuthPageController.logout() -> MemberSessionManager.signOut()`를 그대로 사용한다.
 - 데이터 / 상태 변화: 새로운 테이블이나 권한 모델 변화는 없다. 바뀐 것은 홈 첫 화면에서 현재 인증 상태를 직접 보여 주는 방식이다. guest는 홈에서 바로 계정을 연결할 수 있고, 로그인 사용자는 어떤 계정으로 기록을 이어가는지 홈에서 바로 확인한다.
 - 핵심 도메인 개념: 이 작업은 인증 규칙 추가가 아니라 표현 규칙 보강이다. 그래서 `HomeController`에 model flag를 더 넘기지 않고, 템플릿이 세션 상태를 직접 읽도록 두었다. 반대로 로그인/로그아웃 같은 상태 변경은 계속 `AuthPageController`, `MemberSessionManager`가 맡는다. 즉, 홈은 상태를 바꾸지 않고 이미 있는 인증 상태를 어떻게 보여 줄지만 책임진다.
@@ -2342,7 +4022,7 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/35-redesign-recommendation-survey-with-twelve-questions.md`
+  - `blog/11-guest-session-ownership-and-progress-claim.md`
 - 요청 흐름 / 데이터 흐름: 추천 흐름 자체는 그대로 `GET /recommendation/survey -> POST /recommendation/survey -> RecommendationSurveyService.recommend() -> recommendation/result -> POST /api/recommendation/feedback`이다. 바뀐 것은 입력 모델과 점수식이다. `RecommendationSurveyForm`이 12개 질문을 `RecommendationSurveyAnswers`로 바꾸고, `RecommendationSurveyService`는 country profile 30개와 비교해 top 3를 계산한다. 결과 페이지는 12개 답변 스냅샷을 hidden payload로 함께 내려 보내고, 만족도 제출은 `RecommendationFeedbackRequest -> RecommendationFeedbackSubmission -> RecommendationFeedbackService`로 저장된다.
 - 데이터 / 상태 변화: 추천 결과 top 3 자체는 여전히 저장하지 않는다. 저장되는 것은 `surveyVersion=survey-v3`, `engineVersion=engine-v3`, `satisfactionScore`, 그리고 사용자가 선택한 12개 답변 스냅샷이다. 새 answer snapshot 컬럼은 로컬 기존 row와 충돌하지 않게 nullable로 추가했고, 실제 신규 요청 유효성은 request validation으로 강제한다.
 - 핵심 도메인 개념: 이번 단계의 핵심은 “좋아하는 조건”만 묻지 않고 “무엇을 감수할 수 있는가”를 묻는 설문으로 바꾼 것이다. 그래서 단순 budget/priority 한 축 대신 `CostQualityPreference`, `SeasonTolerance`, `ImportanceLevel` 4축을 별도 enum으로 분리했다. 이 로직은 컨트롤러가 아니라 `RecommendationSurveyService`에 있어야 한다. 어떤 신호를 얼마나 강하게 점수에 반영할지, 물가 초과를 어떻게 penalty로 줄지, 영어 지원이 핵심일 때 얼마나 더 강하게 볼지는 HTTP 바인딩이 아니라 추천 도메인 규칙이기 때문이다.
@@ -2365,7 +4045,7 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/36-add-sitewide-light-mode-toggle.md`
+  - `blog/11-guest-session-ownership-and-progress-claim.md`
 - 요청 흐름 / 데이터 흐름: 이 기능은 서버 상태 변화가 없다. 첫 진입 시 header fragment 상단의 짧은 inline script가 `localStorage.worldmap-theme`를 읽어 `html[data-theme]`를 먼저 맞춘다. 이후 `theme-toggle.js`가 토글 버튼 클릭을 받아 `light <-> dark`를 전환하고, 같은 값을 다시 localStorage에 저장한다. 실제 시각 변화는 모두 `site.css`의 CSS 변수 레이어가 담당한다.
 - 데이터 / 상태 변화: DB나 세션에는 아무것도 저장하지 않는다. 테마 상태는 브라우저 로컬의 `worldmap-theme` 값만 바뀐다. public shell과 dashboard shell이 같은 storage key를 공유하므로, 사용자가 홈에서 light로 바꾸면 `/dashboard`에 들어가도 같은 테마가 유지된다.
 - 핵심 도메인 개념: 이건 사용자 선호 UI 상태이지 비즈니스 데이터가 아니다. 그래서 컨트롤러나 세션에 넣지 않고 `html[data-theme] + CSS 변수 + localStorage` 조합으로 처리했다. 테마를 서버가 들고 있지 않기 때문에 페이지 진입마다 request 처리나 DB 접근이 추가되지 않고, 모든 화면이 공통 fragment와 공통 CSS만으로 같은 동작을 한다.
@@ -2405,7 +4085,7 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/37-expand-recommendation-survey-to-twenty-questions.md`
+  - `blog/11-guest-session-ownership-and-progress-claim.md`
 - 요청 흐름 / 데이터 흐름: 추천 흐름 자체는 그대로 `GET /recommendation/survey -> POST /recommendation/survey -> RecommendationSurveyService.recommend() -> recommendation/result -> POST /api/recommendation/feedback`이다. 바뀐 것은 입력 모델과 점수 계산의 세밀함이다. `RecommendationSurveyForm`이 20개 질문을 `RecommendationSurveyAnswers`로 정규화하고, `RecommendationSurveyService`는 확장된 나라 프로필 카탈로그를 기준으로 climate / seasonality / housing / newcomer support / digital / culture / future base까지 점수화한다. 결과 페이지는 20개 답변 스냅샷을 hidden payload로 내려 보내고, 만족도 제출은 `RecommendationFeedbackRequest -> RecommendationFeedbackSubmission -> RecommendationFeedbackService`로 저장된다.
 - 데이터 / 상태 변화: 추천 결과 top 3는 여전히 저장하지 않는다. 저장되는 것은 `surveyVersion=survey-v4`, `engineVersion=engine-v4`, `satisfactionScore`, 그리고 사용자가 선택한 20개 답변 스냅샷이다. 이전 피드백 row와 충돌하지 않게 새 컬럼은 nullable로 추가했고, 신규 요청 유효성은 form / request validation으로 강제한다.
 - 핵심 도메인 개념: 이번 단계의 핵심은 질문 수가 아니라 `설문 축의 해상도`다. 그래서 기존 12문항 위에 질문만 덧붙이지 않고, `SeasonStylePreference`, `CrowdPreference`, `HousingPreference`, `NewcomerSupportNeed`, `WorkLifePreference`, `FutureBasePreference` 같은 별도 enum 축을 추가했다. 그리고 나라 프로필에도 `seasonality`, `housingSpace`, `digitalConvenience`, `cultureScene`, `newcomerFriendliness`를 새로 넣었다. 이 계산은 컨트롤러가 아니라 `RecommendationSurveyService`가 맡아야 한다. 어떤 답변이 어떤 나라 속성과 얼마나 가깝고, cost overshoot나 climate mismatch를 어떻게 penalty로 줄지, newcomer support와 future base를 어떻게 read model로 묶을지는 추천 도메인 규칙이기 때문이다.
@@ -2428,7 +4108,7 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/38-simplify-home-landing-structure.md`
+  - `blog/11-guest-session-ownership-and-progress-claim.md`
 - 요청 흐름 / 데이터 흐름: 요청은 그대로 `GET / -> HomeController -> home.html`이다. 이번에는 `HomeController`가 `modeCards`, `entrySteps`, `accountNotes`만 내려 주고, `home.html`은 그 세 가지 read model과 현재 세션을 합쳐 홈 첫 화면을 렌더링한다. guest / member 분기는 기존처럼 템플릿이 세션을 직접 읽고, hero는 `모드 선택하기 -> #home-modes`, `서비스 현황 보기 -> /stats`만 제공한다. 실제 모드별 직접 이동은 `지금 플레이할 모드` 카드에만 남겼다.
 - 데이터 / 상태 변화: 새로운 테이블이나 인증 규칙 변화는 없다. 바뀐 것은 public 홈 첫 화면의 정보 구조다. 모드 선택, 기록 연결, 통계 진입을 서로 다른 위치에서 중복 노출하던 구조를 줄이고, 홈에서는 “무슨 서비스인지”와 “어떻게 시작하는지”만 먼저 보여 주도록 정리했다.
 - 핵심 도메인 개념: 이 작업은 도메인 로직 추가가 아니라 public shell의 read model 정리다. 그래서 `HomeController`는 게임 상태나 인증 상태를 바꾸지 않고, 홈에서 반복해서 써야 하는 설명 리스트만 만든다. 반대로 guest/member 인증 상태, 로그아웃, 실제 모드 시작은 기존 auth/game 흐름이 계속 맡는다. 즉, 홈은 상태를 바꾸지 않고 진입 구조를 어떻게 보여 줄지만 책임진다.
@@ -2449,7 +4129,7 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/39-stabilize-public-design-pass.md`
+  - `blog/11-guest-session-ownership-and-progress-claim.md`
 - 요청 흐름 / 데이터 흐름: 런타임 요청 흐름 자체는 바뀌지 않았다. 추천은 여전히 `GET /recommendation/survey -> RecommendationPageController -> survey.html`, 랭킹은 `GET /ranking -> LeaderboardPageController -> ranking/index.html`이다. 이번에는 컨트롤러가 내려 주는 SSR 화면의 문구와 테스트 기대값만 새 디자인 기준으로 맞췄다.
 - 데이터 / 상태 변화: DB, 세션, 도메인 모델 변화는 없다. 바뀐 것은 public 화면의 표현과, 그 표현을 검증하는 통합 테스트 기대값이다.
 - 핵심 도메인 개념: 큰 디자인 패스 직후에는 먼저 “서버가 어떤 HTML을 내려 주는가”를 다시 고정해야 한다. 이 프로젝트는 SSR 기반이라, 카피와 레이아웃이 바뀌면 기능 로직은 그대로여도 테스트는 깨질 수 있다. 그래서 이번 조각은 새 디자인을 또 바꾸기보다, `RecommendationPageIntegrationTest`, `LeaderboardIntegrationTest`가 현재 문구와 구조를 기준으로 다시 통과하도록 만드는 안정화 작업이다.
@@ -2476,7 +4156,7 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/40-split-cost-overshoot-penalty-by-preference.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
 - 요청 흐름 / 데이터 흐름: 런타임 요청 흐름은 그대로 `GET /recommendation/survey -> POST /recommendation/survey -> RecommendationSurveyService.recommend() -> recommendation/result -> POST /api/recommendation/feedback`이다. 바뀐 것은 `RecommendationSurveyService` 내부의 비용 점수 계산뿐이다. 사용자가 `CostQualityPreference`를 고르면 서비스가 이제 `VALUE_FIRST / BALANCED / QUALITY_FIRST`에 따라 초과 물가 패널티 강도를 다르게 적용한다. 결과 페이지와 feedback 저장은 기존처럼 `survey-v4`, 새 `engine-v5`, 20개 답변 snapshot을 함께 내려 주고 저장한다.
 - 데이터 / 상태 변화: 추천 결과 top 3는 여전히 저장하지 않는다. 익명 피드백에는 `surveyVersion=survey-v4`, `engineVersion=engine-v5`, `satisfactionScore`, 20개 답변 snapshot만 저장된다. 이 버전 문자열은 `/dashboard/recommendation/feedback`과 `/dashboard` 운영 화면에도 그대로 노출되어, 어느 엔진 실험의 응답인지 나중에 집계할 수 있게 한다.
 - 핵심 도메인 개념: 이번 단계의 핵심은 “비용 민감도도 사람마다 다르다”는 점을 점수식에 드러내는 것이다. 이전에는 초과 물가 패널티가 하나였기 때문에 `QUALITY_FIRST`와 `VALUE_FIRST` 모두 같은 강도로 깎였다. 이제는 `VALUE_FIRST > BALANCED > QUALITY_FIRST` 순으로 penalty 강도를 나눴다. 이 계산은 컨트롤러가 아니라 `RecommendationSurveyService`가 맡아야 한다. 사용자의 비용 선호를 실제 나라 `priceLevel`과 비교해 몇 점을 주거나 깎을지는 HTTP 바인딩이 아니라 추천 도메인 규칙이기 때문이다.
@@ -2503,7 +4183,7 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/41-add-experience-transit-bonus-for-budget-explorers.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
 - 요청 흐름 / 데이터 흐름: 추천 런타임 흐름은 그대로 `GET /recommendation/survey -> POST /recommendation/survey -> RecommendationSurveyService.recommend() -> recommendation/result -> POST /api/recommendation/feedback`이다. 이번에는 `RecommendationSurveyService` 내부에 `experienceTransitBonus()`를 추가했다. 사용자가 `EXPERIENCE + TRANSIT_FIRST + VALUE_FIRST`로 답하면, 서비스가 각 후보의 `transitSupport`, `newcomerSupport`, `digitalConvenience`, `safety`, `welfare`를 한 번 더 읽어 “가볍게 적응하면서 대중교통 중심으로 살아보기 좋은가”를 별도 보정한다.
 - 데이터 / 상태 변화: 추천 결과 top 3는 여전히 저장하지 않는다. 익명 피드백에는 이제 `engineVersion=engine-v6`이 저장되고, `/dashboard`와 `/dashboard/recommendation/feedback` 운영 화면도 현재 엔진 버전을 `engine-v6`으로 보여준다. `surveyVersion`은 계속 `survey-v4`를 유지한다. 즉, 이번 조각은 질문이 아니라 엔진만 튜닝한 버전 실험이다.
 - 핵심 도메인 개념: 이번 단계의 핵심은 “교통 친화적인 탐색형 생활”을 기존 축들만으로는 완전히 설명하기 어려웠다는 점이다. 그래서 `mobility`, `newcomer`, `digital`, `기본 안전성`을 한 번 더 묶는 작은 coherence 신호를 만들었다. 이 규칙은 컨트롤러가 아니라 `RecommendationSurveyService`가 맡아야 한다. 어떤 설문 조합에서 보정을 켜고, 어떤 프로필 속성을 함께 읽을지는 HTTP 처리보다 추천 도메인 규칙에 가깝기 때문이다.
@@ -2531,7 +4211,7 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/42-add-civic-base-bonus-for-balanced-lifestyles.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
 - 요청 흐름 / 데이터 흐름: 런타임 추천 흐름은 그대로 `GET /recommendation/survey -> POST /recommendation/survey -> RecommendationSurveyService.recommend() -> recommendation/result -> POST /api/recommendation/feedback`이다. 이번에는 `RecommendationSurveyService` 내부에 `civicBaseBonus()`를 추가했다. 사용자가 `MIXED` 환경, `BALANCED` pace를 원하고 `safetyPriority` 또는 `publicServicePriority`가 `HIGH`이면, 서비스가 후보 국가의 `safety`, `welfare`, `housingSpace`, `newcomerFriendliness`를 한 번 더 묶어 균형형 정착 안정성을 보정한다. 단, `VALUE_FIRST`인데 물가가 너무 높은 후보는 이 bonus를 못 받게 막았다.
 - 데이터 / 상태 변화: 추천 결과 top 3는 여전히 저장하지 않는다. 익명 피드백에는 이제 `engineVersion=engine-v7`이 저장되고, `/dashboard`와 `/dashboard/recommendation/feedback` 운영 화면도 현재 엔진 버전을 `engine-v7`으로 보여준다. 설문 버전은 계속 `survey-v4`를 유지한다.
 - 핵심 도메인 개념: 이번 단계의 핵심은 “균형형 생활”도 하나의 coherence 신호라는 점이다. 지금까지는 기후, pace, 물가 같은 개별 축 점수는 있었지만, `안전 / 공공서비스 / 정착 안정성`을 같이 묶는 read model은 약했다. 그래서 `civicBaseBonus()`로 이 축을 한 번 더 잡았다. 이 계산은 컨트롤러가 아니라 `RecommendationSurveyService`가 맡아야 한다. 어떤 설문 조합에서 이 bonus를 켜고, 어떤 프로필 속성을 묶어 읽을지는 추천 도메인 규칙이지 HTTP 바인딩 규칙이 아니기 때문이다.
@@ -2558,7 +4238,7 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/43-add-soft-landing-bonus-for-practical-budget-users.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
 - 요청 흐름 / 데이터 흐름: 런타임 추천 흐름은 그대로 `GET /recommendation/survey -> POST /recommendation/survey -> RecommendationSurveyService.recommend() -> recommendation/result -> POST /api/recommendation/feedback`이다. 이번에는 `RecommendationSurveyService` 안에 `softLandingBonus()`를 추가했다. 사용자가 `VALUE_FIRST + SAFETY HIGH + MIXED + BALANCED + EnglishSupport MEDIUM`으로 답하면, 서비스가 후보 국가의 `englishSupport`, `newcomerFriendliness`, `housingSpace`, `safety`, `welfare`를 함께 읽어 “현실적으로 초기에 부딪히는 장벽이 낮은가”를 별도 bonus로 반영한다.
 - 데이터 / 상태 변화: 추천 결과 top 3는 여전히 저장하지 않는다. 익명 피드백에는 이제 `engineVersion=engine-v8`이 저장되고, `/dashboard`와 `/dashboard/recommendation/feedback` 운영 화면도 현재 엔진 버전을 `engine-v8`으로 보여준다. 설문 버전은 그대로 `survey-v4`다.
 - 핵심 도메인 개념: 이번 단계의 핵심은 `저예산 + 안전 중시 + 영어 적응 중간` 사용자가 실제로 중요하게 느끼는 것은 음식/문화 점수보다 “초기 정착이 얼마나 덜 힘든가”라는 점이다. 그래서 이전 bonus를 더 넓게 키우지 않고, `softLandingBonus()`로 `english + newcomer + housing + safety + welfare`를 동시에 만족할 때만 작동하는 아주 좁은 신호를 추가했다. 이 계산은 컨트롤러가 아니라 `RecommendationSurveyService`가 맡아야 한다. 어떤 설문 조합에서 bonus를 켜고 어떤 프로필 속성을 함께 보는지는 추천 도메인 규칙이기 때문이다.
@@ -2585,7 +4265,7 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/44-make-dashboard-persona-baseline-dynamic.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
 - 요청 흐름 / 데이터 흐름: 런타임 플레이어 요청 흐름은 바뀌지 않았다. 바뀐 것은 운영 화면 쪽 read model이다. 이제 `GET /dashboard/recommendation/persona-baseline -> AdminPageController -> AdminPersonaBaselineService.loadBaseline()`에서 서비스가 `RecommendationPersonaBaselineCatalog.scenarios()`를 읽고, 각 시나리오를 `RecommendationSurveyService.recommend()`에 다시 넣어 현재 top 3를 계산한다. 그 결과를 기준으로 `expectedCandidates`와 교집합이 없는 시나리오만 weak scenario로 분류해 SSR에 전달한다.
 - 데이터 / 상태 변화: 새 테이블은 없다. 바뀐 것은 baseline 정의 위치와 운영 화면 계산 방식이다. 이전에는 weak scenario와 active-signal 시나리오가 `AdminPersonaBaselineService`에 하드코딩돼 있었고, 추천 엔진을 바꿔도 운영 화면 값이 자동으로 따라오지 않았다. 이제는 baseline 정의가 `RecommendationPersonaBaselineCatalog` 하나로 모이고, dashboard가 그 카탈로그와 현재 엔진 결과를 함께 읽어 weak scenario를 계산한다.
 - 핵심 도메인 개념: “어떤 페르소나를 baseline으로 볼 것인가”는 test 전용 임시값이 아니라 추천 도메인의 평가 자산이다. 그래서 test source에만 두기보다 main source의 카탈로그로 올렸다. 반대로 weak scenario 판정은 템플릿이 하면 안 되고 `AdminPersonaBaselineService`가 맡아야 한다. 기대 후보와 현재 top 3의 교집합을 보고 weak scenario를 분류하는 규칙이 운영 화면용 read model 규칙이기 때문이다.
@@ -2612,7 +4292,7 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/45-add-family-base-bonus-for-family-settlement.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
 - 요청 흐름 / 데이터 흐름: 런타임 추천 흐름은 그대로 `GET /recommendation/survey -> POST /recommendation/survey -> RecommendationSurveyService.recommend() -> recommendation/result -> POST /api/recommendation/feedback`이다. 이번에는 `RecommendationSurveyService` 안에 `familyBaseBonus()`를 추가했다. 사용자가 `QUALITY_FIRST + SAFETY HIGH + English HIGH + MIXED + BALANCED + LOW tolerance`로 답하면, 서비스가 후보 국가의 `englishSupport`, `safety`, `welfare`, `housingSpace`, `newcomerFriendliness`를 함께 읽어 가족 단위로도 오래 버티기 쉬운 기반이 있는지를 별도 bonus로 반영한다.
 - 데이터 / 상태 변화: 추천 결과 top 3는 여전히 저장하지 않는다. 익명 피드백에는 이제 `engineVersion=engine-v9`이 저장되고, `/dashboard`와 `/dashboard/recommendation/feedback` 운영 화면도 현재 엔진 버전을 `engine-v9`으로 보여준다. 동적 baseline 기준으로는 이제 `matchedScenarioCount=18`, `weakScenarioCount=0`이 된다.
 - 핵심 도메인 개념: 이번 단계의 핵심은 `P11`이 기후보다 `영어 + 치안 + 복지 + 주거 기반`을 더 강하게 보는 시나리오라는 점이다. 그래서 broad bonus를 또 하나 더 만드는 대신, `QUALITY_FIRST`, `SAFETY HIGH`, `English HIGH`, `MIXED`, `BALANCED`, `LOW tolerance`, `BALANCED settlement`를 동시에 만족할 때만 작동하는 `familyBaseBonus()`를 추가했다. 이 계산은 컨트롤러가 아니라 `RecommendationSurveyService`가 맡아야 한다. 어떤 설문 조합에서 어떤 프로필 속성을 함께 읽을지는 추천 도메인 규칙이기 때문이다.
@@ -2637,7 +4317,7 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/46-add-anchor-drift-to-dashboard-persona-baseline.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
 - 요청 흐름 / 데이터 흐름: 플레이어 요청 흐름은 바뀌지 않는다. 이번 조각은 `GET /dashboard/recommendation/persona-baseline -> AdminPageController -> AdminPersonaBaselineService.loadBaseline()` read model만 바뀐다. 서비스는 `RecommendationPersonaBaselineCatalog`의 18개 시나리오를 현재 `RecommendationSurveyService`에 다시 넣어 top 3를 계산한 뒤, `weak scenario`, `anchor drift`, `active signal` 세 그룹으로 나눠 SSR에 전달한다.
 - 데이터 / 상태 변화: 새 테이블이나 저장 상태는 없다. 달라진 것은 운영 화면에서 보는 기준이다. 이제는 `expectedCandidates` 중 아무거나 top 3에 있느냐뿐 아니라, `expectedCandidates[0]`이 실제 top 1인지도 같이 계산한다.
 - 핵심 도메인 개념: weak scenario는 “완전히 빗나간 경우”이고, anchor drift는 “방향은 맞지만 1위가 아쉬운 경우”다. 이 판정은 템플릿이 하면 안 되고 `AdminPersonaBaselineService`가 맡아야 한다. 기대 후보와 현재 top 3, 기대 1위와 현재 1위를 비교하는 규칙이 운영 read model 규칙이기 때문이다.
@@ -2662,7 +4342,7 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/47-add-ops-review-to-recommendation-feedback-dashboard.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
 - 요청 흐름 / 데이터 흐름: 운영 요청은 `GET /dashboard/recommendation/feedback -> AdminPageController -> RecommendationFeedbackService.summarizeByVersion() + AdminRecommendationOpsReviewService.loadReview()`로 흐른다. 여기서 `AdminRecommendationOpsReviewService`는 다시 `RecommendationFeedbackService`와 `AdminPersonaBaselineService`를 호출해 현재 버전 응답 수, 현재 버전 평균 만족도, baseline 18/18 여부, weak count, anchor drift count를 한 read model로 합친다.
 - 데이터 / 상태 변화: 새 테이블은 없다. 만족도 피드백은 기존처럼 `recommendation_feedback`에만 쌓이고, baseline은 저장하지 않고 현재 엔진 결과를 다시 계산한다. 이번 조각은 이 두 source를 합쳐 운영 판단 문장과 우선 시나리오 ID를 만드는 read model만 추가했다.
 - 핵심 도메인 개념: 운영 화면에서 “다음에 뭘 먼저 할까”는 단순 템플릿 조건문이 아니라 운영 규칙이다. 현재 버전 응답이 5개 미만이면 먼저 피드백 수집, weak scenario가 있으면 weak 먼저, 평균 만족도가 낮으면 문구 점검, 그렇지 않고 drift만 남아 있으면 drift부터 보는 식의 우선순위는 `AdminRecommendationOpsReviewService`가 맡는 편이 맞다.
@@ -2684,7 +4364,7 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/48-seed-current-recommendation-feedback-in-local-demo.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
 - 요청 흐름 / 데이터 흐름: 이 조각은 HTTP 요청이 아니라 startup bootstrap 흐름이다. `CountrySeedInitializer -> AdminBootstrapInitializer -> DemoBootstrapInitializer -> DemoBootstrapService.ensureLocalDemoData()` 순서에서, demo service가 기존 member run / guest session을 만든 뒤 `RecommendationFeedbackRepository.countBySurveyVersionAndEngineVersion()`로 현재 버전 응답 수를 확인하고, 5개 미만이면 부족한 개수만큼 샘플 피드백을 추가한다.
 - 데이터 / 상태 변화: 기존처럼 `leaderboard_record`, `location_game_session`, `population_game_session` 샘플이 생기고, 이번에는 `recommendation_feedback`에도 current `survey-v4 / engine-v9` 샘플 5개가 추가된다. 이미 응답이 5개 이상 있으면 건드리지 않고, 5개 미만일 때만 top-up 한다.
 - 핵심 도메인 개념: local demo bootstrap의 목적은 “화면이 비어 있지 않게 만든다”가 아니라 “로컬에서 설명 가능한 상태를 재현한다”는 것이다. 그래서 추천 운영 화면도 게임 기록처럼 sample source of truth가 있어야 한다. 이 로직은 컨트롤러가 아니라 `DemoBootstrapService`가 맡아야 한다. startup runner가 책임지는 개발용 재현 상태이기 때문이다.
@@ -2714,7 +4394,7 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/49-add-global-hub-bonus-for-warm-city-hubs.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
 - 요청 흐름 / 데이터 흐름: 런타임 추천 흐름은 그대로 `GET /recommendation/survey -> POST /recommendation/survey -> RecommendationSurveyService.recommend() -> recommendation/result -> POST /api/recommendation/feedback`이다. 이번에는 `RecommendationSurveyService` 안에 `globalHubBonus()`를 추가했다. 사용자가 `WARM + FAST + CITY + QUALITY_FIRST + EnglishSupport HIGH + Diversity HIGH + Digital HIGH + Culture HIGH + Newcomer HIGH`로 답하면, 서비스가 후보 국가의 `urbanity`, `transit`, `digitalConvenience`, `diversity`, `food`, `cultureScene`, `safety`를 함께 읽어 “처음부터 살기 좋은 초도시형 글로벌 허브인가”를 별도 bonus로 반영한다.
 - 데이터 / 상태 변화: 추천 결과 top 3는 여전히 저장하지 않는다. 익명 피드백에는 이제 `engineVersion=engine-v10`이 저장되고, `/dashboard`, `/dashboard/recommendation/feedback`, `/dashboard/recommendation/persona-baseline` 운영 화면도 현재 엔진 버전을 `engine-v10`으로 보여준다. dynamic baseline 기준으로는 여전히 `18 / 18`을 유지하면서 anchor drift 수가 `13 -> 11`로 줄었다.
 - 핵심 도메인 개념: 이번 단계의 핵심은 `P01`, `P05`가 단순히 “따뜻한 나라”를 찾는 시나리오가 아니라, `영어 / 대중교통 / 디지털 / 문화 / 다양성`이 동시에 높은 초도시형 허브를 원하는 시나리오라는 점이다. 그래서 broad bonus를 더 넓히지 않고, warm/fast/city/high-quality와 높은 적응 요구를 모두 만족할 때만 작동하는 `globalHubBonus()`를 따로 추가했다. 이 계산은 컨트롤러가 아니라 `RecommendationSurveyService`가 맡아야 한다. 어떤 설문 조합에서 어떤 프로필 속성을 함께 읽을지는 추천 도메인 규칙이기 때문이다.
@@ -2728,20 +4408,20 @@
 - 단계: 10. 포트폴리오 정리와 발표 준비 보조 조각
 - 목적: `blog/`는 현재까지 주로 기능 발전 과정을 기록하는 연대기 역할을 해 왔다. 그래서 설계 이유를 설명하는 데는 좋았지만, 블로그만 보고 현재 저장소를 그대로 재현하려는 사람에게는 `/admin -> /dashboard`, `8문항 -> 12문항 -> 20문항`, `engine-v9 -> engine-v10` 같은 변화가 혼동을 만들 수 있었다. 이번 조각은 blog를 “현재 코드 재현” 기준에서도 읽을 수 있게 보강하는 데 집중한다.
 - 변경 파일:
-  - `blog/50-current-state-rebuild-map.md`
+  - `blog/00_rebuild_guide.md`
   - `blog/00_rebuild_guide.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/13-recommendation-feedback-insights.md`
-  - `blog/17-expand-recommendation-survey-question-set.md`
-  - `blog/20-move-ops-insights-into-admin-surface.md`
-  - `blog/27-protect-admin-routes-with-session-role.md`
-  - `blog/29-bootstrap-admin-account-from-env.md`
-  - `blog/35-redesign-recommendation-survey-with-twelve-questions.md`
-  - `blog/48-seed-current-recommendation-feedback-in-local-demo.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
+  - `blog/11-guest-session-ownership-and-progress-claim.md`
+  - `blog/17-game-integrity-current-member-and-role-revalidation.md`
+  - `blog/11-guest-session-ownership-and-progress-claim.md`
+  - `blog/11-guest-session-ownership-and-progress-claim.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
   - `docs/PORTFOLIO_PLAYBOOK.md`
   - `docs/WORKLOG.md`
-- 요청 흐름 / 데이터 흐름: 이번 조각은 런타임 요청을 바꾸지 않는다. 바뀐 것은 설명 흐름이다. 새 허브 글 `blog/50-current-state-rebuild-map.md`는 현재 라우트(`/dashboard`, `/stats`, `/mypage`), 현재 추천 기준(`survey-v4 / engine-v10`, 20문항), 현재 local demo 기준을 한 번에 고정하고, 어떤 글이 역사 기록이고 어떤 글이 현재 재현 기준인지 분리해 준다.
+- 요청 흐름 / 데이터 흐름: 이번 조각은 런타임 요청을 바꾸지 않는다. 바뀐 것은 설명 흐름이다. 새 허브 글 `blog/00_rebuild_guide.md`는 현재 라우트(`/dashboard`, `/stats`, `/mypage`), 현재 추천 기준(`survey-v4 / engine-v10`, 20문항), 현재 local demo 기준을 한 번에 고정하고, 어떤 글이 역사 기록이고 어떤 글이 현재 재현 기준인지 분리해 준다.
 - 핵심 도메인 개념: 문서도 역할이 나뉜다. `docs/`는 SSOT이고, `blog/`는 출판용 연대기다. 그런데 재현형 블로그로도 쓰려면 “현재 상태 허브”가 따로 있어야 한다. 그래서 이번에는 기존 글을 지우지 않고, 구버전 글 상단에 `현재 기준 안내`를 붙여 연대기와 현재 재현 가이드를 분리했다.
 - 예외 상황 또는 엣지 케이스: 예전 글을 모두 최신 상태로 덮어쓰면 당시 설계 판단이 사라진다. 반대로 아무 안내도 없이 그대로 두면 현재 재현용으로 읽는 사람은 `/admin`이나 8문항 설문을 최신 기준으로 오해할 수 있다. 그래서 본문은 유지하고, 상단 배너와 허브 글로 현재 기준만 명시하는 방식을 택했다.
 - 테스트 내용: 코드나 라우트 자체는 바꾸지 않은 문서 조각이라 애플리케이션 테스트는 다시 돌리지 않았다. 대신 각 글의 상단 안내와 허브 글이 현재 코드 기준([AdminPageController.java](/Users/alex/project/worldmap/src/main/java/com/worldmap/admin/web/AdminPageController.java), [RecommendationSurveyService.java](/Users/alex/project/worldmap/src/main/java/com/worldmap/recommendation/application/RecommendationSurveyService.java), [survey.html](/Users/alex/project/worldmap/src/main/resources/templates/recommendation/survey.html), [site-header.html](/Users/alex/project/worldmap/src/main/resources/templates/fragments/site-header.html))과 직접 연결되도록 점검했고 `git diff --check`로 문서 형식도 확인했다.
@@ -2751,11 +4431,11 @@
 ## 2026-03-26 - 블로그 현재 상태 허브에 실행 체크리스트 추가
 
 - 단계: 10. 포트폴리오 정리와 발표 준비 보조 조각
-- 목적: 현재 상태 허브를 만든 뒤에도 “그래서 실제로 무엇을 실행하고 어떤 URL에서 무엇을 확인해야 하는가”는 독자가 다시 조합해야 했다. 이번 조각은 `blog/50-current-state-rebuild-map.md`를 실제 실행 체크리스트까지 가진 재현 허브로 보강하는 데 집중한다.
+- 목적: 현재 상태 허브를 만든 뒤에도 “그래서 실제로 무엇을 실행하고 어떤 URL에서 무엇을 확인해야 하는가”는 독자가 다시 조합해야 했다. 이번 조각은 `blog/00_rebuild_guide.md`를 실제 실행 체크리스트까지 가진 재현 허브로 보강하는 데 집중한다.
 - 변경 파일:
-  - `blog/50-current-state-rebuild-map.md`
-  - `blog/33-bootstrap-local-demo-accounts-and-sample-runs.md`
-  - `blog/48-seed-current-recommendation-feedback-in-local-demo.md`
+  - `blog/00_rebuild_guide.md`
+  - `blog/11-guest-session-ownership-and-progress-claim.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
   - `docs/PORTFOLIO_PLAYBOOK.md`
   - `docs/WORKLOG.md`
 - 요청 흐름 / 데이터 흐름: 런타임 코드나 요청 흐름은 바뀌지 않았다. 이번 조각은 문서가 실제 실행 순서를 더 직접 안내하도록 바뀐 것이다. 허브 글은 이제 `.env.local -> bootRun -> public URL 확인 -> USER/ADMIN 로그인 -> dashboard 확인` 순서를 한 번에 정리하고, local demo 관련 글도 current `survey-v4 / engine-v10` 기준으로 맞췄다.
@@ -2786,10 +4466,10 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/33-bootstrap-local-demo-accounts-and-sample-runs.md`
-  - `blog/48-seed-current-recommendation-feedback-in-local-demo.md`
-  - `blog/50-current-state-rebuild-map.md`
-  - `blog/51-reduce-p02-anchor-drift-with-foodie-starter-bonus.md`
+  - `blog/11-guest-session-ownership-and-progress-claim.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
+  - `blog/00_rebuild_guide.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
 - 요청 흐름 / 데이터 흐름: 런타임 추천 흐름은 그대로 `GET /recommendation/survey -> POST /recommendation/survey -> RecommendationSurveyService.recommend() -> recommendation/result -> POST /api/recommendation/feedback`이다. 이번에는 `RecommendationSurveyService` 안에 `foodieStarterBonus()`를 추가했다. 사용자가 `WARM + BALANCED + VALUE_FIRST + MIXED + English MEDIUM + FOOD HIGH + DIVERSITY MEDIUM+ + BALANCED settlement/mobility`로 답하면, 서비스가 후보 국가의 `food`, `diversity`, `newcomerFriendliness`, `englishSupport`, `digitalConvenience`, `safety`, `priceLevel`을 함께 읽어 “저렴하면서도 초반 적응이 쉬운 음식·다문화 시작점인가”를 별도 bonus로 반영한다.
 - 데이터 / 상태 변화: 추천 결과 top 3는 여전히 저장하지 않는다. 익명 피드백에는 이제 `engineVersion=engine-v11`이 저장되고, `/dashboard`, `/dashboard/recommendation/feedback`, `/dashboard/recommendation/persona-baseline` 운영 화면도 현재 엔진 버전을 `engine-v11`로 보여준다. dynamic baseline 기준으로는 `18 / 18`을 유지하면서 anchor drift 수가 `11 -> 10`으로 줄었고, ops review의 우선 시나리오는 `P04, P06, P07`로 이동했다.
 - 핵심 도메인 개념: `P02`는 단순히 “따뜻하고 싼 나라”를 고르는 시나리오가 아니라, “생활비를 아끼면서도 음식 만족도와 다문화 적응성을 같이 보는 초반 정착형” 시나리오다. 그래서 broad cost penalty를 다시 건드리기보다, 이 설문 조합에만 작동하는 `foodieStarterBonus()`를 따로 추가했다. 이 계산은 컨트롤러가 아니라 `RecommendationSurveyService`가 맡아야 한다. 어떤 설문 조합에서 어떤 프로필 속성을 함께 읽어 rank drift를 줄일지는 추천 도메인 규칙이기 때문이다.
@@ -2818,10 +4498,10 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/33-bootstrap-local-demo-accounts-and-sample-runs.md`
-  - `blog/48-seed-current-recommendation-feedback-in-local-demo.md`
-  - `blog/50-current-state-rebuild-map.md`
-  - `blog/52-reduce-p04-anchor-drift-with-temperate-public-base-bonus.md`
+  - `blog/11-guest-session-ownership-and-progress-claim.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
+  - `blog/00_rebuild_guide.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
 - 요청 흐름 / 데이터 흐름: 런타임 추천 흐름은 그대로 `GET /recommendation/survey -> POST /recommendation/survey -> RecommendationSurveyService.recommend() -> recommendation/result -> POST /api/recommendation/feedback`이다. 이번에는 `RecommendationSurveyService` 안에 `temperatePublicBaseBonus()`를 추가했다. 사용자가 `MILD + BALANCED + MIXED + English MEDIUM + HIGH publicService + BALANCED settlement/mobility`로 답하면, 서비스가 후보 국가의 `climateValue`, `seasonality`, `safety`, `welfare`, `housingSpace`, `digitalConvenience`, `priceLevel`을 함께 읽어 “온화하면서도 기본 정착 기반이 안정적인 나라”인가를 별도 bonus로 반영한다.
 - 데이터 / 상태 변화: 추천 결과 top 3는 여전히 저장하지 않는다. 익명 피드백에는 이제 `engineVersion=engine-v12`가 저장되고, `/dashboard`, `/dashboard/recommendation/feedback`, `/dashboard/recommendation/persona-baseline` 운영 화면도 현재 엔진 버전을 `engine-v12`로 보여준다. dynamic baseline 기준으로는 `18 / 18`을 유지하면서 anchor drift 수가 `10 -> 9`로 줄었고, ops review의 우선 시나리오는 `P06, P07, P08`으로 이동했다.
 - 핵심 도메인 개념: `P04`는 단순히 “온화한 나라”를 고르는 시나리오가 아니라, “기후는 온화하되 공공서비스와 기본 생활 안정성이 함께 맞는 나라”를 찾는 시나리오다. 그래서 broad climate bonus를 더 주지 않고, 이 설문 조합에만 작동하는 `temperatePublicBaseBonus()`를 따로 추가했다. 이 계산은 컨트롤러가 아니라 `RecommendationSurveyService`가 맡아야 한다. 어떤 설문 조합에서 어떤 프로필 속성을 함께 읽어 rank drift를 줄일지는 추천 도메인 규칙이기 때문이다.
@@ -2851,10 +4531,10 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/33-bootstrap-local-demo-accounts-and-sample-runs.md`
-  - `blog/48-seed-current-recommendation-feedback-in-local-demo.md`
-  - `blog/50-current-state-rebuild-map.md`
-  - `blog/53-reduce-p06-anchor-drift-with-practical-public-value-bonus.md`
+  - `blog/11-guest-session-ownership-and-progress-claim.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
+  - `blog/00_rebuild_guide.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
 - 요청 흐름 / 데이터 흐름: 런타임 추천 흐름은 그대로 `GET /recommendation/survey -> POST /recommendation/survey -> RecommendationSurveyService.recommend() -> recommendation/result -> POST /api/recommendation/feedback`이다. 이번에는 `RecommendationSurveyService` 안에 `practicalPublicValueBonus()`를 추가했다. 사용자가 `MILD + VALUE_FIRST + SAFETY HIGH + publicService MEDIUM + English MEDIUM + newcomer LOW + MIXED + BALANCED settlement/mobility`로 답하면, 서비스가 후보 국가의 `priceLevel`, `climateValue`, `safety`, `welfare`, `housingSpace`, `digitalConvenience`, `newcomerFriendliness`, `urbanityValue`, `paceValue`를 함께 읽어 “현실적으로 오래 버티기 쉬운 온화한 나라”인가를 별도 bonus로 반영한다.
 - 데이터 / 상태 변화: 추천 결과 top 3는 여전히 저장하지 않는다. 익명 피드백에는 이제 `engineVersion=engine-v13`이 저장되고, `/dashboard`, `/dashboard/recommendation/feedback`, `/dashboard/recommendation/persona-baseline` 운영 화면도 현재 엔진 버전을 `engine-v13`으로 보여준다. dynamic baseline 기준으로는 `18 / 18`을 유지하면서 anchor drift 수가 `9 -> 8`로 줄었고, ops review의 우선 시나리오는 `P07, P08, P09`로 이동했다.
 - 핵심 도메인 개념: `P06`은 단순히 “값싼 온화한 나라”를 고르는 시나리오가 아니라, “생활비는 감당 가능해야 하고, 동시에 치안·복지·주거 안정성이 있어야 하는 현실형 정착 시나리오”다. 그래서 broad cost penalty나 civic bonus를 더 키우기보다, 이 설문 조합에만 작동하는 `practicalPublicValueBonus()`를 따로 추가했다. 이 계산은 컨트롤러가 아니라 `RecommendationSurveyService`가 맡아야 한다. 어떤 설문 조합에서 어떤 프로필 속성을 함께 읽어 rank drift를 줄일지는 추천 도메인 규칙이기 때문이다.
@@ -2884,10 +4564,10 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/33-bootstrap-local-demo-accounts-and-sample-runs.md`
-  - `blog/48-seed-current-recommendation-feedback-in-local-demo.md`
-  - `blog/50-current-state-rebuild-map.md`
-  - `blog/54-reduce-p09-anchor-drift-with-premium-warm-hub-bonus.md`
+  - `blog/11-guest-session-ownership-and-progress-claim.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
+  - `blog/00_rebuild_guide.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
 - 요청 흐름 / 데이터 흐름: 런타임 추천 흐름은 그대로 `GET /recommendation/survey -> POST /recommendation/survey -> RecommendationSurveyService.recommend() -> recommendation/result -> POST /api/recommendation/feedback`이다. 이번에는 `RecommendationSurveyService` 안에 `premiumWarmHubBonus()`를 추가했다. 사용자가 `WARM + QUALITY_FIRST + CITY + English HIGH + publicService HIGH`로 답하면, 서비스가 후보 국가의 `climateValue`, `priceLevel`, `urbanityValue`, `englishSupport`, `digitalConvenience`, `newcomerFriendliness`, `housingSpace`를 함께 읽어 “비용은 높아도 영어와 정착 허들이 낮은 따뜻한 프리미엄 허브”인가를 별도 bonus로 반영한다.
 - 데이터 / 상태 변화: 추천 결과 top 3는 여전히 저장하지 않는다. 익명 피드백에는 이제 `engineVersion=engine-v14`가 저장되고, `/dashboard`, `/dashboard/recommendation/feedback`, `/dashboard/recommendation/persona-baseline` 운영 화면도 현재 엔진 버전을 `engine-v14`로 보여준다. dynamic baseline 기준으로는 `18 / 18`을 유지하면서 anchor drift 수가 `8 -> 7`로 줄었고, ops review의 우선 시나리오는 `P07, P08, P10`으로 이동했다.
 - 핵심 도메인 개념: `P09`는 단순히 “비싸지만 좋은 나라”를 고르는 시나리오가 아니라, “따뜻한 도시 허브 중에서도 영어·정착 허들이 낮고 중심 생활 인프라가 강한 프리미엄 허브”를 고르는 시나리오다. 그래서 broad city/global bonus를 더 키우기보다, 이 설문 조합에만 작동하는 `premiumWarmHubBonus()`를 따로 추가했다. 이 계산은 컨트롤러가 아니라 `RecommendationSurveyService`가 맡아야 한다. 어떤 설문 조합에서 어떤 프로필 속성을 함께 읽어 rank drift를 줄일지는 추천 도메인 규칙이기 때문이다.
@@ -2917,10 +4597,10 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/33-bootstrap-local-demo-accounts-and-sample-runs.md`
-  - `blog/48-seed-current-recommendation-feedback-in-local-demo.md`
-  - `blog/50-current-state-rebuild-map.md`
-  - `blog/55-reduce-p08-anchor-drift-with-soft-nature-base-bonus.md`
+  - `blog/11-guest-session-ownership-and-progress-claim.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
+  - `blog/00_rebuild_guide.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
 - 요청 흐름 / 데이터 흐름: 런타임 추천 흐름은 그대로 `GET /recommendation/survey -> POST /recommendation/survey -> RecommendationSurveyService.recommend() -> recommendation/result -> POST /api/recommendation/feedback`이다. 이번에는 `RecommendationSurveyService` 안에 `softNatureBaseBonus()`를 추가했다. 사용자가 `COLD + RELAXED + NATURE + English MEDIUM + safety HIGH`로 답하면, 서비스가 후보 국가의 `climateValue`, `urbanityValue`, `paceValue`, `englishSupport`, `safety`, `housingSpace`, `newcomerFriendliness`를 함께 읽어 “너무 가혹하지 않은 기후에서 영어 적응이 쉬운 자연형 정착지”인가를 별도 bonus로 반영한다.
 - 데이터 / 상태 변화: 추천 결과 top 3는 여전히 저장하지 않는다. 익명 피드백에는 이제 `engineVersion=engine-v15`가 저장되고, `/dashboard`, `/dashboard/recommendation/feedback`, `/dashboard/recommendation/persona-baseline` 운영 화면도 현재 엔진 버전을 `engine-v15`로 보여준다. dynamic baseline 기준으로는 `18 / 18`을 유지하면서 anchor drift 수가 `7 -> 6`으로 줄었고, ops review의 우선 시나리오는 `P07, P10, P11`로 이동했다.
 - 핵심 도메인 개념: `P08`은 단순히 “차가운 나라”를 고르는 시나리오가 아니라, “자연과 여유를 원하지만 너무 가혹한 한랭 환경보다는 영어 적응이 쉬운 정착지”를 고르는 시나리오다. 그래서 북유럽 공공서비스 bonus를 더 키우는 대신, 이 설문 조합에만 작동하는 `softNatureBaseBonus()`를 따로 추가했다. 이 계산은 컨트롤러가 아니라 `RecommendationSurveyService`가 맡아야 한다. 어떤 설문 조합에서 어떤 프로필 속성을 함께 읽어 rank drift를 줄일지는 추천 도메인 규칙이기 때문이다.
@@ -2950,8 +4630,8 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/50-current-state-rebuild-map.md`
-  - `blog/56-reduce-p10-anchor-drift-with-cosmopolitan-pulse-bonus.md`
+  - `blog/00_rebuild_guide.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
 - 요청 흐름 / 데이터 흐름: 런타임 추천 흐름은 그대로 `GET /recommendation/survey -> POST /recommendation/survey -> RecommendationSurveyService.recommend() -> recommendation/result -> POST /api/recommendation/feedback`이다. 이번에는 `RecommendationSurveyService` 안에 `cosmopolitanPulseBonus()`를 추가했다. 사용자가 `MILD + FAST + CITY + BALANCED + English LOW + diversity HIGH + culture HIGH`로 답하면, 서비스가 후보 국가의 `climateValue`, `paceValue`, `urbanityValue`, `diversity`, `cultureScene`, `food`, `housingSpace`, `digitalConvenience`를 함께 읽어 “영어 의존이 낮아도 다문화 도시 자극을 충분히 느낄 수 있는가”를 별도 bonus로 반영한다.
 - 데이터 / 상태 변화: 추천 결과 top 3는 여전히 저장하지 않는다. 익명 피드백에는 이제 `engineVersion=engine-v16`이 저장되고, `/dashboard`, `/dashboard/recommendation/feedback`, `/dashboard/recommendation/persona-baseline` 운영 화면도 현재 엔진 버전을 `engine-v16`으로 보여준다. dynamic baseline 기준으로는 `18 / 18`을 유지하면서 anchor drift 수가 `6 -> 5`로 줄었고, ops review의 우선 시나리오는 `P07, P11, P13`으로 이동했다.
 - 핵심 도메인 개념: `P10`은 단순히 “빠른 도시”를 고르는 시나리오가 아니라, “영어가 꼭 필요하진 않지만 다양성과 문화 밀도가 높은 도시에서 활기 있게 살고 싶은 시나리오”다. 그래서 broad digital bonus를 더 키우지 않고, 이 설문 조합에만 작동하는 `cosmopolitanPulseBonus()`를 따로 추가했다. 이 계산은 컨트롤러가 아니라 `RecommendationSurveyService`가 맡아야 한다. 어떤 설문 조합에서 어떤 프로필 속성을 함께 읽어 rank drift를 줄일지는 추천 도메인 규칙이기 때문이다.
@@ -2981,10 +4661,10 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/50-current-state-rebuild-map.md`
-  - `blog/33-bootstrap-local-demo-accounts-and-sample-runs.md`
-  - `blog/48-seed-current-recommendation-feedback-in-local-demo.md`
-  - `blog/57-reduce-p13-anchor-drift-with-temperate-global-city-bonus.md`
+  - `blog/00_rebuild_guide.md`
+  - `blog/11-guest-session-ownership-and-progress-claim.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
 - 요청 흐름 / 데이터 흐름: 런타임 추천 흐름은 그대로 `GET /recommendation/survey -> POST /recommendation/survey -> RecommendationSurveyService.recommend() -> recommendation/result -> POST /api/recommendation/feedback`이다. 이번에는 `RecommendationSurveyService` 안에 `temperateGlobalCityBonus()`를 추가했다. 사용자가 `MILD + FAST + CITY + QUALITY_FIRST + English HIGH + diversity HIGH`로 답하면, 서비스가 후보 국가의 `climateValue`, `seasonality`, `paceValue`, `urbanityValue`, `englishSupport`, `digitalConvenience`, `diversity`, `cultureScene`, `newcomerFriendliness`, `priceLevel`을 함께 읽어 “온화한 기후에서도 영어 적응과 글로벌 도시 연결성이 충분한가”를 별도 bonus로 반영한다.
 - 데이터 / 상태 변화: 추천 결과 top 3는 여전히 저장하지 않는다. 익명 피드백에는 이제 `engineVersion=engine-v17`이 저장되고, `/dashboard`, `/dashboard/recommendation/feedback`, `/dashboard/recommendation/persona-baseline` 운영 화면도 현재 엔진 버전을 `engine-v17`으로 보여준다. dynamic baseline 기준으로는 `18 / 18`을 유지하면서 anchor drift 수가 `5 -> 4`로 줄었고, ops review의 우선 시나리오는 `P07, P11, P14`로 이동했다.
 - 핵심 도메인 개념: `P13`은 단순히 “영어가 좋은 대도시”를 고르는 시나리오가 아니라, “온화한 기후에서도 영어 적응과 글로벌 도시 연결성이 높은 정착지를 찾는 시나리오”다. 그래서 broad global hub bonus를 더 키우지 않고, 이 설문 조합에만 작동하는 `temperateGlobalCityBonus()`를 따로 추가했다. 이 계산은 컨트롤러가 아니라 `RecommendationSurveyService`가 맡아야 한다. 어떤 설문 조합에서 어떤 프로필 속성을 함께 읽어 rank drift를 줄일지는 추천 도메인 규칙이기 때문이다.
@@ -3014,10 +4694,10 @@
   - `docs/LOCAL_DEMO_BOOTSTRAP.md`
   - `docs/WORKLOG.md`
   - `blog/00_series_plan.md`
-  - `blog/33-bootstrap-local-demo-accounts-and-sample-runs.md`
-  - `blog/48-seed-current-recommendation-feedback-in-local-demo.md`
-  - `blog/50-current-state-rebuild-map.md`
-  - `blog/58-reduce-p14-anchor-drift-with-accessible-warm-value-hub-bonus.md`
+  - `blog/11-guest-session-ownership-and-progress-claim.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
+  - `blog/00_rebuild_guide.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
 - 요청 흐름 / 데이터 흐름: 런타임 추천 흐름은 그대로 `GET /recommendation/survey -> POST /recommendation/survey -> RecommendationSurveyService.recommend() -> recommendation/result -> POST /api/recommendation/feedback`이다. 이번에는 `RecommendationSurveyService` 안에 `accessibleWarmValueHubBonus()`를 추가했다. 사용자가 `WARM + VALUE_FIRST + MIXED + English MEDIUM + publicService HIGH`에 가까운 조합으로 답하면, 서비스가 후보 국가의 `climateValue`, `priceLevel`, `urbanityValue`, `englishSupport`, `welfare`, `digitalConvenience`, `newcomerFriendliness`를 함께 읽어 “따뜻한 기후권에서도 영어 적응과 생활 편의 균형이 좋은 실용형 거점인가”를 별도 bonus로 반영한다.
 - 데이터 / 상태 변화: 추천 결과 top 3는 여전히 저장하지 않는다. 익명 피드백에는 이제 `engineVersion=engine-v18`이 저장되고, `/dashboard`, `/dashboard/recommendation/feedback`, `/dashboard/recommendation/persona-baseline` 운영 화면도 현재 엔진 버전을 `engine-v18`으로 보여준다. dynamic baseline 기준으로는 `18 / 18`을 유지하면서 anchor drift 수가 `4 -> 3`으로 줄었고, ops review의 우선 시나리오는 `P07, P11, P15`로 이동했다.
 - 핵심 도메인 개념: `P14`는 단순히 “따뜻하고 싼 나라”를 고르는 시나리오가 아니라, “생활비를 아끼면서도 영어 적응과 생활 편의, 기본 공공서비스가 함께 따라오는 동남아형 거점을 찾는 시나리오”다. 그래서 broad cost penalty를 다시 조정하지 않고, 이 설문 조합에만 작동하는 `accessibleWarmValueHubBonus()`를 따로 추가했다. 이 계산은 컨트롤러가 아니라 `RecommendationSurveyService`가 맡아야 한다. 어떤 설문 조합에서 어떤 프로필 속성을 함께 읽어 rank drift를 줄일지는 추천 도메인 규칙이기 때문이다.
@@ -3047,10 +4727,10 @@
   - `docs/LOCAL_DEMO_BOOTSTRAP.md`
   - `docs/WORKLOG.md`
   - `blog/00_series_plan.md`
-  - `blog/33-bootstrap-local-demo-accounts-and-sample-runs.md`
-  - `blog/48-seed-current-recommendation-feedback-in-local-demo.md`
-  - `blog/50-current-state-rebuild-map.md`
-  - `blog/59-reduce-p11-anchor-drift-with-temperate-family-bridge-bonus.md`
+  - `blog/11-guest-session-ownership-and-progress-claim.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
+  - `blog/00_rebuild_guide.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
 - 요청 흐름 / 데이터 흐름: 런타임 추천 흐름은 그대로 `GET /recommendation/survey -> POST /recommendation/survey -> RecommendationSurveyService.recommend() -> recommendation/result -> POST /api/recommendation/feedback`이다. 이번에는 `RecommendationSurveyService` 안에 `temperateFamilyBridgeBonus()`를 추가했다. 사용자가 `MILD + QUALITY_FIRST + MIXED + English HIGH + safety HIGH`에 가까운 조합으로 답하면, 서비스가 후보 국가의 `climateValue`, `seasonality`, `englishSupport`, `safety`, `welfare`, `housingSpace`, `digitalConvenience`, `diversity`, `newcomerFriendliness`를 함께 읽어 “온화한 기후권에서도 가족형 정착 기반이 충분한가”를 별도 bonus로 반영한다.
 - 데이터 / 상태 변화: 추천 결과 top 3는 여전히 저장하지 않는다. 익명 피드백에는 이제 `engineVersion=engine-v19`이 저장되고, `/dashboard`, `/dashboard/recommendation/feedback`, `/dashboard/recommendation/persona-baseline` 운영 화면도 현재 엔진 버전을 `engine-v19`으로 보여준다. dynamic baseline 기준으로는 `18 / 18`을 유지하면서 anchor drift 수가 `3 -> 2`로 줄었고, ops review의 우선 시나리오는 `P07, P15`로 이동했다.
 - 핵심 도메인 개념: `P11`은 단순히 “영어와 안전이 좋은 나라”를 고르는 시나리오가 아니라, “온화한 기후권에서도 영어 적응, 복지, 주거 안정성, 디지털 생활이 함께 받쳐주는 가족형 정착지”를 찾는 시나리오다. 그래서 기존 `familyBaseBonus()`를 더 키우지 않고, 이 설문 조합에만 작동하는 `temperateFamilyBridgeBonus()`를 따로 추가했다. 이 계산은 컨트롤러가 아니라 `RecommendationSurveyService`가 맡아야 한다. 어떤 설문 조합에서 어떤 프로필 속성을 함께 읽어 rank drift를 줄일지는 추천 도메인 규칙이기 때문이다.
@@ -3079,10 +4759,10 @@
   - `docs/LOCAL_DEMO_BOOTSTRAP.md`
   - `docs/WORKLOG.md`
   - `blog/00_series_plan.md`
-  - `blog/33-bootstrap-local-demo-accounts-and-sample-runs.md`
-  - `blog/48-seed-current-recommendation-feedback-in-local-demo.md`
-  - `blog/50-current-state-rebuild-map.md`
-  - `blog/60-reduce-p15-anchor-drift-with-exploratory-nature-runway-bonus.md`
+  - `blog/11-guest-session-ownership-and-progress-claim.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
+  - `blog/00_rebuild_guide.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
 - 요청 흐름 / 데이터 흐름: 런타임 추천 흐름은 그대로 `GET /recommendation/survey -> POST /recommendation/survey -> RecommendationSurveyService.recommend() -> recommendation/result -> POST /api/recommendation/feedback`이다. 이번에는 `RecommendationSurveyService` 안에 `exploratoryNatureRunwayBonus()`를 추가했다. 사용자가 `MILD + BALANCED + RELAXED + NATURE + VALUE_FIRST + TRANSIT_FIRST + EXPERIENCE`에 가까운 조합으로 답하면, 서비스가 후보 국가의 `climateValue`, `seasonality`, `paceValue`, `urbanityValue`, `englishSupport`, `safety`, `housingSpace`, `newcomerFriendliness`, `priceLevel`을 함께 읽어 “가볍게 살아보는 탐색 단계에서도 자연, 영어 적응, 생활 여유가 같이 확보되는가”를 별도 bonus로 반영한다.
 - 데이터 / 상태 변화: 추천 결과 top 3는 여전히 저장하지 않는다. 익명 피드백에는 이제 `engineVersion=engine-v20`이 저장되고, `/dashboard`, `/dashboard/recommendation/feedback`, `/dashboard/recommendation/persona-baseline` 운영 화면도 현재 엔진 버전을 `engine-v20`으로 보여준다. dynamic baseline 기준으로는 `18 / 18`을 유지하면서 anchor drift 수가 `2 -> 1`로 줄었고, ops review의 우선 시나리오는 `P07` 하나로 좁혀졌다.
 - 핵심 도메인 개념: `P15`는 단순히 “자연을 좋아하는 저비용 사용자”를 고르는 시나리오가 아니라, “먼저 가볍게 살아보면서도 영어 적응과 안전, 생활 공간, 이동 편의가 함께 받쳐주는 탐색형 정착지”를 찾는 시나리오다. 그래서 기존 `experienceTransitBonus()`를 더 키우지 않고, 이 설문 조합에만 작동하는 `exploratoryNatureRunwayBonus()`를 따로 추가했다. 이 계산은 컨트롤러가 아니라 `RecommendationSurveyService`가 맡아야 한다. 어떤 설문 조합에서 어떤 프로필 속성을 함께 읽어 rank drift를 줄일지는 추천 도메인 규칙이기 때문이다.
@@ -3105,10 +4785,10 @@
   - `docs/LOCAL_DEMO_BOOTSTRAP.md`
   - `docs/WORKLOG.md`
   - `blog/00_series_plan.md`
-  - `blog/33-bootstrap-local-demo-accounts-and-sample-runs.md`
-  - `blog/48-seed-current-recommendation-feedback-in-local-demo.md`
-  - `blog/50-current-state-rebuild-map.md`
-  - `blog/61-recalibrate-p07-baseline-anchor-for-warm-megacity-scenario.md`
+  - `blog/11-guest-session-ownership-and-progress-claim.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
+  - `blog/00_rebuild_guide.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
 - 요청 흐름 / 데이터 흐름: 런타임 추천 흐름은 그대로 `GET /recommendation/survey -> POST /recommendation/survey -> RecommendationSurveyService.recommend() -> recommendation/result -> POST /api/recommendation/feedback`이다. 이번 조각은 런타임 점수식이 아니라 운영 평가 read model이 기대하는 baseline 정의를 바꿨다. `RecommendationPersonaBaselineCatalog`에서 `P07`의 expected candidates를 `싱가포르, 대한민국, 일본`으로 재정의했고, `AdminPersonaBaselineService`와 `AdminRecommendationOpsReviewService`는 그 현재 baseline 정의를 읽어 weak/drift/ops memo를 다시 계산한다.
 - 데이터 / 상태 변화: 추천 결과 top 3 저장 방식은 바뀌지 않는다. `survey-v4 / engine-v20`도 그대로다. 달라진 것은 baseline 해석이다. dynamic baseline 기준으로는 `18 / 18`을 유지하면서 anchor drift가 `1 -> 0`이 되었고, `/dashboard/recommendation/feedback`의 현재 버전 메모는 이제 `현재 엔진 유지`로 떨어진다.
 - 핵심 도메인 개념: 모든 mismatch를 엔진 bonus로 해결하면 과적합이 생긴다. `P07`은 현재 20문항에서 `WARM + FAST + CITY`가 warm megacity 쪽으로 읽히는데, anchor를 `일본`으로 두고 있었던 것이 문제였다. 이런 판단은 컨트롤러가 아니라 `RecommendationPersonaBaselineCatalog`가 맡아야 한다. 이건 요청 처리 규칙이 아니라 운영 평가 기준 정의이기 때문이다.
@@ -3172,8 +4852,8 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/50-current-state-rebuild-map.md`
-  - `blog/63-expose-population-level-2-on-public-ranking.md`
+  - `blog/00_rebuild_guide.md`
+  - `blog/15-public-scope-reset-and-new-games-lineup.md`
 - 요청 흐름 / 데이터 흐름: 공개 랭킹은 `GET /ranking -> LeaderboardPageController -> LeaderboardService.getLeaderboard(mode, level, scope, limit)` 흐름으로 첫 SSR을 만들고, 이후 `ranking.js`가 `GET /api/rankings/{gameMode}?level={gameLevel}&scope={scope}`를 주기적으로 호출해 같은 board를 갱신한다. 이번 조각으로 조회 기준에 `gameLevel`이 추가됐고, Redis key와 DB fallback도 같은 기준으로 분기한다.
 - 데이터 / 상태 변화: `leaderboard_record` 저장 방식은 바뀌지 않는다. 대신 Redis key가 `population:l1`, `population:l2`처럼 level별로 분리되고, public `/ranking`은 인구수 게임에서만 `Level 1 / Level 2`를 따로 볼 수 있게 바뀌었다. 위치 찾기 랭킹은 아직 Level 1만 제공하므로, 공개 필터도 그 상태를 그대로 반영한다.
 - 핵심 도메인 개념: 이번 단계의 핵심은 “Level 2 노출을 화면 if문으로만 처리하지 않는다”는 점이다. 조회 기준은 `LeaderboardService`가 맡아야 한다. 어떤 `gameMode + gameLevel + scope` 조합을 어떤 Redis key로 읽고, 키가 비었을 때 어떤 DB 쿼리로 fallback할지는 HTTP 분기보다 read model 규칙에 가깝기 때문이다. 컨트롤러는 request param을 전달하고, 템플릿과 JS는 active board만 바꾼다.
@@ -3204,7 +4884,7 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/64-explain-population-level-2-result-bands.md`
+  - `blog/15-public-scope-reset-and-new-games-lineup.md`
 - 요청 흐름 / 데이터 흐름: 플레이 중 제출은 그대로 `POST /api/games/population/sessions/{id}/answer -> PopulationGameService.submitAnswer() -> PopulationGamePrecisionScoringPolicy.judge()` 흐름이다. 달라진 것은 policy가 이제 `correct / score / errorRatePercent`뿐 아니라 `precisionBand`도 함께 내려준다는 점이다. 최종 결과는 `GET /games/population/result/{id} -> PopulationGameService.getSessionResult() -> population-game/result.html`에서 Level 2 attempt마다 `오차율 + band`를 같이 렌더링한다.
 - 데이터 / 상태 변화: DB 스키마는 바뀌지 않았다. `population_game_attempt`에 새 컬럼을 추가하지 않고, 기존 `selectedPopulation`과 stage의 `targetPopulation`을 이용해 결과 read model에서 오차율과 band를 다시 계산한다. 즉 이번 단계는 persistence를 키우지 않고 설명용 read model만 보강한 조각이다.
 - 핵심 도메인 개념: `정밀 적중 / 근접 적중 / 허용 범위 정답 / 오답`은 화면 카피가 아니라 점수 정책의 일부다. 그래서 이 기준은 템플릿 if문이 아니라 `PopulationGamePrecisionScoringPolicy`와 `PopulationGamePrecisionBand`가 같이 가져야 한다. 컨트롤러는 제출을 받고 응답을 내릴 뿐이고, 어떤 오차율이 어느 band에 속하는지는 policy가 책임져야 Level 2 규칙을 한 문장으로 설명할 수 있다.
@@ -3223,7 +4903,7 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/65-design-location-level-2-first-slice.md`
+  - `blog/15-public-scope-reset-and-new-games-lineup.md`
 - 요청 흐름 / 데이터 흐름: 이번 조각은 코드 구현이 아니라 설계 확정이다. 기준 흐름은 `POST /api/games/location/sessions (gameLevel=LEVEL_2) -> GET /state -> POST /answer -> LocationGameService -> Level 2 hint policy(distanceKm, directionHint)`로 잡았다. 즉 첫 구현은 입력 방식을 다시 바꾸지 않고, 기존 선택형 흐름 위에 서버 힌트 payload를 얹는 방식으로 간다.
 - 데이터 / 상태 변화: 실제 DB 스키마는 아직 바꾸지 않았다. 다만 다음 구현에서 `LocationGameSession.gameLevel`을 추가하고, `LocationGameStage`, `LocationGameAttempt`는 그대로 재사용한다는 원칙을 먼저 정했다. 힌트 사용 이력은 첫 조각에서 컬럼으로 바로 올리지 않고, answer payload와 read model 계산으로 시작하는 것이 맞다고 판단했다.
 - 핵심 도메인 개념: 위치 찾기 Level 2를 곧바로 “새 게임”으로 만들지 않는다. Level 1이 이미 가진 `세션 / Stage / Attempt / 하트 / endless run` 구조를 그대로 두고, Level 2는 출제 정책과 오답 피드백 정책만 분리한다. 첫 조각의 차별점은 `거리 + 방향 힌트`이며, 이 계산은 프론트가 아니라 서버 policy가 맡아야 한다. 힌트도 결국 점수와 랭킹 설명에 연결되는 게임 규칙이기 때문이다.
@@ -3263,8 +4943,8 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/50-current-state-rebuild-map.md`
-  - `blog/66-start-location-level-2-with-distance-hints.md`
+  - `blog/00_rebuild_guide.md`
+  - `blog/15-public-scope-reset-and-new-games-lineup.md`
 - 요청 흐름 / 데이터 흐름: 시작은 `POST /api/games/location/sessions`에서 `gameLevel`을 함께 받는다. `LocationGameApiController`는 현재 로그인/guest 분기만 하고, 실제 레벨 저장과 Stage 생성은 `LocationGameService.startGuestGame/startMemberGame(..., gameLevel)`이 맡는다. 진행 중에는 `GET /api/games/location/sessions/{id}/state`가 현재 `gameLevel`과 난이도 라벨을 내려주고, `POST /api/games/location/sessions/{id}/answer`는 오답일 때 `LocationGameDistanceHintPolicy`를 호출해 `distanceKm + directionHint`를 answer payload에 포함한다.
 - 데이터 / 상태 변화: `location_game_session`에 `game_level`이 추가돼 세션이 `LEVEL_1 / LEVEL_2`를 저장한다. Stage와 Attempt 엔티티는 그대로 재사용하고, 힌트는 아직 DB 컬럼으로 올리지 않고 answer payload에서만 먼저 노출한다. 랭킹도 `LeaderboardService.recordLocationResult()`로 바꿔 `leaderboard_record.game_level`에 위치 게임 Level 2를 구분 저장하도록 맞췄다.
 - 핵심 도메인 개념: 이번 조각의 핵심은 “입력 방식은 그대로 두고, 난도와 피드백 정책만 분리한다”는 점이다. Level 2는 새 게임이 아니라 기존 `세션 / Stage / Attempt / 하트 / endless run` 구조 위에 `gameLevel`과 `distance hint policy`를 얹은 형태다. 거리/방향 계산을 프론트가 아니라 서버 정책으로 둔 이유는, 힌트도 결국 정답 판정과 같은 게임 규칙이기 때문이다.
@@ -3287,8 +4967,8 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/50-current-state-rebuild-map.md`
-  - `blog/67-add-location-level-2-hint-log-to-result-read-model.md`
+  - `blog/00_rebuild_guide.md`
+  - `blog/15-public-scope-reset-and-new-games-lineup.md`
 - 요청 흐름 / 데이터 흐름: 플레이 중 정답/오답 판정 흐름은 그대로 `POST /api/games/location/sessions/{id}/answer -> LocationGameService.submitAnswer() -> LocationGameDistanceHintPolicy`다. 이번 조각에서 달라진 것은 결과 조회 흐름이다. `GET /api/games/location/sessions/{id}/result -> LocationGameService.getSessionResult()`에서 서비스가 attempt와 country 정보를 같이 읽은 뒤, Level 2 오답 attempt에 한해 `LocationGameDistanceHintPolicy`를 다시 호출해 `distanceKm + directionHint`를 `LocationGameAttemptResultView`에 채운다. 그 결과 `GET /games/location/result/{id}`에서도 같은 힌트 로그를 SSR로 보여 줄 수 있다.
 - 데이터 / 상태 변화: DB 스키마는 바뀌지 않았다. 힌트를 별도 컬럼으로 저장하지 않고, 이미 저장된 `stage.countryId`와 `attempt.selectedCountryIso3Code`를 이용해 결과 read model에서 다시 계산한다. 즉 이번 조각은 write model이 아니라 read model 설명력을 보강한 작업이다.
 - 핵심 도메인 개념: “결과에서 다시 설명 가능한 힌트”도 게임 규칙이다. 그래서 템플릿이 문자열을 조합하는 방식이 아니라, `LocationGameService`가 `LocationGameDistanceHintPolicy`를 재사용해 attempt view를 만들도록 두는 편이 맞다. 어떤 시도에 힌트를 붙일지, 언제 null이어야 할지는 화면보다 도메인 read model 규칙에 가깝기 때문이다.
@@ -3312,8 +4992,8 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/50-current-state-rebuild-map.md`
-  - `blog/68-expose-location-level-2-on-public-ranking.md`
+  - `blog/00_rebuild_guide.md`
+  - `blog/15-public-scope-reset-and-new-games-lineup.md`
 - 요청 흐름 / 데이터 흐름: 공개 랭킹은 그대로 `GET /ranking -> LeaderboardPageController -> LeaderboardService.getLeaderboard(mode, level, scope, limit)` 흐름으로 첫 SSR을 만들고, 이후 `ranking.js`가 `GET /api/rankings/{gameMode}?level={gameLevel}&scope={scope}`를 주기적으로 호출해 같은 보드를 갱신한다. 이번 조각으로 위치 게임도 `LEVEL_1 / LEVEL_2` 보드를 SSR 모델과 polling 둘 다에서 가지게 됐다.
 - 데이터 / 상태 변화: 저장 구조는 바뀌지 않는다. `leaderboard_record.game_level`과 Redis key는 직전 조각들에서 이미 `location:l1`, `location:l2`를 지원하고 있었고, 이번에는 public 조회 표면이 그 구조를 실제로 사용하게 됐다. 결과적으로 `/ranking`은 이제 위치/인구수 두 게임 모두 `Level 1 / Level 2` 보드를 각각 갖는다.
 - 핵심 도메인 개념: 이번 조각의 핵심은 “필터만 열면 끝”이 아니라, 공개 조회도 `gameMode + gameLevel + scope`를 일관되게 따라가야 한다는 점이다. 어떤 보드를 SSR에서 미리 보여 주고, 이후 polling이 어떤 API 조합을 다시 칠지 결정하는 책임은 템플릿 if문이 아니라 `LeaderboardService`와 그 위의 page controller가 가져야 한다. 조회 기준 자체가 read model 규칙이기 때문이다.
@@ -3342,8 +5022,8 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/50-current-state-rebuild-map.md`
-  - `blog/69-apply-hint-debt-to-location-level-2-score.md`
+  - `blog/00_rebuild_guide.md`
+  - `blog/15-public-scope-reset-and-new-games-lineup.md`
 - 요청 흐름 / 데이터 흐름: 제출 흐름은 그대로 `POST /api/games/location/sessions/{id}/answer -> LocationGameService.submitAnswer() -> LocationGameScoringPolicy.judge()`다. 달라진 것은 scoring policy가 이제 `gameLevel`과 `attemptNumber`를 함께 보고, Level 2 정답일 때 `attemptNumber - 1`만큼 hint debt를 계산해 `awardedScore`에서 감점한다는 점이다. 결과 조회는 `GET /api/games/location/sessions/{id}/result -> LocationGameService.getSessionResult()`에서 stage의 wrong attempt 수를 다시 읽어 stage별 `hintPenalty`를 계산해 내려준다.
 - 데이터 / 상태 변화: DB 스키마는 바뀌지 않았다. 힌트 감점도 별도 컬럼으로 저장하지 않고, `attemptNumber`와 wrong attempt 수만으로 다시 계산한다. answer payload는 이제 `hintPenalty`를 포함하고, 결과 read model도 stage별 `hintPenalty`를 가진다.
 - 핵심 도메인 개념: 이번 조각의 핵심은 “힌트는 도움말이지만 무료가 아니다”라는 규칙을 서버 정책으로 올리는 것이다. 프론트는 단지 `힌트 감점 -15`를 보여 줄 뿐이고, 실제 점수 계산은 `LocationGameScoringPolicy`가 맡는다. 같은 규칙이 answer와 result에서 동시에 설명돼야 하기 때문이다.
@@ -3370,8 +5050,8 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/50-current-state-rebuild-map.md`
-  - `blog/70-add-level-2-highlights-to-mypage.md`
+  - `blog/00_rebuild_guide.md`
+  - `blog/15-public-scope-reset-and-new-games-lineup.md`
 - 요청 흐름 / 데이터 흐름: 요청은 그대로 `GET /mypage -> MyPageController -> MyPageService.loadDashboard(memberId)` 에서 시작한다. 이번 조각에서 `MyPageService`는 기존 전체 최고 기록과 최근 플레이 read model에 더해, `LeaderboardRecordRepository.findFirstByMemberIdAndGameModeAndGameLevelOrderByRankingScoreDescFinishedAtAsc(...)` 와 `countByMemberIdAndGameModeAndGameLevel(...)` 를 이용해 위치/인구수 `LEVEL_2` 최고 기록을 따로 읽어 `MyPageDashboardView` 에 채운다. 템플릿은 그 값을 `Level 2 하이라이트` 카드로만 표현한다.
 - 데이터 / 상태 변화: DB 스키마는 바뀌지 않았다. 새로운 테이블이나 컬럼 없이, 이미 저장된 `leaderboard_record.game_level` 을 읽는 read model만 확장했다. 따라서 이번 조각은 “어떻게 저장하는가”가 아니라 “이미 저장된 Level 2 run을 계정 화면에서 어떻게 다시 설명할 것인가”에 집중한 변경이다.
 - 핵심 도메인 개념: `/mypage`는 raw session 전체를 바로 보여 주는 화면이 아니라, `완료된 run 요약(leaderboard_record)` 과 `플레이 방식(stage 집계)` 를 분리해 보여 주는 기록 허브다. Level 2 하이라이트도 이 원칙을 그대로 따라, write model을 건드리지 않고 `leaderboard_record` 기반 최고 기록 카드로 추가하는 편이 더 설명 가능하다. 어떤 Level 2 run이 최고 기록인지, 몇 번의 완료 run 중에서 나온 기록인지, 현재 공개 랭킹에서 몇 위인지 판단하는 책임은 템플릿이 아니라 `MyPageService` read model 규칙에 가깝다.
@@ -3394,8 +5074,8 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/50-current-state-rebuild-map.md`
-  - `blog/71-expose-level-2-highlights-on-public-stats.md`
+  - `blog/00_rebuild_guide.md`
+  - `blog/15-public-scope-reset-and-new-games-lineup.md`
 - 요청 흐름 / 데이터 흐름: 요청은 그대로 `GET /stats -> StatsPageController` 에서 시작한다. 컨트롤러는 기존처럼 `ServiceActivityService.loadTodayActivity()` 로 활동 지표를 읽고, `LeaderboardService.getLeaderboard(...)` 를 재사용해 일간 Top 3 외에 `LOCATION + LEVEL_2 + ALL + 1`, `POPULATION + LEVEL_2 + ALL + 1` 조합도 같이 읽어 `locationLevel2Highlight`, `populationLevel2Highlight` 모델을 채운다. 템플릿은 이 두 보드의 첫 entry만 골라 공개용 하이라이트 카드로 보여 준다.
 - 데이터 / 상태 변화: DB 스키마와 Redis key는 바뀌지 않았다. 이미 저장되던 `leaderboard_record.game_level`과 Redis `l2` 보드를 public `/stats`가 다시 읽기 시작한 것뿐이다. 즉 이번 조각은 새 저장 규칙이 아니라 공개 read model 확장이다.
 - 핵심 도메인 개념: `/stats`는 `Dashboard`의 축소판이 아니라, 공개 가능한 read model만 보여 주는 public 표면이다. 그래서 내부 추천 품질·버전 정보는 계속 숨기고, 게임 쪽도 상세 운영 판단 대신 “Level 2 최고 기록”이라는 제한된 신호만 노출한다. 어떤 Level 2 보드를 어떻게 읽을지는 템플릿 if문보다 `LeaderboardService`의 `gameMode + gameLevel + scope` 조회 규칙을 그대로 재사용하는 편이 더 일관되고 설명 가능하다.
@@ -3460,8 +5140,8 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/50-current-state-rebuild-map.md`
-  - `blog/72-roll-back-game-level-2-and-purge-legacy-data.md`
+  - `blog/00_rebuild_guide.md`
+  - `blog/09-redis-leaderboard-and-ranking-page.md`
 - 요청 흐름: public 요청 흐름은 다시 단순해졌다. `POST /api/games/location/sessions`, `POST /api/games/population/sessions`는 이제 Level 선택을 무시하고 Level 1 세션만 시작한다. `GET /ranking`, `GET /stats`, `GET /mypage`도 더 이상 Level 2 read model을 만들지 않고, 게임 결과 / 플레이 JS도 Level 1-only copy만 보여 준다.
 - 데이터 / 상태 변화: 앱 시작 시 `CountrySeedInitializer -> AdminBootstrapInitializer -> RecommendationFeedbackLegacyColumnInitializer -> GameLevelRollbackInitializer -> DemoBootstrapInitializer` 순서가 된다. 새 rollback initializer가 `game_level = LEVEL_2`인 위치/인구수 세션, Stage, Attempt, `leaderboard_record`와 Redis `l2` 키를 먼저 삭제해 기존 DB에도 Level 2 흔적이 남지 않게 만든다.
 - 핵심 도메인 개념: 이번 조각의 핵심은 “기능을 숨기는 것”이 아니라 “호환성을 깨지 않는 롤백”이다. enum을 바로 지우면 old DB row 때문에 JPA가 깨질 수 있어서, 먼저 public surface를 Level 1-only로 되돌리고 startup에서 legacy Level 2 데이터를 비우는 방식으로 정리했다.
@@ -3501,9 +5181,9 @@
   - `docs/WORKLOG.md`
   - `blog/00_series_plan.md`
   - `blog/README.md`
-  - `blog/50-current-state-rebuild-map.md`
-  - `blog/72-roll-back-game-level-2-and-purge-legacy-data.md`
-  - `blog/73-remove-internal-level-2-compatibility-code.md`
+  - `blog/00_rebuild_guide.md`
+  - `blog/09-redis-leaderboard-and-ranking-page.md`
+  - `blog/15-public-scope-reset-and-new-games-lineup.md`
 - 요청 흐름 / 데이터 흐름: 게임 시작 요청은 이제 `POST /api/games/location/sessions`, `POST /api/games/population/sessions` 모두 닉네임만 받아 항상 Level 1 세션을 만든다. 위치/인구수 서비스는 더 이상 level 분기, 힌트, exact-input, precision band, hint debt를 계산하지 않는다. 랭킹 조회도 `gameMode + scope`만 읽고, `gameLevel` 축은 완전히 제거됐다. 대신 startup `GameLevelRollbackInitializer`는 `information_schema.columns`를 확인해 legacy `game_level` 컬럼이 실제로 있을 때만 old `LEVEL_2` row와 Redis `l2` 키를 비운다.
 - 데이터 / 상태 변화: current JPA 스키마에는 `game_level` 필드가 더 이상 없고, 엔티티/DTO/read model도 level-aware 구조가 아니다. 다만 예전 local DB에 컬럼이 남아 있을 수 있으므로, initializer가 컬럼 존재 여부를 보고만 purge를 수행한다. rollback 통합 테스트는 H2에 legacy 컬럼을 직접 추가해 old DB 상태를 재현하도록 바뀌었다.
 - 핵심 도메인 개념: 이번 조각의 핵심은 “현재 제품 범위는 runtime 코드에서도 Level 1-only여야 한다”는 점이다. legacy 정리는 HTTP 요청 중에 할 일이 아니라 boot 시점 운영 규칙이므로 initializer가 맡고, 현재 게임 규칙과 read model 단순화는 각각 서비스와 정책 클래스가 맡는다.
@@ -3534,8 +5214,8 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/74-close-stage-9-with-polling-first.md`
-  - `blog/75-package-architecture-and-presentation-kit.md`
+  - `blog/15-public-scope-reset-and-new-games-lineup.md`
+  - `blog/15-public-scope-reset-and-new-games-lineup.md`
 - 요청 흐름 / 데이터 흐름: 이번 조각은 런타임 코드가 아니라 설명 문서를 정리한 작업이다. 다만 문서에 고정한 대표 흐름은 `GET /ranking -> polling`, `POST /api/games/location/sessions -> state -> answer -> leaderboard`, `POST /login -> guest progress claim`, `POST /recommendation/survey -> POST /api/recommendation/feedback -> /dashboard/recommendation/feedback` 이다.
 - 데이터 / 상태 변화: 코드나 스키마 변화는 없다. 대신 현재 기준에서 Redis는 `leaderboard read model`, PostgreSQL은 `truth storage`, `/dashboard`는 운영 read model, `/stats`는 공개 read model이라는 책임 분리를 문서로 명확히 고정했다.
 - 핵심 도메인 개념: 이번 조각의 핵심은 “기능을 더 추가하는 것”이 아니라 “현재 구조를 설명 가능한 형태로 패키징하는 것”이다. 그래서 실시간 전달 방식도 기술 욕심보다 현재 read model 설계와 설명 가능성 기준으로 결정했다.
@@ -3557,7 +5237,7 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/76-plan-next-country-game-expansion.md`
+  - `blog/15-public-scope-reset-and-new-games-lineup.md`
 - 요청 흐름 / 데이터 흐름: 이번 조각은 설계 작업이라 런타임 요청 흐름 변화는 없다. 대신 다음 구현 흐름을 `수도 맞히기 start -> state -> answer -> result -> leaderboard`로 고정했고, 이후 `인구 비교 퀵 배틀`, `국기 게임`은 같은 세션/Stage/Attempt 구조를 재사용하는 방향으로 잡았다.
 - 데이터 / 상태 변화: 현재 `country.capitalCity`, `country.population`은 새 게임 후보를 바로 지원한다. 반면 국기 게임은 정적 자산 파이프라인이 아직 없으므로, 데이터 준비 순서상 세 번째로 미뤘다.
 - 핵심 도메인 개념: 새 게임을 추가할 때도 프론트가 아니라 서버가 문제 생성, 정답 판정, 점수, 하트, 다음 Stage를 관리해야 한다. 따라서 새 모드도 기존 `session -> stage -> attempt -> leaderboard_record` 구조 위에 얹는 것이 맞다.
@@ -3626,8 +5306,8 @@
   - `docs/LOCAL_DEMO_BOOTSTRAP.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/50-current-state-rebuild-map.md`
-  - `blog/77-add-capital-quiz-level-1-vertical-slice.md`
+  - `blog/00_rebuild_guide.md`
+  - `blog/09-redis-leaderboard-and-ranking-page.md`
 - 요청 흐름 / 데이터 흐름: `GET /games/capital/start`에서 SSR 시작 화면이 열린 뒤, `POST /api/games/capital/sessions`가 guest/member ownership을 가진 세션을 만든다. 이후 `GET /api/games/capital/sessions/{id}/state`가 현재 Stage와 보기 4개를 내려주고, `POST /api/games/capital/sessions/{id}/answer`가 정답 여부와 점수, 하트 감소, 다음 Stage 생성을 서버에서 처리한다. `POST /api/games/capital/sessions/{id}/restart`는 같은 `sessionId`를 재사용해 run을 리셋하고, `GET /api/games/capital/sessions/{id}`는 Stage/Attempt 결과를 읽는다. 세션이 끝나면 `LeaderboardService.recordCapitalResult(...)`가 `leaderboard_record`와 Redis 랭킹을 같이 반영한다.
 - 데이터 / 상태 변화: 새 모드 `CAPITAL`과 `capital_game_session / capital_game_stage / capital_game_attempt`가 추가됐다. Stage는 출제 국가, 수도 보기 4개, 정답 보기 번호를 저장하고, Attempt는 사용자가 고른 보기와 남은 하트를 기록한다. 공개 `/ranking`, `/stats`, 홈 모드 카드도 `CAPITAL` read model을 함께 사용하기 시작했다.
 - 핵심 도메인 개념: 수도 게임도 위치/인구수와 같은 endless run, 하트 3개, same-session restart 구조를 유지한다. 새 추상화를 만들지 않고 기존 `session -> stage -> attempt -> leaderboard_record` 패턴을 재사용해, “새 게임 하나를 더 열었다”는 사실보다 “같은 서버 주도 게임 구조를 세 번째 모드에 적용했다”는 점을 설명하기 쉽게 만들었다.
@@ -3682,8 +5362,8 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/50-current-state-rebuild-map.md`
-  - `blog/78-add-population-battle-level-1-vertical-slice.md`
+  - `blog/00_rebuild_guide.md`
+  - `blog/15-public-scope-reset-and-new-games-lineup.md`
 - 요청 흐름 / 데이터 흐름: `GET /games/population-battle/start`에서 SSR 시작 화면이 열린 뒤, `POST /api/games/population-battle/sessions`가 guest/member ownership을 가진 세션을 만든다. 이후 `GET /api/games/population-battle/sessions/{id}/state`가 현재 Stage와 좌/우 2-choice 보기를 내려주고, `POST /api/games/population-battle/sessions/{id}/answer`가 더 인구가 많은 나라 선택 여부를 판정한다. 오답이면 같은 Stage를 유지하고 하트를 줄이며, 정답이면 점수 부여 후 다음 pair를 서버가 생성한다. `POST /api/games/population-battle/sessions/{id}/restart`는 같은 `sessionId`를 재사용해 run을 리셋하고, `GET /api/games/population-battle/sessions/{id}`는 Stage/Attempt 결과를 읽는다. 게임오버 시 `LeaderboardService.recordPopulationBattleResult(...)`가 `leaderboard_record`와 Redis 랭킹을 같이 반영한다.
 - 데이터 / 상태 변화: 새 모드 `POPULATION_BATTLE`와 `population_battle_game_session / population_battle_game_stage / population_battle_game_attempt`가 추가됐다. Stage는 비교 국가 2개, 각 보기의 인구수, 정답 보기 번호를 저장하고, Attempt는 사용자가 고른 나라와 남은 하트를 기록한다. 공개 `/ranking`, `/stats`, 홈 모드 카드, admin 활동 카드도 `POPULATION_BATTLE` read model을 함께 사용하기 시작했다.
 - 핵심 도메인 개념: 인구 비교 퀵 배틀은 인구수 퀴즈와 같은 endless run / 하트 3개 / same-session restart 구조를 유지하되, 입력 루프를 `4개 구간 중 선택`에서 `2개 국가 중 선택`으로 줄인 모드다. 난이도는 절대 인구값이 아니라 국가 인구 순위의 gap으로 설명한다. 즉, Stage 생성 규칙의 핵심은 “어떤 두 나라를 비교쌍으로 고를 것인가”다.
@@ -3742,8 +5422,8 @@
   - `docs/WORKLOG.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/50-current-state-rebuild-map.md`
-  - `blog/79-add-flag-asset-catalog-before-opening-flag-game.md`
+  - `blog/00_rebuild_guide.md`
+  - `blog/15-public-scope-reset-and-new-games-lineup.md`
 - 요청 흐름 / 데이터 흐름: 이번 조각은 아직 HTTP 요청이 시작되지 않는다. 대신 앱이 `FlagAssetCatalog` bean을 만들 때 `classpath:data/flag-assets.json`을 읽고, 각 entry의 `iso3Code`, `relativePath`, `format`을 검증한 뒤 실제 `classpath:static/images/flags/*.svg` 파일 존재까지 확인한다. 이후 다른 서비스는 `supportedIso3Codes()`와 `findByIso3Code()`만 읽으면 “출제 가능한 국기 국가 집합”을 알 수 있다.
 - 데이터 / 상태 변화: DB 테이블과 엔티티는 바뀌지 않았다. 대신 저장소 안에 `flag-assets.json` manifest와 sample SVG 12개가 추가돼, 국기 자산의 source of truth가 코드베이스 안으로 들어왔다. 즉 지금은 `country`와 별도로 관리되는 정적 에셋 카탈로그가 새 read model로 생긴 상태다.
 - 핵심 도메인 개념: 국기 게임에서 중요한 건 국가 도메인과 에셋 도메인을 섞지 않는 것이다. `country`는 출제 대상의 공통 데이터고, 국기 이미지는 배포 가능한 정적 자산이다. 그래서 1차는 `country.flagPath` 같은 DB 컬럼을 추가하지 않고, manifest를 읽는 `FlagAssetCatalog`가 startup validation과 asset lookup을 동시에 맡는 구조로 시작했다.
@@ -3776,10 +5456,10 @@
   - `README.md`
   - `docs/PORTFOLIO_PLAYBOOK.md`
   - `docs/WORKLOG.md`
-  - `blog/50-current-state-rebuild-map.md`
+  - `blog/00_rebuild_guide.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/80-add-korean-capital-names-to-country-seed-and-capital-quiz.md`
+  - `blog/15-public-scope-reset-and-new-games-lineup.md`
 - 요청 흐름 / 데이터 흐름: runtime 요청은 그대로 `POST /api/games/capital/sessions -> GET /state -> POST /answer -> GET /result`다. 달라진 것은 seed 준비 단계다. `scripts/sync_capital_city_kr.py`가 `countries.json`의 194개 국가에 `capitalCityKr`를 채우고, 앱 startup에서 `CountrySeedInitializer`가 그 값을 DB `country.capital_city_kr`로 동기화한다. 이후 `CapitalGameService`와 `CapitalGameOptionGenerator`는 영어 `capitalCity` 대신 한국어 `capitalCityKr`를 읽어 Stage와 보기 문자열을 만든다.
 - 데이터 / 상태 변화: `country`에 `capital_city_kr` 컬럼이 추가됐고, `countries.json` 194건에 `capitalCityKr`가 모두 채워졌다. `capitalCity` 영어 원본은 recommendation / country API 같은 기존 read model 호환을 위해 유지하고, 수도 게임 Stage/Attempt snapshot만 한국어 수도명 문자열로 저장한다.
 - 핵심 도메인 개념: 이번 조각의 핵심은 원본 reference 값과 표시 언어를 분리하는 것이다. 영어 수도명 `capitalCity`를 덮어쓰면 추천/국가 조회까지 흔들리기 때문에, seed에 `capitalCityKr`를 따로 두고 capital quiz만 그 필드를 읽게 하는 편이 설명 가능성과 호환성이 더 좋다.
@@ -3856,10 +5536,10 @@
   - `docs/NEW_GAME_EXPANSION_PLAN.md`
   - `docs/PORTFOLIO_PLAYBOOK.md`
   - `docs/WORKLOG.md`
-  - `blog/50-current-state-rebuild-map.md`
+  - `blog/00_rebuild_guide.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/81-build-flag-question-country-pool-from-seed-and-assets.md`
+  - `blog/15-public-scope-reset-and-new-games-lineup.md`
 - 요청 흐름 / 데이터 흐름: public HTTP 요청은 아직 없다. 현재 흐름은 `FlagQuestionCountryPoolService.loadPool() -> CountryRepository.findAllByOrderByNameKrAsc() + FlagAssetCatalog`이다. 서비스는 country seed 194개를 읽고, 그중 manifest와 실제 정적 SVG가 모두 있는 국가만 `FlagQuestionCountryView`로 매핑한다. 동시에 `FlagAssetCatalog`에 있지만 seed에 없는 ISO3가 발견되면 예외로 터뜨려 자산/시드 불일치를 조기에 드러낸다.
 - 데이터 / 상태 변화: DB 스키마 변화는 없다. 새로운 것은 서버 내부 read model이다. 출제 가능 국기 국가는 이제 `countryId / iso3 / 한글명 / 영문명 / 대륙 / flagRelativePath / format`을 가진 목록으로 계산되고, 대륙별 count도 같이 제공된다.
 - 핵심 도메인 개념: 이번 조각의 핵심은 “국기 자산이 있다고 바로 게임이 가능한 것이 아니다”라는 점이다. `FlagAssetCatalog`는 자산 무결성을 검증하는 catalog이고, `FlagQuestionCountryPoolService`는 그 catalog와 `country` 시드의 교집합을 실제 출제 pool로 만드는 read model이다. 이 계산은 단순 util보다 `다음 flag game mode가 신뢰할 source of truth`에 가깝기 때문에 서비스로 두는 편이 설명 가능성이 높다.
@@ -3909,10 +5589,10 @@
   - `docs/PORTFOLIO_PLAYBOOK.md`
   - `docs/LOCAL_DEMO_BOOTSTRAP.md`
   - `docs/WORKLOG.md`
-  - `blog/50-current-state-rebuild-map.md`
+  - `blog/00_rebuild_guide.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/82-add-flag-quiz-level-1-vertical-slice.md`
+  - `blog/15-public-scope-reset-and-new-games-lineup.md`
 - 요청 흐름 / 데이터 흐름: public 요청은 `GET /games/flag/start -> POST /api/games/flag/sessions -> GET /api/games/flag/sessions/{sessionId}/state -> POST /api/games/flag/sessions/{sessionId}/answer -> POST /api/games/flag/sessions/{sessionId}/restart -> GET /api/games/flag/sessions/{sessionId}`로 흐른다. `FlagGameApiController`는 요청 해석만 하고, `FlagGameService`가 `FlagQuestionCountryPoolService`에서 출제 가능 국가 pool을 읽어 Stage를 만들고, 점수 / 하트 / 재시작 / 결과 read model을 관리한다. 게임오버가 되면 `LeaderboardService.recordFlagResult()`가 `leaderboard_record`와 Redis 랭킹을 같이 반영하고, 공개 `/ranking`, `/stats`, 홈 카드도 같은 read model 규칙을 재사용한다.
 - 데이터 / 상태 변화: `flag_game_session`, `flag_game_stage`, `flag_game_attempt` 저장 구조가 추가됐고, Stage는 `targetCountryName`, `targetFlagRelativePath`, 보기 4개, correct option number를 저장한다. Attempt는 선택한 나라명과 시도 번호를 저장한다. `leaderboard_record`에는 `FLAG` game mode run이 새로 쌓이고, `/stats`와 `/ranking`은 그 보드를 읽을 수 있게 됐다.
 - 핵심 도메인 개념: 국기 게임의 핵심은 “게임이 자산 catalog를 직접 믿지 않고, 출제 가능 국가 pool read model을 통해 문제를 만든다”는 점이다. `FlagAssetCatalog`는 asset 무결성, `FlagQuestionCountryPoolService`는 실제 출제 가능 국가 집합, `FlagGameService`는 세션 / Stage / Attempt 게임 규칙을 각각 맡는다. 즉, 국기 자산 검증과 게임 문제 생성 규칙을 한 클래스에 섞지 않고, `자산 -> 출제 pool -> 게임 세션` 순서로 책임을 나눴다.
@@ -3937,10 +5617,10 @@
   - `docs/LOCAL_DEMO_BOOTSTRAP.md`
   - `docs/PORTFOLIO_PLAYBOOK.md`
   - `docs/WORKLOG.md`
-  - `blog/50-current-state-rebuild-map.md`
+  - `blog/00_rebuild_guide.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/83-seed-flag-sample-run-in-local-demo-bootstrap.md`
+  - `blog/15-public-scope-reset-and-new-games-lineup.md`
 - 요청 흐름 / 데이터 흐름: 이번 조각은 public HTTP가 아니라 startup bootstrap 흐름이다. `CountrySeedInitializer -> AdminBootstrapInitializer -> RecommendationFeedbackLegacyColumnInitializer -> GameLevelRollbackInitializer -> DemoBootstrapInitializer` 순서가 유지되고, 그 안에서 `DemoBootstrapService.ensureLocalDemoData()`가 `orbit_runner` member를 만든 뒤 위치 / 인구수 / 국기 sample run과 guest live session, recommendation feedback sample을 채운다. 국기 sample run은 `FlagQuestionCountryPoolService`에서 지원 ISO3를 읽어 `flag_game_session / stage / attempt`와 `leaderboard_record`를 함께 만든다.
 - 데이터 / 상태 변화: local profile 기준으로 `orbit_runner` 완료 run이 2개에서 3개로 늘어난다. 새로 추가되는 것은 `demo:flag:orbit_runner:1` 시그니처를 가진 `FLAG` leaderboard run 1개와 이에 대응하는 `flag_game_session / stage / attempt` sample 데이터다. 이로 인해 `/stats`와 `/ranking`의 flag 보드는 서버 첫 기동 직후부터 값을 가진다.
 - 핵심 도메인 개념: demo bootstrap은 “서비스 규칙을 우회하는 fixture 덤프”가 아니라, 현재 제품이 설명 가능한 시작 상태를 재현하는 startup service다. 그래서 국기 sample run도 임의 SQL 삽입이 아니라 `FlagQuestionCountryPoolService`가 확인한 출제 가능 국가 subset을 기준으로 만들었다. 즉 demo 데이터도 실제 게임 규칙과 같은 source of truth를 공유해야 한다.
@@ -3964,10 +5644,10 @@
   - `docs/LOCAL_DEMO_BOOTSTRAP.md`
   - `docs/PORTFOLIO_PLAYBOOK.md`
   - `docs/WORKLOG.md`
-  - `blog/50-current-state-rebuild-map.md`
+  - `blog/00_rebuild_guide.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/84-seed-capital-and-population-battle-sample-runs-in-local-demo-bootstrap.md`
+  - `blog/15-public-scope-reset-and-new-games-lineup.md`
 - 요청 흐름 / 데이터 흐름: 이번 조각은 public HTTP가 아니라 startup bootstrap 흐름이다. `CountrySeedInitializer -> AdminBootstrapInitializer -> RecommendationFeedbackLegacyColumnInitializer -> GameLevelRollbackInitializer -> DemoBootstrapInitializer` 순서를 유지한 채, `DemoBootstrapService.ensureLocalDemoData()`가 기존 위치 / 인구수 / 국기 sample run 뒤에 `capital`, `population-battle` sample run도 채운다. 두 run 모두 `*_game_session / stage / attempt`와 `leaderboard_record`를 같이 만들기 때문에 `/stats`, `/ranking`, `/mypage`가 같은 seed를 바로 읽을 수 있다.
 - 데이터 / 상태 변화: local profile 기준으로 `orbit_runner` 완료 run이 3개에서 5개로 늘어난다. 새로 추가되는 것은 `demo:capital:orbit_runner:1`, `demo:population-battle:orbit_runner:1` 시그니처를 가진 leaderboard run 2개와, 이에 대응하는 `capital_game_session / stage / attempt`, `population_battle_game_session / stage / attempt` sample 데이터다. 이로 인해 `/stats`와 `/ranking`의 `capital`, `population-battle` 보드도 서버 첫 기동 직후부터 값을 가진다.
 - 핵심 도메인 개념: demo bootstrap은 “SQL fixture 덤프”가 아니라 현재 제품의 설명 가능한 시작 상태를 재현하는 startup service다. 그래서 수도/인구 비교 sample run도 임의 점수 row만 넣지 않고, 실제 세션 / Stage / Attempt 패턴을 만든 뒤 leaderboard까지 반영했다. 즉 demo 데이터도 public 게임이 쓰는 도메인 구조와 같은 source of truth를 공유해야 한다.
@@ -3996,10 +5676,10 @@
   - `docs/PORTFOLIO_PLAYBOOK.md`
   - `docs/LOCAL_DEMO_BOOTSTRAP.md`
   - `docs/WORKLOG.md`
-  - `blog/50-current-state-rebuild-map.md`
+  - `blog/00_rebuild_guide.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/85-expand-flag-asset-pool-with-regeneratable-snapshots.md`
+  - `blog/15-public-scope-reset-and-new-games-lineup.md`
 - 요청 흐름 / 데이터 흐름: runtime HTTP 요청은 바뀌지 않았다. 자산 준비 흐름은 `scripts/fetch_flag_assets.py -> countries.json(iso3/iso2 매핑) -> flagcdn.com SVG download -> static/images/flags/{iso3}.svg 저장 + flag-assets.json 재생성`으로 정리했다. 앱 runtime에서는 기존처럼 `FlagAssetCatalog -> FlagQuestionCountryPoolService -> FlagGameService` 순서로만 읽는다.
 - 데이터 / 상태 변화: `flag-assets.json` manifest와 정적 SVG 파일 세트가 12개에서 36개로 늘어났다. 현재 출제 가능 국기 국가 분포는 `EUROPE 15 / ASIA 8 / NORTH_AMERICA 3 / SOUTH_AMERICA 4 / AFRICA 4 / OCEANIA 2`다. DB 스키마 변화는 없다.
 - 핵심 도메인 개념: 국기 게임에서 자산 확대는 단순 파일 추가가 아니라 `출제 가능 국가 pool` 품질을 바꾸는 작업이다. 다만 runtime은 여전히 local static file만 읽고, download/rebuild는 별도 스크립트로 분리했다. 즉 앱 부팅과 asset regeneration을 분리해 재현성과 운영 단순성을 같이 유지했다.
@@ -4023,10 +5703,10 @@
   - `README.md`
   - `docs/PORTFOLIO_PLAYBOOK.md`
   - `docs/WORKLOG.md`
-  - `blog/50-current-state-rebuild-map.md`
+  - `blog/00_rebuild_guide.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/86-tune-flag-distractor-fallback-order.md`
+  - `blog/15-public-scope-reset-and-new-games-lineup.md`
 - 요청 흐름 / 데이터 흐름: public 요청 흐름은 바뀌지 않았다. 여전히 `POST /api/games/flag/sessions -> FlagGameService -> FlagGameOptionGenerator` 순서로 문제 Stage를 만들고, `GET /state`가 그 보기 4개를 내려준다. 이번에는 `FlagQuestionCountryPoolService`가 만든 출제 가능 국가 pool 위에서 `FlagGameOptionGenerator`만 same-continent 우선 뒤에 `인접 대륙 fallback -> 전체 pool fallback` 순서를 적용하도록 바뀌었다.
 - 데이터 / 상태 변화: DB나 Redis 스키마 변화는 없다. 바뀐 것은 Stage 생성 시점의 보기 품질 규칙뿐이다. 예를 들어 오세아니아 target은 같은 대륙 후보가 1개뿐일 때 유럽/남미보다 아시아 후보를 먼저 끌어오고, 북미 target은 유럽보다 남미 후보를 먼저 끌어온다.
 - 핵심 도메인 개념: 국기 distractor 품질은 프론트 연출이 아니라 서버 문제 생성 규칙이다. 따라서 이 로직은 컨트롤러나 JS가 아니라 `FlagGameOptionGenerator`에 있어야 한다. 컨트롤러는 HTTP 요청만 해석하고, 실제로 어떤 나라 4개가 비교군이 되는지는 server-side game rule로 고정해야 테스트와 설명이 가능하다.
@@ -4058,10 +5738,10 @@
   - `README.md`
   - `docs/PORTFOLIO_PLAYBOOK.md`
   - `docs/WORKLOG.md`
-  - `blog/50-current-state-rebuild-map.md`
+  - `blog/00_rebuild_guide.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/87-polish-flag-difficulty-phases-and-result-copy.md`
+  - `blog/15-public-scope-reset-and-new-games-lineup.md`
 - 요청 흐름 / 데이터 흐름: public 요청 흐름은 바뀌지 않았다. 여전히 `POST /api/games/flag/sessions -> FlagGameService -> FlagGameDifficultyPolicy / FlagGameOptionGenerator -> GET /state -> POST /answer -> GET /result` 순서다. 이번에는 `FlagGameDifficultyPolicy`가 `기본 / 확장 / 전체 라운드`와 가이드를 정하고, `FlagGameService`가 초반 라운드에서 same-continent distractor가 충분한 대륙만 target pool로 먼저 쓰도록 바뀌었다. 결과 조회 시에도 stageNumber를 기준으로 같은 difficulty label을 다시 계산해 result read model에 붙인다.
 - 데이터 / 상태 변화: DB/Redis 스키마 변화는 없다. 다만 state payload에는 `difficultyGuide`, answer payload에는 `nextDifficultyGuide`, result stage read model에는 `difficultyLabel`이 추가됐다. 또한 Stage 1~4 target은 북미/오세아니아처럼 같은 대륙 distractor가 부족한 대륙을 우선적으로 피하게 된다.
 - 핵심 도메인 개념: 난이도 라벨은 단순 UI 문구가 아니라 어떤 국가 pool에서 문제를 뽑을지와 연결된 서버 규칙이다. 따라서 `기본 라운드에서 어떤 대륙을 우선할지`, `다음 라운드 안내 문구를 무엇으로 줄지`, `결과 화면에서 Stage를 어떤 구간으로 보여 줄지`는 컨트롤러가 아니라 `FlagGameDifficultyPolicy`와 `FlagGameService`가 맡아야 한다.
@@ -4092,10 +5772,10 @@
   - `README.md`
   - `docs/PORTFOLIO_PLAYBOOK.md`
   - `docs/WORKLOG.md`
-  - `blog/50-current-state-rebuild-map.md`
+  - `blog/00_rebuild_guide.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/88-group-public-surfaces-after-adding-three-new-games.md`
+  - `blog/15-public-scope-reset-and-new-games-lineup.md`
 - 요청 흐름 / 데이터 흐름: 요청 흐름은 바뀌지 않았다. 홈은 여전히 `GET / -> HomeController -> home.html`, 랭킹은 `GET /ranking -> LeaderboardPageController -> LeaderboardService`, Stats는 `GET /stats -> StatsPageController -> ServiceActivityService + LeaderboardService`로 간다. 이번 조각은 컨트롤러와 템플릿이 public read model을 어떻게 묶어 보여 주는지만 바꾼 것이고, 서버 상태를 바꾸는 write flow는 없다.
 - 데이터 / 상태 변화: DB나 Redis 변화는 없다. 대신 홈 `ModeCardView`에 `group` read model 필드를 추가해 `arcade / quiz / discover` 구분을 템플릿이 직접 해석하지 않게 했고, Stats는 기존 서비스 지표와 per-game 완료 수, Top 보드를 별도 구역으로 다시 배치했다.
 - 핵심 도메인 개념: 이번 조각의 핵심은 “게임 수가 늘었다고 바로 게임 선택 복잡도까지 같이 늘어나면 안 된다”는 것이다. 그래서 public grouping 규칙은 프론트 임시 배열이 아니라 `ModeCardView` 같은 read model에 올리고, `/ranking`, `/stats`는 기존 `LeaderboardService`와 `ServiceActivityService`를 유지한 채 표현 단위만 다시 묶었다. 정렬과 집계는 여전히 서버가 맡고, public surface는 어떤 종류의 플레이가 있는지를 먼저 읽히게 하는 역할만 한다.
@@ -4118,10 +5798,10 @@
   - `README.md`
   - `docs/PORTFOLIO_PLAYBOOK.md`
   - `docs/WORKLOG.md`
-  - `blog/50-current-state-rebuild-map.md`
+  - `blog/00_rebuild_guide.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/89-relax-legacy-leaderboard-game-level-constraint-for-local-boot.md`
+  - `blog/15-public-scope-reset-and-new-games-lineup.md`
 - 요청 흐름 / 데이터 흐름: public HTTP 요청은 없다. 흐름은 `CountrySeedInitializer -> AdminBootstrapInitializer -> RecommendationFeedbackLegacyColumnInitializer -> GameLevelRollbackInitializer -> DemoBootstrapInitializer`이다. 이번에는 `GameLevelRollbackInitializer`가 먼저 stale `leaderboard_record_game_mode_check` constraint를 제거하고, `leaderboard_record.game_level` 컬럼이 있으면 `ALTER COLUMN DROP NOT NULL`도 수행한 뒤, 예전 `LEVEL_2` row와 Redis `l2` 키를 정리한다. 이후 `DemoBootstrapService`가 current `LeaderboardRecord` 엔티티로 sample run을 저장한다.
 - 데이터 / 상태 변화: DB 스키마를 migration으로 영구 변경하지는 않는다. 대신 startup 시점에 legacy local DB의 `leaderboard_record.game_level` nullable 상태를 되돌리고, stale `leaderboard_record_game_mode_check` constraint를 제거한다. 이로 인해 current 엔티티가 `game_level`을 모르고 `CAPITAL / FLAG / POPULATION_BATTLE` 같은 새 `game_mode`를 저장해도 local boot와 sample run seed가 실패하지 않는다.
 - 핵심 도메인 개념: 이 로직은 demo bootstrap 자체보다 앞에 있어야 한다. 이유는 demo bootstrap이 `leaderboard_record` insert를 시작하기 전에 legacy 제약이 먼저 풀려야 하기 때문이다. 따라서 컨트롤러나 bootstrap service가 아니라 startup initializer가 책임지는 것이 맞다.
@@ -4149,10 +5829,10 @@
   - `README.md`
   - `docs/PORTFOLIO_PLAYBOOK.md`
   - `docs/WORKLOG.md`
-  - `blog/50-current-state-rebuild-map.md`
+  - `blog/00_rebuild_guide.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/90-auto-advance-to-the-next-stage-after-correct-answers.md`
+  - `blog/15-public-scope-reset-and-new-games-lineup.md`
 - 요청 흐름 / 데이터 흐름: 서버 API 흐름은 바뀌지 않았다. 여전히 `POST /api/games/.../sessions/{id}/answer`가 정답 판정과 점수 계산을 맡고, 다음 Stage는 `GET /api/games/.../sessions/{id}/state`로 다시 불러온다. 달라진 것은 프론트 루프다. 수도/인구수/인구 비교/국기 게임 JS가 이제 정답 응답을 받은 뒤 `획득 점수` overlay를 보여 주고, 약 950ms 후 같은 세션의 `loadState()`를 자동 호출한다.
 - 데이터 / 상태 변화: DB나 Redis 변화는 없다. public play 템플릿에서 `다음 Stage` 버튼이 제거됐고, JS의 정답 branch는 수동 버튼 표시 대신 자동 타이머를 사용한다. 오답과 게임오버 흐름은 그대로 유지한다.
 - 핵심 도메인 개념: 이번 조각은 서버 판정 로직을 옮긴 게 아니라, 이미 있는 `answer -> next state` read flow를 더 짧게 붙인 것이다. 점수 계산과 정답 판정은 계속 서버가 맡고, 프론트는 정답 시 `언제 다음 state를 다시 요청할지`만 바꾼다. 그래서 컨트롤러나 서비스 수정 없이도 게임 루프의 제품 감각을 크게 바꿀 수 있다.
@@ -4192,10 +5872,10 @@
   - `README.md`
   - `docs/PORTFOLIO_PLAYBOOK.md`
   - `docs/WORKLOG.md`
-  - `blog/50-current-state-rebuild-map.md`
+  - `blog/00_rebuild_guide.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
-  - `blog/91-unify-wrong-answer-feedback-rhythm-across-public-games.md`
+  - `blog/15-public-scope-reset-and-new-games-lineup.md`
 - 요청 흐름: 서버 API 흐름은 그대로 `POST /api/games/.../sessions/{id}/answer`와 `GET /api/games/.../sessions/{id}/state`다. 이번 조각은 각 게임 JS가 오답 응답을 받은 뒤 overlay와 HUD 문구를 보여 주고, 약 `950ms` 뒤 같은 Stage 재시도 상태로 입력 잠금을 해제하는 프론트 리듬만 정리한다.
 - 데이터 / 상태 변화: DB나 Redis 변화는 없다. public play 템플릿은 바뀐 JS 캐시 버전을 읽게 됐고, JS는 `STAGE_FEEDBACK_DELAY_MS`, `FINISH_REDIRECT_DELAY_MS` 같은 공통 상수로 정답/오답 지연 시간을 명시적으로 관리한다.
 - 핵심 도메인 개념: 이 조각은 정답 판정 규칙 변경이 아니다. 서버는 계속 정답/오답/하트/점수를 계산하고, 프론트는 그 결과를 얼마 동안 노출할지와 언제 다시 입력을 풀지 결정한다. 즉 상태 변경 책임은 서버에 두고, 게임 템포만 JS에서 정리한 것이다.
@@ -4265,7 +5945,7 @@
   - `docs/DEPLOYMENT_RUNBOOK_AWS_ECS.md`
   - `docs/PORTFOLIO_PLAYBOOK.md`
   - `docs/WORKLOG.md`
-  - `blog/92-add-java-25-multi-stage-dockerfile-for-ecs-prep.md`
+  - `blog/10-deterministic-recommendation-engine-and-feedback-loop.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
 - 요청 흐름 / 데이터 흐름: 런타임 요청 흐름은 바뀌지 않았다. 이번 조각은 build/deploy 흐름을 여는 작업이다. `docker build`가 `eclipse-temurin:25-jdk` builder image에서 `./gradlew bootJar -x test`를 실행하고, runtime image `eclipse-temurin:25-jre`에 결과 jar만 복사하는 multi-stage 구조로 바뀌었다.
@@ -4291,7 +5971,7 @@
   - `docs/DEPLOYMENT_RUNBOOK_AWS_ECS.md`
   - `docs/PORTFOLIO_PLAYBOOK.md`
   - `docs/WORKLOG.md`
-  - `blog/93-add-application-prod-profile-for-ecs-runtime-baseline.md`
+  - `blog/16-production-runtime-redis-session-and-ecs-deploy-prep.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
 - 요청 흐름 / 데이터 흐름: 런타임 요청 흐름은 바뀌지 않았다. 이번 조각은 profile 분리다. `prod` 프로필은 datasource/redis endpoint를 환경변수에서 읽고, demo bootstrap을 끄고, `server.forward-headers-strategy=native`를 사용하도록 분리됐다. 즉 실제 ECS task definition이 주입할 값을 어디서 읽는지의 source of truth가 생긴 셈이다.
@@ -4318,7 +5998,7 @@
   - `docs/DEPLOYMENT_RUNBOOK_AWS_ECS.md`
   - `docs/PORTFOLIO_PLAYBOOK.md`
   - `docs/WORKLOG.md`
-  - `blog/94-add-graceful-shutdown-and-runtime-jvm-opts-for-ecs.md`
+  - `blog/16-production-runtime-redis-session-and-ecs-deploy-prep.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
 - 요청 흐름 / 데이터 흐름: 런타임 HTTP 요청 흐름은 바뀌지 않았다. 이번 조각은 `ECS task env -> Docker ENTRYPOINT -> Spring Boot prod profile` 흐름을 정리한 것이다. Docker는 `JAVA_RUNTIME_OPTS`를 읽어 JVM을 띄우고, Spring Boot는 prod profile에서 forwarded header와 graceful shutdown 기준을 읽는다.
@@ -4348,7 +6028,7 @@
   - `docs/DEPLOYMENT_RUNBOOK_AWS_ECS.md`
   - `docs/PORTFOLIO_PLAYBOOK.md`
   - `docs/WORKLOG.md`
-  - `blog/95-add-actuator-readiness-and-liveness-for-ecs-health-checks.md`
+  - `blog/16-production-runtime-redis-session-and-ecs-deploy-prep.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
 - 요청 흐름 / 데이터 흐름: 게임 요청 흐름은 바뀌지 않았다. 새로 생긴 것은 운영 health 흐름이다. `GET /actuator/health`, `GET /actuator/health/liveness`, `GET /actuator/health/readiness`가 Spring Boot actuator에서 시작되고, prod group 설정은 `application-prod.yml`이 source of truth가 된다.
@@ -4375,7 +6055,7 @@
   - `docs/DEPLOYMENT_RUNBOOK_AWS_ECS.md`
   - `docs/PORTFOLIO_PLAYBOOK.md`
   - `docs/WORKLOG.md`
-  - `blog/96-add-ecs-task-definition-sample-for-secrets-manager-and-ssm.md`
+  - `blog/16-production-runtime-redis-session-and-ecs-deploy-prep.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
 - 요청 흐름 / 데이터 흐름: 런타임 요청 흐름은 바뀌지 않았다. 새로 정리된 것은 배포 입력 흐름이다. `Secrets Manager/SSM -> ECS task definition secrets field -> container env -> application-prod.yml` 순서로 비밀 값이 주입되고, 비밀이 아닌 값은 `environment`로만 들어간다.
@@ -4405,7 +6085,7 @@
   - `docs/DEPLOYMENT_RUNBOOK_AWS_ECS.md`
   - `docs/PORTFOLIO_PLAYBOOK.md`
   - `docs/WORKLOG.md`
-  - `blog/97-enable-prod-only-spring-session-redis-for-fargate-scale-out.md`
+  - `blog/16-production-runtime-redis-session-and-ecs-deploy-prep.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
 - 요청 흐름 / 데이터 흐름: 로그인/게스트/게임 요청 흐름 자체는 바뀌지 않았다. 달라진 것은 세션 저장 경로다. local/test는 여전히 servlet session을 쓰고, prod는 `HttpSession -> Spring Session Redis repository -> Redis namespace worldmap:session` 흐름으로 세션을 저장한다.
@@ -4435,7 +6115,7 @@
   - `docs/DEPLOYMENT_RUNBOOK_AWS_ECS.md`
   - `docs/PORTFOLIO_PLAYBOOK.md`
   - `docs/WORKLOG.md`
-  - `blog/98-add-github-actions-ecs-deploy-workflow-from-template.md`
+  - `blog/16-production-runtime-redis-session-and-ecs-deploy-prep.md`
   - `blog/README.md`
   - `blog/00_series_plan.md`
 - 요청 흐름 / 데이터 흐름: 게임 요청 흐름은 바뀌지 않았다. 새로 고정된 것은 배포 흐름이다. `workflow_dispatch -> actions/checkout -> actions/setup-java -> ./gradlew test -> aws-actions/configure-aws-credentials(OIDC) -> amazon-ecr-login -> docker build/push -> render_ecs_task_definition.py -> amazon-ecs-deploy-task-definition` 순서로 production deploy가 진행된다.
@@ -4455,3 +6135,221 @@
 - 배운 점: task definition template만 저장소에 두면 설명은 되지만 자동 배포까지 이어지지 않는다. 반대로 rendered JSON만 두면 source of truth가 사라진다. 둘을 `sample -> render -> deploy`로 나누는 것이 현재 프로젝트와 같은 초보자 지향 런북에 가장 설명 가능하다.
 - 아직 약한 부분: 아직 실제 AWS 계정에 OIDC role, repository variables, ECS cluster/service를 연결해 workflow를 한 번 돌린 상태는 아니다. 즉 자동 배포의 코드 뼈대는 생겼지만, smoke test는 다음 단계다.
 - 면접용 30초 요약: 이번에는 GitHub Actions로 ECS 배포 workflow를 추가했습니다. 핵심은 `OIDC 인증 -> 테스트 -> ECR push -> sample task definition 렌더링 -> ECS deploy`까지 저장소 파일로 고정한 점입니다. 특히 task definition을 사람이 직접 수정하지 않고 `render_ecs_task_definition.py`가 실제 AWS 값과 image URI를 주입하도록 만들어서, 초보자도 자동 배포 흐름을 코드 기준으로 설명할 수 있게 했습니다.
+
+## 2026-04-01 - Railway 단일 플랫폼 배포 baseline으로 전환
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 사용자가 AWS 대신 “하나의 플랫폼에서 끝나는 배포”를 원했고, 루트 `Dockerfile`도 배포용이 아니라 로컬 검증용으로만 두고 싶다고 방향을 바꿨다. 이번 조각의 목적은 현재 기본 배포 경로를 ECS에서 Railway 단일 플랫폼으로 재정렬하고, 그 기준을 저장소 설정과 문서로 같이 고정하는 것이다.
+- 변경 파일:
+  - `build.gradle`
+  - `Dockerfile.local`
+  - `.github/workflows/deploy-prod-ecs.yml`
+  - `railway.toml`
+  - `src/main/resources/application-prod.yml`
+  - `src/test/java/com/worldmap/common/config/ProdProfileConfigTest.java`
+  - `src/test/java/com/worldmap/common/config/RailwayConfigTemplateTest.java`
+  - `README.md`
+  - `docs/DEPLOYMENT_RUNBOOK_RAILWAY.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/99-pivot-deploy-baseline-from-ecs-to-railway.md`
+  - `blog/README.md`
+  - `blog/00_series_plan.md`
+- 요청 흐름 / 데이터 흐름: 사용자 요청 흐름은 바뀌지 않았다. 바뀐 것은 운영 런타임 흐름이다. 현재 기본 배포 흐름은 `Railway build (RAILPACK) -> ./gradlew bootJar -> worldmap.jar -> java -Dserver.port=$PORT -jar ... -> /actuator/health/readiness`다. ECS workflow는 보조 경로로 남기되, 루트 `Dockerfile` 대신 `Dockerfile.local`을 사용하도록 바꿔 Railway auto-detection과 충돌하지 않게 했다.
+- 데이터 / 상태 변화: DB 스키마나 게임 도메인 상태는 변하지 않는다. 대신 prod Redis 연결 계약이 Railway `SPRING_DATA_REDIS_URL` direct binding과 host 기반 `host`, `port`, `username`, `password` 분기를 함께 설명할 수 있게 정리됐다. `bootJar` 산출물 이름도 `worldmap.jar`로 고정돼 배포 명령이 버전 문자열과 분리됐다.
+- 핵심 도메인 개념: 이 조각의 핵심은 “배포 source of truth 재정의”다. `Dockerfile`이 더 이상 기본 배포 기준이 아니라 `Dockerfile.local`이 되고, 실제 배포 책임은 `railway.toml`과 `application-prod.yml`이 맡는다. 이건 웹 요청 로직이 아니라 운영 계약 문제라서 컨트롤러/서비스가 아니라 build 설정과 런북 문서에 있어야 한다.
+- 예외 / 엣지 케이스:
+  - Railway는 루트 `Dockerfile`이 있으면 그 파일을 자동 사용하므로, 이름 변경 없이 `railway.toml`만 추가하는 방식은 의도와 다르게 Docker 배포로 흘러갈 수 있다.
+  - Redis는 Railway에서 `REDIS_URL` 한 개로 받는 흐름이 자연스럽지만, 기존 설정은 host/port만 전제로 설명돼 있었다. 그래서 host 기반 계약은 `application-prod.yml`에 남기고, `SPRING_DATA_REDIS_URL`은 Spring Boot 환경변수 바인딩으로 직접 받는다고 기준을 다시 정리했다.
+  - ECS workflow는 저장소에 남아 있지만 이제는 보조 경로다. 파일 자체가 깨지지 않도록 `docker build -f Dockerfile.local`로 같이 수정했다.
+- 테스트:
+  - `./gradlew test --tests com.worldmap.common.config.RailwayConfigTemplateTest --tests com.worldmap.common.config.ProdProfileConfigTest --tests com.worldmap.common.config.ActuatorHealthEndpointIntegrationTest --tests com.worldmap.common.config.RedisSessionConfigurationIntegrationTest`
+  - `docker build -f Dockerfile.local -t worldmap-railway-check .`
+  - `./gradlew test`
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이번 조각은 “배포 플랫폼을 바꾸면서 source of truth를 어디에 둘 것인가”를 설명하는 운영 feature slice라서 블로그로 남길 가치가 충분하다.
+- 배운 점: 플랫폼을 바꾸는 일은 문서 교체가 아니라 런타임 계약 재정의에 가깝다. 특히 Railway처럼 `Dockerfile` auto-detection이 있는 플랫폼에선, 파일 이름 하나가 실제 배포 방식 자체를 바꿔 버릴 수 있다.
+- 아직 약한 부분: 아직 Railway 프로젝트 생성, GitHub 저장소 연결, Postgres/Redis reference variable 입력, 공개 URL smoke test는 하지 않았다. 즉 저장소는 Railway-ready지만, 실제 플랫폼 배포 성공 기록은 다음 단계다.
+- 면접용 30초 요약: 이번에는 배포 기준을 Railway 단일 플랫폼으로 다시 정리했습니다. 핵심은 루트 `Dockerfile`을 `Dockerfile.local`로 바꿔 Railway auto-detection과 분리하고, `railway.toml`에서 Railpack 빌드와 `worldmap.jar` start command, readiness health check를 고정한 점입니다. 그리고 prod Redis 설정이 URL 방식도 받을 수 있게 해서 Railway Postgres/Redis reference variable로 바로 연결할 수 있게 만들었습니다.
+
+## 2026-03-31 - 신규 게임 3종 확장 구간을 대표 글 하나로 다시 묶기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: `77~88` 구간은 capital, population-battle, flag, public regrouping이 서로 연결된 한 덩어리인데도 글이 너무 잘게 쪼개져 있어서 공개용 읽기 경로가 끊겼다. 이번 조각의 목적은 이 구간을 "신규 게임 3종 확장" 대표 글 하나로 다시 묶고, 나머지 글은 evidence note로 재배치하는 것이다.
+- 변경 파일:
+  - `blog/09-redis-leaderboard-and-ranking-page.md`
+  - `blog/README.md`
+  - `blog/00_rebuild_guide.md`
+  - `blog/00_rebuild_guide.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 앱 런타임 요청은 바뀌지 않았다. 바뀐 것은 문서 읽기 흐름이다. 현재 기준 흐름은 `blog/README.md -> blog/09-redis-leaderboard-and-ranking-page.md -> 필요한 경우 78~88 evidence note`다. 즉 사용자가 여러 micro post를 순서대로 읽는 대신, capital / population-battle / flag / public regrouping을 한 대표 글에서 먼저 보고 세부 근거로 내려가게 만들었다.
+- 데이터 / 상태 변화: DB, Redis, 세션, 게임 상태 변화는 없다. 대신 블로그 정보 구조에서 `77`이 신규 게임 3종 확장의 대표 글이 되었고, `78~88`은 vertical slice, seed 보강, asset/pool, public surface follow-up evidence note로 읽히는 구조가 됐다.
+- 핵심 도메인 개념: 이 조각의 핵심은 "문서용 aggregate"다. 코드의 aggregate가 아니라, 여러 구현 조각을 하나의 설명 단위로 묶어 독자가 `공통 endless run 확장 -> seed/asset 정책 -> public surface regrouping`을 한 번에 이해하게 만드는 편집 모델이다.
+- 예외 / 엣지 케이스: 파일 수 자체를 줄이려고 기존 글 내용을 삭제하거나 archive로 옮기지는 않았다. 기존 번호 글들은 그대로 유지하고, top-level 읽기 경로에서 대표 글과 evidence note의 역할만 다시 명시했다.
+- 테스트:
+  - `python3` one-off script로 수정한 문서들의 내부 링크 존재 여부 확인
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이번 조각 자체가 블로그 편집 구조를 고치는 작업이라 별도 numbered post를 새로 만들기보다, 기존 anchor post인 `77`을 현재 코드 기준의 긴 대표 글로 전면 재작성하는 쪽이 맞았다.
+- 배운 점: 블로그 글 수가 많다는 문제는 파일 삭제보다 `대표 글이 실제로 주변 follow-up을 충분히 흡수하고 있는가`의 문제에 더 가깝다. 읽는 사람이 적은 파일 수만 보게 하려면, README와 허브 문서가 "무엇을 먼저 읽고 무엇은 나중에 내려갈지"를 강하게 안내해야 한다.
+- 아직 약한 부분: 신규 게임 구간은 묶였지만, `public/admin split`, `demo bootstrap`, `추천 튜닝`처럼 중간 시리즈에도 아직 작은 글이 많이 남아 있다. 다음 편집 조각에서도 같은 방식으로 anchor post를 더 키워야 한다.
+- 면접용 30초 요약: 이번에는 코드를 바꾼 게 아니라 블로그 설명 구조를 바꿨습니다. `77~88` 구간은 사실 capital, population-battle, flag, public regrouping이 하나의 스토리였는데 글이 너무 잘게 쪼개져 있어서, `77`을 신규 게임 3종 확장의 대표 글로 다시 쓰고 README와 재현 허브도 그 기준으로 정리했습니다. 그래서 이제는 하나의 긴 글만 읽어도 공통 endless run을 새 게임 3종으로 어떻게 확장했는지 설명할 수 있습니다.
+
+## 2026-03-31 - 계정, `/mypage`, `/dashboard`, `/stats` 구간도 대표 글 하나로 다시 묶기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: `22~33`과 `103`은 사실 guest ownership, 단순 로그인, `/mypage`, `/dashboard`, `/stats`, local demo bootstrap으로 이어지는 한 덩어리인데도, 현재 top-level 경로에서는 여전히 파일 수가 너무 많았다. 이번 조각의 목적은 이 구간을 계정/운영 흐름 대표 글 하나로 다시 묶고, 나머지 글은 evidence note로 재배치하는 것이다.
+- 변경 파일:
+  - `blog/09-redis-leaderboard-and-ranking-page.md`
+  - `blog/README.md`
+  - `blog/00_rebuild_guide.md`
+  - `blog/00_rebuild_guide.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 앱 런타임 요청은 바뀌지 않았다. 바뀐 것은 문서 읽기 흐름이다. 현재 기준 흐름은 `blog/README.md -> blog/09-redis-leaderboard-and-ranking-page.md -> 필요한 경우 22~33, 103 evidence note`다. 즉 사용자가 guest ownership, 로그인, `/mypage`, `/dashboard`, `/stats`, local demo를 각각 따로 읽는 대신 대표 글 하나에서 먼저 보고 세부 근거로 내려가게 만들었다.
+- 데이터 / 상태 변화: DB, Redis, 세션, 게임 상태 변화는 없다. 대신 블로그 정보 구조에서 `25`가 계정/운영 흐름의 대표 글이 되었고, `22~24`, `26`, `28`, `30~33`, `103`은 foundation, first version, current-state read model을 설명하는 follow-up evidence note로 읽히는 구조가 됐다.
+- 핵심 도메인 개념: 이 조각의 핵심은 "문서용 aggregate"를 계정 파트에도 적용하는 것이다. guest ownership, auth, mypage read model, dashboard/stats split, local demo bootstrap을 하나의 설명 단위로 묶어야 실제 제품 흐름이 보인다.
+- 예외 / 엣지 케이스: 이번에도 기존 번호 글을 삭제하거나 archive로 옮기지는 않았다. 파일은 유지하고, top-level에서 먼저 읽어야 할 anchor와 나중에 내려가야 할 evidence note의 역할만 다시 명시했다.
+- 테스트:
+  - `python3` one-off script로 수정한 문서들의 내부 링크 존재 여부 확인
+  - `git diff --check`
+- 블로그 반영 여부: 반영. 이번 조각 자체가 블로그 정보 구조 정리라 별도 새 numbered post를 추가하기보다, 기존 anchor 후보였던 `25`를 현재 코드 기준의 큰 대표 글로 다시 쓰는 편이 맞았다.
+- 배운 점: "계정 기능", "`/mypage`", "`/dashboard`", "`/stats`", "demo bootstrap"을 각각 다른 기능처럼 보면 파일 수가 폭증한다. 하지만 독자 입장에서는 이들이 모두 "게스트에서 로그인한 기록 허브와 운영 화면까지 어떻게 이어지는가"라는 하나의 질문 아래 있어야 훨씬 읽기 쉽다.
+- 아직 약한 부분: 추천 튜닝과 public shell 디자인 구간은 여전히 미세 글이 많다. 다음 편집 조각에서는 그쪽 anchor post를 더 키워 top-level 추천 읽기 경로를 더 줄여야 한다.
+- 면접용 30초 요약: 이번에는 계정/운영 파트의 블로그 설명 구조를 다시 묶었습니다. `22~33`과 `103`은 실제로 guest ownership, 로그인, `/mypage`, `/dashboard`, `/stats`, local demo가 이어지는 한 스토리인데 글이 너무 많아서, `25`를 대표 글로 다시 쓰고 README와 재현 허브를 그 기준으로 정리했습니다. 그래서 이제는 하나의 긴 글만 읽어도 게스트 플레이가 계정과 운영 화면까지 어떻게 이어지는지 설명할 수 있습니다.
+
+## 2026-04-01 - `dashboard` 운영 surface 대표 글을 재현 가이드 수준으로 다시 쓰기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: `/dashboard`는 단순히 숫자를 더 많이 보여 주는 admin 페이지가 아니라, public `/stats`와 분리된 운영 판단 surface라는 점을 블로그 한 편만 읽어도 다시 구현하고 설명할 수 있게 만드는 것이다. 특히 첫 화면의 route card, focus item, recommendation ops review, persona baseline taxonomy를 현재 코드와 테스트 기준으로 묶어야 했다.
+- 변경 파일:
+  - `blog/14-dashboard-admin-surface-and-operations-cards.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 앱 런타임 흐름은 바뀌지 않았다. 바뀐 것은 독자 흐름이다. 현재 기준 읽기 경로는 `blog/README.md -> blog/14-dashboard-admin-surface-and-operations-cards.md -> AdminDashboardService / AdminRecommendationOpsReviewService / AdminPersonaBaselineService / admin SSR templates / admin tests`다.
+- 데이터 / 상태 변화: DB, Redis, 세션 상태 변화는 없다. 대신 문서 모델에서 `/dashboard`는 `ServiceActivityView`를 공유해도 `/stats`와는 다른 ops surface이고, `AdminRecommendationOpsReviewService`가 current version feedback와 baseline을 함께 읽어 우선 액션을 계산한다는 설명 경계가 명확해졌다.
+- 핵심 도메인 개념:
+  - `AdminDashboardView`: dashboard 첫 화면에 필요한 운영 숫자와 이동 동선을 묶는 read model
+  - `AdminDashboardRouteView`: 운영자가 바로 열어야 할 public/admin 라우트를 카드로 노출하는 모델
+  - `AdminDashboardFocusView`: 운영 원칙을 첫 화면에서 다시 고정하는 모델
+  - `AdminRecommendationOpsReviewView`: 현재 버전 피드백과 baseline을 합쳐 다음 액션을 제안하는 운영 메모 모델
+  - `AdminPersonaBaselineView`: 18개 시나리오를 weak / anchor drift / active signal로 읽는 baseline 모델
+- 예외 / 엣지 케이스:
+  - `/dashboard`를 `/stats` 확장판처럼 설명하면 public-safe metric과 내부 운영 메모 경계가 무너진다.
+  - feedback 집계만 보고 baseline을 같이 읽지 않으면 `응답 수가 적은데도 tuning` 같은 잘못된 판단을 하게 된다.
+  - baseline 화면은 weak scenario가 0개일 수 있고, anchor drift도 0개일 수 있으므로 empty state와 "현재 엔진 유지" 판단 규칙을 같이 적어야 한다.
+  - legacy `/admin` 북마크를 바로 끊지 않고 `/dashboard` 체계로 redirect하는 이유를 설명하지 않으면 URL 리네임이 단순 cosmetic 변경처럼 보인다.
+- 테스트:
+  - 없음. 이번 조각은 doc-only 편집 작업이다.
+  - 문서 링크 검사 `missing 0`
+  - `git diff --check`
+- 배운 점: 운영 화면 글은 서비스 메서드 나열보다 "운영자가 지금 무엇을 판단하려고 여기에 들어오는가"를 먼저 잡아야 읽히기 시작한다. `ServiceActivityView` 공유 여부보다 `surface의 질문이 다르다`는 점을 먼저 설명하는 편이 훨씬 명확했다.
+- 아직 약한 부분: `/dashboard` 글은 현재 구조를 다시 구현하는 데는 충분해졌지만, 다음 조각에서는 `15-public-scope-reset-and-new-games-lineup`도 같은 수준으로 cross-review해 public lineup 정리와 운영 surface의 연결점을 더 다듬어야 한다.
+- 면접용 30초 요약: `/dashboard`는 `/stats`보다 숫자가 많은 페이지가 아니라, 운영자가 지금 어디를 봐야 하는지 빠르게 판단하게 만드는 read-only 허브입니다. `AdminDashboardService`가 활동 지표와 recommendation 상태, route card, focus item을 묶고, `AdminRecommendationOpsReviewService`는 현재 버전 피드백과 baseline을 함께 읽어 다음 액션을 계산하며, `AdminPersonaBaselineService`는 18개 시나리오를 weak·anchor drift·active signal로 분류해 운영자가 바로 튜닝 우선순위를 잡을 수 있게 만듭니다.
+
+## 2026-04-01 - public scope reset과 신규 게임 lineup 대표 글을 재현 가이드 수준으로 다시 쓰기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: `15-public-scope-reset-and-new-games-lineup`는 지금 public 제품이 왜 `기본 게임 5개 + 추천 + ranking + stats`로 설명되는지, 왜 신규 게임 3종 추가보다 먼저 Level 2 흔적 정리와 product scope reset을 설명해야 하는지를 한 편에서 다시 구현할 수 있게 만드는 데 목적이 있다. 특히 startup rollback, capital/battle/flag의 공통 contract, home regrouping을 같은 스토리로 묶어야 했다.
+- 변경 파일:
+  - `blog/15-public-scope-reset-and-new-games-lineup.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 앱 런타임은 바뀌지 않았다. 바뀐 것은 독자 흐름이다. 현재 읽기 경로는 `blog/README.md -> blog/15-public-scope-reset-and-new-games-lineup.md -> GameLevelRollbackInitializer -> capital / population-battle / flag 서비스 -> HomeController -> 관련 통합 테스트`다.
+- 데이터 / 상태 변화: DB, Redis, 세션 변화는 없다. 대신 문서 모델에서 이 단계의 핵심이 `신규 게임 3개 추가`가 아니라 `public scope reset + lineup expansion + public regrouping`이라는 점이 분명해졌다. rollback initializer가 startup 호환성 코드이고, 새 게임들은 shared endless run contract와 terminal leaderboard write를 재사용한다는 설명도 더 정확해졌다.
+- 핵심 도메인 개념:
+  - `public lineup`: 현재 public에서 직접 설명하는 5개 게임과 추천/ranking/stats 범위
+  - `legacy Level 2 residue`: old `game_level` row, old leaderboard constraint, Redis `l2` 키
+  - `asset-backed playable pool`: flag는 seed와 manifest와 실제 static 파일의 교집합만 출제 가능
+  - `public regrouping`: 홈 카드, 안내 문구, ranking/stats/mypage가 같은 product scope를 바라보게 다시 맞추는 일
+- 예외 / 엣지 케이스:
+  - Level 2를 UI에서만 숨기면 README와 실제 DB/Redis가 서로 다른 제품을 설명하게 된다.
+  - rollback initializer를 단순 row delete로 설명하면 old `leaderboard_record_game_mode_check`, `game_level NOT NULL` 정리 이유를 놓치게 된다.
+  - flag를 seed 기반 퀴즈처럼 설명하면 36개 asset snapshot과 continent 분포, early-round same-continent distractor 조건을 재현하지 못한다.
+  - home 카드를 단순 디자인 요소로 보면 current public lineup과 route order를 놓치게 된다.
+- 테스트:
+  - 없음. 이번 조각은 doc-only 편집 작업이다.
+  - 문서 링크 검사 `missing 0`
+  - `git diff --check`
+- 배운 점: 이 단계는 새 게임 3개를 만든 단계이기도 하지만, 실제로는 "지금 public 제품이 무엇인가"를 다시 한 문장으로 닫은 단계라는 점을 먼저 잡아야 글이 읽힌다. 특히 flag는 게임 로직보다 asset contract를 먼저 설명해야 재현 가능한 글이 된다.
+- 아직 약한 부분: `15`는 많이 강해졌지만, 다음에는 `16-runtime`, `17-hardening`, `18-verification` 삼부작을 다시 cross-review해 서로 같은 용어와 전제를 쓰는지까지 맞춰야 한다.
+- 면접용 30초 요약: 이 단계에서는 capital, population-battle, flag를 추가한 것보다 먼저 위치/인구수 Level 2 실험 흔적을 현재 public 제품 설명에서 걷어냈습니다. `GameLevelRollbackInitializer`로 legacy DB/Redis와 old leaderboard constraint를 startup에서 정리하고, 그 다음 세 신규 게임을 기존 endless run contract 위에 올렸습니다. 특히 flag는 `FlagAssetCatalog`와 `FlagQuestionCountryPoolService`로 36개 playable pool을 먼저 고정해 홈과 ranking, stats까지 같은 public lineup을 설명할 수 있게 만들었습니다.
+
+## 2026-04-01 - production runtime 대표 글에서 deploy 입력 계약과 한계를 더 구체화하기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: `16-production-runtime-redis-session-and-ecs-deploy-prep`는 이미 길었지만, cross-review 관점에서 아직 "render script의 조건부 입력이 정확히 무엇인가", "readiness는 어디까지 검증됐는가", "preflight의 live repo 상태와 fixture 보장은 어디서 갈라지는가"가 흐렸다. 이번 조각의 목적은 첫 배포를 다시 밟는 사람이 runtime contract, workflow, preflight, 수동 ALB 설정 경계를 실제 코드와 테스트가 보장하는 수준으로만 이해하게 만드는 것이다.
+- 변경 파일:
+  - `blog/16-production-runtime-redis-session-and-ecs-deploy-prep.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 앱 런타임 자체는 바뀌지 않았다. 바뀐 것은 독자 흐름이다. 현재 읽기 경로는 `blog/README.md -> blog/16-production-runtime-redis-session-and-ecs-deploy-prep.md -> Dockerfile / application-prod.yml / RedisSessionProdConfiguration / deploy-prod-ecs.yml / task-definition.prod.sample.json / render_ecs_task_definition.py / check_prod_deploy_preflight.py / 관련 config tests`다.
+- 데이터 / 상태 변화: DB, Redis, 세션 상태 변화는 없다. 대신 문서 모델에서 `deploy-prod-ecs.yml`의 입력이 workflow input이 아니라 GitHub repository variables 13개라는 점, `worldmap-app` container name과 `IMAGE_URI` 우선 / `ECR_REPOSITORY + IMAGE_TAG` 조건부 fallback 규칙, preflight가 보는 필수 파일 3개, `Ready: YES`가 AWS wiring 보장까지 의미하지는 않는다는 한계, readiness가 현재 설정값과 endpoint 노출까지만 검증된다는 점이 더 분명해졌다.
+- 핵심 도메인 개념:
+  - `runtime contract`: prod profile, cookie, health, datasource/redis 입력, graceful shutdown
+  - `prod-only Redis session`: local/test는 servlet session, prod만 Redis session
+  - `deploy input contract`: env vs secret, repo variables 13개, sample task definition + render script
+  - `preflight`: workflow vars와 필수 파일만 읽는 첫 배포 전 검사기이며, live repo 결과와 fixture 결과를 구분해서 읽어야 한다
+- 예외 / 엣지 케이스:
+  - `Ready: YES`는 GitHub variables와 파일 존재가 맞다는 뜻이지, AWS 리소스/네트워크/ALB wiring이 맞다는 뜻은 아니다.
+  - sample task definition에는 container-level `healthCheck`가 없어서, ALB target group path는 `/actuator/health/readiness`로 수동 지정해야 한다.
+  - `ActuatorHealthEndpointIntegrationTest`와 `ProdProfileConfigTest`는 readiness 설정값과 endpoint 노출만 고정하고, `/actuator/health/readiness`의 contributor payload/evaluation까지는 아직 검증하지 않는다.
+  - `RedisSessionConfigurationIntegrationTest`는 wiring test이지 실제 multi-task session 유지 smoke가 아니다.
+  - workflow는 input field가 0개이므로, 실제 배포 값은 모두 repo variable에 들어 있어야 한다.
+- 테스트:
+  - 없음. 이번 조각은 doc-only 편집 작업이다.
+  - 문서 링크 검사 `missing 0`
+  - `git diff --check`
+- 배운 점: 운영 글은 "길다"보다 "정확히 어디서 실패하는지 말해 주는가"가 더 중요하다. 특히 첫 배포에서는 코드보다 입력 누락이 더 흔하므로, preflight의 검사 범위와 비검사 범위를 같이 적어 두는 편이 훨씬 실용적이었다.
+- 아직 약한 부분: 이제 `16`은 꽤 선명해졌지만, 다음 조각에서는 `17-hardening`, `18-verification`과 같은 용어를 쓰는지까지 맞춰 trilogy 전체의 consistency를 다시 봐야 한다.
+- 면접용 30초 요약: 운영 런타임 글을 다시 다듬으면서, Docker image와 prod profile만이 아니라 deploy 입력 경계와 검증 범위를 더 분명히 적었습니다. `workflow_dispatch`는 입력 field가 없고 13개 GitHub repo variable만 읽으며, sample task definition은 render script가 `worldmap-app` container와 env/secrets를 concrete JSON으로 바꾸되 `IMAGE_URI`가 없으면 `ECR_REPOSITORY + IMAGE_TAG`를 추가로 요구합니다. 또 preflight는 파일과 변수 존재만 보고, readiness도 현재 설정값과 endpoint 노출까지만 고정돼 있다는 점까지 같이 설명하게 만들었습니다.
+
+## 2026-04-01 - production runtime 대표 글의 사실 표현을 실제 코드와 테스트 범위로 낮추기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 방금 보강한 `16`은 길고 자세했지만, 몇몇 문장은 여전히 "실제로 증명된 것"보다 강하게 써 있었다. 이번 조각의 목적은 render script의 조건부 입력, readiness 검증 범위, preflight의 live 상태 의존성을 실제 코드와 테스트가 보장하는 수준으로 정확히 낮추는 것이다.
+- 변경 파일:
+  - `blog/16-production-runtime-redis-session-and-ecs-deploy-prep.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 앱 런타임 자체는 바뀌지 않았다. 바뀐 것은 독자 흐름이다. 현재 읽기 경로는 `blog/README.md -> blog/16-production-runtime-redis-session-and-ecs-deploy-prep.md -> render_ecs_task_definition.py / ProdProfileConfigTest / ActuatorHealthEndpointIntegrationTest / ProdDeployPreflightScriptTest`다.
+- 데이터 / 상태 변화: DB, Redis, 세션 상태 변화는 없다. 대신 문서 모델에서 `IMAGE_URI`가 없을 때만 `ECR_REPOSITORY + IMAGE_TAG`가 추가로 필요하다는 renderer 입력 계약, readiness가 `db+redis+ping`을 실제로 평가한다고 단정하지 않고 설정값과 endpoint 노출만 고정돼 있다는 점, preflight의 `Ready: YES/NO`가 live repo 변수 상태에 따라 달라진다는 점이 바로잡혔다.
+- 핵심 도메인 개념:
+  - `conditional deploy input`: 항상 필요한 env와 `IMAGE_URI` 부재 시에만 필요한 env를 구분한다.
+  - `config-level readiness contract`: 현재는 YAML group 값과 actuator endpoint 노출까지만 고정돼 있다.
+  - `live-vs-fixture preflight`: workflow-required variable 수 13개는 안정적이지만, 실제 missing 개수는 실행 시점의 GitHub 상태에 의존한다.
+- 예외 / 엣지 케이스:
+  - `ActuatorHealthEndpointIntegrationTest`는 endpoint open 여부만 보고, readiness payload contributor 목록까지는 아직 확인하지 않는다.
+  - `ProdDeployPreflightScriptTest`는 fixture 분기를 고정할 뿐 live repo variables 자체를 보장하지 않는다.
+  - `render_ecs_task_definition.py`는 `IMAGE_URI`가 있으면 `ECR_REPOSITORY`와 `IMAGE_TAG` 없이도 동작한다.
+- 테스트:
+  - 없음. 이번 조각은 doc-only 편집 작업이다.
+  - 문서 링크 검사 `missing 0`
+  - `git diff --check`
+- 배운 점: 재현형 글일수록 "무엇이 맞다"보다 "무엇이 어디까지 증명됐는가"를 더 엄격하게 적어야 한다. 특히 운영 글은 외부 상태가 섞이므로 fixture 기반 보장과 live 환경 사실을 섞어 쓰면 금방 부정확해진다.
+- 아직 약한 부분: production trilogy는 이제 용어가 더 맞아졌지만, 다음 조각에서는 `17-hardening`, `18-verification`에서 같은 수준의 사실 엄밀성을 유지하는지 최종 cross-review가 필요하다.
+- 면접용 30초 요약: 운영 런타임 문서를 다시 다듬으면서, render script의 조건부 입력과 readiness 검증 범위를 실제 코드가 보장하는 수준으로 낮춰 썼습니다. 이제 이 글은 `13개 repo variable 필요`, `IMAGE_URI 없을 때만 ECR_REPOSITORY+IMAGE_TAG 추가 필요`, `readiness는 설정값과 endpoint 노출까지만 검증`, `preflight의 Ready 상태는 live repo 변수 상태에 의존`까지 더 정확하게 설명합니다.
+
+## 2026-04-01 - integrity 대표 글 17의 hardening 주장 범위를 실제 public contract 수준으로 낮추기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: `17-game-integrity-current-member-and-role-revalidation`은 전체 구조는 좋았지만, 몇몇 문장이 아직 "현재 코드가 실제로 강제하는 범위"보다 강했다. 이번 조각의 목적은 stale-submit 409와 header visibility 설명을 current public client contract와 current-member source 범위로 정확히 낮추는 것이다.
+- 변경 파일:
+  - `blog/17-game-integrity-current-member-and-role-revalidation.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름: 앱 런타임 자체는 바뀌지 않았다. 바뀐 것은 독자 흐름이다. 현재 읽기 경로는 `blog/README.md -> blog/17-game-integrity-current-member-and-role-revalidation.md -> GameSessionAccessContextResolver / GameSubmissionGuard / CurrentMemberAccessService / AdminAccessGuard / SiteHeaderModelAdvice / 관련 integration tests`다.
+- 데이터 / 상태 변화: DB, Redis, 세션 상태 변화는 없다. 대신 문서 모델에서 stale-submit `409`가 현재 public client가 `stageId + expectedAttemptNumber`를 echo하는 계약 기준이라는 점, `SiteHeaderModelAdvice`가 `AdminAccessGuard`를 직접 호출하지 않고 같은 current-member source를 재사용해 `showDashboardLink`를 계산한다는 점이 더 분명해졌다.
+- 핵심 도메인 개념:
+  - `public freshness contract`: DTO는 nullable이지만 shipped browser client는 freshness 값을 항상 echo하고, flow test도 그 경로를 고정한다.
+  - `current-member source reuse`: `/dashboard/**`와 admin API는 `AdminAccessGuard`, 헤더는 `CurrentMemberAccessService` 결과를 써서 같은 source of truth를 공유한다.
+  - `hardening scope honesty`: 같은 source와 같은 policy method는 다르며, 지금 보장하는 범위를 문서가 정확히 말해야 한다.
+- 예외 / 엣지 케이스:
+  - lower-level service overload는 `null` freshness 값도 받을 수 있으므로 타입 차원에서 강제 필드인 것은 아니다.
+  - 헤더 visibility는 current role 기준이 맞지만 `AdminAccessGuard`를 직접 호출하는 구조는 아니다.
+  - `409` 보장은 현재 public client/request contract를 전제로 읽어야 한다.
+- 테스트:
+  - 없음. 이번 조각은 doc-only 편집 작업이다.
+  - 문서 링크 검사 `missing 0`
+  - `git diff --check`
+- 배운 점: hardening 문서는 특히 "막는다"라는 표현을 쉽게 세게 쓰게 된다. 하지만 실제 저장소가 보장하는 건 policy source, request contract, test coverage의 교집합이므로 그 경계를 정확히 적는 편이 오히려 더 설득력 있다.
+- 아직 약한 부분: 이제 `17`도 범위가 정리됐지만, 다음 조각에서는 `18-production-verification-and-demo-interview-pack`이 browser smoke와 public smoke의 보장 범위를 과장하지 않는지 한 번 더 cross-review해야 한다.
+- 면접용 30초 요약: integrity 글을 다시 다듬으면서, stale-submit `409`와 header visibility 설명을 실제 public contract 수준으로 낮춰 썼습니다. 이제 문서는 `GameSubmissionGuard`가 현재 public client가 보내는 freshness 값 기준 stale submit을 `409`로 끊고, `/dashboard/**`와 admin API는 `AdminAccessGuard`가 막으며, public 헤더는 같은 current-member source를 재사용해 `Dashboard` 링크를 계산한다고 더 정확히 설명합니다.

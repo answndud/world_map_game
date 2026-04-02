@@ -2,42 +2,53 @@ package com.worldmap.web;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
-import static com.worldmap.auth.application.MemberSessionManager.MEMBER_ID_ATTRIBUTE;
-import static com.worldmap.auth.application.MemberSessionManager.MEMBER_NICKNAME_ATTRIBUTE;
-import static com.worldmap.auth.application.MemberSessionManager.MEMBER_ROLE_ATTRIBUTE;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
+import com.worldmap.auth.application.AdminAccessGuard;
+import com.worldmap.auth.application.AuthenticatedMemberSession;
+import com.worldmap.auth.application.CurrentMemberAccessService;
 import com.worldmap.auth.domain.MemberRole;
+import jakarta.servlet.http.HttpServletRequest;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.context.annotation.Import;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(HomeController.class)
-@Import(com.worldmap.auth.application.MemberSessionManager.class)
 class HomeControllerTest {
 
 	@Autowired
 	private MockMvc mockMvc;
 
+	@MockBean
+	private AdminAccessGuard adminAccessGuard;
+
+	@MockBean
+	private CurrentMemberAccessService currentMemberAccessService;
+
 	@Test
 	void homePageRenders() throws Exception {
+		given(currentMemberAccessService.currentMember(any(HttpServletRequest.class))).willReturn(Optional.empty());
+
 		mockMvc.perform(get("/"))
 			.andExpect(status().isOk())
 			.andExpect(view().name("home"))
 			.andExpect(model().attributeExists("modeCards"))
 			.andExpect(model().attributeExists("entrySteps"))
 			.andExpect(model().attributeExists("accountNotes"))
-			.andExpect(content().string(containsString("지금 플레이할 게임")))
-			.andExpect(content().string(containsString("아케이드 러너")))
-			.andExpect(content().string(containsString("퀵 퀴즈와 추천")))
-			.andExpect(content().string(containsString("기록은 이렇게 이어집니다")))
+			.andExpect(content().string(containsString("바로 시작할 게임")))
+			.andExpect(content().string(containsString("아케이드")))
+			.andExpect(content().string(containsString("퀴즈·추천")))
+			.andExpect(content().string(containsString("기록 연결")))
 			.andExpect(content().string(containsString(">Stats<")))
 			.andExpect(content().string(containsString(">Ranking<")))
 			.andExpect(content().string(containsString(">My Page<")))
@@ -67,15 +78,25 @@ class HomeControllerTest {
 
 	@Test
 	void homePageShowsDashboardLinkForAdminSession() throws Exception {
+		given(currentMemberAccessService.currentMember(any(HttpServletRequest.class))).willReturn(Optional.of(
+			new AuthenticatedMemberSession(1L, "worldmap_admin", MemberRole.ADMIN)
+		));
 		MockHttpSession session = new MockHttpSession();
-		session.setAttribute(MEMBER_ID_ATTRIBUTE, 1L);
-		session.setAttribute(MEMBER_NICKNAME_ATTRIBUTE, "worldmap_admin");
-		session.setAttribute(MEMBER_ROLE_ATTRIBUTE, MemberRole.ADMIN.name());
 
 		mockMvc.perform(get("/").session(session))
 			.andExpect(status().isOk())
 			.andExpect(content().string(containsString(">Dashboard<")))
 			.andExpect(content().string(containsString(">로그아웃<")))
 			.andExpect(content().string(not(containsString(">회원가입<"))));
+	}
+
+	@Test
+	void homePageHidesDashboardLinkWhenCurrentMemberIsMissing() throws Exception {
+		given(currentMemberAccessService.currentMember(any(HttpServletRequest.class))).willReturn(Optional.empty());
+		MockHttpSession session = new MockHttpSession();
+
+		mockMvc.perform(get("/").session(session))
+			.andExpect(status().isOk())
+			.andExpect(content().string(not(containsString(">Dashboard<"))));
 	}
 }

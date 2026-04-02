@@ -1,7 +1,10 @@
 package com.worldmap.recommendation.web;
 
+import com.worldmap.recommendation.application.RecommendationFeedbackContext;
 import com.worldmap.recommendation.application.RecommendationQuestionCatalog;
 import com.worldmap.recommendation.application.RecommendationSurveyService;
+import com.worldmap.recommendation.domain.RecommendationSurveyAnswers;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -17,13 +20,16 @@ public class RecommendationPageController {
 
 	private final RecommendationQuestionCatalog questionCatalog;
 	private final RecommendationSurveyService recommendationSurveyService;
+	private final RecommendationFeedbackSessionStore recommendationFeedbackSessionStore;
 
 	public RecommendationPageController(
 		RecommendationQuestionCatalog questionCatalog,
-		RecommendationSurveyService recommendationSurveyService
+		RecommendationSurveyService recommendationSurveyService,
+		RecommendationFeedbackSessionStore recommendationFeedbackSessionStore
 	) {
 		this.questionCatalog = questionCatalog;
 		this.recommendationSurveyService = recommendationSurveyService;
+		this.recommendationFeedbackSessionStore = recommendationFeedbackSessionStore;
 	}
 
 	@GetMapping("/survey")
@@ -39,7 +45,8 @@ public class RecommendationPageController {
 	public String recommend(
 		@Valid @ModelAttribute("surveyForm") RecommendationSurveyForm surveyForm,
 		BindingResult bindingResult,
-		Model model
+		Model model,
+		HttpSession httpSession
 	) {
 		if (bindingResult.hasErrors()) {
 			model.addAttribute("surveyQuestions", questionCatalog.questions());
@@ -47,7 +54,14 @@ public class RecommendationPageController {
 			return "recommendation/survey";
 		}
 
-		model.addAttribute("result", recommendationSurveyService.recommend(surveyForm.toAnswers()));
+		RecommendationSurveyAnswers answers = surveyForm.toAnswers();
+		var result = recommendationSurveyService.recommend(answers);
+		String feedbackToken = recommendationFeedbackSessionStore.store(
+			httpSession,
+			new RecommendationFeedbackContext(result.surveyVersion(), result.engineVersion(), answers)
+		);
+		model.addAttribute("result", result);
+		model.addAttribute("feedbackToken", feedbackToken);
 		return "recommendation/result";
 	}
 

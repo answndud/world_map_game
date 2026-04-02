@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -46,10 +47,11 @@ class PopulationBattleGameFlowIntegrationTest {
 
 	@Test
 	void populationBattleContinuesBeyondFiveStages() throws Exception {
-		UUID sessionId = UUID.fromString(startGame("battle-player"));
+		MockHttpSession browserSession = new MockHttpSession();
+		UUID sessionId = UUID.fromString(startGame("battle-player", browserSession));
 
 		for (int stageNumber = 1; stageNumber <= 7; stageNumber++) {
-			mockMvc.perform(get("/api/games/population-battle/sessions/{sessionId}/state", sessionId))
+			mockMvc.perform(get("/api/games/population-battle/sessions/{sessionId}/state", sessionId).session(browserSession))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.stageNumber").value(stageNumber))
 				.andExpect(jsonPath("$.options.length()").value(2))
@@ -62,6 +64,7 @@ class PopulationBattleGameFlowIntegrationTest {
 
 			MvcResult answerResult = mockMvc.perform(
 				post("/api/games/population-battle/sessions/{sessionId}/answer", sessionId)
+					.session(browserSession)
 					.contentType("application/json")
 					.content(answerPayload(stageNumber, stage.getCorrectOptionNumber()))
 			)
@@ -76,24 +79,21 @@ class PopulationBattleGameFlowIntegrationTest {
 			assertThat(answerJson.get("gameStatus").asText()).isEqualTo("IN_PROGRESS");
 		}
 
-		mockMvc.perform(get("/api/games/population-battle/sessions/{sessionId}", sessionId))
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.status").value("IN_PROGRESS"))
-			.andExpect(jsonPath("$.clearedStageCount").value(7))
-			.andExpect(jsonPath("$.totalAttemptCount").value(7))
-			.andExpect(jsonPath("$.firstTryClearCount").value(7))
-			.andExpect(jsonPath("$.stages.length()").value(8));
+		mockMvc.perform(get("/api/games/population-battle/sessions/{sessionId}", sessionId).session(browserSession))
+			.andExpect(status().isNotFound());
 	}
 
 	@Test
 	void wrongAnswerConsumesLifeAndKeepsSameStage() throws Exception {
-		UUID sessionId = UUID.fromString(startGame("battle-life"));
+		MockHttpSession browserSession = new MockHttpSession();
+		UUID sessionId = UUID.fromString(startGame("battle-life", browserSession));
 		PopulationBattleGameStage firstStage = populationBattleGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
 			.orElseThrow();
 		int wrongOptionNumber = findWrongOptionNumber(firstStage.getCorrectOptionNumber());
 
 		mockMvc.perform(
 			post("/api/games/population-battle/sessions/{sessionId}/answer", sessionId)
+				.session(browserSession)
 				.contentType("application/json")
 				.content(answerPayload(1, wrongOptionNumber))
 		)
@@ -104,7 +104,7 @@ class PopulationBattleGameFlowIntegrationTest {
 			.andExpect(jsonPath("$.nextStageNumber").value(1))
 			.andExpect(jsonPath("$.clearedStageCount").value(0));
 
-		mockMvc.perform(get("/api/games/population-battle/sessions/{sessionId}/state", sessionId))
+		mockMvc.perform(get("/api/games/population-battle/sessions/{sessionId}/state", sessionId).session(browserSession))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.stageNumber").value(1))
 			.andExpect(jsonPath("$.livesRemaining").value(2));
@@ -114,8 +114,87 @@ class PopulationBattleGameFlowIntegrationTest {
 	}
 
 	@Test
+	void playPageRendersAccessibleGameOverDialogShell() throws Exception {
+		MockHttpSession browserSession = new MockHttpSession();
+		String sessionId = startGame("battle-dialog", browserSession);
+
+		mockMvc.perform(get("/games/population-battle/play/{sessionId}", sessionId).session(browserSession))
+			.andExpect(status().isOk())
+			.andExpect(content().string(containsString("role=\"dialog\"")))
+			.andExpect(content().string(containsString("aria-describedby=\"population-battle-game-over-summary\"")))
+			.andExpect(content().string(containsString("tabindex=\"-1\"")));
+	}
+
+	@Test
+	void staleDuplicateWrongAnswerIsRejectedWithoutConsumingExtraLife() throws Exception {
+		MockHttpSession browserSession = new MockHttpSession();
+		UUID sessionId = UUID.fromString(startGame("stale-battle", browserSession));
+		PopulationBattleGameStage firstStage = populationBattleGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
+			.orElseThrow();
+		int wrongOptionNumber = firstStage.getCorrectOptionNumber() == 1 ? 2 : 1;
+		String stalePayload = answerPayload(1, firstStage.getId(), firstStage.nextAttemptNumber(), wrongOptionNumber);
+
+		mockMvc.perform(
+			post("/api/games/population-battle/sessions/{sessionId}/answer", sessionId)
+				.session(browserSession)
+				.contentType("application/json")
+				.content(stalePayload)
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.outcome").value("WRONG"))
+			.andExpect(jsonPath("$.livesRemaining").value(2));
+
+		mockMvc.perform(
+			post("/api/games/population-battle/sessions/{sessionId}/answer", sessionId)
+				.session(browserSession)
+				.contentType("application/json")
+				.content(stalePayload)
+		)
+			.andExpect(status().isConflict());
+
+		mockMvc.perform(get("/api/games/population-battle/sessions/{sessionId}/state", sessionId).session(browserSession))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.livesRemaining").value(2));
+
+		assertThat(populationBattleGameAttemptRepository.findAllByStageSessionIdOrderByStageStageNumberAscAttemptNumberAsc(sessionId))
+			.hasSize(1);
+	}
+
+	@Test
+	void duplicateCorrectAnswerIsRejectedAfterStageAdvances() throws Exception {
+		MockHttpSession browserSession = new MockHttpSession();
+		UUID sessionId = UUID.fromString(startGame("battle-duplicate", browserSession));
+		PopulationBattleGameStage firstStage = populationBattleGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
+			.orElseThrow();
+
+		mockMvc.perform(
+			post("/api/games/population-battle/sessions/{sessionId}/answer", sessionId)
+				.session(browserSession)
+				.contentType("application/json")
+				.content(answerPayload(1, firstStage.getCorrectOptionNumber()))
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.correct").value(true))
+			.andExpect(jsonPath("$.nextStageNumber").value(2));
+
+		mockMvc.perform(
+			post("/api/games/population-battle/sessions/{sessionId}/answer", sessionId)
+				.session(browserSession)
+				.contentType("application/json")
+				.content(answerPayload(1, firstStage.getCorrectOptionNumber()))
+		)
+			.andExpect(status().isConflict());
+
+		assertThat(populationBattleGameAttemptRepository.findAllByStageSessionIdOrderByStageStageNumberAscAttemptNumberAsc(sessionId))
+			.hasSize(1);
+		assertThat(populationBattleGameStageRepository.findAllBySessionIdOrderByStageNumber(sessionId))
+			.hasSize(2);
+	}
+
+	@Test
 	void threeWrongAnswersLeadToGameOver() throws Exception {
-		UUID sessionId = UUID.fromString(startGame("battle-game-over"));
+		MockHttpSession browserSession = new MockHttpSession();
+		UUID sessionId = UUID.fromString(startGame("battle-game-over", browserSession));
 		PopulationBattleGameStage firstStage = populationBattleGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
 			.orElseThrow();
 		int wrongOptionNumber = findWrongOptionNumber(firstStage.getCorrectOptionNumber());
@@ -123,6 +202,7 @@ class PopulationBattleGameFlowIntegrationTest {
 		for (int attempt = 1; attempt <= 2; attempt++) {
 			mockMvc.perform(
 				post("/api/games/population-battle/sessions/{sessionId}/answer", sessionId)
+					.session(browserSession)
 					.contentType("application/json")
 					.content(answerPayload(1, wrongOptionNumber))
 			)
@@ -132,6 +212,7 @@ class PopulationBattleGameFlowIntegrationTest {
 
 		mockMvc.perform(
 			post("/api/games/population-battle/sessions/{sessionId}/answer", sessionId)
+				.session(browserSession)
 				.contentType("application/json")
 				.content(answerPayload(1, wrongOptionNumber))
 		)
@@ -141,7 +222,7 @@ class PopulationBattleGameFlowIntegrationTest {
 			.andExpect(jsonPath("$.livesRemaining").value(0))
 			.andExpect(jsonPath("$.nextStageNumber").doesNotExist());
 
-		mockMvc.perform(get("/api/games/population-battle/sessions/{sessionId}", sessionId))
+		mockMvc.perform(get("/api/games/population-battle/sessions/{sessionId}", sessionId).session(browserSession))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.status").value("GAME_OVER"))
 			.andExpect(jsonPath("$.livesRemaining").value(0))
@@ -151,7 +232,8 @@ class PopulationBattleGameFlowIntegrationTest {
 
 	@Test
 	void restartReusesSameSessionAndResetsProgress() throws Exception {
-		UUID sessionId = UUID.fromString(startGame("battle-restart"));
+		MockHttpSession browserSession = new MockHttpSession();
+		UUID sessionId = UUID.fromString(startGame("battle-restart", browserSession));
 		PopulationBattleGameStage firstStage = populationBattleGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
 			.orElseThrow();
 		int wrongOptionNumber = findWrongOptionNumber(firstStage.getCorrectOptionNumber());
@@ -159,13 +241,14 @@ class PopulationBattleGameFlowIntegrationTest {
 		for (int attempt = 1; attempt <= 3; attempt++) {
 			mockMvc.perform(
 				post("/api/games/population-battle/sessions/{sessionId}/answer", sessionId)
+					.session(browserSession)
 					.contentType("application/json")
 					.content(answerPayload(1, wrongOptionNumber))
 			)
 				.andExpect(status().isOk());
 		}
 
-		mockMvc.perform(post("/api/games/population-battle/sessions/{sessionId}/restart", sessionId))
+		mockMvc.perform(post("/api/games/population-battle/sessions/{sessionId}/restart", sessionId).session(browserSession))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.sessionId").value(sessionId.toString()))
 			.andExpect(jsonPath("$.status").value("IN_PROGRESS"))
@@ -173,7 +256,7 @@ class PopulationBattleGameFlowIntegrationTest {
 			.andExpect(jsonPath("$.totalStages").value(1))
 			.andExpect(jsonPath("$.playPageUrl").value("/games/population-battle/play/" + sessionId));
 
-		mockMvc.perform(get("/api/games/population-battle/sessions/{sessionId}/state", sessionId))
+		mockMvc.perform(get("/api/games/population-battle/sessions/{sessionId}/state", sessionId).session(browserSession))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.stageNumber").value(1))
 			.andExpect(jsonPath("$.livesRemaining").value(3))
@@ -188,7 +271,8 @@ class PopulationBattleGameFlowIntegrationTest {
 
 	@Test
 	void resultPageHidesSelectionAndAnswerDetailsForClearedStage() throws Exception {
-		UUID sessionId = UUID.fromString(startGame("battle-result-hide"));
+		MockHttpSession browserSession = new MockHttpSession();
+		UUID sessionId = UUID.fromString(startGame("battle-result-hide", browserSession));
 		PopulationBattleGameStage firstStage = populationBattleGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
 			.orElseThrow();
 		int wrongOptionNumber = findWrongOptionNumber(firstStage.getCorrectOptionNumber());
@@ -197,6 +281,7 @@ class PopulationBattleGameFlowIntegrationTest {
 
 		mockMvc.perform(
 			post("/api/games/population-battle/sessions/{sessionId}/answer", sessionId)
+				.session(browserSession)
 				.contentType("application/json")
 				.content(answerPayload(1, wrongOptionNumber))
 		)
@@ -204,12 +289,26 @@ class PopulationBattleGameFlowIntegrationTest {
 
 		mockMvc.perform(
 			post("/api/games/population-battle/sessions/{sessionId}/answer", sessionId)
+				.session(browserSession)
 				.contentType("application/json")
 				.content(answerPayload(1, firstStage.getCorrectOptionNumber()))
 		)
 			.andExpect(status().isOk());
 
-		mockMvc.perform(get("/games/population-battle/result/{sessionId}", sessionId))
+		PopulationBattleGameStage secondStage = populationBattleGameStageRepository.findBySessionIdAndStageNumber(sessionId, 2)
+			.orElseThrow();
+		int secondStageWrongOptionNumber = findWrongOptionNumber(secondStage.getCorrectOptionNumber());
+		for (int attempt = 1; attempt <= 2; attempt++) {
+			mockMvc.perform(
+				post("/api/games/population-battle/sessions/{sessionId}/answer", sessionId)
+					.session(browserSession)
+					.contentType("application/json")
+					.content(answerPayload(2, secondStageWrongOptionNumber))
+			)
+				.andExpect(status().isOk());
+		}
+
+		mockMvc.perform(get("/games/population-battle/result/{sessionId}", sessionId).session(browserSession))
 			.andExpect(status().isOk())
 			.andExpect(content().string(containsString("1차 오답 / 하트 2")))
 			.andExpect(content().string(containsString("2차 정답 / 점수 +")))
@@ -220,9 +319,10 @@ class PopulationBattleGameFlowIntegrationTest {
 			.andExpect(content().string(not(containsString("<th>정답</th>"))));
 	}
 
-	private String startGame(String nickname) throws Exception {
+	private String startGame(String nickname, MockHttpSession browserSession) throws Exception {
 		MvcResult result = mockMvc.perform(
 			post("/api/games/population-battle/sessions")
+				.session(browserSession)
 				.contentType("application/json")
 				.content("{\"nickname\":\"" + nickname + "\"}")
 		)
@@ -240,6 +340,22 @@ class PopulationBattleGameFlowIntegrationTest {
 			  "selectedOptionNumber": %d
 			}
 			""".formatted(stageNumber, selectedOptionNumber);
+	}
+
+	private String answerPayload(
+		Integer stageNumber,
+		Long stageId,
+		Integer expectedAttemptNumber,
+		Integer selectedOptionNumber
+	) {
+		return """
+			{
+			  "stageNumber": %d,
+			  "stageId": %d,
+			  "expectedAttemptNumber": %d,
+			  "selectedOptionNumber": %d
+			}
+			""".formatted(stageNumber, stageId, expectedAttemptNumber, selectedOptionNumber);
 	}
 
 	private int findWrongOptionNumber(int correctOptionNumber) {

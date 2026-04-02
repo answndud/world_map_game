@@ -2,9 +2,11 @@ package com.worldmap.auth.web;
 
 import com.worldmap.auth.application.GuestSessionKeyManager;
 import com.worldmap.auth.application.GuestProgressClaimService;
+import com.worldmap.auth.application.CurrentMemberAccessService;
 import com.worldmap.auth.application.MemberAuthService;
 import com.worldmap.auth.application.MemberSessionManager;
 import com.worldmap.auth.domain.Member;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
@@ -20,24 +22,27 @@ public class AuthPageController {
 
 	private final MemberAuthService memberAuthService;
 	private final MemberSessionManager memberSessionManager;
+	private final CurrentMemberAccessService currentMemberAccessService;
 	private final GuestSessionKeyManager guestSessionKeyManager;
 	private final GuestProgressClaimService guestProgressClaimService;
 
 	public AuthPageController(
 		MemberAuthService memberAuthService,
 		MemberSessionManager memberSessionManager,
+		CurrentMemberAccessService currentMemberAccessService,
 		GuestSessionKeyManager guestSessionKeyManager,
 		GuestProgressClaimService guestProgressClaimService
 	) {
 		this.memberAuthService = memberAuthService;
 		this.memberSessionManager = memberSessionManager;
+		this.currentMemberAccessService = currentMemberAccessService;
 		this.guestSessionKeyManager = guestSessionKeyManager;
 		this.guestProgressClaimService = guestProgressClaimService;
 	}
 
 	@GetMapping("/signup")
-	public String signupPage(Model model, HttpSession httpSession) {
-		if (memberSessionManager.currentMember(httpSession).isPresent()) {
+	public String signupPage(Model model, HttpServletRequest request) {
+		if (currentMemberAccessService.currentMember(request).isPresent()) {
 			return "redirect:/mypage";
 		}
 		if (!model.containsAttribute("signupForm")) {
@@ -50,6 +55,7 @@ public class AuthPageController {
 	public String signUp(
 		@Valid @ModelAttribute("signupForm") SignupForm signupForm,
 		BindingResult bindingResult,
+		HttpServletRequest request,
 		HttpSession httpSession,
 		Model model
 	) {
@@ -61,7 +67,7 @@ public class AuthPageController {
 			Member member = memberAuthService.signUp(signupForm.getNickname(), signupForm.getPassword());
 			guestSessionKeyManager.currentGuestSessionKey(httpSession)
 				.ifPresent(guestSessionKey -> guestProgressClaimService.claimGuestRecords(member.getId(), guestSessionKey));
-			memberSessionManager.signIn(httpSession, member);
+			memberSessionManager.signIn(request, member);
 			return "redirect:/mypage";
 		} catch (IllegalArgumentException | IllegalStateException ex) {
 			model.addAttribute("authErrorMessage", ex.getMessage());
@@ -72,10 +78,10 @@ public class AuthPageController {
 	@GetMapping("/login")
 	public String loginPage(
 		Model model,
-		HttpSession httpSession,
+		HttpServletRequest request,
 		@RequestParam(required = false) String returnTo
 	) {
-		if (memberSessionManager.currentMember(httpSession).isPresent()) {
+		if (currentMemberAccessService.currentMember(request).isPresent()) {
 			return "redirect:/mypage";
 		}
 		if (!model.containsAttribute("loginForm")) {
@@ -89,6 +95,7 @@ public class AuthPageController {
 	public String login(
 		@Valid @ModelAttribute("loginForm") LoginForm loginForm,
 		BindingResult bindingResult,
+		HttpServletRequest request,
 		HttpSession httpSession,
 		Model model,
 		@RequestParam(required = false) String returnTo
@@ -102,7 +109,7 @@ public class AuthPageController {
 			Member member = memberAuthService.login(loginForm.getNickname(), loginForm.getPassword());
 			guestSessionKeyManager.currentGuestSessionKey(httpSession)
 				.ifPresent(guestSessionKey -> guestProgressClaimService.claimGuestRecords(member.getId(), guestSessionKey));
-			memberSessionManager.signIn(httpSession, member);
+			memberSessionManager.signIn(request, member);
 			return "redirect:" + resolvePostLoginRedirect(returnTo);
 		} catch (IllegalArgumentException | IllegalStateException ex) {
 			model.addAttribute("authErrorMessage", ex.getMessage());

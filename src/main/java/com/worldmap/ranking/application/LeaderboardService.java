@@ -22,6 +22,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations.TypedTuple;
 import org.springframework.stereotype.Service;
@@ -154,13 +156,13 @@ public class LeaderboardService {
 
 		if (recordIds.isEmpty()) {
 			orderedRecords = topRecordsFromDatabase(gameMode, scope, targetDate, sanitizedLimit);
-			syncRecordsToRedis(orderedRecords, scope, targetDate);
+			trySyncRecordsToRedis(gameMode, scope, targetDate, orderedRecords);
 		} else {
 			orderedRecords = orderedRecordsById(recordIds);
 
 			if (orderedRecords.size() != recordIds.size()) {
 				orderedRecords = topRecordsFromDatabase(gameMode, scope, targetDate, sanitizedLimit);
-				rebuildRedisKey(gameMode, scope, targetDate, orderedRecords);
+				tryRebuildRedisKey(gameMode, scope, targetDate, orderedRecords);
 			}
 		}
 
@@ -201,21 +203,27 @@ public class LeaderboardService {
 		}
 
 		long rankingScore = leaderboardRankingPolicy.rankingScore(totalScore, clearedStageCount, totalAttemptCount);
-		LeaderboardRecord record = leaderboardRecordRepository.saveAndFlush(
-			LeaderboardRecord.create(
-				runSignature,
-				sessionId,
-				gameMode,
-				playerNickname,
-				memberId,
-				guestSessionKey,
-				totalScore,
-				rankingScore,
-				clearedStageCount,
-				totalAttemptCount,
-				finishedAt
-			)
-		);
+		LeaderboardRecord record;
+		try {
+			record = leaderboardRecordRepository.saveAndFlush(
+				LeaderboardRecord.create(
+					runSignature,
+					sessionId,
+					gameMode,
+					playerNickname,
+					memberId,
+					guestSessionKey,
+					totalScore,
+					rankingScore,
+					clearedStageCount,
+					totalAttemptCount,
+					finishedAt
+				)
+			);
+		} catch (DataIntegrityViolationException ex) {
+			log.debug("Leaderboard run {} was already recorded by another request", runSignature, ex);
+			return;
+		}
 
 		runAfterCommit(() -> {
 			try {
@@ -232,8 +240,19 @@ public class LeaderboardService {
 		LocalDate targetDate,
 		Integer limit
 	) {
-		Collection<TypedTuple<String>> tuples = stringRedisTemplate.opsForZSet()
-			.reverseRangeWithScores(redisKey(gameMode, scope, targetDate), 0, limit - 1);
+		Collection<TypedTuple<String>> tuples;
+		try {
+			tuples = stringRedisTemplate.opsForZSet()
+				.reverseRangeWithScores(redisKey(gameMode, scope, targetDate), 0, limit - 1);
+		} catch (DataAccessException ex) {
+			log.warn(
+				"Failed to read {} {} leaderboard from redis. Falling back to database.",
+				gameMode,
+				scope,
+				ex
+			);
+			return List.of();
+		}
 
 		if (tuples == null || tuples.isEmpty()) {
 			return List.of();
@@ -283,6 +302,42 @@ public class LeaderboardService {
 		String redisKey = redisKey(gameMode, scope, targetDate);
 		stringRedisTemplate.delete(redisKey);
 		syncRecordsToRedis(records, scope, targetDate);
+	}
+
+	private void tryRebuildRedisKey(
+		LeaderboardGameMode gameMode,
+		LeaderboardScope scope,
+		LocalDate targetDate,
+		List<LeaderboardRecord> records
+	) {
+		try {
+			rebuildRedisKey(gameMode, scope, targetDate, records);
+		} catch (DataAccessException ex) {
+			log.warn(
+				"Failed to rebuild {} {} leaderboard redis cache after fallback read.",
+				gameMode,
+				scope,
+				ex
+			);
+		}
+	}
+
+	private void trySyncRecordsToRedis(
+		LeaderboardGameMode gameMode,
+		LeaderboardScope scope,
+		LocalDate targetDate,
+		List<LeaderboardRecord> records
+	) {
+		try {
+			syncRecordsToRedis(records, scope, targetDate);
+		} catch (DataAccessException ex) {
+			log.warn(
+				"Failed to warm {} {} leaderboard redis cache after database read fallback.",
+				gameMode,
+				scope,
+				ex
+			);
+		}
 	}
 
 	private void syncRecordsToRedis(

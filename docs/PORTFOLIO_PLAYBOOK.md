@@ -355,10 +355,15 @@
 - `GET /api/rankings/{gameMode}` 조회 API 추가
 - `/ranking` SSR 화면 추가
 - Redis 키가 비어 있을 때 RDB 상위 기록으로 fallback 조회 후 Redis 재구성
+- Redis가 내려가 있거나 읽기/재구성에 실패해도 `/api/rankings/*`, `/ranking`, `/stats` public read path는 `LeaderboardService`가 DB top run fallback으로 계속 응답하고, Redis warm/rebuild는 best-effort로만 시도하게 정리
 - `/ranking` 화면에서 15초 간격 폴링과 수동 새로고침으로 갱신 체감 추가
 - `/ranking` 화면에서 `위치/인구수`, `전체/일간` 필터 전환으로 active 보드만 크게 보는 UI 적용
+- `/ranking` 화면 자동 갱신을 "숨겨진 10개 보드 fan-out"이 아니라 "현재 보고 있는 active 보드 1개 갱신"으로 줄이고, 모드/범위 전환 직후에는 새 active 보드만 즉시 fetch하도록 정리
+- `GET /ranking` 첫 SSR은 기본 active 보드인 `location:ALL`만 실제로 읽고, 나머지 9개 보드는 placeholder 행과 `data-initial-rendered="false"` 상태로 defer render한 뒤 첫 전환 시 fetch하도록 정리
+- 일간 보드 설명 카피의 기준 날짜가 SSR 시점에 멈추지 않도록, polling 응답의 `targetDate`로 `data-copy`를 다시 동기화
 - 동점 처리 규칙을 화면에 명시하고, 현재 보드 제목/설명도 필터 상태에 맞게 갱신
 - 랭킹 통합 테스트 통과
+- `LeaderboardPageControllerTest`로 `/ranking` 첫 진입이 `LeaderboardService.getLeaderboard(LOCATION, ALL, 10)` 한 번만 호출되는지 고정
 
 이 단계에서 남은 일:
 
@@ -366,6 +371,7 @@
 
 - SSE / WebSocket 업그레이드는 `9단계 실시간성 고도화`에서 판단하고 구현한다.
 - 닉네임 외 식별자 정책은 `8단계 인증, 전적, 마이페이지`와 함께 정리한다.
+- 지금의 `기본 보드 SSR 1개 + active board polling + defer board first-load` 조합이 실제 TTFB와 사용자 체감 기준으로 충분한지 실측 후 판단한다.
 
 반드시 이해할 것:
 
@@ -420,8 +426,9 @@
 - 단순 취향 체크 대신 `기후 방향`, `사계절 변화`, `기후 적응 성향`, `집 크기 vs 중심 접근성`, `초기 적응 친화도`, `디지털 생활 편의`, `문화·여가`, `장기 기반`까지 묻는 20문항 구조로 재설계하고, 피드백 스냅샷도 20개 답변 기준으로 확장
 - `/recommendation/survey` 설문 페이지와 `/recommendation/survey` POST 결과 페이지 SSR 흐름 추가
 - 결과 페이지에서 설문 입력 요약, top 3 국가, 서버 계산 이유 3개 노출
-- 결과 페이지에서 추천 결과 자체는 저장하지 않고, `1~5점 만족도 + surveyVersion + engineVersion + 선택한 20개 답변`만 익명 피드백으로 수집
-- `/dashboard/recommendation/feedback` SSR 페이지와 `/api/recommendation/feedback/summary` API로 버전 조합별 평균 점수, 응답 수, 점수 분포 조회 추가
+- 추천 결과 top 3 자체는 저장하지 않고, 결과 페이지마다 서버 세션에 `feedbackToken -> 추천 문맥(surveyVersion + engineVersion + 선택한 20개 답변)`을 잠깐 저장한 뒤 `1~5점 만족도`만 익명 피드백으로 수집
+- 추천 결과 만족도 입력은 커스텀 `aria-pressed` 버튼 묶음 대신 `fieldset + radio + live region`으로 다시 정리해, 키보드와 스크린리더에서도 실제 단일 선택 점수 입력으로 동작하게 맞춤
+- `/dashboard/recommendation/feedback` SSR 페이지와 admin session으로 보호된 `/api/recommendation/feedback/summary` API로 버전 조합별 평균 점수, 응답 수, 점수 분포 조회 추가
 - 추천 기능을 홈 화면과 공통 헤더 내비게이션에 연결
 - 공통 CSS에서 버튼, 패널, 입력창, 모달, 테이블 셸, 배지의 모서리를 완전한 사각형으로 통일하고, 스타일 버전 쿼리까지 적용해 실제 반영 경로를 함께 정리
 - 공통 shell에 dark/light theme toggle을 추가하고, `html[data-theme] + CSS 변수 + localStorage` 조합으로 테마 상태를 사이트 전체에서 유지
@@ -554,8 +561,8 @@
 이 단계에서 남은 일:
 
 - baseline은 18 / 18, anchor drift 0개까지 맞췄으니, 다음엔 6단계를 닫고 실시간성 고도화나 Level 1 polish로 넘어갈지 판단
-- 블로그는 연대기 성격이 강하므로, 현재 코드 재현이 목적일 때는 `blog/50-current-state-rebuild-map.md` 기준으로 최신 글과 구버전 글을 구분해 읽는 흐름을 유지
-- local demo / blog 재현성은 `blog/50-current-state-rebuild-map.md`의 실행 체크리스트와 `docs/LOCAL_DEMO_BOOTSTRAP.md`를 함께 기준으로 본다
+- 블로그는 이제 ERP형 구조를 참고한 `허브 4개 + 본편 18개`, 총 22파일의 재현 중심 시리즈로 고정한다. 공개용 진입은 `blog/README.md`, 순서 파악은 `blog/00_series_plan.md`, 글 품질 기준은 `blog/00_quality_checklist.md`, 재현형 섹션 규칙은 `blog/00_rebuild_guide.md`를 기준으로 본다
+- local demo / blog 재현성은 `blog/00_rebuild_guide.md`, `blog/18-production-verification-and-demo-interview-pack.md`, `docs/LOCAL_DEMO_BOOTSTRAP.md`를 함께 기준으로 본다
 - 현재는 `/dashboard/recommendation/feedback`이 그 판단을 운영 메모로 내려주므로, 다음 실험은 메모가 가리키는 우선순위 하나만 좁게 집행
 - 실험 결과를 snapshot과 비교해 어떤 시나리오 순위가 움직였는지 문서화
 - rank drift가 큰 시나리오 중 실제 만족도 저점과 겹치는 조합이 있는지 확인
@@ -588,22 +595,36 @@
 - 회원가입/로그인 시 현재 브라우저 세션의 guest 기록만 계정으로 귀속하는 흐름 설계
 - `member`, `MemberRole`, `MemberRepository`를 추가해 단순 계정 도메인 뼈대를 먼저 만들었다
 - `GuestSessionKeyManager`가 같은 브라우저 세션 안에서 공통 `guestSessionKey`를 발급/유지하도록 연결했다
-- 위치/인구수 게임 세션과 `leaderboard_record`가 모두 `memberId` 또는 `guestSessionKey`로 소유자를 저장하도록 ownership 필드를 추가했다
-- 같은 브라우저 세션으로 위치/인구수 게임을 시작하면 동일 `guestSessionKey`를 공유하고, 게스트 게임 종료 시 랭킹 레코드도 같은 ownership을 유지하는 테스트를 고정했다
+- 위치/인구수/수도/국기/인구 비교 퀵 배틀 게임 세션과 `leaderboard_record`가 모두 `memberId` 또는 `guestSessionKey`로 소유자를 저장하도록 ownership 필드를 추가했다
+- 같은 브라우저 세션으로 다섯 게임을 시작하면 동일 `guestSessionKey`를 공유하고, 게스트 게임 종료 시 랭킹 레코드도 같은 ownership을 유지하는 테스트를 고정했다
 - BCrypt 기반 `MemberPasswordHasher`, `MemberAuthService`, `MemberSessionManager`를 추가해 `닉네임 + 비밀번호` 단순 계정의 세션 로그인 흐름을 만들었다
 - `/signup`, `/login`, `/logout` SSR 폼과 `/mypage`의 guest 유도 / 로그인 상태 shell 분기를 추가했다
-- 로그인 사용자가 새로 시작하는 위치/인구수 게임은 request nickname 대신 계정 닉네임을 사용하고, 세션/랭킹 기록을 `memberId` ownership으로 저장하도록 연결했다
+- 로그인 사용자가 새로 시작하는 다섯 게임은 request nickname 대신 계정 닉네임을 사용하고, 세션/랭킹 기록을 `memberId` ownership으로 저장하도록 연결했다
 - `GuestProgressClaimService`를 추가해 회원가입/로그인 직후 현재 브라우저의 `guestSessionKey` 기록을 계정 ownership으로 귀속하도록 연결했다
+- claim 범위는 현재 위치/인구수/수도/국기/인구 비교 퀵 배틀 5개 게임 세션과 `leaderboard_record` 전체다. signup/login 통합 테스트로 같은 브라우저에서 시작한 모든 guest 세션이 한 번에 같은 `memberId`로 귀속되는지 고정했다
 - guest로 저장됐던 게임 세션 / 랭킹 레코드는 claim 시 `memberId`를 채우고 `guestSessionKey`는 비워 ownership을 단일화한다
-- `MyPageService`를 추가해 `/mypage`가 로그인 사용자의 `leaderboard_record`를 읽어 총 완료 플레이 수, 모드별 최고 점수, 최고 랭킹, 최근 플레이 10개를 보여주도록 연결했다
-- `/mypage`는 raw game session 전체보다 먼저 `leaderboard_record`를 읽는다. 완료된 run 단위가 이미 정규화돼 있어 최고 기록과 최근 기록을 설명하기 쉽고, 당시 랭킹 위치도 바로 연결할 수 있기 때문이다
+- `GameSessionAccessContext`, `GameSessionAccessContextResolver`를 추가해 게임 `play / state / answer / restart / result` 요청이 현재 `memberId` 또는 같은 브라우저의 `guestSessionKey` ownership과 일치하는 세션만 읽도록 묶었다
+- access context는 `memberId`와 `guestSessionKey`를 함께 들고 간다. 그래서 로그인 직후 아직 claim되지 않은 same-browser guest 세션도 이어서 접근할 수 있고, 다른 브라우저에서 `sessionId`만 알아도 열 수는 없게 된다
+- 게임 결과는 terminal resource로 다시 정의했다. `READY`, `IN_PROGRESS` 상태에서는 `/result` API와 결과 페이지가 404를 돌려 진행 중 정답과 시도 이력이 먼저 노출되지 않는다
+- `MemberSessionManager.signIn()`은 로그인 / 회원가입 성공 시 `changeSessionId()`를 호출해 session fixation 위험을 줄인다
+- 무결성 1차로 각 게임 session repository에 write 전용 `findByIdForUpdate()`를 추가하고, `submitAnswer` / `restartGame`는 session row를 잠근 뒤 처리하도록 바꿨다. 같은 `sessionId`의 write가 직렬화되므로 attempt 번호 계산, 다음 stage 생성, restart reset이 서로 충돌해 500으로 번지는 위험을 먼저 줄였다
+- public 플레이 화면은 state 응답에서 `stageId`, `expectedAttemptNumber`를 함께 받고, 답안 제출 시 그대로 돌려보낸다. 서버는 현재 stage/attempt와 다르면 stale submit으로 보고 `409`를 반환하므로, 같은 오답 payload 재전송이 life를 두 번 깎는 문제를 막을 수 있다
+- `LeaderboardService`는 `runSignature` unique 충돌을 no-op로 삼도록 바뀌어, terminal 상태 중복 submit이 들어와도 같은 run의 leaderboard row를 한 번만 남긴다
+- `MyPageService`를 추가해 `/mypage`가 로그인 사용자의 `leaderboard_record`를 읽어 총 완료 플레이 수, 모드별 최고 점수, 현재 전체 순위, 최근 플레이 10개를 보여주도록 연결했다
+- `/mypage`는 raw game session 전체보다 먼저 `leaderboard_record`를 읽는다. 완료된 run 단위가 이미 정규화돼 있어 최고 기록과 최근 기록을 설명하기 쉽고, 최근 플레이/베스트 카드의 현재 전체 순위도 같은 read model에서 계산할 수 있기 때문이다
 - guest로 한 판 끝낸 뒤 회원가입하면, 귀속된 `leaderboard_record`가 즉시 `/mypage` 최근 플레이와 최고 기록에 반영되는 통합 테스트를 고정했다
 - `/admin/**`는 `AdminAccessInterceptor`가 보호하고, 비로그인 사용자는 `/login?returnTo=...`로 보내며, 로그인한 일반 사용자(`USER`)는 403으로 막는다
 - admin 접근 제어는 각 컨트롤러 메서드가 아니라 인터셉터에 뒀다. 이 규칙은 비즈니스 상태 변경보다 라우트 입구의 공통 진입 정책이기 때문이다
+- `AdminAccessGuard`는 세션의 `memberId`로 현재 회원을 다시 조회해 `role`을 재확인하고, 세션 닉네임/role도 현재 DB 값으로 동기화한다. 그래서 admin 권한이 회수된 뒤 기존 세션이 남아 있어도 `/dashboard/**`와 `/api/recommendation/feedback/summary`는 즉시 막힌다
+- public `site-header`도 `SiteHeaderModelAdvice`를 통해 같은 `AdminAccessGuard`를 사용한다. 그래서 `Dashboard` 링크 노출 역시 세션 role 문자열이 아니라 현재 DB role 기준으로 맞춰지고, 권한 강등/승격이 홈 / Stats / Ranking / My Page 같은 SSR shell에 바로 반영된다
+- `CurrentMemberAccessService`는 admin 전용 guard 밖에서도 공통 current-member source로 쓴다. 홈 hero의 계정 CTA, `/login`·`/signup` GET 진입 분기, `/mypage`, 5개 게임 시작 페이지, 세션 시작 API, `GameSessionAccessContextResolver`는 세션 캐시가 아니라 이 서비스가 확인한 현재 회원 row를 기준으로 움직인다
+- 같은 request 안에서는 `CurrentMemberAccessService`가 request attribute cache를 써서 current member를 한 번만 푼다. 그래서 admin interceptor + SSR advice, SSR advice + auth controller, SSR advice + game access context처럼 계층이 겹쳐도 DB 재조회 기준은 유지하면서 중복 read는 줄일 수 있다
 - 로그인 폼은 `returnTo`를 받아, admin 사용자가 로그인 후 원래 보려던 `/admin` 경로로 바로 돌아오도록 정리했다
 - `/mypage`는 finished session에 속한 stage를 다시 읽어 모드별 `클리어 Stage 수`, `1트 클리어율`, `평균 시도 수`를 추가로 보여준다
 - 이 성향 지표는 `leaderboard_record`가 아니라 raw stage 집계에서 나온다. 최고 점수/최근 완료 이력과 달리, 플레이 방식 자체는 stage 시도 수를 봐야 설명할 수 있기 때문이다
 - `MyPageServiceIntegrationTest`로 위치/인구수 게임을 실제로 한 판씩 끝낸 뒤, raw stage 기반 성향 지표가 기대값으로 계산되는지 고정했다
+- `/mypage` read model은 현재 `bestRuns`, `modePerformances`, `recentPlays` per-mode 리스트 구조로 정리돼, 위치/수도/국기/인구 비교/인구수 5개 게임을 같은 템플릿 iteration으로 렌더링한다
+- `MyPageServiceIntegrationTest`, `MyPageControllerTest`, `AuthFlowIntegrationTest`로 5개 게임 노출, 현재 전체 순위 라벨, 회원가입 직후 `/mypage` 연결이 함께 유지되는지 고정했다
 - `MemberCredentialPolicy`로 닉네임 / 비밀번호 규칙을 회원가입과 admin bootstrap이 함께 재사용하도록 정리했다
 - `AdminBootstrapProperties`, `AdminBootstrapService`, `AdminBootstrapInitializer`를 추가해 서버 시작 시 환경변수 기준 운영용 admin 계정을 자동 생성하거나 기존 계정을 `ADMIN`으로 승격하도록 연결했다
 - bootstrap admin은 `WORLDMAP_ADMIN_BOOTSTRAP_ENABLED`, `WORLDMAP_ADMIN_BOOTSTRAP_NICKNAME`, `WORLDMAP_ADMIN_BOOTSTRAP_PASSWORD`로 제어한다
@@ -626,6 +647,9 @@
 - hero는 서비스 소개, 계정 연결, 공개 `Stats` 진입만 맡고, 각 모드별 직접 이동은 본문 카드와 `My Page`/`Stats` 흐름으로만 연결해 첫 진입 구조를 단순화했다
 - 최근 디자인 패스 이후 public 화면 테스트를 새 카피와 레이아웃 기준으로 다시 맞추고, 홈 / 추천 / 랭킹 / Stats / My Page의 공통 shell 안정화 여부를 먼저 확인하는 작은 안정화 조각을 별도로 두었다
 - `DemoBootstrapIntegrationTest`, `StatsPageControllerTest`로 local dummy data bootstrap과 public stats 렌더링을 고정했다
+- 게임 세션 API와 `play/result` 페이지는 현재 브라우저의 access context로 ownership을 다시 검사한다. 로그인 사용자는 `memberId`, 비회원은 `guestSessionKey`가 맞아야 세션 조회 / 답안 제출 / 재시작 / 결과 확인이 가능하다
+- 게임 결과는 terminal resource로 다시 정의했다. `READY`나 `IN_PROGRESS` 상태에서는 `/result` API와 결과 페이지를 404로 막아, 플레이 중간에 정답과 시도 기록을 먼저 읽는 치팅 경로를 닫았다
+- 회원가입 / 로그인 성공 시 `MemberSessionManager.signIn()`이 `changeSessionId()`를 호출해 기존 단순 세션 로그인 구조에서도 session fixation을 줄이도록 정리했다
 
 이후 고도화 아이디어:
 
@@ -634,6 +658,8 @@
   - 모드별 누적 플레이 시간
   - 실패 run 포함 정확도
   - 시즌/기간 필터
+- restart 후 늦게 도착한 오래된 answer packet까지 완전히 막기 위한 `run generation token` 또는 restart nonce 설계
+- prod/local profile, startup initializer, readiness 기준을 운영 안전성 관점에서 재점검
 - admin 운영 도구 확장
   - build 상태
   - 랭킹 캐시 점검
@@ -661,6 +687,9 @@
 - 왜 홈 hero에서 개별 모드 CTA를 반복하지 않고, 모드 선택을 카드 영역 한 곳으로 모으는 것이 더 자연스러운지
 - 왜 홈 hero는 서비스 소개와 계정/Stats 진입만 맡고, 실제 모드 선택은 본문으로 내리는 편이 구조적으로 더 깔끔한지
 - 왜 큰 디자인 패스 직후에는 기능 추가보다 먼저 컨트롤러/SSR 테스트를 새 카피 기준으로 다시 고정해야 하는지
+- 왜 게임 세션 접근 권한 검증은 컨트롤러 복붙이 아니라 서비스 진입 시점의 공통 access context 비교로 두는 편이 더 설명 가능한지
+- 왜 게임 결과는 “언제든 읽을 수 있는 세션 상태”가 아니라 “종료 후에만 생기는 결과 리소스”로 보는 편이 치팅 방지와 API 의미 모두에 더 맞는지
+- 왜 단순 세션 로그인 구조를 유지하더라도 로그인/회원가입 성공 순간에 세션 ID를 회전시켜야 하는지
 
 면접 포인트:
 
@@ -675,6 +704,9 @@
 - 왜 일반 사용자에게는 `/dashboard` 대신 공개 `/stats`를 별도로 열어 두었는가
 - DB가 비어도 local demo 계정과 샘플 run을 어떻게 다시 재현하는가
 - 왜 홈 첫 화면에서 정보 카드, 모드 목록, 직접 CTA를 중복 노출하지 않고 한 번씩만 보여 주는 편이 더 나은가
+- 왜 guest 플레이를 허용하는 구조에서도 현재 브라우저 ownership과 맞는 세션만 읽게 해야 하는가
+- 왜 `/result`를 `IN_PROGRESS` 때도 열어 두면 치팅 경로가 되는가
+- 왜 Spring Security 전체 도입 전에도 `changeSessionId()`와 ownership guard만으로 먼저 막아야 할 보안 구멍이 있는가
 
 완료 기준:
 
@@ -756,23 +788,50 @@
 - [docs/ERD.md](/Users/alex/project/worldmap/docs/ERD.md)로 핵심 테이블과 관계 고정
 - [docs/REQUEST_FLOW_GUIDE.md](/Users/alex/project/worldmap/docs/REQUEST_FLOW_GUIDE.md)로 대표 요청 흐름 3개를 시퀀스로 정리
 - [docs/PRESENTATION_PREP.md](/Users/alex/project/worldmap/docs/PRESENTATION_PREP.md)로 3분 소개, 10분 기술 설명, 예상 질문 정리
+- [README.md](/Users/alex/project/worldmap/README.md)는 배포용 공개 소개 문서 역할에 맞게 다시 잘랐다. 이제 README는 `제품 소개 / 현재 범위 / 아키텍처 / 빠른 실행 / 검증 레일 / 배포 상태 / 문서 안내`만 남기고, 단계별 구현 순서와 긴 설계 설명은 `docs/`와 `blog/`로 분리한다
+- [blog/README.md](/Users/alex/project/worldmap/blog/README.md), [blog/00_series_plan.md](/Users/alex/project/worldmap/blog/00_series_plan.md), [blog/00_rebuild_guide.md](/Users/alex/project/worldmap/blog/00_rebuild_guide.md), [blog/00_quality_checklist.md](/Users/alex/project/worldmap/blog/00_quality_checklist.md), 본편 `01~18`을 ERP형 재현 시리즈 기준으로 다시 썼다. 현재 `blog/` top-level은 `허브 4개 + 본편 18개 = 22파일`이고, 본편 경계도 `guest ownership`, `simple auth`, `mypage/stats`, `dashboard`, `scope reset + new games`, `runtime`, `integrity`, `verification + demo`처럼 문제 단위로 다시 나뉜다
+- 재현형 본편의 공통 포맷도 강화했다. 핵심 글은 `이번 글에서 풀 문제 -> 최종 도착 상태 -> 먼저 알아둘 개념 -> 이번 글에서 다룰 파일 -> 핵심 도메인 모델 / 상태 -> 설계 구상 -> 코드 설명 -> 요청 흐름 / 상태 변화 -> 실패 케이스 / 예외 처리 -> 테스트 -> 회고 -> 취업 포인트 -> 시작 상태 -> 구현 체크리스트 -> 실행/검증 명령 -> 산출물 체크리스트 -> 글 종료 체크포인트 -> 자주 막히는 지점` 순서로 현재 코드베이스 재현을 안내한다
+- [blog/11-guest-session-ownership-and-progress-claim.md](/Users/alex/project/worldmap/blog/11-guest-session-ownership-and-progress-claim.md)도 현재 코드 기준으로 다시 썼다. `11`은 `GuestSessionKeyManager`의 `ensure/current/rotate` lifecycle, 다섯 게임 start API의 `currentMember -> startMemberGame / ensureGuestSessionKey -> startGuestGame` 분기, `BaseGameSession`과 `LeaderboardRecord`의 owner 필드, `GuestProgressClaimService`가 다섯 게임 session과 leaderboard row를 함께 claim하는 이유, signup/login 직후 `claim -> signIn(changeSessionId)` 순서, logout의 guest boundary 회전, `CurrentMemberAccessService` 기반 stale member fallback까지 묶어 guest ownership 전체를 다시 구현할 수 있는 수준으로 정리한다
+- [blog/12-simple-auth-member-session-and-admin-entry.md](/Users/alex/project/worldmap/blog/12-simple-auth-member-session-and-admin-entry.md)도 현재 코드 기준으로 다시 썼다. `12`는 `Member`/`MemberRole` 최소 모델, `MemberCredentialPolicy`와 `MemberPasswordHasher`, `MemberAuthService`의 signup/login 규칙, `MemberSessionManager`의 `changeSessionId()`와 session snapshot, `AuthPageController`의 SSR form + `returnTo` safe redirect, `AdminBootstrapProperties`/`Service`/`Initializer`의 create-or-promote bootstrap admin, `AdminAccessInterceptor`/`AdminAccessGuard`/`CurrentMemberAccessService`를 통한 `/dashboard` current-role 재검증까지 묶어 simple auth와 admin entry를 실제로 다시 세울 수 있는 수준으로 정리한다
+- [blog/13-mypage-and-public-stats-read-models.md](/Users/alex/project/worldmap/blog/13-mypage-and-public-stats-read-models.md)도 현재 코드 기준으로 다시 썼다. `13`은 `SiteHeaderModelAdvice`에서 current member를 SSR model에 주입하는 방식, `MyPageService`가 leaderboard row와 다섯 게임 stage raw data를 함께 읽어 `bestRuns`, `modePerformances`, `recentPlays`를 조합하는 이유, `currentRank`가 historical rank가 아니라 현재 보드 기준이라는 점, `ServiceActivityService`가 member/guest distinct 시작 수와 leaderboard 완료 수를 분리해 집계하는 규칙, `StatsPageController`가 `ServiceActivityView + daily Top 3`만 public에 노출하고 `AdminDashboardService`는 같은 source 위에 운영용 recommendation/route/focus item을 얹는 차이까지 묶어 `/mypage`와 `/stats` read model을 실제로 다시 세울 수 있는 수준으로 정리한다
+- [blog/14-dashboard-admin-surface-and-operations-cards.md](/Users/alex/project/worldmap/blog/14-dashboard-admin-surface-and-operations-cards.md)도 현재 코드 기준으로 다시 썼다. `14`는 `AdminDashboardService`가 `ServiceActivityView`, 현재 survey/engine 버전, route card, focus item을 묶어 `/dashboard` 허브를 만드는 방식, `AdminRecommendationOpsReviewService`가 current version feedback와 baseline 결과를 같이 읽어 `피드백 더 수집 / weak scenario 정리 / 문구 점검 / rank drift / 현재 엔진 유지` 중 다음 액션을 계산하는 규칙, `AdminPersonaBaselineService`가 18개 시나리오를 weak/anchor drift/active signal로 분류하는 이유, `AdminPageController`와 세 개의 admin SSR 템플릿, legacy `/admin` redirect, `AdminAccessInterceptor`와 current-role 재검증이 필요한 운영 경계까지 묶어 `/dashboard` 운영 surface를 실제로 다시 세울 수 있는 수준으로 정리한다
+- [blog/15-public-scope-reset-and-new-games-lineup.md](/Users/alex/project/worldmap/blog/15-public-scope-reset-and-new-games-lineup.md)도 현재 코드 기준으로 다시 썼다. `15`는 `GameLevelRollbackInitializer`가 `worldmap.legacy.rollback.enabled=true`일 때만 legacy `LEVEL_2` row, old leaderboard constraint, Redis `l2` 키를 정리하는 정확한 범위, `CapitalGameService`와 `PopulationBattleGameService`, `FlagGameService`가 같은 endless run contract와 stale submit 방어를 재사용하는 방식, `FlagAssetCatalog`와 `FlagQuestionCountryPoolService`가 36개 playable pool과 대륙 분포를 어떻게 고정하는지, `HomeController`가 현재 public lineup을 어떤 카드 순서와 route로 선언하는지, 그리고 이 단계가 `새 게임 추가`보다 `public scope reset + regrouping`에 더 가깝다는 점까지 묶어 public lineup 재정렬을 실제로 다시 세울 수 있는 수준으로 정리한다
+- 추가 cross-review로 [blog/11-guest-session-ownership-and-progress-claim.md](/Users/alex/project/worldmap/blog/11-guest-session-ownership-and-progress-claim.md)부터 [blog/15-public-scope-reset-and-new-games-lineup.md](/Users/alex/project/worldmap/blog/15-public-scope-reset-and-new-games-lineup.md)까지의 `테스트`, `현재 구현의 한계`, `운영/권한/라인업 설명의 범위`를 다시 다듬었다. 이제 ownership, simple auth, `/mypage`/`/stats`, `/dashboard`, public lineup 글도 `대표 테스트가 직접 고정하는 범위`, `별도 브라우저 확인이나 수동 운영 판단이 필요한 범위`, `의도적으로 남겨 둔 제품 한계`를 더 명확하게 구분한다
+- 후속 보강으로 baseline/data/game foundation 축인 [blog/02-gradle-spring-boot-ssr-bootstrap.md](/Users/alex/project/worldmap/blog/02-gradle-spring-boot-ssr-bootstrap.md), [blog/03-docker-postgres-redis-dev-environment.md](/Users/alex/project/worldmap/blog/03-docker-postgres-redis-dev-environment.md), [blog/04-application-yml-and-profile-strategy.md](/Users/alex/project/worldmap/blog/04-application-yml-and-profile-strategy.md), [blog/05-country-seed-and-reference-data-pipeline.md](/Users/alex/project/worldmap/blog/05-country-seed-and-reference-data-pipeline.md), [blog/06-game-package-structure-and-shared-session-contract.md](/Users/alex/project/worldmap/blog/06-game-package-structure-and-shared-session-contract.md), [blog/08-population-quiz-arcade-loop-and-option-generation.md](/Users/alex/project/worldmap/blog/08-population-quiz-arcade-loop-and-option-generation.md)도 같은 19섹션 재현형 포맷과 현재 코드/테스트 기준으로 다시 써서, 앞쪽 챕터만 읽어도 build baseline, local/test/prod profile, country seed, shared game contract, population vertical slice를 실제로 재구현할 수 있게 했다
+- 추가 cross-review로 [blog/01-why-worldmap-server-driven-game-platform.md](/Users/alex/project/worldmap/blog/01-why-worldmap-server-driven-game-platform.md)부터 [blog/05-country-seed-and-reference-data-pipeline.md](/Users/alex/project/worldmap/blog/05-country-seed-and-reference-data-pipeline.md)까지의 `최종 도착 상태`, `테스트`, `현재 구현의 한계`를 다시 다듬었다. 이제 앞쪽 baseline 글들도 `자동으로 증명되는 범위`, `사람이 수동으로 확인해야 하는 범위`, `글이 링크한 source of truth를 함께 열어야 닫히는 범위`를 더 정직하게 구분한다
+- 대표 앵커 글 [blog/07-location-game-session-stage-attempt-loop.md](/Users/alex/project/worldmap/blog/07-location-game-session-stage-attempt-loop.md), [blog/09-redis-leaderboard-and-ranking-page.md](/Users/alex/project/worldmap/blog/09-redis-leaderboard-and-ranking-page.md)도 다시 손봤다. `07`은 now-hardening 이후의 ownership, stale submit, terminal result, accessible modal, 결과 노출 정책까지 포함한 현재 위치 게임 계약을 설명하고, `09`는 `LeaderboardRecord`, `runSignature`, after-commit Redis sync, 5개 게임 terminal write callsite, `/stats` shared read path, initial SSR 1보드 전략, active board polling, Redis unavailable fallback까지 현재 저장소 기준으로 다시 구현할 수 있는 수준으로 밀도를 올렸다
+- [blog/10-deterministic-recommendation-engine-and-feedback-loop.md](/Users/alex/project/worldmap/blog/10-deterministic-recommendation-engine-and-feedback-loop.md)도 현재 코드 기준으로 다시 썼다. `10`은 `survey-v4 / engine-v20`, 20문항 enum survey form lifecycle, 30개 seed-backed country profile join, one-time feedback token/session context, `recommendation_feedback` answer snapshot 저장, admin feedback summary와 persona baseline review, 18개 offline scenario coverage/snapshot까지 recommendation의 전체 품질 루프를 다시 구현할 수 있는 수준으로 정리한다
+- 추가 cross-review로 [blog/06-game-package-structure-and-shared-session-contract.md](/Users/alex/project/worldmap/blog/06-game-package-structure-and-shared-session-contract.md)부터 [blog/10-deterministic-recommendation-engine-and-feedback-loop.md](/Users/alex/project/worldmap/blog/10-deterministic-recommendation-engine-and-feedback-loop.md)까지의 `테스트`, `현재 구현의 한계`, `브라우저/운영 검증과의 경계`를 다시 다듬었다. 이제 공통 session contract, 위치/인구수 vertical slice, leaderboard, recommendation 글도 `대표 integration test가 직접 고정하는 범위`, `별도 browser E2E나 수동 운영 절차를 같이 봐야 하는 범위`, `아직 남은 한계`를 더 명확하게 구분한다
+- [blog/16-production-runtime-redis-session-and-ecs-deploy-prep.md](/Users/alex/project/worldmap/blog/16-production-runtime-redis-session-and-ecs-deploy-prep.md)도 현재 코드 기준으로 다시 썼다. `16`은 Java 25 multi-stage image, prod runtime contract 표, local/test/prod session 분기, `WMSESSION`/`worldmap:session` Redis session 규칙, ECS task definition env/secrets matrix, `IMAGE_URI` 우선과 `ECR_REPOSITORY + IMAGE_TAG` fallback을 포함한 renderer 입력 계약, workflow의 13개 repo variable 입력, `workflow_dispatch` 단일 트리거와 input 0개 구조, concurrency와 `wait-for-service-stability`, preflight가 검사하는 필수 파일 3개와 fixture/live variable 해석 범위, readiness group 설정값과 endpoint 노출은 고정하지만 contributor payload end-to-end smoke는 아직 없다는 한계, ALB readiness path를 `/actuator/health/readiness`로 수동 맞춰야 하는 현재 한계, `WORLDMAP_PUBLIC_BASE_URL=... ./gradlew publicUrlSmokeTest`까지 포함해 실제 첫 배포 재현 경로를 정리한다
+- [blog/17-game-integrity-current-member-and-role-revalidation.md](/Users/alex/project/worldmap/blog/17-game-integrity-current-member-and-role-revalidation.md)도 현재 코드 기준으로 다시 썼다. `17`은 `GameSessionAccessContext`, `GameSessionAccessContextResolver`, `GameSubmissionGuard`, 각 게임 service의 `findByIdForUpdate + assertCanAccess + assertResultAccessible`, `LeaderboardService`의 `runSignature` dedupe, `CurrentMemberAccessService`의 current-member/request-cache 규칙, `AdminAccessGuard`와 `AdminAccessInterceptor`, `SiteHeaderModelAdvice`의 SSR dashboard-link visibility까지 묶어 game integrity와 current member/current role 재검증을 실제 hardening 가이드 수준으로 정리한다. 다만 stale-submit `409`는 현재 public client가 `stageId + expectedAttemptNumber`를 echo하는 계약 기준으로 설명하고, 헤더 visibility는 `AdminAccessGuard`를 직접 공유하지 않고 같은 current-member source를 재사용하는 수준까지 정직하게 구분한다
+- [blog/18-production-verification-and-demo-interview-pack.md](/Users/alex/project/worldmap/blog/18-production-verification-and-demo-interview-pack.md)도 현재 운영 기준으로 다시 썼다. `18`은 `test`/`browserSmokeTest`/`publicUrlSmokeTest`의 책임 분리, browser-smoke profile의 Redis-free 전제, `BrowserSmokeE2ETest`가 실제로 고정하는 범위를 `대표 public 진입 경로 + ranking/stats shell + terminal modal keyboard contract`로 한정해 설명한 점, `PublicUrlSmokeE2ETest`가 heading/title/status/navigation timing까지만 보고 local fallback timing은 production 성능 근거가 아니라는 점, Redis fallback과 public URL fallback의 차이, `verify.yml`의 trigger 3개와 CI job 2개, local demo bootstrap의 fresh DB 기준과 rerun 시 `>= 5`로 읽어야 하는 feedback baseline, `LOCAL_DEMO_BOOTSTRAP`/`ARCHITECTURE_OVERVIEW`/`ERD`/`REQUEST_FLOW_GUIDE`/`PRESENTATION_PREP`의 interview pack 역할까지 포함해 production-ready 마감 패키지를 다시 세울 수 있는 수준으로 정리한다
+- 허브 문서 [blog/README.md](/Users/alex/project/worldmap/blog/README.md), [blog/00_rebuild_guide.md](/Users/alex/project/worldmap/blog/00_rebuild_guide.md), [blog/00_series_plan.md](/Users/alex/project/worldmap/blog/00_series_plan.md), [blog/00_quality_checklist.md](/Users/alex/project/worldmap/blog/00_quality_checklist.md)도 현재 수준에 맞게 다시 맞췄다. 이제 `19개 섹션`은 최대치가 아니라 최소 teaching skeleton로 정의되고, `16 -> 17 -> 18`은 production-ready trilogy로 읽히며, checklist도 긴 글의 길 찾기와 production-ready bundle 일관성까지 보게 한다
+- 허브 문서의 재현 약속도 더 정직하게 다시 정의했다. 이제 `blog/`는 저장소와 분리된 독립 교과서가 아니라, `글 + 링크된 코드/테스트/설정 파일`을 함께 따라가게 만드는 재현 허브로 설명한다. 특히 [blog/00_rebuild_guide.md](/Users/alex/project/worldmap/blog/00_rebuild_guide.md), [blog/00_series_plan.md](/Users/alex/project/worldmap/blog/00_series_plan.md), [blog/00_quality_checklist.md](/Users/alex/project/worldmap/blog/00_quality_checklist.md)는 `코드로 존재하는 사실`, `테스트로 자동 고정된 사실`, `사람이 수동으로 맞춰야 하는 운영 절차`, `아직 남은 한계`를 섞어 쓰지 말아야 한다는 기준을 허브 차원에서 명시한다
+- 마지막 수평 검수로 본편 `01~18`의 첫머리, `테스트`, `현재 구현의 한계`, `실행 / 검증 명령`을 한 번 더 점검했다. 이제 baseline, core game, auth/read model, production-ready 글이 모두 같은 규칙으로 `코드로 존재하는 사실`, `대표 테스트가 직접 고정하는 범위`, `브라우저/운영에서 따로 확인해야 하는 범위`, `아직 남겨 둔 한계`를 구분해서 말한다
 - [docs/DEPLOYMENT_RUNBOOK_AWS_ECS.md](/Users/alex/project/worldmap/docs/DEPLOYMENT_RUNBOOK_AWS_ECS.md)로 계정 생성, 인프라 선택, 시나리오별 비용, 수동 배포, CI/CD, 운영, 롤백까지 초보자 기준 런북 정리
 - 런북 2차 보정으로 `Java 25 배포 이미지 결정`, `forwarded headers`, `JVM 메모리 옵션`, `graceful shutdown`, `Secrets Manager/SSM`, `public IPv4 비용`, `ElastiCache TLS`, `ECR lifecycle policy`를 첫 배포 판단 항목으로 보강
-- [Dockerfile](/Users/alex/project/worldmap/Dockerfile)과 [.dockerignore](/Users/alex/project/worldmap/.dockerignore)를 추가해 Java 25 기준 multi-stage 컨테이너 빌드를 실제로 검증
+- 로컬 이미지 검증용 [Dockerfile.local](/Users/alex/project/worldmap/Dockerfile.local)과 [.dockerignore](/Users/alex/project/worldmap/.dockerignore)를 추가해 Java 25 기준 multi-stage 컨테이너 빌드를 실제로 검증
 - [application-prod.yml](/Users/alex/project/worldmap/src/main/resources/application-prod.yml)을 추가해 prod datasource / redis / demo bootstrap off / forwarded header 기준이 어디서 분리되는지 고정
-- [Dockerfile](/Users/alex/project/worldmap/Dockerfile)의 JVM 옵션을 `JAVA_RUNTIME_OPTS`로 override 가능하게 바꾸고, [application-prod.yml](/Users/alex/project/worldmap/src/main/resources/application-prod.yml)에 graceful shutdown 기준을 추가해 ALB 뒤 종료 동작을 코드로 고정
+- [Dockerfile.local](/Users/alex/project/worldmap/Dockerfile.local)의 JVM 옵션을 `JAVA_RUNTIME_OPTS`로 override 가능하게 바꾸고, [application-prod.yml](/Users/alex/project/worldmap/src/main/resources/application-prod.yml)에 graceful shutdown 기준을 추가해 ALB 뒤 종료 동작을 코드로 고정
 - `spring-boot-starter-actuator`를 추가하고 [application-prod.yml](/Users/alex/project/worldmap/src/main/resources/application-prod.yml)에 health/liveness/readiness probe group을 구성해 ECS/ALB health check 기준을 실제 endpoint로 열었다
+- 운영 안정화 1차로 base [application.yml](/Users/alex/project/worldmap/src/main/resources/application.yml)에서 `local` 기본 프로필을 제거하고, prod [application-prod.yml](/Users/alex/project/worldmap/src/main/resources/application-prod.yml)은 `ddl-auto=validate`, readiness `db+redis+ping` 기준으로 다시 고정했다
+- 같은 조각에서 [GameLevelRollbackInitializer.java](/Users/alex/project/worldmap/src/main/java/com/worldmap/common/config/GameLevelRollbackInitializer.java)는 `worldmap.legacy.rollback.enabled=true`일 때만 켜지게 바꿨다. local/test는 true, prod는 false로 나눠, legacy rollback 호환 코드가 운영 startup에서 실제 데이터를 건드리지 않게 했다
 - [task-definition.prod.sample.json](/Users/alex/project/worldmap/deploy/ecs/task-definition.prod.sample.json)을 추가해 어떤 값은 `environment`, 어떤 값은 `secrets`로 ECS에 넣는지 샘플을 저장소에 고정했다
 - [RedisSessionProdConfiguration.java](/Users/alex/project/worldmap/src/main/java/com/worldmap/common/config/RedisSessionProdConfiguration.java)로 `prod` 프로필에서만 Redis-backed session을 켜고, [application-local.yml](/Users/alex/project/worldmap/src/main/resources/application-local.yml) / [application-test.yml](/Users/alex/project/worldmap/src/main/resources/application-test.yml)에서는 session auto-configuration을 제외해 기존 servlet session 흐름을 보존했다
 - [deploy-prod-ecs.yml](/Users/alex/project/worldmap/.github/workflows/deploy-prod-ecs.yml)로 `workflow_dispatch -> OIDC AWS 인증 -> ./gradlew test -> ECR push -> rendered task definition deploy` 순서를 저장소에 고정했다
 - [render_ecs_task_definition.py](/Users/alex/project/worldmap/scripts/render_ecs_task_definition.py)로 sample task definition을 실제 AWS 리소스 값과 image URI로 치환하는 렌더링 규칙을 추가했다
+- 단일 플랫폼 배포 요구에 맞춰 루트 Dockerfile을 [Dockerfile.local](/Users/alex/project/worldmap/Dockerfile.local)로 분리하고, Railway가 직접 읽는 [railway.toml](/Users/alex/project/worldmap/railway.toml)을 추가했다
+- [build.gradle](/Users/alex/project/worldmap/build.gradle)의 `bootJar` 산출물을 `worldmap.jar`로 고정해 Railway start command를 버전 문자열과 분리했다
+- [application-prod.yml](/Users/alex/project/worldmap/src/main/resources/application-prod.yml)은 Railway Redis host 기반 연결용 `host`, `port`, `username`, `password` 계약을 명시하고, `SPRING_DATA_REDIS_URL`은 Spring Boot env 바인딩으로 직접 받을 수 있게 정리했다
+- [DEPLOYMENT_RUNBOOK_RAILWAY.md](/Users/alex/project/worldmap/docs/DEPLOYMENT_RUNBOOK_RAILWAY.md)로 GitHub 저장소 연결, Railway Postgres/Redis, 환경변수, 기본 도메인, readiness health check를 한 번에 설명하는 단일 플랫폼 배포 런북을 추가했다
 - README에 실시간 전달 결정과 발표용 문서 세트 링크 반영
 
 다음에 이어서 할 일:
 
-- 실제 AWS 계정에서 `workflow_dispatch`에 필요한 repository variables와 OIDC role을 연결한다
-- ECS 수동 배포 1회와 GitHub Actions 배포 1회를 모두 성공시켜 smoke test를 남긴다
-- 실제 ECS 환경에서 Redis-backed session이 task 재기동 이후에도 유지되는지 smoke test를 한다
+- Railway 프로젝트를 실제로 만들고 GitHub 저장소를 연결한다
+- Railway Postgres/Redis reference variable을 넣어 첫 공개 URL 배포를 성공시킨다
+- Railway 공개 URL 기준 smoke test와 admin/dashboard 로그인 확인을 남긴다
+- Railway 배포가 안정된 뒤에만 커스텀 도메인이나 Cloudflare 앞단 연결을 검토한다
 
 반드시 이해할 것:
 
@@ -858,11 +917,35 @@
 - 위치/인구수/수도/인구 비교/국기 게임은 정답 시 `획득 점수`만 잠깐 보여 준 뒤 자동으로 다음 Stage를 다시 로드하도록 공통 UX를 맞춤
 - 수도/인구수/인구 비교/국기 플레이 화면에서 `다음 Stage` 수동 버튼을 제거하고, 결과 페이지 중심이 아니라 플레이 연속성 중심으로 루프를 정리
 - 위치/인구수/수도/인구 비교/국기 게임은 오답 오버레이와 입력 잠금 해제도 약 `950ms` 리듬으로 맞춰, 정답/오답 템포가 게임마다 흔들리지 않게 정리
+- 공통 shell에 `focus-visible` 링을 추가하고, 위치/인구수/수도/국기/인구 비교 퀵 배틀의 게임오버 모달은 `aria-describedby + tabindex + inert + focus trap`으로 실제 focus scope를 갖게 정리해 키보드 접근성을 한 번 더 보강
+- 국기 플레이/결과 화면의 카드 프레임이 정의되지 않은 CSS 토큰 때문에 무테두리처럼 깨지지 않도록, `flag-display-card`와 `flag-display-image`에 공통 surface/border fallback token을 적용
+- `build.gradle`에 `browserSmokeTest` verification task를 추가하고, `BrowserSmokeE2ETest`로 `home` SSR shell, `capital start -> play`, `recommendation survey -> result`를 실제 headless Chromium에서 검증하는 Playwright 브라우저 스모크 레일을 붙였다
+- 기본 `test` task는 `browser-smoke` tag를 제외해 빠른 피드백을 유지하고, 브라우저 레일만 별도 실행하게 분리했다
+- `application-browser-smoke.yml`로 browser smoke 전용 profile을 추가해 `worldmap.legacy.rollback.enabled=false`를 강제하고, Redis는 의도적으로 빈 `127.0.0.1:6390`으로 돌려 local Redis 6379에 기대지 않는 현재 smoke 범위를 확인하게 했다
+- `BrowserSmokeProfileConfigTest`로 이 profile의 rollback off / Redis override를 고정했다
+- `LeaderboardService` read path가 Redis `DataAccessException`을 `cache miss`처럼 처리하고 DB top run으로 fallback하도록 보강해, browser smoke가 `/ranking`, `/stats` 같은 public leaderboard read model까지 local Redis 없이 검증할 수 있게 했다
+- `RedisUnavailableLeaderboardFallbackIntegrationTest`와 `BrowserSmokeE2ETest`로 `/api/rankings/*`, `/ranking`, `/stats`가 실제 Redis unavailable 조건에서도 계속 뜨는지 고정했다
+- `BrowserSmokeE2ETest`에 capital 대표 게임의 game-over modal keyboard flow를 추가해, 실제 Chromium에서 `Tab / Shift+Tab / Escape / restart 후 focus return`이 유지되는지 고정했다
+- 이 E2E는 브라우저가 세션을 만든 뒤 서버 도메인 API로 lives를 1개 남은 상태까지 먼저 줄이고, 마지막 오답 1회만 브라우저로 제출해 modal focus 규칙 자체를 안정적으로 검증하도록 정리했다
+- `location` 대표 게임에도 game-over modal keyboard E2E를 추가해, WebGL 지구본 셸에서도 `Tab / Shift+Tab / Escape / restart 후 focus return`이 실제 Chromium에서 유지되는지 고정했다
+- 이때 마지막 오답 선택은 좌표 클릭 대신 Playwright init script가 `window.Globe` 생성 시 polygon click handler를 잡아 브라우저 안에서 그대로 재사용하게 해, modal keyboard contract에 집중하면서도 3D 좌표 flaky함은 피했다
+- 같은 방식으로 `population` 대표 게임에도 game-over modal keyboard E2E를 추가해, endless 4-choice quiz shell에서도 `Tab / Shift+Tab / Escape / restart 후 focus return`이 실제 Chromium에서 유지되는지 고정했다
+- 같은 방식으로 `population-battle` 대표 게임에도 game-over modal keyboard E2E를 추가해, 2-choice 게임에서도 `Tab / Shift+Tab / Escape / restart 후 focus return`이 실제 Chromium에서 유지되는지 고정했다
+- 같은 방식으로 `flag` 대표 게임에도 game-over modal keyboard E2E를 추가해, 이미지 기반 4-choice quiz shell에서도 `Tab / Shift+Tab / Escape / restart 후 focus return`이 실제 Chromium에서 유지되는지 고정했다
+- 이로써 public 게임 5종(location / capital / population / population-battle / flag)의 terminal modal keyboard contract를 모두 real-browser browser smoke로 설명할 수 있게 됐다
+- 이후 `game-over-modal.js` helper를 추가해, 다섯 게임 JS에 흩어져 있던 `inert + keydown trap + restart entry focus`를 한 곳으로 모았다. 각 게임은 summary 문구와 restart 뒤 primary play surface focus만 넘기고, modal keyboard contract 자체는 공통 helper가 맡는다
+- `.github/workflows/verify.yml`을 추가해 GitHub Actions에서 `test -> browser-smoke` 두 verification job을 분리해 돌리도록 했다. `test` job은 Redis service를 명시적으로 띄우고, `browser-smoke` job은 Playwright Chromium 설치 뒤 `./gradlew browserSmokeTest`를 실행한다
+- GitHub `main` 브랜치 protection에도 `test`, `browser-smoke`를 `strict=true` required status check로 연결해, production-ready 검증 레일이 실제 merge gate로 동작하도록 맞췄다
+- 이 과정에서 `RedisSessionConfigurationIntegrationTest`가 prod session config만 보도록 schema 생성 override를 추가했고, 여러 게임 flow test의 game-over/restart 기대값도 현재 하트 규칙에 맞게 정리해 CI green baseline을 다시 맞췄다
+- 홈 / `/ranking` / `/stats` public shell은 구조는 유지한 채 hero, panel, helper copy를 더 짧게 다듬어 읽기 부담을 줄였다. 게임 선택 / 공개 지표 / 랭킹 설명은 남기되, 같은 뜻을 반복하던 문장과 placeholder copy를 줄여 첫 화면에서 핵심만 먼저 읽히게 정리했다
+- `publicUrlSmokeTest` verification task를 추가해, 실제 공개 URL이 생기면 `WORLDMAP_PUBLIC_BASE_URL=https://... ./gradlew publicUrlSmokeTest`로 `/`, `/stats`, `/ranking`, `/login`, `/signup`, `/recommendation/survey`, `/games/capital/start`의 status와 browser-side `TTFB(responseStart) / DOMContentLoaded / load`를 같은 Markdown report로 남길 수 있게 했다
+- 이 레일은 URL이 없을 때는 `test + browser-smoke` 내장 서버를 자동으로 써서 로컬에서도 먼저 검증된다. 즉 “배포 URL이 생기면 그대로 production에 대입할 측정 도구”를 먼저 코드로 고정한 셈이다
+- `check_prod_deploy_preflight.py`로 첫 ECS 배포 전에 `deploy-prod-ecs.yml`이 실제로 요구하는 GitHub repository variables, `workflow_dispatch`, sample task definition, render script가 다 준비됐는지 한 번에 확인하도록 했다. 현재처럼 vars가 하나도 없는 상태에서는 어떤 값이 비었는지 Markdown report로 바로 남긴다
 
 다음 후속 개선 후보:
 
 - 국기 게임 세부 난이도(동일 대륙 고정 비율, 자산 36개 이후 확장 전략)를 더 넓힐지 결정
-- 신규 게임 3종이 모두 열린 상태에서 홈/랭킹/Stats 문구를 더 줄일지, 아니면 현재 그룹 구조로 유지할지 한 번 더 확인
+- `check_prod_deploy_preflight.py`를 초록으로 만든 뒤 첫 GitHub Actions ECS 배포를 시도하고, 그 다음 ALB DNS를 `publicUrlSmokeTest`에 넣어 first production report를 남기기
 
 반드시 이해할 것:
 
