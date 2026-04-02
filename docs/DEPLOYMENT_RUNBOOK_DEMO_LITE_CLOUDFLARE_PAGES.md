@@ -165,6 +165,20 @@ Cloudflare Pages build image는 `.node-version` 또는 `NODE_VERSION`을 읽을 
 3. 추천 결과 계산 후 홈 recent recommendation 반영
 4. 홈 `한 줄 요약 복사` 버튼 동작
 
+저장소 기준 반복 smoke 명령:
+
+```bash
+cd demo-lite
+npm run smoke:public -- https://worldmap-demo-lite.pages.dev
+```
+
+이 스크립트는 아래를 한 번에 확인한다.
+
+1. `/` root HTML과 핵심 보안/캐시 헤더
+2. root HTML이 참조하는 `/assets/*` 정적 파일
+3. `/generated/data/countries.json`의 국가 수와 `capitalCityKr`
+4. `/generated/data/flag-assets.json`과 실제 `/generated/flags/*.svg`
+
 현재 첫 공개 URL:
 
 - Production URL: [https://worldmap-demo-lite.pages.dev/](https://worldmap-demo-lite.pages.dev/)
@@ -210,17 +224,21 @@ git diff --check
 
 ## 11. 지금 상태에서 아직 안 한 것
 
-이번 baseline은 “Pages에서 바로 빌드할 수 있는가”를 닫은 것이다.
-
-아직 안 한 것은 아래다.
+현재는 아래까지 끝났다.
 
 - 실제 Cloudflare Pages 프로젝트 생성
 - 첫 공개 URL 생성
+- clean repo commit 기준 production alias 재배포
 - 공개 URL 기준 smoke test 기록
+- 저장소 안의 `npm run smoke:public` 반복 검증 레일 추가
+
+아직 안 한 것은 아래다.
+
+- Git-connected auto deploy source of truth 연결
 - custom domain 연결
 
-즉 현재 상태는 **배포 완료가 아니라 Pages-ready**에 가깝다.
+즉 현재 상태는 **첫 공개 배포 완료 + 아직 수동 운영**에 가깝다.
 
 ## 12. 한 줄 결론
 
-현재 `demo-lite`는 Cloudflare Pages에서 `root directory = demo-lite`, `build = npm run build`, `output = dist`로 바로 올릴 수 있는 baseline을 갖췄다. 그리고 Node 버전, 캐시 규칙, 기본 보안 헤더는 각각 [.node-version](/Users/alex/project/worldmap/demo-lite/.node-version)과 [public/_headers](/Users/alex/project/worldmap/demo-lite/public/_headers)로 저장소 안에 고정돼 있다.
+현재 `demo-lite`는 Cloudflare Pages에서 `root directory = demo-lite`, `build = npm run build`, `output = dist`로 실제 공개 URL까지 열린 상태이며, Node 버전과 캐시/보안 헤더는 각각 [.node-version](/Users/alex/project/worldmap/demo-lite/.node-version)과 [public/_headers](/Users/alex/project/worldmap/demo-lite/public/_headers)로 고정돼 있다. 그리고 배포 후 검증은 `npm run smoke:public`으로 저장소 안에서 반복할 수 있다.

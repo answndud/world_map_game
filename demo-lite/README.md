@@ -43,6 +43,7 @@ npm run dev
 cd demo-lite
 npm run build
 npm run verify:pages
+npm run smoke:public -- https://worldmap-demo-lite.pages.dev
 ```
 
 빌드 흐름:
@@ -56,6 +57,14 @@ npm run verify:pages
 1. `package.json` build 스크립트에 `sync:shared`, `verify:shared`, `vite build`가 모두 있는지
 2. `.node-version`이 concrete Node 버전으로 고정돼 있는지
 3. `public/_headers`에 기본 보안 헤더와 캐시 규칙이 들어 있는지
+
+`npm run smoke:public`은 실제 공개 URL에 대해 아래를 확인합니다.
+
+1. `/`가 `200`이고 root HTML에 `WorldMap Demo-Lite`가 들어 있는지
+2. root HTML이 참조하는 `/assets/*` 정적 파일이 실제로 열리는지
+3. `/generated/data/countries.json`이 194개 국가와 `KOR`의 `capitalCityKr`를 포함하는지
+4. `/generated/data/flag-assets.json`과 대표 `/generated/flags/*.svg`가 실제로 열리는지
+5. `Cache-Control`, `Content-Security-Policy`, `X-Content-Type-Options`, `X-Frame-Options`가 production 응답에 붙어 있는지
 
 ## Cloudflare Pages 기준 배포 값
 

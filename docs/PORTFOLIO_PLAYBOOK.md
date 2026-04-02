@@ -840,6 +840,7 @@
 - 추가로 Chrome channel 기반 Playwright screenshot smoke로 `/`, `/#/games/capital`, `/#/recommendation` 렌더링까지 확인해 hash-route 정적 배포가 실제로 뜨는지 봤다
 - 이어서 `demo-lite` 전체 변경을 clean repo commit `5356fde`로 커밋/푸시한 뒤, `wrangler pages deploy dist --branch main --commit-hash 5356fde...`로 production alias를 다시 배포해 dirty working tree 상태를 정리했다. 즉 현재 공개 URL은 clean repo commit 기준으로 한 번 더 맞춰져 있다
 - `cd demo-lite && npm test`, `cd demo-lite && npm run build`로 demo-lite 단독 loop와 static build가 실제로 통과하는지 확인해, free-tier static hosting 전환의 첫 기술적 전제가 코드로 닫혔다
+- 마지막으로 [demo-lite/scripts/smoke-public-url.mjs](/Users/alex/project/worldmap/demo-lite/scripts/smoke-public-url.mjs)와 [demo-lite/tests/public-smoke-script.test.mjs](/Users/alex/project/worldmap/demo-lite/tests/public-smoke-script.test.mjs)를 추가해 `npm run smoke:public -- https://worldmap-demo-lite.pages.dev` 한 번으로 root HTML, `/assets/*`, generated countries/flag data, 대표 SVG, 핵심 보안/캐시 헤더를 공개 URL 기준으로 다시 검증할 수 있게 만들었다
 - README에 실시간 전달 결정과 발표용 문서 세트 링크 반영
 
 다음에 이어서 할 일:
@@ -849,7 +850,7 @@
 - Railway 공개 URL 기준 smoke test와 admin/dashboard 로그인 확인을 남긴다
 - Railway 배포가 안정된 뒤에만 커스텀 도메인이나 Cloudflare 앞단 연결을 검토한다
 - 무료 배포가 꼭 필요하면 full app을 억지로 깎지 말고, [DEMO_LITE_SCOPE_PLAN.md](/Users/alex/project/worldmap/docs/DEMO_LITE_SCOPE_PLAN.md) 기준 retained surface를 먼저 고정한 뒤 sibling `demo-lite` app으로 분리한다
-- `demo-lite` 다음 조각으로는 현재 수동 Pages production 상태를 `main` branch 기준 Git-connected auto deploy source of truth로 넘기는 것이다. 즉 Cloudflare 대시보드에서 Git 연결과 production branch 운영 기준을 실제 저장소 흐름과 맞춰야 한다
+- `demo-lite` 다음 조각으로는 현재 수동 Pages production 상태를 `main` branch 기준 Git-connected auto deploy source of truth로 넘기고, 그 뒤 `npm run smoke:public`을 release checklist에 고정하는 것이다
 - 그다음 [DEMO_LITE_DECOMPOSITION_PLAN.md](/Users/alex/project/worldmap/docs/DEMO_LITE_DECOMPOSITION_PLAN.md) 순서대로 `header/auth -> recommendation feedback -> stats/ranking/mypage/dashboard -> leaderboard write -> auth/ownership -> server-side game persistence`를 끊는 설계를 구현한다
 
 반드시 이해할 것:

@@ -6951,3 +6951,37 @@
 - 배운 점: 공개 URL이 있다고 바로 source of truth가 생기는 것은 아니다. 포트폴리오용 static hosting에서도 “어떤 commit 상태가 production인지”를 명확히 맞춰 두는 과정이 꼭 필요하다.
 - 아직 약한 부분: 현재 production URL은 clean commit 기준으로는 맞았지만, 여전히 Git-connected auto deploy가 아니다. 즉 Cloudflare 대시보드에서 브랜치와 repo를 직접 연결하기 전까지는 manual production 운영이다.
 - 면접용 30초 요약: demo-lite 첫 공개 URL을 연 뒤, 그 상태가 dirty working tree snapshot에 묶여 있지 않도록 전체 변경을 커밋/푸시하고 Pages production alias를 clean repo commit `5356fde` 기준으로 다시 배포했습니다. 핵심은 단순히 URL을 열어 두는 것이 아니라, 실제 저장소 commit과 public URL을 다시 맞춰 설명 가능한 배포 상태로 정리한 점입니다.
+
+## 2026-04-02 - demo-lite 공개 URL smoke를 저장소 스크립트로 고정하기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 공개 URL이 실제로 열려 있어도, 배포 후 상태를 계속 손으로 확인하면 재현성이 떨어진다. 이번 조각의 목적은 `demo-lite` 공개 URL에 대해 root HTML, 정적 asset, generated data, 보안/캐시 헤더를 한 번에 확인하는 smoke 스크립트를 저장소에 남겨, 배포 후 검증을 반복 가능한 형태로 고정하는 것이다.
+- 변경 파일:
+  - `demo-lite/package.json`
+  - `demo-lite/scripts/smoke-public-url.mjs`
+  - `demo-lite/tests/public-smoke-script.test.mjs`
+  - `demo-lite/README.md`
+  - `README.md`
+  - `docs/DEPLOYMENT_RUNBOOK_DEMO_LITE_CLOUDFLARE_PAGES.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/110-add-repeatable-public-smoke-script-for-demo-lite-pages.md`
+- 요청 흐름 / 데이터 흐름: 메인 Spring Boot 요청 흐름은 바뀌지 않았다. 새 검증 흐름은 `npm run smoke:public -- <public-url> -> smoke-public-url.mjs -> / root HTML -> /assets/* -> /generated/data/countries.json -> /generated/data/flag-assets.json -> /generated/flags/*.svg` 순서다. 즉 이번 조각은 앱 runtime이 아니라 static hosting release 검증 레일을 코드로 남긴 것이다.
+- 데이터 / 상태 변화: DB, Redis, localStorage, Pages 자산 자체는 바뀌지 않았다. 대신 `demo-lite`는 이제 공개 URL에 대해 반복 가능한 검증 스크립트를 가진다. 이 스크립트는 root HTML의 title, 핵심 보안/캐시 헤더, hashed asset 존재, 국가/국기 generated JSON 무결성, 대표 SVG 응답까지 같이 본다.
+- 핵심 도메인 개념:
+  - `public smoke script`: 공개 URL이 정상인지 앱 외부에서 다시 검증하는 저장소 내 release 도구
+  - `asset-chain verification`: root HTML만 보는 것이 아니라 실제 `/assets/*`와 generated data/flags까지 따라가 보는 smoke 방식
+  - `header contract`: `_headers`에 적은 cache/security 정책이 production 응답에서 실제로 보이는지 확인하는 운영 계약
+  - `static release checklist`: build 완료 이후 release를 확인하는 순서를 사람 기억이 아니라 저장소 스크립트로 고정한 것
+- 예외 / 엣지 케이스:
+  - hash route 기반 앱이라 `/#/games/capital` 자체는 서버에 전달되지 않는다. 이번 smoke는 root shell과 정적 asset/data chain을 기준으로 본다.
+  - Cloudflare 응답 헤더는 추가 조합이 붙을 수 있으므로 exact match 대신 `must-revalidate`, `nosniff`, `DENY` 포함 여부로 검사한다.
+  - 국기 smoke는 manifest 첫 번째 자산을 representative sample로만 본다. 전체 36개를 다 순회하지는 않는다.
+- 테스트:
+  - `cd demo-lite && npm test`
+  - `cd demo-lite && npm run build`
+  - `cd demo-lite && npm run smoke:public -- https://worldmap-demo-lite.pages.dev`
+  - `cd /Users/alex/project/worldmap && git diff --check`
+- 배운 점: 공개 URL smoke는 브라우저 스크린샷보다 범위가 좁아도, 저장소 안에서 재실행 가능한 형태로 남겨 두는 편이 운영 설명력은 더 높다. 즉 “한 번 확인했다”보다 “누구나 같은 명령으로 다시 확인할 수 있다”가 더 중요하다.
+- 아직 약한 부분: 현재 smoke는 hash route shell과 정적 asset/data chain 위주다. route 내부 interaction까지 반복 검증하려면 Git-connected auto deploy 이후 browser smoke 기준도 별도로 정리해야 한다.
+- 면접용 30초 요약: demo-lite 공개 URL에 대해 반복 가능한 smoke 스크립트를 추가했습니다. `npm run smoke:public` 한 번으로 root HTML, `/assets/*`, generated countries/flag data, 대표 SVG, `_headers` 기반 보안/캐시 헤더까지 같이 확인하게 했고, 이를 테스트와 문서에 연결했습니다. 핵심은 static hosting 검증을 사람 손검사에서 저장소 스크립트로 바꿔 release 설명력을 높인 점입니다.

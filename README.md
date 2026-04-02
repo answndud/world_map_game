@@ -143,6 +143,13 @@ npm run dev
 - 다만 가장 최근 production alias는 clean repo commit `5356fde` 기준으로 다시 맞췄습니다.
 - 아직 Git-connected 자동 배포 source of truth는 아니므로, 다음 단계는 이 상태를 `main` 기준 auto deploy 흐름으로 넘기는 것입니다.
 
+공개 URL smoke:
+
+```bash
+cd demo-lite
+npm run smoke:public -- https://worldmap-demo-lite.pages.dev
+```
+
 ## 검증 레일
 
 기본 회귀:
@@ -172,9 +179,12 @@ WORLDMAP_PUBLIC_BASE_URL=https://<public-url> ./gradlew publicUrlSmokeTest
 - ECS task definition sample + render script + preflight script 제공
 - Railway 런북과 `demo-lite` scope / decomposition 문서 정리
 - `demo-lite`용 Cloudflare Pages 런북, `.node-version`, `_headers` baseline 추가
+- `demo-lite`용 public URL smoke 스크립트 추가
 
-다만 **공개 URL은 아직 연결되지 않았습니다.**
-즉 현재 상태는 “배포 완료”가 아니라 **배포 준비와 검증 레일이 코드로 정리된 상태**에 가깝습니다.
+현재 상태는 두 갈래입니다.
+
+- full Spring Boot 앱: 공개 URL 미연결, 배포 준비와 검증 레일 정리 단계
+- `demo-lite`: [https://worldmap-demo-lite.pages.dev/](https://worldmap-demo-lite.pages.dev/) 에 공개 URL이 열려 있고, `npm run smoke:public`으로 반복 검증 가능
 
 배포 전 확인:
 
