@@ -1,0 +1,21 @@
+{
+  "name": "worldmap-demo-lite",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "npm run sync:shared && vite",
+    "build": "npm run sync:shared && npm run verify:shared && vite build",
+    "preview": "vite preview",
+    "test": "node --test ./tests/*.test.mjs",
+    "sync:shared": "node ./scripts/sync-shared-assets.mjs",
+    "verify:shared": "node ./scripts/check-shared-assets.mjs",
+    "verify:pages": "node ./scripts/check-cloudflare-pages-baseline.mjs"
+  },
+  "engines": {
+    "node": "20.x"
+  },
+  "devDependencies": {
+    "vite": "^7.1.11"
+  }
+}

@@ -47,3 +47,9 @@ out/
 *.keystore
 *.crt
 deploy/ecs/task-definition.rendered.json
+demo-lite/node_modules/
+demo-lite/dist/
+demo-lite/public/generated/
+demo-lite/test-results/
+node_modules/
+demo-lite/dist/

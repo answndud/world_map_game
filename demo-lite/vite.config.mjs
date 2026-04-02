@@ -1,0 +1,11 @@
+import { defineConfig } from "vite";
+
+export default defineConfig({
+  server: {
+    port: 4173,
+    open: false
+  },
+  preview: {
+    port: 4174
+  }
+});
