@@ -7055,3 +7055,326 @@
 - 배운 점: handoff 준비와 운영 완료는 문장 한 줄 차이처럼 보여도, source of truth를 어떤 URL과 어떤 Pages project로 볼지 명확히 바꾸지 않으면 README와 런북이 오래된 운영 정보를 계속 말하게 된다. 운영 완료 시점엔 docs와 smoke 기본값도 함께 바꿔야 한다.
 - 아직 약한 부분: 이제 남은 것은 기능이 아니라 운영 polish다. Build Watch Paths를 더 좁히거나 legacy direct-upload 프로젝트를 정리할지는 별도 판단이 필요하다.
 - 면접용 30초 요약: demo-lite는 이제 Git-connected Cloudflare Pages 프로젝트 `world-map-game-demo-lite-git`에서 `main` 기준으로 자동 배포되는 상태입니다. 이번 조각에서는 기본 public URL과 기본 Pages 프로젝트 기준을 새 운영 source of truth로 바꾸고, 예전 direct-upload 프로젝트는 legacy backup으로만 남긴다고 문서와 smoke 도구에 반영했습니다. 핵심은 handoff 준비가 아니라 실제 운영 완료 상태를 저장소 안의 기본값까지 포함해 맞춘 점입니다.
+
+## 2026-04-03 - demo-lite 공통 톤과 홈 셸을 main light 계열로 다시 맞추기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: `demo-lite`는 기능 범위는 맞았지만 beige/brown/teal 중심의 낡은 색감과 동일한 무게의 패널 반복 때문에 메인 제품과 다른 서비스처럼 보였다. 이번 조각의 목적은 기능을 늘리지 않고도 `demo-lite`가 같은 제품군의 public sibling app처럼 보이게 공통 토큰과 홈 위계를 다시 잡는 것이다.
+- 변경 파일:
+  - `demo-lite/src/style.css`
+  - `demo-lite/src/app.js`
+  - `demo-lite/src/routes.js`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 메인 Spring Boot 요청 흐름은 바뀌지 않았다. `demo-lite` 쪽 흐름도 그대로 `index.html -> main.js -> app.js -> hash route resolve -> feature render`다. 바뀐 것은 `renderHome()`가 정보를 보여 주는 위계와 [style.css](/Users/alex/project/worldmap/demo-lite/src/style.css)의 표현 계층이다. browser-history read model, localStorage best score, 추천 계산 로직은 그대로고, 홈은 이제 `hero -> retained routes -> browser recent state -> recent entries -> mode snapshots` 순서로 읽힌다.
+- 데이터 / 상태 변화: DB, Redis, 세션 상태 변화는 없다. localStorage key 구조도 그대로다. 상태 변화는 전부 표현 계층에 있다. `demo-lite` light theme 토큰이 메인 light theme에 가까운 `slate text + cobalt accent + white surface` 계열로 바뀌었고, `Home` nav label도 `홈`으로 바꿔 전체 톤을 한국어 public shell 기준에 맞췄다.
+- 핵심 도메인 개념:
+  - `design token rebase`: 기존 beige/teal 축을 버리고 메인 light theme와 같은 제품군으로 읽히는 색 체계로 다시 잡는 것
+  - `retained route emphasis`: free-tier 공개 트랙에서 실제로 남긴 surface를 홈 첫 번째 중요한 섹션으로 끌어올리는 것
+  - `browser-side read model shell`: 최근 플레이, streak, 요약 복사 같은 browser-history 결과를 보조 패널이 아니라 홈 핵심 read model로 재배치한 것
+  - `public sibling consistency`: feature set은 줄었어도 visual language는 메인과 같은 family로 맞추는 기준
+- 예외 / 엣지 케이스:
+  - Cloudflare Pages `_headers`는 `style-src 'self'`라서 외부 폰트를 새로 붙이지 않았다. 이번 조각은 remote font import 없이 기존 font stack과 색/위계만으로 해결했다.
+  - feature game loop나 recommendation 계산 규칙은 바뀌지 않았으므로, 보이는 분위기는 좋아졌어도 route별 개성은 아직 공통 셸 위주다. 다음 polish가 있다면 feature-specific hero/status band를 더 얇게 조정하는 정도가 맞다.
+  - 현재 Git-connected Pages 운영 URL은 `main` 기준 자동 배포다. 이번 변경은 로컬 build/verify까지 확인했고, 공개 URL 반영은 `main` 반영 뒤 자동 배포 타이밍을 기다려야 한다.
+- 테스트:
+  - `cd demo-lite && npm test`
+  - `cd demo-lite && npm run build`
+  - `cd demo-lite && npm run verify:pages`
+  - `cd /Users/alex/project/worldmap && git diff --check`
+- 배운 점: demo-lite의 촌스러움은 색 하나가 아니라 `토큰 + 패널 위계 + home 정보 구조`가 같이 만든 문제였다. 공통 셸과 홈만 다시 잡아도 기능을 하나도 안 늘리고 체감 품질을 크게 바꿀 수 있다.
+- 아직 약한 부분: 이번 조각은 공통 토큰과 홈 셸 중심이다. `capital / flag / population-battle / recommendation` 각 route의 accent 미세 조정이나 실제 공개 URL 기준 before/after screenshot 비교는 아직 남아 있다.
+- 면접용 30초 요약: demo-lite를 메인 제품과 같은 family로 보이게 공통 light theme와 홈 셸을 다시 잡았습니다. beige/teal 계열을 cobalt/slate/white surface 계열로 바꾸고, 홈을 `hero -> retained routes -> browser recent state` 위계로 재배치해 free-tier용 sibling app이 본편의 축소판이 아니라 정돈된 공개 트랙처럼 보이게 만들었습니다.
+- 블로그 생략 이유: 이번 조각은 API, 도메인 모델, 게임 루프 변경이 아니라 `demo-lite` 표현 계층 리베이스와 홈 정보 구조 조정이라 블로그 글로 분리할 설명 가치는 낮았다.
+
+## 2026-04-03 - demo-lite route별 hero와 status band를 분리해 게임별 성격을 살리기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 공통 토큰과 홈 셸을 정리한 뒤에도 `capital / flag / population-battle / recommendation` 화면은 여전히 같은 카드 프레임만 반복해 보였다. 이번 조각의 목적은 같은 제품 family를 유지하면서도 각 route가 서로 다른 mode처럼 읽히게, 상단 hero와 status band의 정보 구조를 분리하는 것이다.
+- 변경 파일:
+  - `demo-lite/src/style.css`
+  - `demo-lite/src/features/capital-game.js`
+  - `demo-lite/src/features/flag-game.js`
+  - `demo-lite/src/features/population-battle-game.js`
+  - `demo-lite/src/features/recommendation.js`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 게임과 추천의 요청 흐름은 그대로다. `capital / flag / population-battle`는 브라우저 클릭 -> feature별 `submit...Answer()` -> local session 상태 갱신 -> rerender 순서를 유지하고, 추천은 `form submit -> calculateRecommendationResult()` 흐름을 그대로 쓴다. 바뀐 것은 각 feature가 `renderQuestionCard()`, `renderResult()`, `renderSurvey()`에서 어떤 상단 구조를 내보내는지다. 즉 상태를 바꾸는 곳은 여전히 도메인 함수이고, 이번 조각은 그 상태를 route별 다른 톤으로 보여 주는 표현 계층 정리다.
+- 데이터 / 상태 변화: DB, Redis, 세션, localStorage key 구조는 바뀌지 않았다. 대신 표현 계층에 `demo-route-hero`, `demo-status-strip`, route tone(`capital`, `flag`, `battle`, `recommendation`)이 추가돼 같은 `demo-lite` 앱 안에서도 route별 accent glow와 정보 밀도가 달라졌다. 추천 결과 카드도 TOP 1~3에 얇은 rank tone을 줘 결과 위계가 조금 더 보이게 했다.
+- 핵심 도메인 개념:
+  - `route tone`: 공통 design token 위에서 route별 hero glow와 status card surface만 달리해 mode 성격을 드러내는 방법
+  - `status strip`: 현재 stage, 하트, 점수, 최고 점수 같은 현재 run 상태를 질문 카드보다 먼저 읽히게 하는 상단 band
+  - `same family, different modes`: 제품은 하나지만 게임별 성격은 보여 주는 public sibling shell 기준
+  - `presentation-only polish`: 상태 전이나 판정 규칙을 건드리지 않고 render 계층만 조정하는 작업
+- 예외 / 엣지 케이스:
+  - 이번 조각은 accent glow와 상단 정보 구조 중심이다. 각 route의 하단 panel/card까지 전부 다른 시각 언어로 갈라 버리면 제품 family가 다시 깨질 수 있어, 하단 surface는 공통 토큰을 유지했다.
+  - 추천 route는 질문 수가 많아 밀도가 높은 편이라, hero와 결과 카드 rank tone까지만 건드리고 question card 구조는 유지했다.
+  - feature route별 미세 카피는 좋아졌지만 실제 공개 URL에서 before/after screenshot 비교는 아직 하지 않았다.
+- 테스트:
+  - `cd demo-lite && npm test`
+  - `cd demo-lite && npm run build`
+  - `cd demo-lite && npm run verify:pages`
+  - `cd /Users/alex/project/worldmap && git diff --check`
+- 배운 점: `demo-lite` 같은 작은 앱에서는 route별 성격을 배경색 전체로 갈라 버리기보다, hero와 status band만 분기하는 편이 더 깔끔하다. 공통 셸을 유지하면서도 “같은 앱 안의 다른 게임”처럼 보이게 만들 수 있다.
+- 아직 약한 부분: feature route별 visual identity는 상단 중심으로만 반영했다. 필요하면 다음 polish에서 결과 카드 내부 hierarchy, recommendation question density, mobile spacing까지 더 다듬을 수 있다.
+- 면접용 30초 요약: demo-lite의 각 retained route가 같은 카드 반복처럼 보이지 않게, route별 hero와 status band를 따로 설계했습니다. 게임 로직은 그대로 두고 `capital / flag / battle / recommendation`마다 상단 accent와 정보 배치를 달리해, 같은 제품 family 안에서 서로 다른 mode처럼 읽히게 만든 것이 핵심입니다.
+- 블로그 생략 이유: 이번 조각도 API, 도메인 모델, 게임 루프 변경이 아니라 feature route 표현 계층 polish라 블로그 글로 분리할 설명 가치는 낮았다.
+
+## 2026-04-03 - demo-lite recommendation 화면의 질문 밀도와 결과 위계를 다시 정리하기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: route별 hero를 분리한 뒤에도 recommendation 화면은 20문항이 같은 무게의 카드로 길게 이어져 가장 답답하게 보였다. 이번 조각의 목적은 추천 계산 로직은 그대로 두고, 질문을 section 단위로 다시 묶고 progress와 result hierarchy를 분명히 해 화면 밀도를 낮추는 것이다.
+- 변경 파일:
+  - `demo-lite/src/features/recommendation.js`
+  - `demo-lite/src/style.css`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 추천 요청 흐름은 그대로 `form submit -> FormData -> calculateRecommendationResult() -> result render -> browser-history top1 기록`이다. 상태를 바꾸는 곳도 여전히 [calculateRecommendationResult()](/Users/alex/project/worldmap/demo-lite/src/features/recommendation.js)와 `recordDemoLiteRecommendationResult()`다. 바뀐 것은 `renderSurvey()`와 `renderResult()`가 결과를 보여 주는 방식이다. 질문 20개를 `QUESTION_SECTIONS`로 나눠 section별로 렌더링하고, hero 아래에 `답변 완료 / 남은 질문 / 비교 대상 / 결과 형식` status strip을 추가했다. 결과 화면에서는 `내가 고른 기준`을 metric 카드 대신 compact pill로 요약하고, rank 1 카드가 더 크게 보이도록 결과 위계를 다시 잡았다.
+- 데이터 / 상태 변화: DB, Redis, 세션, localStorage key 구조는 바뀌지 않았다. `selectedAnswers`, recommendation top 3, browser-history 기록 형식도 그대로다. 상태 변화는 recommendation route 표현 계층에만 있다. 즉 추천 엔진과 persistence 제거 계약은 그대로고, 질문/결과 화면만 더 읽기 쉬운 정보 구조로 바뀌었다.
+- 핵심 도메인 개념:
+  - `question section`: 20문항을 기후, 비용/주거, 적응/안전, 음식/문화, 장기 정착의 5개 묶음으로 다시 읽게 하는 view model
+  - `progress strip`: 현재 설문 진행 상태를 제출 버튼보다 먼저 읽히게 만드는 상단 요약 band
+  - `compact preference summary`: 결과 화면에서 20개 답변을 metric 카드 대신 짧은 pill로 요약해 밀도를 낮추는 방식
+  - `ranked result hierarchy`: top 1 추천이 나머지 결과보다 더 먼저 읽히게 만드는 card hierarchy
+- 예외 / 엣지 케이스:
+  - 설문 입력과 계산 로직은 그대로라, 질문을 section으로 묶어도 모든 문항에 답해야 제출할 수 있다는 규칙은 바뀌지 않았다.
+  - rank 1 카드만 더 크게 보이게 했지만, 결과 수는 여전히 top 3 고정이다.
+  - 이번 조각은 recommendation route만 건드렸으므로 다른 게임 route의 하단 card density에는 영향이 없다.
+- 테스트:
+  - `cd demo-lite && npm test`
+  - `cd demo-lite && npm run build`
+  - `cd demo-lite && npm run verify:pages`
+  - `cd /Users/alex/project/worldmap && git diff --check`
+- 배운 점: 긴 설문은 질문 수 자체보다 “모든 카드가 같은 무게로 이어지는가”가 더 큰 피로를 만든다. 계산 로직을 건드리지 않아도 section과 progress만 다시 잡으면 체감 난도가 많이 내려간다.
+- 아직 약한 부분: recommendation 결과 카드의 copy와 reason list는 여전히 텍스트 비중이 높은 편이다. 필요하면 다음 polish에서 top 1 카드의 이유를 더 짧게 재구성하거나 모바일 폭의 spacing을 더 줄일 수 있다.
+- 면접용 30초 요약: demo-lite recommendation 화면은 20문항이 길게 늘어서 답답했기 때문에, 계산 로직은 그대로 두고 질문을 5개 섹션으로 묶고 progress strip과 compact 결과 요약을 추가했습니다. 핵심은 persistence 없는 deterministic top 3 구조를 유지하면서도, 설문과 결과가 훨씬 읽기 쉬운 화면으로 바뀌었다는 점입니다.
+- 블로그 생략 이유: 이번 조각은 추천 엔진 알고리즘이 아니라 recommendation route의 표현 계층과 정보 위계 조정이라 별도 블로그 글로 분리할 설명 가치는 낮았다.
+
+## 2026-04-03 - demo-lite를 개발자 상태판이 아니라 플레이어용 공개 화면으로 정리하기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 기존 `demo-lite`는 색 체계는 main에 가까워졌지만, 홈과 feature route 곳곳에 `local-state`, `manifest`, `generated`, `feedback 저장`, `deterministic`, `Stage`, `브라우저 최고 점수` 같은 내부 설명이 남아 있었다. 이번 조각의 목적은 게임 계산 로직은 그대로 두고, unrelated user가 바로 플레이하는 공개 화면처럼 읽히도록 player-facing copy와 spacing만 정리하는 것이다.
+- 변경 파일:
+  - `demo-lite/src/app.js`
+  - `demo-lite/src/routes.js`
+  - `demo-lite/src/features/capital-game.js`
+  - `demo-lite/src/features/flag-game.js`
+  - `demo-lite/src/features/population-battle-game.js`
+  - `demo-lite/src/features/recommendation.js`
+  - `demo-lite/src/lib/browser-history.js`
+  - `demo-lite/src/style.css`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 요청은 브라우저 hash route 렌더링에서 시작한다. 홈은 `bootstrapDemoLiteApp() -> resolveRoute() -> renderHome()`으로, 각 게임은 `mountCapitalGame()`, `mountFlagGame()`, `mountPopulationBattleGame()`, 추천은 `mountRecommendationDemo()`로 들어간다. 상태를 바꾸는 곳은 여전히 feature별 local session 함수와 `calculateRecommendationResult()`다. 이번 조각은 그 상태를 보여 주는 `renderHome()`, `renderQuestionCard()`, `renderResult()`, `renderSurvey()`, browser-history summary label, CSS spacing만 바꿨다.
+- 데이터 / 상태 변화:
+  - DB, Redis, Spring session, localStorage key 구조는 바뀌지 않았다.
+  - `browser-history`가 계산하는 요약 자체는 유지하되, 홈에 보여 주는 value를 `연속 플레이 없음`, `연속 클리어 없음`처럼 더 짧고 자연스럽게 바꿨다.
+  - `Stage`, `브라우저 최고 점수` 표기를 `문제`, `최고 점수`로 바꾸고, result hero와 retry feedback도 `다시 하기`, `다음 문제`, `이번 판이 끝났습니다` 같은 플레이어 언어로 통일했다.
+  - recommendation route는 `deterministic`, `no persistence`, `feedback 저장 제거` 같은 설명을 걷어내고 `20문항`, `추천 3곳`, `바로 결과`처럼 행동 기준 정보만 남겼다.
+  - 홈에서는 share summary/기술 설명 패널을 완전히 제거하고 `지금 바로 할 수 있는 게임`, `최근 플레이 요약`, `최근 기록`만 남겼다.
+- 핵심 도메인 개념:
+  - `player-facing shell`: 내부 구현 설명을 빼고 “무엇을 할 수 있는가”만 남긴 공개용 화면 기준
+  - `copy boundary`: 상태 전이 규칙은 도메인 함수가 책임지고, 설명 문구는 render 계층이 책임진다는 분리
+  - `before/after screenshot smoke`: 실제 공개 URL은 before baseline으로, 로컬 static build는 after baseline으로 보는 UI smoke 방식
+  - `micro polish without loop change`: round/stage 계산은 그대로 두고 표현만 바꾸는 작은 조각
+- 예외 / 엣지 케이스:
+  - `demo-lite`는 여전히 browser-side retained app이므로 localStorage 기반 recent play/history 자체는 남겨 두었다. 다만 그 사실을 플레이어에게 직접 설명하는 문구는 제거했다.
+  - recommendation engine이 deterministic이라는 사실은 구현에는 남지만, 플레이어용 화면에서는 굳이 드러내지 않았다.
+  - 실제 공개 URL은 Git-connected Pages `main` 배포 기준이므로, 이번 작업의 after 화면은 로컬 `dist` 정적 서버 기준으로만 확인했다. public before 이미지와 local after 이미지를 비교하는 방식으로 screenshot smoke를 대신했다.
+- 테스트:
+  - `cd demo-lite && npm test`
+  - `cd demo-lite && npm run build`
+  - `cd demo-lite && npm run verify:pages`
+  - `curl -I http://127.0.0.1:4175/`
+  - Chrome headless screenshot:
+    - `http://127.0.0.1:4175/`
+    - `http://127.0.0.1:4175/#/games/capital`
+    - `http://127.0.0.1:4175/#/recommendation`
+  - `git diff --check`
+- 배운 점: demo-lite가 촌스럽고 덜떨어져 보인 핵심 원인은 색만이 아니라 “누구에게 말하고 있는가”가 흔들린 데 있었다. 컬러/레이아웃을 main 쪽으로 맞춘 뒤에도, 화면 문구가 개발자용이면 여전히 제품이 아닌 설명 페이지처럼 보였다. 내부 용어를 걷어내고 hero/panel 문장을 행동 중심으로 줄이자 체감 품질이 크게 좋아졌다.
+- 아직 약한 부분: 실제 운영 Pages URL은 아직 old build일 수 있으므로, `main` 반영 뒤 public after screenshot을 한 번 더 남기면 좋다. 또 mobile 폭에서는 recommendation question card의 세로 밀도가 여전히 높은 편이라 필요하면 나중에 한 번 더 다듬을 수 있다.
+- 면접용 30초 요약: demo-lite를 개발자용 설명 페이지가 아니라 플레이어용 공개 화면으로 다시 정리했습니다. 게임 계산 로직은 그대로 두고 홈과 각 게임 route의 copy에서 `local-state`, `Stage`, `manifest`, `feedback 저장` 같은 내부 용어를 걷어내고 `문제`, `최고 점수`, `다시 하기`, `추천 3곳`처럼 행동 중심 언어로 통일해, unrelated user가 봐도 바로 플레이할 수 있는 화면으로 바꿨습니다.
+- 블로그 생략 이유: 이번 조각은 API, 도메인 모델, 게임 루프 변경이 아니라 `demo-lite` copy/spacing polish와 screenshot smoke 정리라 별도 블로그 글로 분리할 설명 가치는 낮았다.
+
+## 2026-04-03 - demo-lite 홈 hero의 중복 CTA 제거
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 홈 hero의 `수도 게임 시작`, `국가 추천 시작` 버튼과 바로 아래 retained game card의 `수도 게임 열기`, `국기 게임 열기`, `배틀 열기`, `추천 시작하기` 버튼이 같은 목적을 두 번 보여 주고 있었다. 이번 조각의 목적은 홈에서 CTA 역할을 아래 game grid로 일원화해 위계를 더 단순하게 만드는 것이다.
+- 변경 파일:
+  - `demo-lite/src/app.js`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 요청은 여전히 브라우저 hash route 렌더링에서 시작한다. 홈은 `bootstrapDemoLiteApp() -> resolveRoute() -> renderHome()`으로 렌더되고, 실제 게임 진입은 아래 retained game card의 `<a href="#/...">` 링크가 맡는다. 이번 조각은 `renderHome()`의 hero 안 `demo-actions` 블록만 제거한 것이므로, 게임 상태나 browser-history 계산에는 영향이 없다.
+- 데이터 / 상태 변화:
+  - DB, Redis, 세션, localStorage, local game session은 바뀌지 않았다.
+  - 홈 hero는 이제 제품 소개 문구만 보여 주고, 실제 이동 CTA는 바로 아래 game grid 카드들만 남는다.
+- 핵심 도메인 개념:
+  - `single CTA surface`: 같은 목적의 진입 버튼은 한 섹션만 맡게 해 사용자 선택을 덜 흔들리게 하는 기준
+  - `home hero vs game grid responsibility`: hero는 소개, grid는 실제 이동이라는 역할 분리
+- 예외 / 엣지 케이스:
+  - 결과 화면의 `다시 하기` / `홈으로 돌아가기` 액션은 여전히 필요하므로 건드리지 않았다.
+  - recommendation 설문 하단 `추천 결과 보기`와 같은 진행 버튼도 실제 제출 액션이므로 유지했다.
+- 테스트:
+  - `cd demo-lite && npm test`
+  - `cd demo-lite && npm run build`
+  - `cd demo-lite && npm run verify:pages`
+  - `git diff --check`
+- 배운 점: action이 많다고 항상 좋은 게 아니다. 홈 hero에서 소개와 이동을 동시에 맡기면 바로 아래 grid CTA와 충돌해 첫 화면이 더 산만해진다.
+- 아직 약한 부분: 공개 Pages URL에는 아직 이 변경이 배포되지 않았을 수 있다. `main` 반영 뒤 public smoke를 다시 보는 게 다음 자연스러운 확인이다.
+- 면접용 30초 요약: demo-lite 홈에서 같은 목적의 CTA가 hero와 game grid에 두 번 보여 중복이 생겨, hero 버튼을 제거하고 실제 이동은 아래 카드 그리드만 맡기도록 정리했습니다. 로직은 그대로 두고 홈의 역할만 더 명확하게 분리한 조각입니다.
+- 블로그 생략 이유: 이번 조각은 도메인/테스트 구조 변경이 아니라 홈 CTA 위계 정리 수준의 작은 UI 수정이라 별도 블로그 글로 분리할 설명 가치는 낮았다.
+
+## 2026-04-03 - demo-lite 최근 플레이 요약을 더 작은 summary로 축소
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 홈의 `최근 플레이 요약`이 최근 기록 패널까지 있는 상황에서 6개 metric을 또 보여 줘 너무 대시보드처럼 보였고, 숫자 폰트도 과하게 커서 촌스러웠다. 이번 조각의 목적은 browser-history 기반 요약은 유지하되, 홈에서는 정말 필요한 세 가지만 조용하게 보여 주는 것이다.
+- 변경 파일:
+  - `demo-lite/src/app.js`
+  - `demo-lite/src/style.css`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 요청은 여전히 브라우저 hash route 렌더링에서 시작한다. 홈은 `bootstrapDemoLiteApp() -> resolveRoute() -> renderHome()`으로 렌더되고, `readDemoLiteActivitySummary()`가 최근 기록 요약을 읽어 온다. 상태를 바꾸는 곳은 여전히 `browser-history`와 각 feature의 local run 기록 함수이며, 이번 조각은 `renderHome()`에서 어떤 요약 항목을 꺼내 보여 주는지와 CSS 타이포만 바꿨다.
+- 데이터 / 상태 변화:
+  - localStorage key, recent history 계산, 최고 점수 계산, 추천 top1 기록 구조는 바뀌지 않았다.
+  - 홈에서는 `즐긴 게임 / 최고 점수 / 최근 추천` 세 카드만 남기고, `최근 기록 수`, `연속 플레이`, `연속 클리어` 카드는 제거했다.
+  - metric 카드의 패딩, 반경, 숫자 크기를 줄여 `최근 플레이 요약`이 보조 summary처럼 보이게 만들었다.
+- 핵심 도메인 개념:
+  - `read model trimming`: 계산 가능한 값을 전부 노출하지 않고, 홈 목적에 맞는 subset만 보여 주는 기준
+  - `summary vs dashboard`: 같은 browser-history source를 써도 홈은 dashboard가 아니라 lightweight summary여야 한다는 구분
+- 예외 / 엣지 케이스:
+  - `browser-history` 쪽 연속 플레이/연속 클리어 계산은 다른 용도로 다시 쓸 수 있으므로 지우지 않았다.
+  - 이번 조각은 home surface만 줄인 것이므로, 최근 기록 list 자체는 유지했다.
+- 테스트:
+  - `cd demo-lite && npm test`
+  - `cd demo-lite && npm run build`
+  - `cd demo-lite && npm run verify:pages`
+  - Chrome headless screenshot: `http://127.0.0.1:4175/`
+  - `git diff --check`
+- 배운 점: 요약 섹션은 “보여 줄 수 있는 값의 개수”보다 “그 값이 아래 다른 패널과 중복되는가”가 더 중요하다. 최근 기록 list가 이미 있다면, 위 요약 카드는 3개만 남겨도 충분히 상태가 읽힌다.
+- 아직 약한 부분: 실제 공개 Pages URL은 아직 이 버전이 아닐 수 있다. `main` 반영 뒤 public URL에서도 같은 밀도로 보이는지 다시 확인하면 된다.
+- 면접용 30초 요약: demo-lite 홈의 최근 플레이 요약이 너무 많고 폰트가 커서 대시보드처럼 보였기 때문에, browser-history 계산 로직은 그대로 두고 홈에서는 `즐긴 게임`, `최고 점수`, `최근 추천` 세 카드만 남기고 타이포와 패딩을 낮췄습니다. 같은 데이터라도 홈 목적에 맞게 덜 보여 주는 쪽이 더 좋은 화면이라는 판단입니다.
+- 블로그 생략 이유: 이번 조각은 API, 도메인, 테스트 구조 변경이 아니라 홈 summary 항목 축소와 타이포 조정 수준의 UI polish라 별도 블로그 글로 분리할 설명 가치는 낮았다.
+
+## 2026-04-03 - demo-lite 홈의 게임 카드를 전체 클릭 방식으로 전환
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 홈의 게임 카드 아래 `수도 게임 열기`, `국기 게임 열기`, `배틀 열기`, `추천 시작하기` 텍스트 링크는 카드 전체가 이미 하나의 선택 덩어리처럼 보이는 상황에서 오히려 클릭 지점을 잘게 쪼개고 있었다. 이번 조각의 목적은 카드 전체를 바로 눌러 이동하게 만들어 진입 동선을 더 자연스럽게 하는 것이다.
+- 변경 파일:
+  - `demo-lite/src/app.js`
+  - `demo-lite/src/style.css`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 요청은 홈 `renderHome()`에서 retained route 목록을 카드로 렌더링하는 곳에서 시작한다. 이전에는 카드 안쪽의 `<a class="demo-link">`만 이동을 맡았고, 지금은 `demo-card--route` 자체가 `<a href="#/...">`가 되어 카드 전체가 이동을 맡는다. 상태 계산이나 browser-history, feature route local session에는 영향이 없다.
+- 데이터 / 상태 변화:
+  - route path, localStorage, 추천/게임 session 계산은 바뀌지 않았다.
+  - 홈 카드의 clickable area만 링크 텍스트 한 줄에서 카드 전체로 넓어졌다.
+  - CSS도 `demo-card--route:hover`와 `:focus-visible`을 카드 전체에 맞게 바꿔 keyboard focus와 hover가 더 분명하게 보이게 했다.
+- 핵심 도메인 개념:
+  - `single interaction surface`: 눈에 보이는 카드 한 덩어리가 그대로 클릭 면적이 되는 기준
+  - `navigation card`: 설명과 버튼을 따로 두지 않고 카드 자체를 이동 affordance로 만드는 패턴
+- 예외 / 엣지 케이스:
+  - 결과 화면의 `다시 하기` 버튼, 추천 제출 버튼처럼 실제 action control은 그대로 버튼으로 남겼다.
+  - 이번 조각은 home card navigation만 바꾼 것이므로 route 내부 게임 루프와 score/recommendation 계산은 전혀 건드리지 않았다.
+- 테스트:
+  - `cd demo-lite && npm test`
+  - `cd demo-lite && npm run build`
+  - `cd demo-lite && npm run verify:pages`
+  - `git diff --check`
+- 배운 점: 카드형 내비게이션에서 텍스트 링크를 따로 남기면 사용자가 “카드”와 “실제 클릭 지점”을 다르게 인식하게 된다. 카드 자체를 앵커로 바꾸는 편이 더 단순하고 직관적이다.
+- 아직 약한 부분: 공개 Pages URL은 아직 이 변경 전일 수 있다. `main` 반영 뒤 실제 public 화면에서도 hover/focus가 자연스러운지 다시 확인하면 된다.
+- 면접용 30초 요약: demo-lite 홈의 게임 카드에서 아래 링크 텍스트를 없애고 카드 전체가 바로 열리도록 바꿨습니다. 기능은 그대로지만, 카드 한 덩어리가 그대로 이동 면적이 되도록 만들어 더 직관적인 플레이어용 내비게이션으로 정리한 조각입니다.
+- 블로그 생략 이유: 이번 조각은 도메인/테스트 구조 변경이 아니라 홈 카드 클릭 범위와 hover/focus polish 수준의 UI 수정이라 별도 블로그 글로 분리할 설명 가치는 낮았다.
+
+## 2026-04-03 - demo-lite 헤더의 게임 목록 제거
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 헤더에 `홈 / 수도 / 국기 / 배틀 / 추천` 목록이 남아 있으면, 홈 game card와 route 내부 액션이 이미 있는 상태에서 상단까지 또 같은 선택지를 반복하게 된다. 이번 조각의 목적은 헤더를 브랜드 바 수준으로 단순화해 첫 화면을 덜 잡다하게 만드는 것이다.
+- 변경 파일:
+  - `demo-lite/src/app.js`
+  - `demo-lite/src/style.css`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 요청은 여전히 브라우저 hash route 렌더링에서 시작한다. 이전에는 `renderHeader()`가 `RETAINED_ROUTES`를 전부 돌며 nav link를 만들었고, 이제는 브랜드 링크만 렌더한다. 실제 이동은 홈 card anchor, 결과 화면의 `다시 하기`, 설문/게임 내부 action이 그대로 맡는다. 게임 상태나 추천 계산, browser-history read model에는 영향이 없다.
+- 데이터 / 상태 변화:
+  - route map과 path는 바뀌지 않았다.
+  - 헤더의 전역 nav surface만 사라졌고, 상단은 홈으로 돌아가는 브랜드 링크 하나만 남았다.
+  - CSS에서도 `demo-nav`, `demo-nav-link` dead rule을 제거해 header layout이 더 단순해졌다.
+- 핵심 도메인 개념:
+  - `single global chrome`: 헤더는 제품 식별만 맡고, 실제 게임 선택은 본문이 맡는 분리
+  - `surface deduplication`: 같은 선택지를 여러 위치에 반복 노출하지 않는 기준
+- 예외 / 엣지 케이스:
+  - brand link는 그대로 남겨 두었으므로 어느 화면에서도 `#/` 홈 복귀 경로는 유지된다.
+  - feature route 내부 action button과 home card navigation은 그대로 유지돼, 전역 nav를 지워도 흐름은 끊기지 않는다.
+- 테스트:
+  - `cd demo-lite && npm test`
+  - `cd demo-lite && npm run build`
+  - `cd demo-lite && npm run verify:pages`
+  - `git diff --check`
+- 배운 점: demo-lite처럼 화면 수가 적고 home card가 이미 내비게이션 역할을 맡는 앱에서는 상단 nav까지 유지하면 정보 구조가 오히려 중복된다. 헤더를 브랜드 바로 줄이는 편이 더 플레이어용 화면답다.
+- 아직 약한 부분: 공개 Pages URL에는 아직 이 버전이 반영되지 않았을 수 있다. `main` 반영 뒤 public smoke로 실제 첫 화면의 인상 차이를 다시 확인하면 된다.
+- 면접용 30초 요약: demo-lite 헤더에 남아 있던 `홈 / 수도 / 국기 / 배틀 / 추천` 전역 게임 목록을 제거하고, 상단은 브랜드만 남는 단순한 바 형태로 정리했습니다. 홈 카드와 내부 액션이 이미 내비게이션을 맡고 있어서, 같은 선택지를 헤더까지 반복하지 않도록 chrome을 줄인 조각입니다.
+
+## 2026-04-03 - demo-lite hero의 demo-eyebrow 제거
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: `demo-lite`는 개발 현황판이 아니라 플레이어가 바로 게임을 시작하는 공개 화면이다. home hero와 각 게임/추천 hero, 결과 hero 위에 붙는 `demo-eyebrow` 라벨은 제목과 chip 위계를 반복해서 보여 줄 뿐이라 정보량 대비 산만했다. 이번 조각의 목적은 상단을 더 직접적인 제목 중심 구조로 줄이는 것이다.
+- 변경 파일:
+  - `demo-lite/src/app.js`
+  - `demo-lite/src/features/capital-game.js`
+  - `demo-lite/src/features/flag-game.js`
+  - `demo-lite/src/features/population-battle-game.js`
+  - `demo-lite/src/features/recommendation.js`
+  - `demo-lite/src/style.css`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 요청은 여전히 브라우저 hash route 렌더링에서 시작한다. `renderHome()`, 준비 중 feature hero, 각 feature의 `renderQuestionCard()`, `renderResult()`, `renderSurvey()`가 상단 hero를 렌더하지만, 이번에는 그 안의 `demo-eyebrow` 줄만 제거했다. 게임 진행 상태, 추천 계산, browser-history read model에는 영향이 없다.
+- 데이터 / 상태 변화:
+  - route, score, recent history, recommendation result는 그대로다.
+  - home / capital / flag / population-battle / recommendation hero에서 작은 kicker 줄이 사라지고 제목과 핵심 설명만 남는다.
+  - `demo-eyebrow` CSS selector도 dead code가 되어 같이 제거했다.
+- 핵심 도메인 개념:
+  - `player-facing chrome`: 플레이어에게 필요한 정보만 남기는 공개 셸 기준
+  - `hierarchy pruning`: chip, title, summary만으로 충분할 때 중복 위계를 제거하는 판단
+- 예외 / 엣지 케이스:
+  - compact placeholder hero도 같은 기준을 따라 `route.subtitle`을 상단 별도 줄로 보여 주지 않는다.
+  - route 카드의 `subtitle`은 여전히 홈 card chip에서 쓰이므로 route metadata 자체를 지운 것은 아니다.
+- 테스트:
+  - `cd demo-lite && npm test`
+  - `cd demo-lite && npm run build`
+  - `cd demo-lite && npm run verify:pages`
+  - `git diff --check`
+- 배운 점: 플레이어용 공개 셸에서는 작은 분류 라벨이 많을수록 “설명하는 UI”처럼 보이기 쉽다. 이미 chip과 title이 위계를 만들고 있으면 eyebrow 같은 얇은 kicker는 빼는 편이 더 낫다.
+- 아직 약한 부분: 실제 공개 Pages URL에는 아직 이 버전이 반영되지 않았을 수 있다. `main` 반영 뒤 public smoke로 상단 hero 밀도가 더 자연스러운지 다시 확인하면 된다.
+- 면접용 30초 요약: demo-lite 홈과 게임/추천 hero 위에 남아 있던 `demo-eyebrow` 라벨을 모두 제거했습니다. chip과 제목만으로도 충분히 위계가 잡히는데 얇은 kicker가 중복돼 보여서, 플레이어 입장에서는 더 직접적인 상단 구조로 줄인 조각입니다.
+
+## 2026-04-03 - demo-lite 게임 subtitle 제거와 수도 퀴즈 명칭 통일
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 홈 game card 상단의 `4지선다`, `국기 이미지`, `빠른 선택`, `20문항` 같은 subtitle chip은 플레이어 행동에 직접 도움이 되지 않고, 이미 제목과 설명이 있는 상태에서 카드만 더 분산돼 보이게 만들었다. 또 `수도 맞히기`와 `수도 퀴즈`가 섞여 있어 이름도 일관되지 않았다.
+- 변경 파일:
+  - `demo-lite/src/routes.js`
+  - `demo-lite/src/app.js`
+  - `demo-lite/src/lib/browser-history.js`
+  - `demo-lite/src/style.css`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 요청은 여전히 브라우저 hash route 렌더링의 `renderHome()`에서 시작한다. 이전에는 retained route metadata의 `subtitle`이 홈 card chip으로 렌더됐고, browser history의 capital title은 `수도 맞히기`로 남아 있었다. 이제 home card는 `status + title + summary`만 렌더하고, 최근 기록/요약도 `수도 퀴즈` 이름으로 통일된다. 게임 상태나 추천 계산은 바뀌지 않는다.
+- 데이터 / 상태 변화:
+  - retained route metadata에서 home/feature `subtitle`과 불필요한 `ctaLabel` 필드를 제거했다.
+  - 홈 card 상단은 subtitle chip 없이 status 한 줄만 남았다.
+  - browser-history의 capital title이 `수도 퀴즈`로 바뀌어 최근 기록과 공유 텍스트가 같은 명칭을 쓴다.
+- 핵심 도메인 개념:
+  - `player-facing naming`: 내부 구현 설명보다 플레이어가 바로 이해할 이름을 우선하는 기준
+  - `route metadata pruning`: 현재 UI가 실제로 쓰는 최소 필드만 남기는 정리
+- 예외 / 엣지 케이스:
+  - route `navLabel`은 향후 compact label이나 analytics 구분에 쓸 수 있어 그대로 둔다.
+  - 예전 localStorage recent entry에 `수도 맞히기`가 남아 있으면 과거 기록은 그대로 보일 수 있지만, 새로 쌓이는 기록은 `수도 퀴즈`로 저장된다.
+- 테스트:
+  - `cd demo-lite && npm test`
+  - `cd demo-lite && npm run build`
+  - `cd demo-lite && npm run verify:pages`
+  - `git diff --check`
+- 배운 점: 플레이어용 홈 card에서는 “이 게임이 뭔가”를 제목과 한 줄 설명으로 바로 이해하면 충분하다. 분류용 subtitle chip은 오히려 제품처럼 보이기보다 샘플 보드처럼 보이게 만들 수 있다.
+- 아직 약한 부분: 기존 브라우저 localStorage에 이미 저장된 수도 게임 기록 제목은 자동 migration을 하지 않는다. 필요하면 이후 `browser-history` read 시 legacy title을 한 번 정규화할 수 있다.
+- 면접용 30초 요약: demo-lite 홈 카드에서 `4지선다`, `국기 이미지` 같은 subtitle chip을 전부 제거하고, retained route metadata도 실제로 쓰는 필드만 남기도록 정리했습니다. 또 최근 기록에 남던 `수도 맞히기` 명칭을 `수도 퀴즈`로 통일해 플레이어가 보는 이름을 한 가지로 맞췄습니다.
+- 블로그 생략 이유: 이번 조각은 API, 도메인, 테스트 구조 변경이 아니라 header chrome 축소 수준의 작은 UI 수정이라 별도 블로그 글로 분리할 설명 가치는 낮았다.

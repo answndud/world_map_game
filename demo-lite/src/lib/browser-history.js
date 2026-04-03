@@ -5,7 +5,7 @@ const POPULATION_BATTLE_BEST_SCORE_KEY = "worldmap-demo-lite:population-battle-b
 const MAX_RECENT_ENTRIES = 8;
 
 const MODE_META = {
-  capital: { label: "수도", title: "수도 맞히기" },
+  capital: { label: "수도", title: "수도 퀴즈" },
   flag: { label: "국기", title: "국기 퀴즈" },
   "population-battle": { label: "배틀", title: "인구 비교 배틀" },
   recommendation: { label: "추천", title: "국가 추천" }
@@ -195,8 +195,8 @@ function buildRecentGameStreak(entries) {
       modeLabel: "아직 없음",
       modeRunCount: 0,
       clearRunCount: 0,
-      label: "아직 플레이 전",
-      clearLabel: "최근 클리어 streak 없음"
+      label: "연속 플레이 없음",
+      clearLabel: "연속 클리어 없음"
     };
   }
 
@@ -226,22 +226,21 @@ function buildRecentGameStreak(entries) {
     modeRunCount,
     clearRunCount,
     label: `${latestModeLabel} ${modeRunCount}판 연속`,
-    clearLabel:
-      clearRunCount > 0 ? `${clearRunCount}판 연속 클리어` : "최근 클리어 streak 없음"
+    clearLabel: clearRunCount > 0 ? `${clearRunCount}판 연속 클리어` : "연속 클리어 없음"
   };
 }
 
 function buildShareSummaryText(summary) {
   if (summary.totalTrackedEntries === 0) {
-    return "WorldMap demo-lite: 아직 기록이 없습니다. 수도, 국기, 인구 비교 배틀을 한 판 플레이하거나 추천 결과를 먼저 계산해 보세요.";
+    return "WorldMap 플레이 기록: 아직 기록이 없습니다. 게임을 한 판 하거나 추천 결과를 먼저 확인해 보세요.";
   }
 
   return [
-    "WorldMap demo-lite 기록",
+    "WorldMap 플레이 기록",
     `최근 기록 ${summary.totalTrackedEntries}개`,
     `${summary.activeModeCount}개 모드 체험`,
     `최고 점수 ${formatScoreLabel(summary.highestScore)}`,
-    `최근 streak ${summary.recentGameStreak.label}`,
+    `연속 플레이 ${summary.recentGameStreak.label}`,
     `최근 추천 ${summary.latestRecommendationName}`
   ].join(" · ");
 }

@@ -307,21 +307,21 @@ export function submitFlagAnswer(session, selectedOptionNumber) {
 
 function renderStatusCards(session, round) {
   return `
-    <div class="demo-metric-grid demo-metric-grid--compact">
-      <article class="demo-metric">
-        <span>현재 Stage</span>
+    <div class="demo-status-strip">
+      <article class="demo-status-card" data-tone="flag">
+        <span>현재 문제</span>
         <strong>${round.stageNumber} / ${session.rounds.length}</strong>
       </article>
-      <article class="demo-metric">
+      <article class="demo-status-card" data-tone="flag">
         <span>남은 하트</span>
         <strong>${session.livesRemaining}</strong>
       </article>
-      <article class="demo-metric">
+      <article class="demo-status-card" data-tone="flag">
         <span>총점</span>
         <strong>${session.totalScore}</strong>
       </article>
-      <article class="demo-metric">
-        <span>브라우저 최고 점수</span>
+      <article class="demo-status-card" data-tone="flag">
+        <span>최고 점수</span>
         <strong>${session.bestScore}</strong>
       </article>
     </div>
@@ -343,21 +343,25 @@ function renderQuestionCard(round, disabled) {
     .join("");
 
   return `
-    <section class="demo-hero demo-hero--compact">
-      <p class="demo-eyebrow">local-state flag loop</p>
+    <section class="demo-route-hero" data-tone="flag">
+      <div class="demo-route-hero-top">
+        <span class="demo-chip">국기 퀴즈</span>
+        <span class="demo-chip">5문제</span>
+        <span class="demo-chip">3하트</span>
+      </div>
       <h1>이 국기는 어느 나라일까요?</h1>
-      <p class="demo-copy">
-        같은 대륙 distractor를 우선해 보기 4개를 만들고, 오답이면 같은 문제를 다시 풉니다.
-      </p>
+      <div class="demo-route-meta">
+        <p>국기만 보고 보기 4개 중 정답을 고르세요. 틀리면 같은 문제를 다시 풀게 됩니다.</p>
+      </div>
     </section>
 
     <section class="demo-panel">
       <div class="demo-panel-head">
         <h2>문제 국기</h2>
-        <p>메인 저장소의 flag manifest를 <code>public/generated/flags</code> 경로로 변환해 그대로 재사용합니다.</p>
+        <p>국기를 보고 맞는 나라 이름을 골라 보세요.</p>
       </div>
       <div class="demo-flag-frame">
-        <img class="demo-flag-image" src="${round.targetFlagPath}" alt="국기 문제 Stage ${round.stageNumber}">
+        <img class="demo-flag-image" src="${round.targetFlagPath}" alt="국기 문제 ${round.stageNumber}번">
       </div>
     </section>
 
@@ -375,7 +379,7 @@ function renderQuestionCard(round, disabled) {
 }
 
 function renderResult(session) {
-  const title = session.status === "FINISHED" ? "모든 Stage를 마쳤습니다." : "하트를 모두 잃었습니다.";
+  const title = session.status === "FINISHED" ? "모든 문제를 마쳤습니다." : "하트를 모두 잃었습니다.";
   const summary = session.history
     .filter((item) => item.outcome !== "오답")
     .map(
@@ -391,25 +395,28 @@ function renderResult(session) {
     .join("");
 
   return `
-    <section class="demo-hero demo-hero--compact">
-      <p class="demo-eyebrow">flag result</p>
+    <section class="demo-route-hero" data-tone="flag">
+      <div class="demo-route-hero-top">
+        <span class="demo-chip">국기 결과</span>
+        <span class="demo-chip">${session.status === "FINISHED" ? "클리어" : "게임 오버"}</span>
+      </div>
       <h1>${title}</h1>
-      <p class="demo-copy">
-        총점 ${session.totalScore}점, 정답 ${session.correctAnswers}개, 총 제출 ${session.totalAttempts}회, 브라우저 최고 점수 ${session.bestScore}점입니다.
-      </p>
+      <div class="demo-route-meta">
+        <p>총점 ${session.totalScore}점, 정답 ${session.correctAnswers}개, 총 제출 ${session.totalAttempts}회, 최고 점수 ${session.bestScore}점입니다.</p>
+      </div>
       <div class="demo-actions">
-        <button class="demo-button" type="button" data-flag-demo-action="restart">같은 모드 다시 하기</button>
+        <button class="demo-button" type="button" data-flag-demo-action="restart">다시 하기</button>
         <a class="demo-ghost" href="#/">홈으로 돌아가기</a>
       </div>
     </section>
 
     <section class="demo-panel">
       <div class="demo-panel-head">
-        <h2>정답으로 마친 Stage 요약</h2>
-        <p>선택한 보기와 정답 이름은 다시 보여 주지 않고, Stage 결과와 점수만 남깁니다.</p>
+        <h2>맞힌 문제 요약</h2>
+        <p>정답을 맞힌 문제와 획득 점수만 다시 볼 수 있습니다.</p>
       </div>
       <ul class="demo-history-list">
-        ${summary || "<li><span>정답으로 마친 Stage가 없습니다.</span></li>"}
+        ${summary || "<li><span>아직 맞힌 문제가 없습니다.</span></li>"}
       </ul>
     </section>
   `;
@@ -421,7 +428,7 @@ function renderFeedback(target, payload) {
     ? `
       <div class="demo-panel-head">
         <h2>정답입니다</h2>
-        <p>+${payload.awardedScore}점을 얻었습니다. 잠시 뒤 다음 Stage로 이동합니다.</p>
+        <p>+${payload.awardedScore}점을 얻었습니다. 잠시 뒤 다음 문제로 이동합니다.</p>
       </div>
     `
     : `
@@ -429,8 +436,8 @@ function renderFeedback(target, payload) {
         <h2>${payload.outcome === "GAME_OVER" ? "탈락했습니다" : "오답입니다"}</h2>
         <p>${
           payload.outcome === "GAME_OVER"
-            ? "하트를 모두 잃어 이번 run이 종료됩니다."
-            : `하트 ${payload.livesRemaining}개가 남았습니다. 잠시 뒤 같은 Stage를 다시 풉니다.`
+            ? "하트를 모두 잃어 이번 판이 끝났습니다."
+            : `하트 ${payload.livesRemaining}개가 남았습니다. 잠시 뒤 같은 문제를 다시 풉니다.`
         }</p>
       </div>
     `;

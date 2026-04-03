@@ -259,6 +259,34 @@ const QUESTIONS = [
 
 const QUESTION_BY_ID = new Map(QUESTIONS.map((question) => [question.id, question]));
 
+const QUESTION_SECTIONS = [
+  {
+    title: "기후와 생활 리듬",
+    helperText: "몸이 편한 날씨와 하루 속도감을 먼저 맞추는 구간입니다.",
+    questionIds: ["climatePreference", "seasonStylePreference", "seasonTolerance", "pacePreference"]
+  },
+  {
+    title: "생활비와 주거 조건",
+    helperText: "물가, 공간감, 도시-자연 균형, 이동 방식처럼 매일 부딪히는 조건을 묻습니다.",
+    questionIds: ["crowdPreference", "costQualityPreference", "housingPreference", "environmentPreference", "mobilityPreference"]
+  },
+  {
+    title: "초기 적응과 안전",
+    helperText: "영어 지원, newcomer 친화도, 안전, 공공 서비스 같은 soft-landing 조건을 확인합니다.",
+    questionIds: ["englishSupportNeed", "newcomerSupportNeed", "safetyPriority", "publicServicePriority", "digitalConveniencePriority"]
+  },
+  {
+    title: "음식과 문화 취향",
+    helperText: "도시의 맛과 다양성, 문화적 자극이 실제 만족도에 얼마나 중요한지 묻습니다.",
+    questionIds: ["foodImportance", "diversityImportance", "cultureLeisureImportance"]
+  },
+  {
+    title: "장기 정착 방향",
+    helperText: "성장과 생활 균형, 체험인지 정착인지 같은 큰 방향을 마지막에 정리합니다.",
+    questionIds: ["workLifePreference", "settlementPreference", "futureBasePreference"]
+  }
+];
+
 const COUNTRY_PROFILES = [
   { iso3Code: "CAN", climateValue: 2, seasonality: 5, paceValue: 2, priceLevel: 4, urbanityValue: 3, englishSupport: 5, safety: 5, welfare: 5, food: 3, diversity: 5, housingSpace: 4, digitalConvenience: 5, cultureScene: 3, newcomerFriendliness: 4, hookLine: "영어 친화도와 복지, 자연 접근성이 균형 잡힌 선택지입니다." },
   { iso3Code: "USA", climateValue: 3, seasonality: 4, paceValue: 5, priceLevel: 4, urbanityValue: 5, englishSupport: 5, safety: 4, welfare: 3, food: 4, diversity: 5, housingSpace: 4, digitalConvenience: 5, cultureScene: 5, newcomerFriendliness: 4, hookLine: "속도감 있는 대도시 생활과 문화 다양성을 강하게 원하는 경우 선택지가 됩니다." },
@@ -1306,7 +1334,7 @@ export function calculateRecommendationResult(countries, rawAnswers) {
   };
 }
 
-function renderQuestion(question, selectedValue) {
+function renderQuestion(question, questionNumber, selectedValue) {
   const options = question.options
     .map(
       (option) => `
@@ -1322,13 +1350,34 @@ function renderQuestion(question, selectedValue) {
     .join("");
 
   return `
-    <section class="demo-panel">
-      <div class="demo-panel-head">
-        <h2>${question.title}</h2>
-        <p>${question.helperText}</p>
+    <section class="demo-panel demo-question-panel">
+      <div class="demo-question-head">
+        <span class="demo-question-index">Q${questionNumber}</span>
+        <div class="demo-panel-head">
+          <h2>${question.title}</h2>
+          <p class="demo-question-helper">${question.helperText}</p>
+        </div>
       </div>
       <div class="demo-survey-option-grid">
         ${options}
+      </div>
+    </section>
+  `;
+}
+
+function renderQuestionSection(section, selectedAnswers, startIndex) {
+  const questions = section.questionIds.map((questionId) => getQuestion(questionId));
+  return `
+    <section class="demo-panel demo-panel--muted">
+      <div class="demo-panel-head">
+        <p class="demo-panel-kicker">질문 묶음</p>
+        <h2>${section.title}</h2>
+        <p>${section.helperText}</p>
+      </div>
+      <div class="demo-layout">
+        ${questions
+          .map((question, index) => renderQuestion(question, startIndex + index, selectedAnswers[question.id]))
+          .join("")}
       </div>
     </section>
   `;
@@ -1338,9 +1387,9 @@ function renderResult(result) {
   const preferences = result.submittedPreferences
     .map(
       (preference) => `
-        <article class="demo-metric">
-          <span>${preference.title}</span>
-          <strong>${preference.selectedLabel}</strong>
+        <article class="demo-pill">
+          <strong>${preference.title}</strong>
+          <span>${preference.selectedLabel}</span>
         </article>
       `
     )
@@ -1349,7 +1398,7 @@ function renderResult(result) {
   const recommendationCards = result.recommendations
     .map(
       (candidate) => `
-        <article class="demo-card">
+        <article class="demo-card" data-rank="${candidate.rank}">
           <div class="demo-card-top">
             <span class="demo-chip">TOP ${candidate.rank}</span>
             <span class="demo-note">${candidate.iso3Code} · ${candidate.continentLabel}</span>
@@ -1371,12 +1420,34 @@ function renderResult(result) {
     .join("");
 
   return `
-    <section class="demo-hero demo-hero--compact">
-      <p class="demo-eyebrow">deterministic recommendation</p>
+    <section class="demo-route-hero" data-tone="recommendation">
+      <div class="demo-route-hero-top">
+        <span class="demo-chip">20문항</span>
+        <span class="demo-chip">추천 3곳</span>
+        <span class="demo-chip">바로 결과</span>
+      </div>
       <h1>지금 생활 취향과 잘 맞는 나라 3곳</h1>
-      <p class="demo-copy">
-        feedback 저장과 운영 review는 제거하고, 메인 앱과 같은 20문항 breadth와 30국가 profile catalog를 브라우저 안에서 계산했습니다.
-      </p>
+      <div class="demo-route-meta">
+        <p>답변을 바탕으로 지금 어울리는 국가 3곳을 골랐습니다. 가장 잘 맞는 곳부터 순서대로 확인해 보세요.</p>
+      </div>
+      <div class="demo-status-strip">
+        <article class="demo-status-card" data-tone="recommendation">
+          <span>질문 수</span>
+          <strong>${DEMO_LITE_RECOMMENDATION_QUESTION_COUNT}문항</strong>
+        </article>
+        <article class="demo-status-card" data-tone="recommendation">
+          <span>비교 국가</span>
+          <strong>${DEMO_LITE_RECOMMENDATION_PROFILE_COUNT}개</strong>
+        </article>
+        <article class="demo-status-card" data-tone="recommendation">
+          <span>추천 수</span>
+          <strong>TOP ${result.recommendations.length}</strong>
+        </article>
+        <article class="demo-status-card" data-tone="recommendation">
+          <span>가장 잘 맞는 곳</span>
+          <strong>${result.recommendations[0]?.countryNameKr ?? "-"}</strong>
+        </article>
+      </div>
       <div class="demo-actions">
         <button class="demo-button" type="button" data-recommendation-action="restart">설문 다시 하기</button>
         <a class="demo-ghost" href="#/">홈으로 돌아가기</a>
@@ -1386,8 +1457,9 @@ function renderResult(result) {
     <section class="demo-panel">
       <div class="demo-panel-head">
         <h2>내가 고른 기준</h2>
+        <p>답변을 빠르게 다시 볼 수 있도록 한 줄씩 정리했습니다.</p>
       </div>
-      <div class="demo-metric-grid">
+      <div class="demo-pill-grid">
         ${preferences}
       </div>
     </section>
@@ -1395,9 +1467,9 @@ function renderResult(result) {
     <section class="demo-panel">
       <div class="demo-panel-head">
         <h2>추천 결과</h2>
-        <p>free-tier demo-lite에서는 결과 저장 없이 deterministic top 3만 남깁니다.</p>
+        <p>가장 잘 맞는 곳부터 순서대로 살펴보세요.</p>
       </div>
-      <div class="demo-card-grid">
+      <div class="demo-card-grid demo-card-grid--recommendation">
         ${recommendationCards}
       </div>
     </section>
@@ -1417,20 +1489,51 @@ export function mountRecommendationDemo(container, countries) {
   let currentResult = null;
 
   function renderSurvey(message = "") {
+    const answeredCount = QUESTIONS.filter((question) => Boolean(selectedAnswers[question.id])).length;
     container.innerHTML = `
-      <section class="demo-hero demo-hero--compact">
-        <p class="demo-eyebrow">20-question recommendation</p>
+      <section class="demo-route-hero" data-tone="recommendation">
+        <div class="demo-route-hero-top">
+          <span class="demo-chip">20문항</span>
+          <span class="demo-chip">취향 설문</span>
+          <span class="demo-chip">추천 3곳</span>
+        </div>
         <h1>나에게 어울리는 국가 찾기</h1>
-        <p class="demo-copy">
-          free-tier demo-lite에서는 feedback 저장만 덜어내고, 질문 breadth와 국가 catalog는 메인 앱에 가깝게 유지했습니다.
-        </p>
+        <div class="demo-route-meta">
+          <p>생활 취향과 여행 스타일에 맞는 국가를 찾아봅니다. 모든 질문에 답하면 바로 결과를 볼 수 있습니다.</p>
+        </div>
+        <div class="demo-status-strip">
+          <article class="demo-status-card" data-tone="recommendation">
+            <span>답변 완료</span>
+            <strong>${answeredCount} / ${DEMO_LITE_RECOMMENDATION_QUESTION_COUNT}</strong>
+          </article>
+          <article class="demo-status-card" data-tone="recommendation">
+            <span>남은 질문</span>
+            <strong>${DEMO_LITE_RECOMMENDATION_QUESTION_COUNT - answeredCount}개</strong>
+          </article>
+          <article class="demo-status-card" data-tone="recommendation">
+            <span>비교 국가</span>
+            <strong>${DEMO_LITE_RECOMMENDATION_PROFILE_COUNT}국가</strong>
+          </article>
+          <article class="demo-status-card" data-tone="recommendation">
+            <span>결과</span>
+            <strong>추천 3곳</strong>
+          </article>
+        </div>
       </section>
 
       ${message ? `<section class="demo-panel demo-panel--muted"><div class="demo-panel-head"><p>${message}</p></div></section>` : ""}
 
       <form id="demo-recommendation-form" class="demo-layout">
-        ${QUESTIONS.map((question) => renderQuestion(question, selectedAnswers[question.id])).join("")}
+        ${QUESTION_SECTIONS.map((section, index) => {
+          const startIndex = QUESTION_SECTIONS.slice(0, index)
+            .reduce((sum, candidate) => sum + candidate.questionIds.length, 0) + 1;
+          return renderQuestionSection(section, selectedAnswers, startIndex);
+        }).join("")}
         <section class="demo-panel">
+          <div class="demo-panel-head">
+            <h2>결과 계산</h2>
+            <p>모든 질문에 답하면 바로 추천 결과를 확인할 수 있습니다.</p>
+          </div>
           <div class="demo-actions">
             <button class="demo-button" type="submit">추천 결과 보기</button>
             <a class="demo-ghost" href="#/">홈으로 돌아가기</a>
