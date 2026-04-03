@@ -307,7 +307,7 @@ export function submitFlagAnswer(session, selectedOptionNumber) {
 
 function renderStatusCards(session, round) {
   return `
-    <div class="demo-status-strip">
+    <div class="demo-status-strip demo-status-strip--game">
       <article class="demo-status-card" data-tone="flag">
         <span>현재 문제</span>
         <strong>${round.stageNumber} / ${session.rounds.length}</strong>
@@ -320,7 +320,7 @@ function renderStatusCards(session, round) {
         <span>총점</span>
         <strong>${session.totalScore}</strong>
       </article>
-      <article class="demo-status-card" data-tone="flag">
+      <article class="demo-status-card" data-tone="flag" data-mobile-hidden="true">
         <span>최고 점수</span>
         <strong>${session.bestScore}</strong>
       </article>
@@ -472,8 +472,8 @@ export function mountFlagGame(container, countries, flagAssets) {
     }
 
     container.innerHTML = `
-      ${renderStatusCards(session, round)}
       ${renderQuestionCard(round, interactionLocked)}
+      ${renderStatusCards(session, round)}
     `;
     attachOptionActions();
   }

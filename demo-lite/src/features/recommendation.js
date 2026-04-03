@@ -1430,16 +1430,16 @@ function renderResult(result) {
       <div class="demo-route-meta">
         <p>답변을 바탕으로 지금 어울리는 국가 3곳을 골랐습니다. 가장 잘 맞는 곳부터 순서대로 확인해 보세요.</p>
       </div>
-      <div class="demo-status-strip">
+      <div class="demo-status-strip demo-status-strip--recommendation-result">
         <article class="demo-status-card" data-tone="recommendation">
           <span>질문 수</span>
           <strong>${DEMO_LITE_RECOMMENDATION_QUESTION_COUNT}문항</strong>
         </article>
-        <article class="demo-status-card" data-tone="recommendation">
+        <article class="demo-status-card" data-tone="recommendation" data-mobile-hidden="true">
           <span>비교 국가</span>
           <strong>${DEMO_LITE_RECOMMENDATION_PROFILE_COUNT}개</strong>
         </article>
-        <article class="demo-status-card" data-tone="recommendation">
+        <article class="demo-status-card" data-tone="recommendation" data-mobile-hidden="true">
           <span>추천 수</span>
           <strong>TOP ${result.recommendations.length}</strong>
         </article>
@@ -1501,7 +1501,7 @@ export function mountRecommendationDemo(container, countries) {
         <div class="demo-route-meta">
           <p>생활 취향과 여행 스타일에 맞는 국가를 찾아봅니다. 모든 질문에 답하면 바로 결과를 볼 수 있습니다.</p>
         </div>
-        <div class="demo-status-strip">
+        <div class="demo-status-strip demo-status-strip--recommendation-survey">
           <article class="demo-status-card" data-tone="recommendation">
             <span>답변 완료</span>
             <strong>${answeredCount} / ${DEMO_LITE_RECOMMENDATION_QUESTION_COUNT}</strong>
@@ -1510,11 +1510,11 @@ export function mountRecommendationDemo(container, countries) {
             <span>남은 질문</span>
             <strong>${DEMO_LITE_RECOMMENDATION_QUESTION_COUNT - answeredCount}개</strong>
           </article>
-          <article class="demo-status-card" data-tone="recommendation">
+          <article class="demo-status-card" data-tone="recommendation" data-mobile-hidden="true">
             <span>비교 국가</span>
             <strong>${DEMO_LITE_RECOMMENDATION_PROFILE_COUNT}국가</strong>
           </article>
-          <article class="demo-status-card" data-tone="recommendation">
+          <article class="demo-status-card" data-tone="recommendation" data-mobile-hidden="true">
             <span>결과</span>
             <strong>추천 3곳</strong>
           </article>

@@ -330,12 +330,12 @@ export function submitPopulationBattleAnswer(session, selectedOptionNumber) {
 
 function renderStatusCards(session, round) {
   return `
-    <div class="demo-status-strip">
+    <div class="demo-status-strip demo-status-strip--game">
       <article class="demo-status-card" data-tone="battle">
         <span>현재 문제</span>
         <strong>${round.stageNumber} / ${session.rounds.length}</strong>
       </article>
-      <article class="demo-status-card" data-tone="battle">
+      <article class="demo-status-card" data-tone="battle" data-mobile-hidden="true">
         <span>난이도</span>
         <strong>${round.difficultyLabel}</strong>
       </article>
@@ -347,7 +347,7 @@ function renderStatusCards(session, round) {
         <span>총점</span>
         <strong>${session.totalScore}</strong>
       </article>
-      <article class="demo-status-card" data-tone="battle">
+      <article class="demo-status-card" data-tone="battle" data-mobile-hidden="true">
         <span>최고 점수</span>
         <strong>${session.bestScore}</strong>
       </article>
@@ -490,8 +490,8 @@ export function mountPopulationBattleGame(container, countries) {
     }
 
     container.innerHTML = `
-      ${renderStatusCards(session, round)}
       ${renderQuestionCard(round, interactionLocked)}
+      ${renderStatusCards(session, round)}
     `;
     attachOptionActions();
   }

@@ -10,7 +10,6 @@ export const RETAINED_ROUTES = [
     navLabel: "수도",
     title: "수도 퀴즈",
     kind: "feature",
-    status: "즉시 체험 가능",
     summary: "국가의 수도를 맞추는 퀴즈입니다."
   },
   {
@@ -18,7 +17,6 @@ export const RETAINED_ROUTES = [
     navLabel: "국기",
     title: "국기 퀴즈",
     kind: "feature",
-    status: "즉시 체험 가능",
     summary: "국기만 보고 어느 나라인지 맞히는 퀴즈입니다."
   },
   {
@@ -26,7 +24,6 @@ export const RETAINED_ROUTES = [
     navLabel: "배틀",
     title: "인구 비교 배틀",
     kind: "feature",
-    status: "즉시 체험 가능",
     summary: "두 나라 중 인구가 더 많은 쪽을 고르는 퀴즈입니다."
   },
   {
@@ -34,7 +31,6 @@ export const RETAINED_ROUTES = [
     navLabel: "추천",
     title: "나에게 어울리는 국가 찾기",
     kind: "feature",
-    status: "지금 체험 가능",
     summary: "20문항 답변을 바탕으로 지금 어울리는 국가 3곳을 골라 줍니다."
   }
 ];

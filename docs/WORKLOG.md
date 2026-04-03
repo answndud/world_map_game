@@ -7378,3 +7378,42 @@
 - 아직 약한 부분: 기존 브라우저 localStorage에 이미 저장된 수도 게임 기록 제목은 자동 migration을 하지 않는다. 필요하면 이후 `browser-history` read 시 legacy title을 한 번 정규화할 수 있다.
 - 면접용 30초 요약: demo-lite 홈 카드에서 `4지선다`, `국기 이미지` 같은 subtitle chip을 전부 제거하고, retained route metadata도 실제로 쓰는 필드만 남기도록 정리했습니다. 또 최근 기록에 남던 `수도 맞히기` 명칭을 `수도 퀴즈`로 통일해 플레이어가 보는 이름을 한 가지로 맞췄습니다.
 - 블로그 생략 이유: 이번 조각은 API, 도메인, 테스트 구조 변경이 아니라 header chrome 축소 수준의 작은 UI 수정이라 별도 블로그 글로 분리할 설명 가치는 낮았다.
+
+## 2026-04-03 - demo-lite 모바일 밀도 재조정
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 390px 안팎 모바일 폭에서는 `demo-lite`가 깨지진 않았지만, 추천 hero와 게임 status strip가 너무 커서 첫 질문/첫 보기보다 상단 설명과 상태판이 먼저 보였다. 이번 조각의 목적은 작은 화면에서 “설명보다 플레이”가 먼저 보이게 정보량과 렌더 순서를 줄이는 것이다.
+- 변경 파일:
+  - `demo-lite/src/app.js`
+  - `demo-lite/src/routes.js`
+  - `demo-lite/src/features/capital-game.js`
+  - `demo-lite/src/features/flag-game.js`
+  - `demo-lite/src/features/population-battle-game.js`
+  - `demo-lite/src/features/recommendation.js`
+  - `demo-lite/src/style.css`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 요청은 여전히 브라우저 hash route 렌더링에서 시작한다. 게임 상태, 추천 계산, browser-history 요약 자체는 그대로고, 이번에는 `renderHome()`, 각 게임의 `rerenderCurrentRound()`, 추천의 `renderSurvey()/renderResult()`가 상태를 화면에 배치하는 순서와 양만 바꿨다.
+- 데이터 / 상태 변화:
+  - 홈 game card는 이제 status line 없이 제목과 한 줄 설명만 남는다.
+  - capital / flag / population-battle은 `status -> hero -> 문제`가 아니라 `hero -> 문제 -> compact status` 순서로 렌더된다.
+  - game status strip는 mobile에서 `최고 점수`, battle의 `난이도` 같은 보조 항목을 숨긴다.
+  - recommendation survey/result hero의 4칸 status strip는 mobile에서 핵심 2칸만 남긴다.
+  - mobile breakpoint에서 hero title, chip, status card 크기도 함께 더 작아진다.
+- 핵심 도메인 개념:
+  - `mobile-first information hierarchy`: 작은 폭에서는 현재 액션과 현재 문제를 먼저 보여 주는 기준
+  - `non-destructive responsive pruning`: 상태 계산은 유지하고, 표시량만 viewport에 맞춰 줄이는 방식
+- 예외 / 엣지 케이스:
+  - desktop에서는 기존 status strip가 대부분 그대로 남는다.
+  - recommendation result card의 `TOP n` / continent note는 비교 정보라 유지했다.
+  - `route.status`는 이제 home card에서 쓰지 않으므로 retained route metadata에서 제거했다.
+- 테스트:
+  - `cd demo-lite && npm test`
+  - `cd demo-lite && npm run build`
+  - `cd demo-lite && npm run verify:pages`
+  - 390x844 viewport screenshot smoke로 home / capital / recommendation 확인
+  - `git diff --check`
+- 배운 점: 모바일 대응은 단순히 1열로 접히는 것만으로 충분하지 않다. 실제 플레이 surface에서는 “현재 무엇을 눌러야 하는가”가 첫 화면에서 보이도록 렌더 순서 자체를 바꾸는 편이 더 중요하다.
+- 아직 약한 부분: recommendation hero는 많이 줄였지만 20문항 구조상 여전히 첫 화면 비중이 큰 편이다. 더 과감하게 하려면 mobile에서 intro paragraph를 더 짧게 자르거나 첫 section title을 hero 바로 아래로 당기는 추가 조정이 가능하다.
+- 면접용 30초 요약: demo-lite가 모바일에서 깨지진 않았지만, 상태판과 설명이 먼저 보여 실제 플레이가 늦게 시작되는 문제가 있었습니다. 그래서 홈 카드의 보조 라인을 없애고, 게임 화면은 `hero -> 문제 -> compact status`로 순서를 바꾸고, 추천 화면도 mobile에서는 핵심 status 2개만 남기도록 줄여서 작은 화면에서도 바로 플레이가 시작되는 느낌으로 정리했습니다.
+- 블로그 생략 이유: 이번 조각은 API, 도메인, 테스트 구조 변경이 아니라 `demo-lite` 공개 셸의 responsive hierarchy 조정이라 별도 블로그 글로 분리할 설명 가치는 낮았다.

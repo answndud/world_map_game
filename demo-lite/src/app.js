@@ -34,9 +34,6 @@ function renderHome(activitySummary) {
     .map(
       (route) => `
         <a class="demo-card demo-card--route" href="#${route.path}">
-          <div class="demo-card-top">
-            <span class="demo-note">${route.status}</span>
-          </div>
           <h2>${route.title}</h2>
           <p>${route.summary}</p>
         </a>

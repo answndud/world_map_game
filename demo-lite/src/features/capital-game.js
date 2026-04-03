@@ -235,7 +235,7 @@ export function submitCapitalAnswer(session, selectedOptionNumber) {
 
 function renderStatusCards(session, round) {
   return `
-    <div class="demo-status-strip">
+    <div class="demo-status-strip demo-status-strip--game">
       <article class="demo-status-card" data-tone="capital">
         <span>현재 문제</span>
         <strong>${round.stageNumber} / ${session.rounds.length}</strong>
@@ -248,7 +248,7 @@ function renderStatusCards(session, round) {
         <span>총점</span>
         <strong>${session.totalScore}</strong>
       </article>
-      <article class="demo-status-card" data-tone="capital">
+      <article class="demo-status-card" data-tone="capital" data-mobile-hidden="true">
         <span>최고 점수</span>
         <strong>${session.bestScore}</strong>
       </article>
@@ -391,8 +391,8 @@ export function mountCapitalGame(container, countries) {
     }
 
     container.innerHTML = `
-      ${renderStatusCards(session, round)}
       ${renderQuestionCard(session, round, interactionLocked)}
+      ${renderStatusCards(session, round)}
     `;
     attachOptionActions();
   }
