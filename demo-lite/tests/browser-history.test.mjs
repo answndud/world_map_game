@@ -136,6 +136,6 @@ test("activity summary derives recent game streak and shareable summary text", (
 
   assert.equal(summary.recentGameStreak.label, "수도 3판 연속");
   assert.equal(summary.recentGameStreak.clearLabel, "3판 연속 클리어");
-  assert.match(summary.shareSummaryText, /최근 streak 수도 3판 연속/);
+  assert.match(summary.shareSummaryText, /연속 플레이 수도 3판 연속/);
   assert.match(summary.shareSummaryText, /최근 추천 싱가포르/);
 });

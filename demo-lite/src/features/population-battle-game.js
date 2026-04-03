@@ -330,25 +330,25 @@ export function submitPopulationBattleAnswer(session, selectedOptionNumber) {
 
 function renderStatusCards(session, round) {
   return `
-    <div class="demo-metric-grid demo-metric-grid--compact">
-      <article class="demo-metric">
-        <span>현재 Stage</span>
+    <div class="demo-status-strip">
+      <article class="demo-status-card" data-tone="battle">
+        <span>현재 문제</span>
         <strong>${round.stageNumber} / ${session.rounds.length}</strong>
       </article>
-      <article class="demo-metric">
-        <span>구간</span>
+      <article class="demo-status-card" data-tone="battle">
+        <span>난이도</span>
         <strong>${round.difficultyLabel}</strong>
       </article>
-      <article class="demo-metric">
+      <article class="demo-status-card" data-tone="battle">
         <span>남은 하트</span>
         <strong>${session.livesRemaining}</strong>
       </article>
-      <article class="demo-metric">
+      <article class="demo-status-card" data-tone="battle">
         <span>총점</span>
         <strong>${session.totalScore}</strong>
       </article>
-      <article class="demo-metric">
-        <span>브라우저 최고 점수</span>
+      <article class="demo-status-card" data-tone="battle">
+        <span>최고 점수</span>
         <strong>${session.bestScore}</strong>
       </article>
     </div>
@@ -362,24 +362,28 @@ function renderBattleOption(optionNumber, country, disabled) {
     }>
       <span class="demo-option-label">${optionNumber === 1 ? "왼쪽 선택" : "오른쪽 선택"}</span>
       <strong>${country.countryName}</strong>
-      <span class="demo-battle-meta">${toContinentLabel(country.continent)} · 인구 순위 ${country.populationRank}위대</span>
+      <span class="demo-battle-meta">${toContinentLabel(country.continent)} · 인구 순위 ${country.populationRank}위권</span>
     </button>
   `;
 }
 
 function renderQuestionCard(round, disabled) {
   return `
-    <section class="demo-hero demo-hero--compact">
-      <p class="demo-eyebrow">local-state population battle</p>
+    <section class="demo-route-hero" data-tone="battle">
+      <div class="demo-route-hero-top">
+        <span class="demo-chip">인구 배틀</span>
+        <span class="demo-chip">5문제</span>
+        <span class="demo-chip">3하트</span>
+      </div>
       <h1>더 인구가 많은 나라를 고르세요</h1>
-      <p class="demo-copy">
-        메인 앱의 배틀 감각을 줄여, 인구 순위 gap 기준 pair를 브라우저 메모리 상태로만 이어 갑니다.
-      </p>
+      <div class="demo-route-meta">
+        <p>두 나라 중 인구가 더 많은 쪽을 고르세요. 틀리면 같은 문제를 다시 풀고, 맞히면 다음 비교로 넘어갑니다.</p>
+      </div>
     </section>
 
     <section class="demo-panel">
       <div class="demo-panel-head">
-        <h2>현재 비교 구간</h2>
+        <h2>현재 비교</h2>
         <p>${round.difficultyLabel} · ${QUESTION_PROMPT}</p>
       </div>
       <div class="demo-battle-grid">
@@ -393,7 +397,7 @@ function renderQuestionCard(round, disabled) {
 }
 
 function renderResult(session) {
-  const title = session.status === "FINISHED" ? "모든 배틀 Stage를 마쳤습니다." : "하트를 모두 잃었습니다.";
+  const title = session.status === "FINISHED" ? "모든 비교를 마쳤습니다." : "하트를 모두 잃었습니다.";
   const summary = session.history
     .filter((item) => item.outcome !== "오답")
     .map(
@@ -409,25 +413,28 @@ function renderResult(session) {
     .join("");
 
   return `
-    <section class="demo-hero demo-hero--compact">
-      <p class="demo-eyebrow">population battle result</p>
+    <section class="demo-route-hero" data-tone="battle">
+      <div class="demo-route-hero-top">
+        <span class="demo-chip">배틀 결과</span>
+        <span class="demo-chip">${session.status === "FINISHED" ? "클리어" : "게임 오버"}</span>
+      </div>
       <h1>${title}</h1>
-      <p class="demo-copy">
-        총점 ${session.totalScore}점, 정답 ${session.correctAnswers}개, 총 제출 ${session.totalAttempts}회, 브라우저 최고 점수 ${session.bestScore}점입니다.
-      </p>
+      <div class="demo-route-meta">
+        <p>총점 ${session.totalScore}점, 정답 ${session.correctAnswers}개, 총 제출 ${session.totalAttempts}회, 최고 점수 ${session.bestScore}점입니다.</p>
+      </div>
       <div class="demo-actions">
-        <button class="demo-button" type="button" data-population-battle-demo-action="restart">같은 모드 다시 하기</button>
+        <button class="demo-button" type="button" data-population-battle-demo-action="restart">다시 하기</button>
         <a class="demo-ghost" href="#/">홈으로 돌아가기</a>
       </div>
     </section>
 
     <section class="demo-panel">
       <div class="demo-panel-head">
-        <h2>정답으로 마친 Stage 요약</h2>
-        <p>선택한 나라와 정답 나라는 다시 보여 주지 않고, Stage 결과와 점수만 남깁니다.</p>
+        <h2>맞힌 문제 요약</h2>
+        <p>어느 구간에서 맞혔는지와 획득 점수만 다시 볼 수 있습니다.</p>
       </div>
       <ul class="demo-history-list">
-        ${summary || "<li><span>정답으로 마친 Stage가 없습니다.</span></li>"}
+        ${summary || "<li><span>아직 맞힌 문제가 없습니다.</span></li>"}
       </ul>
     </section>
   `;
@@ -439,7 +446,7 @@ function renderFeedback(target, payload) {
     ? `
       <div class="demo-panel-head">
         <h2>정답입니다</h2>
-        <p>+${payload.awardedScore}점을 얻었습니다. 잠시 뒤 다음 Stage로 이동합니다.</p>
+        <p>+${payload.awardedScore}점을 얻었습니다. 잠시 뒤 다음 문제로 이동합니다.</p>
       </div>
     `
     : `
@@ -447,8 +454,8 @@ function renderFeedback(target, payload) {
         <h2>${payload.outcome === "GAME_OVER" ? "탈락했습니다" : "오답입니다"}</h2>
         <p>${
           payload.outcome === "GAME_OVER"
-            ? "하트를 모두 잃어 이번 run이 종료됩니다."
-            : `하트 ${payload.livesRemaining}개가 남았습니다. 잠시 뒤 같은 Stage를 다시 풉니다.`
+            ? "하트를 모두 잃어 이번 판이 끝났습니다."
+            : `하트 ${payload.livesRemaining}개가 남았습니다. 잠시 뒤 같은 문제를 다시 풉니다.`
         }</p>
       </div>
     `;
