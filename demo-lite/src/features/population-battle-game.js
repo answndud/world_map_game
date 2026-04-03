@@ -377,7 +377,7 @@ function renderQuestionCard(round, disabled) {
       </div>
       <h1>더 인구가 많은 나라를 고르세요</h1>
       <div class="demo-route-meta">
-        <p>두 나라 중 인구가 더 많은 쪽을 고르세요. 틀리면 같은 문제를 다시 풀고, 맞히면 다음 비교로 넘어갑니다.</p>
+        <p>두 나라 중 인구가 더 많은 쪽을 고르세요. 틀리면 같은 문제를 다시 풉니다.</p>
       </div>
     </section>
 

@@ -7417,3 +7417,40 @@
 - 아직 약한 부분: recommendation hero는 많이 줄였지만 20문항 구조상 여전히 첫 화면 비중이 큰 편이다. 더 과감하게 하려면 mobile에서 intro paragraph를 더 짧게 자르거나 첫 section title을 hero 바로 아래로 당기는 추가 조정이 가능하다.
 - 면접용 30초 요약: demo-lite가 모바일에서 깨지진 않았지만, 상태판과 설명이 먼저 보여 실제 플레이가 늦게 시작되는 문제가 있었습니다. 그래서 홈 카드의 보조 라인을 없애고, 게임 화면은 `hero -> 문제 -> compact status`로 순서를 바꾸고, 추천 화면도 mobile에서는 핵심 status 2개만 남기도록 줄여서 작은 화면에서도 바로 플레이가 시작되는 느낌으로 정리했습니다.
 - 블로그 생략 이유: 이번 조각은 API, 도메인, 테스트 구조 변경이 아니라 `demo-lite` 공개 셸의 responsive hierarchy 조정이라 별도 블로그 글로 분리할 설명 가치는 낮았다.
+
+## 2026-04-03 - demo-lite 모바일 spacing 최종 압축
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 모바일 밀도 1차 조정 뒤에도 390px 폭 기준으로 home hero와 recommendation hero가 아직 조금 큰 편이었다. 이번 마감 조각의 목적은 반응형 구조를 바꾸는 것이 아니라, 실제 공개 URL 캡처를 보고 header / hero / card / status card 패딩과 타이포를 한 단계 더 줄여 첫 화면 체감을 더 단단하게 만드는 것이다.
+- 변경 파일:
+  - `demo-lite/src/app.js`
+  - `demo-lite/src/features/capital-game.js`
+  - `demo-lite/src/features/flag-game.js`
+  - `demo-lite/src/features/population-battle-game.js`
+  - `demo-lite/src/features/recommendation.js`
+  - `demo-lite/src/style.css`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 요청은 여전히 브라우저 hash route 렌더링에서 시작한다. 게임 상태, 추천 계산, browser-history 요약은 그대로다. 이번에는 [demo-lite/src/style.css](/Users/alex/project/worldmap/demo-lite/src/style.css)의 mobile breakpoint와 각 feature의 hero copy만 조정해 같은 상태를 더 짧은 표면에 싣도록 바꿨다.
+- 데이터 / 상태 변화:
+  - mobile에서 header / hero / panel padding이 한 단계 더 줄었다.
+  - home title, route title, status card 숫자 크기가 같이 낮아졌다.
+  - game hero의 세 번째 chip은 mobile에서 숨겨져 `수도 퀴즈 + 5문제`, `국기 퀴즈 + 5문제`, `인구 배틀 + 5문제`처럼 더 짧게 보인다.
+  - home card, metric card, recent history card padding도 함께 줄어 첫 화면에서 더 많은 actionable surface가 보인다.
+  - recommendation hero copy는 한 문장 더 짧아져 첫 질문 섹션이 더 빨리 보인다.
+- 핵심 도메인 개념:
+  - `mobile spacing budget`: 같은 정보라도 viewport가 작으면 패딩과 장식이 직접 UX cost가 된다는 기준
+  - `screenshot-driven polish`: 깨짐이 아니라 실제 공개 캡처를 보고 마지막 간격을 조정하는 방식
+- 예외 / 엣지 케이스:
+  - desktop과 tablet 규칙은 그대로 두고, 720px 이하에서만 더 강한 압축을 걸었다.
+  - 결과 화면의 2-chip hero는 그대로 유지되며, 숨기는 대상은 3개 이상 chip을 쓰는 game/recommendation hero top에만 적용된다.
+- 테스트:
+  - `cd demo-lite && npm test`
+  - `cd demo-lite && npm run build`
+  - `git diff --check`
+  - `python3 -m http.server 4177 -d demo-lite/dist`
+  - Chrome headless 390x844 screenshot으로 home / capital / recommendation 확인
+- 배운 점: 모바일 polish는 CSS breakpoint만 보고 끝내면 과하거나 덜한 부분을 놓치기 쉽다. 실제 캡처를 보면 “깨지지 않는다”와 “바로 플레이하고 싶다” 사이 차이가 훨씬 잘 드러난다.
+- 아직 약한 부분: recommendation은 구조상 질문 수가 많아, 더 과감한 mobile-first로 가려면 hero intro를 아예 접거나 첫 section card를 hero 안으로 더 당기는 선택지도 남아 있다.
+- 면접용 30초 요약: demo-lite 모바일 밀도 1차 조정 뒤에도 hero와 카드 패딩이 아직 조금 컸습니다. 그래서 실제 공개 화면 캡처를 다시 보고 mobile에서만 header, hero, card, status card 간격과 타이포를 한 단계 더 줄여 첫 질문과 첫 보기까지 도달하는 시간을 더 짧게 만들었습니다.
+- 블로그 생략 이유: 이번 조각도 API, 도메인, 테스트 구조 변경이 아니라 demo-lite 공개 셸의 spacing polish라 별도 블로그 글로 분리할 설명 가치는 낮았다.

@@ -71,7 +71,7 @@ function renderHome(activitySummary) {
     <section class="demo-hero">
       <h1>World Map Game</h1>
       <p class="demo-copy">
-        수도 퀴즈, 국기 퀴즈, 인구 비교 배틀, 국가 추천까지 바로 시작할 수 있습니다.
+        수도 퀴즈, 국기 퀴즈, 인구 비교 배틀, 국가 추천을 바로 즐겨보세요.
       </p>
     </section>
 

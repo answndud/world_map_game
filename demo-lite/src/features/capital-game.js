@@ -279,7 +279,7 @@ function renderQuestionCard(session, round, disabled) {
       </div>
       <h1>${round.targetCountryName}</h1>
       <div class="demo-route-meta">
-        <p>나라 이름에 맞는 수도를 고르세요. 틀리면 같은 문제를 다시 풀고, 맞히면 다음 문제로 넘어갑니다.</p>
+        <p>나라 이름에 맞는 수도를 고르세요. 틀리면 같은 문제를 다시 풉니다.</p>
       </div>
     </section>
 

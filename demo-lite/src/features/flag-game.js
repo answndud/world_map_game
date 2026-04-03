@@ -351,7 +351,7 @@ function renderQuestionCard(round, disabled) {
       </div>
       <h1>이 국기는 어느 나라일까요?</h1>
       <div class="demo-route-meta">
-        <p>국기만 보고 보기 4개 중 정답을 고르세요. 틀리면 같은 문제를 다시 풀게 됩니다.</p>
+        <p>국기만 보고 보기 4개 중 정답을 고르세요. 틀리면 같은 문제를 다시 풉니다.</p>
       </div>
     </section>
 

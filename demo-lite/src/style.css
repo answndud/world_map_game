@@ -928,45 +928,65 @@ input:focus-visible {
 @media (max-width: 720px) {
   .demo-page-shell {
     width: min(100vw - 20px, 1160px);
-    padding-top: 16px;
+    padding-top: 14px;
+  }
+
+  .demo-header {
+    padding: 13px 16px;
+    border-radius: 18px;
+  }
+
+  .demo-layout {
+    gap: 14px;
+    margin-top: 18px;
   }
 
   .demo-hero,
   .demo-panel {
-    padding: 22px 18px;
-    border-radius: 20px;
+    padding: 18px 16px;
+    border-radius: 18px;
   }
 
   .demo-hero--compact {
-    padding: 22px 18px;
+    padding: 18px 16px;
   }
 
   .demo-hero h1 {
     max-width: none;
-    font-size: clamp(1.95rem, 9vw, 2.6rem);
+    margin-top: 4px;
+    font-size: clamp(1.75rem, 8.4vw, 2.3rem);
     line-height: 1.02;
   }
 
   .demo-route-hero {
-    padding: 22px 18px;
-    gap: 12px;
+    padding: 18px 16px;
+    gap: 10px;
   }
 
   .demo-route-hero h1 {
     max-width: none;
-    font-size: clamp(1.7rem, 8vw, 2.3rem);
-    line-height: 1.04;
+    font-size: clamp(1.56rem, 7.5vw, 2.04rem);
+    line-height: 1.03;
   }
 
   .demo-route-meta p,
   .demo-copy {
-    font-size: 0.96rem;
+    font-size: 0.92rem;
+    line-height: 1.5;
   }
 
   .demo-chip {
-    min-height: 24px;
-    padding: 0 8px;
-    font-size: 0.76rem;
+    min-height: 22px;
+    padding: 0 7px;
+    font-size: 0.72rem;
+  }
+
+  .demo-route-hero-top {
+    gap: 6px;
+  }
+
+  .demo-route-hero-top .demo-chip:nth-child(n + 3) {
+    display: none;
   }
 
   .demo-hero::after {
@@ -980,21 +1000,21 @@ input:focus-visible {
   }
 
   .demo-card--route {
-    gap: 4px;
-    padding: 14px 15px;
+    gap: 3px;
+    padding: 12px 13px;
   }
 
   .demo-card--route h2 {
-    font-size: 1.18rem;
+    font-size: 1.12rem;
   }
 
   .demo-card--route p {
-    font-size: 0.95rem;
+    font-size: 0.91rem;
   }
 
   .demo-status-strip {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
+    gap: 8px;
   }
 
   .demo-status-strip--game {
@@ -1007,16 +1027,16 @@ input:focus-visible {
   }
 
   .demo-status-card {
-    padding: 12px 13px;
-    gap: 4px;
+    padding: 10px 11px;
+    gap: 3px;
   }
 
   .demo-status-card span {
-    font-size: 0.74rem;
+    font-size: 0.7rem;
   }
 
   .demo-status-card strong {
-    font-size: 1rem;
+    font-size: 0.94rem;
   }
 
   .demo-status-card[data-mobile-hidden="true"] {
@@ -1028,10 +1048,32 @@ input:focus-visible {
   }
 
   .demo-question-panel {
-    padding: 18px;
+    padding: 16px;
   }
 
   .demo-question-head {
     grid-template-columns: 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .demo-panel-head {
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+
+  .demo-panel-head h2,
+  .demo-card h2 {
+    font-size: 1.16rem;
+  }
+
+  .demo-history-list {
+    gap: 10px;
+  }
+
+  .demo-history-list li,
+  .demo-metric,
+  .demo-card {
+    padding: 12px 13px;
   }
 }

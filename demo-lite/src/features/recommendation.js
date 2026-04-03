@@ -1499,7 +1499,7 @@ export function mountRecommendationDemo(container, countries) {
         </div>
         <h1>나에게 어울리는 국가 찾기</h1>
         <div class="demo-route-meta">
-          <p>생활 취향과 여행 스타일에 맞는 국가를 찾아봅니다. 모든 질문에 답하면 바로 결과를 볼 수 있습니다.</p>
+          <p>생활 취향과 여행 스타일에 맞는 국가를 고르면 바로 결과를 볼 수 있습니다.</p>
         </div>
         <div class="demo-status-strip demo-status-strip--recommendation-survey">
           <article class="demo-status-card" data-tone="recommendation">
