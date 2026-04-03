@@ -129,7 +129,7 @@ npm run dev
 
 현재 공개 URL:
 
-- [https://worldmap-demo-lite.pages.dev/](https://worldmap-demo-lite.pages.dev/)
+- [https://world-map-game-demo-lite-git.pages.dev/](https://world-map-game-demo-lite-git.pages.dev/)
 
 - `#/`
 - `#/games/capital`
@@ -139,9 +139,25 @@ npm run dev
 
 주의:
 
-- 현재 public URL은 `wrangler pages deploy`로 열어 둔 수동 Pages 배포입니다.
-- 다만 가장 최근 production alias는 clean repo commit `5356fde` 기준으로 다시 맞췄습니다.
-- 아직 Git-connected 자동 배포 source of truth는 아니므로, 다음 단계는 이 상태를 `main` 기준 auto deploy 흐름으로 넘기는 것입니다.
+- 현재 운영 URL은 Git-connected Cloudflare Pages 프로젝트 `world-map-game-demo-lite-git` 입니다.
+- production branch는 `main`이고, `main`에 푸시되면 Pages가 자동으로 다시 빌드/배포합니다.
+- custom domain은 연결하지 않고 기본 `pages.dev` 도메인을 그대로 사용합니다.
+- 이전 `worldmap-demo-lite.pages.dev` direct-upload 프로젝트는 비교/백업용 legacy 경로로만 남겨 둡니다.
+
+공개 URL smoke:
+
+```bash
+cd demo-lite
+npm run inspect:pages-git
+npm run smoke:public -- https://world-map-game-demo-lite-git.pages.dev
+```
+
+Git-connected 운영 기준:
+
+- [demo-lite-verify.yml](/Users/alex/project/worldmap/.github/workflows/demo-lite-verify.yml)이 `demo-lite` 변경마다 `npm test`, `npm run build`, `npm run verify:pages`를 실행합니다.
+- `workflow_dispatch`에서는 public URL을 직접 넣어 `npm run smoke:public`까지 GitHub Actions에서 다시 돌릴 수 있습니다.
+- 로컬에서는 `cd demo-lite && npm run inspect:pages-git`으로 현재 운영 Pages 프로젝트의 Git provider, 현재 브랜치, working tree 상태를 바로 확인할 수 있습니다.
+- legacy direct-upload 프로젝트를 다시 점검하려면 `DEMO_LITE_PAGES_PROJECT_NAME=worldmap-demo-lite npm run inspect:pages-git`처럼 프로젝트명을 override하면 됩니다.
 
 ## 검증 레일
 
@@ -172,9 +188,13 @@ WORLDMAP_PUBLIC_BASE_URL=https://<public-url> ./gradlew publicUrlSmokeTest
 - ECS task definition sample + render script + preflight script 제공
 - Railway 런북과 `demo-lite` scope / decomposition 문서 정리
 - `demo-lite`용 Cloudflare Pages 런북, `.node-version`, `_headers` baseline 추가
+- `demo-lite`용 public URL smoke 스크립트 추가
+- `demo-lite`용 GitHub Actions verify lane 추가
 
-다만 **공개 URL은 아직 연결되지 않았습니다.**
-즉 현재 상태는 “배포 완료”가 아니라 **배포 준비와 검증 레일이 코드로 정리된 상태**에 가깝습니다.
+현재 상태는 두 갈래입니다.
+
+- full Spring Boot 앱: 공개 URL 미연결, 배포 준비와 검증 레일 정리 단계
+- `demo-lite`: [https://world-map-game-demo-lite-git.pages.dev/](https://world-map-game-demo-lite-git.pages.dev/) 에 Git-connected Pages 공개 URL이 열려 있고, `main` 푸시 기준 자동 배포와 `npm run smoke:public` 반복 검증이 가능
 
 배포 전 확인:
 

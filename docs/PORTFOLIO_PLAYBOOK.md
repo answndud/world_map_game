@@ -840,6 +840,10 @@
 - 추가로 Chrome channel 기반 Playwright screenshot smoke로 `/`, `/#/games/capital`, `/#/recommendation` 렌더링까지 확인해 hash-route 정적 배포가 실제로 뜨는지 봤다
 - 이어서 `demo-lite` 전체 변경을 clean repo commit `5356fde`로 커밋/푸시한 뒤, `wrangler pages deploy dist --branch main --commit-hash 5356fde...`로 production alias를 다시 배포해 dirty working tree 상태를 정리했다. 즉 현재 공개 URL은 clean repo commit 기준으로 한 번 더 맞춰져 있다
 - `cd demo-lite && npm test`, `cd demo-lite && npm run build`로 demo-lite 단독 loop와 static build가 실제로 통과하는지 확인해, free-tier static hosting 전환의 첫 기술적 전제가 코드로 닫혔다
+- 마지막으로 [demo-lite/scripts/smoke-public-url.mjs](/Users/alex/project/worldmap/demo-lite/scripts/smoke-public-url.mjs)와 [demo-lite/tests/public-smoke-script.test.mjs](/Users/alex/project/worldmap/demo-lite/tests/public-smoke-script.test.mjs)를 추가해 `npm run smoke:public -- https://worldmap-demo-lite.pages.dev` 한 번으로 root HTML, `/assets/*`, generated countries/flag data, 대표 SVG, 핵심 보안/캐시 헤더를 공개 URL 기준으로 다시 검증할 수 있게 만들었다
+- 이어서 [demo-lite/scripts/inspect-pages-git-handoff.mjs](/Users/alex/project/worldmap/demo-lite/scripts/inspect-pages-git-handoff.mjs)와 [demo-lite/tests/pages-git-handoff.test.mjs](/Users/alex/project/worldmap/demo-lite/tests/pages-git-handoff.test.mjs)를 추가해 현재 Pages 프로젝트의 Git provider, 현재 브랜치, working tree 상태를 저장소 안에서 다시 읽을 수 있게 만들었다
+- 그리고 [demo-lite-verify.yml](/Users/alex/project/worldmap/.github/workflows/demo-lite-verify.yml)을 추가해 `demo-lite` 변경 시 `npm test`, `npm run build`, `npm run verify:pages`를 GitHub Actions에서 먼저 돌리도록 고정했다. `workflow_dispatch`에서는 public URL을 입력해 `npm run smoke:public`까지 수동 실행할 수 있다
+- 마지막으로 Cloudflare Pages Git-connected 프로젝트 `world-map-game-demo-lite-git`를 실제 운영 source of truth로 연결했고, 운영 URL을 [https://world-map-game-demo-lite-git.pages.dev/](https://world-map-game-demo-lite-git.pages.dev/) 로 고정했다. custom domain은 의도적으로 붙이지 않았고, 기존 `worldmap-demo-lite` direct-upload URL은 legacy backup 경로로만 남겨 뒀다
 - README에 실시간 전달 결정과 발표용 문서 세트 링크 반영
 
 다음에 이어서 할 일:
@@ -849,7 +853,7 @@
 - Railway 공개 URL 기준 smoke test와 admin/dashboard 로그인 확인을 남긴다
 - Railway 배포가 안정된 뒤에만 커스텀 도메인이나 Cloudflare 앞단 연결을 검토한다
 - 무료 배포가 꼭 필요하면 full app을 억지로 깎지 말고, [DEMO_LITE_SCOPE_PLAN.md](/Users/alex/project/worldmap/docs/DEMO_LITE_SCOPE_PLAN.md) 기준 retained surface를 먼저 고정한 뒤 sibling `demo-lite` app으로 분리한다
-- `demo-lite` 다음 조각으로는 현재 수동 Pages production 상태를 `main` branch 기준 Git-connected auto deploy source of truth로 넘기는 것이다. 즉 Cloudflare 대시보드에서 Git 연결과 production branch 운영 기준을 실제 저장소 흐름과 맞춰야 한다
+- `demo-lite`는 Git-connected Pages와 `pages.dev` 기본 도메인 기준으로 배포 완료로 본다. 이후 남는 일은 기능 확장이 아니라 legacy direct-upload 프로젝트 정리 여부와 Build Watch Paths 조정 같은 운영 polish다
 - 그다음 [DEMO_LITE_DECOMPOSITION_PLAN.md](/Users/alex/project/worldmap/docs/DEMO_LITE_DECOMPOSITION_PLAN.md) 순서대로 `header/auth -> recommendation feedback -> stats/ranking/mypage/dashboard -> leaderboard write -> auth/ownership -> server-side game persistence`를 끊는 설계를 구현한다
 
 반드시 이해할 것:
