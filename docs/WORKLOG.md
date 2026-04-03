@@ -7023,3 +7023,35 @@
 - 배운 점: Cloudflare Pages에서 Direct Upload와 Git-connected는 단순한 토글 문제가 아니기 때문에, 실제 전환 전에 저장소 쪽 release gate를 먼저 분리해 두는 것이 중요하다. 즉 대시보드 클릭 이전에 CI contract를 먼저 고정해야 이후 운영 기준이 설명 가능해진다.
 - 아직 약한 부분: 새 Git-connected Pages project 생성 자체는 여전히 Cloudflare 대시보드에서 직접 해야 한다. 즉 지금 단계는 handoff 준비를 끝낸 것이지, auto deploy 전환을 끝낸 것은 아니다.
 - 면접용 30초 요약: demo-lite를 Git-connected Pages로 넘기기 전에, 저장소 쪽 source of truth를 먼저 닫기 위해 `demo-lite-verify` GitHub Actions workflow를 추가했습니다. 이 workflow는 `demo-lite` 변경마다 테스트, static build, Pages baseline verify를 자동으로 돌리고, 필요하면 public URL smoke도 수동으로 다시 돌릴 수 있습니다. 핵심은 Direct Upload 상태를 바로 전환하려 하지 않고, 먼저 repo/main이 배포 가능한 branch라는 사실을 CI로 증명하도록 만든 점입니다.
+
+## 2026-04-03 - demo-lite Git-connected Pages 배포 완료 상태를 최종 문서에 반영하기
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: `demo-lite`는 handoff 준비까지만 끝난 상태가 아니라, 이제 실제 Git-connected Cloudflare Pages 프로젝트로 운영 중이다. 이번 조각의 목적은 현재 운영 사실을 기준으로 기본 public URL, 기본 Pages 프로젝트명, auto deploy 기준, legacy direct-upload 프로젝트의 역할을 문서와 스크립트에 최종 반영하는 것이다.
+- 변경 파일:
+  - `demo-lite/scripts/smoke-public-url.mjs`
+  - `demo-lite/scripts/inspect-pages-git-handoff.mjs`
+  - `README.md`
+  - `demo-lite/README.md`
+  - `docs/DEPLOYMENT_RUNBOOK_DEMO_LITE_CLOUDFLARE_PAGES.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/112-finalize-demo-lite-git-connected-pages-deployment.md`
+- 요청 흐름 / 데이터 흐름: 앱 runtime은 바뀌지 않았다. 바뀐 것은 운영 기준이다. 이제 `main`에 반영된 `demo-lite` 변경은 Git-connected Pages 프로젝트 `world-map-game-demo-lite-git`가 자동으로 다시 빌드/배포한다. 로컬 검증 흐름은 `npm run inspect:pages-git -> npm run smoke:public -- https://world-map-game-demo-lite-git.pages.dev` 이고, legacy direct-upload 프로젝트를 다시 보고 싶을 때만 환경변수로 project name을 override한다.
+- 데이터 / 상태 변화: DB, Redis, localStorage는 바뀌지 않았다. 대신 운영 source of truth가 바뀌었다. 기본 public URL은 이제 `world-map-game-demo-lite-git.pages.dev`이고, `smoke-public-url.mjs`와 `inspect-pages-git-handoff.mjs`의 default도 이 운영 기준으로 바꿨다. 기존 `worldmap-demo-lite.pages.dev`는 비교/백업용 legacy 경로로만 남긴다.
+- 핵심 도메인 개념:
+  - `git-connected production`: Cloudflare Pages가 `main`을 production branch로 읽고 자동 배포하는 상태
+  - `pages.dev final URL`: custom domain 없이도 운영 종료 기준으로 삼을 수 있는 기본 도메인
+  - `legacy backup project`: 예전 direct-upload Pages 프로젝트를 운영 기준이 아니라 비교/백업용으로만 유지하는 상태
+  - `default inspection target`: 로컬 smoke/inspection 도구가 기본적으로 운영 source of truth를 가리키는 상태
+- 예외 / 엣지 케이스:
+  - 로컬 브랜치가 여전히 feature branch면 `inspect:pages-git`는 current branch가 `main`과 다르다고 알려 준다. 이건 배포 실패가 아니라 “현재 로컬 작업 브랜치가 production branch는 아니다”라는 안내다.
+  - legacy direct-upload 프로젝트를 다시 확인할 때는 `DEMO_LITE_PAGES_PROJECT_NAME=worldmap-demo-lite npm run inspect:pages-git`처럼 override가 필요하다.
+  - custom domain은 의도적으로 연결하지 않았다. 현재 완료 기준은 `pages.dev` 운영 URL 기준이다.
+- 테스트:
+  - `cd demo-lite && DEMO_LITE_PAGES_PROJECT_NAME=world-map-game-demo-lite-git npm run inspect:pages-git`
+  - `cd demo-lite && npm run smoke:public -- https://world-map-game-demo-lite-git.pages.dev`
+  - `git diff --check`
+- 배운 점: handoff 준비와 운영 완료는 문장 한 줄 차이처럼 보여도, source of truth를 어떤 URL과 어떤 Pages project로 볼지 명확히 바꾸지 않으면 README와 런북이 오래된 운영 정보를 계속 말하게 된다. 운영 완료 시점엔 docs와 smoke 기본값도 함께 바꿔야 한다.
+- 아직 약한 부분: 이제 남은 것은 기능이 아니라 운영 polish다. Build Watch Paths를 더 좁히거나 legacy direct-upload 프로젝트를 정리할지는 별도 판단이 필요하다.
+- 면접용 30초 요약: demo-lite는 이제 Git-connected Cloudflare Pages 프로젝트 `world-map-game-demo-lite-git`에서 `main` 기준으로 자동 배포되는 상태입니다. 이번 조각에서는 기본 public URL과 기본 Pages 프로젝트 기준을 새 운영 source of truth로 바꾸고, 예전 direct-upload 프로젝트는 legacy backup으로만 남긴다고 문서와 smoke 도구에 반영했습니다. 핵심은 handoff 준비가 아니라 실제 운영 완료 상태를 저장소 안의 기본값까지 포함해 맞춘 점입니다.

@@ -16,15 +16,15 @@
 
 현재 공개 URL:
 
-- [https://worldmap-demo-lite.pages.dev/](https://worldmap-demo-lite.pages.dev/)
+- [https://world-map-game-demo-lite-git.pages.dev/](https://world-map-game-demo-lite-git.pages.dev/)
 
-현재 공개 URL은 수동 `wrangler pages deploy` 기준입니다. 다만 가장 최근 production alias는 clean repo commit `5356fde` 기준으로 다시 맞췄습니다. 아직 Git-connected 자동 배포 source of truth는 아니므로, 다음 단계는 이 상태를 `main` 기준 auto deploy 흐름으로 넘기는 것입니다.
+현재 공개 URL은 Git-connected Cloudflare Pages 프로젝트 `world-map-game-demo-lite-git` 기준입니다. production branch는 `main`이고, `main`에 푸시되면 Pages가 자동으로 다시 빌드/배포합니다. custom domain은 연결하지 않고 기본 `pages.dev` 도메인을 그대로 사용합니다.
 
 중요:
 
-- 현재 `worldmap-demo-lite`는 Direct Upload 프로젝트입니다.
-- 따라서 Git integration으로 넘기려면 기존 프로젝트를 전환하는 것이 아니라, 같은 저장소를 바라보는 새 Git-connected Pages 프로젝트를 만들어야 합니다.
-- 저장소 쪽 준비는 [demo-lite-verify.yml](/Users/alex/project/worldmap/.github/workflows/demo-lite-verify.yml)에서 먼저 닫습니다.
+- 현재 운영 source of truth는 `world-map-game-demo-lite-git` 입니다.
+- 이전 `worldmap-demo-lite` 프로젝트는 direct-upload legacy 경로로만 남겨 두고, 운영 기준으로는 보지 않습니다.
+- 저장소 쪽 배포 준비와 검증은 [demo-lite-verify.yml](/Users/alex/project/worldmap/.github/workflows/demo-lite-verify.yml)에서 닫습니다.
 
 아직 없는 것:
 
@@ -50,7 +50,7 @@ cd demo-lite
 npm run build
 npm run verify:pages
 npm run inspect:pages-git
-npm run smoke:public -- https://worldmap-demo-lite.pages.dev
+npm run smoke:public -- https://world-map-game-demo-lite-git.pages.dev
 ```
 
 빌드 흐름:
@@ -73,14 +73,20 @@ npm run smoke:public -- https://worldmap-demo-lite.pages.dev
 4. `/generated/data/flag-assets.json`과 대표 `/generated/flags/*.svg`가 실제로 열리는지
 5. `Cache-Control`, `Content-Security-Policy`, `X-Content-Type-Options`, `X-Frame-Options`가 production 응답에 붙어 있는지
 
-`npm run inspect:pages-git`은 현재 Cloudflare Pages 프로젝트 상태를 읽어 아래를 요약합니다.
+`npm run inspect:pages-git`은 현재 운영 Cloudflare Pages 프로젝트 상태를 읽어 아래를 요약합니다.
 
 1. 현재 프로젝트가 Direct Upload인지 Git-connected인지
 2. 현재 로컬 브랜치가 planned production branch와 다른지
 3. working tree가 dirty한지
 4. 다음 handoff step이 무엇인지
 
-`npm run inspect:pages-git`은 아래를 확인합니다.
+legacy direct-upload 프로젝트를 다시 보려면 아래처럼 project 이름만 바꿔 실행합니다.
+
+```bash
+DEMO_LITE_PAGES_PROJECT_NAME=worldmap-demo-lite npm run inspect:pages-git
+```
+
+운영 기준 기본값은 이미 새 Git-connected 프로젝트를 가리킵니다.
 
 1. 현재 Cloudflare Pages 프로젝트가 `Git Provider: No` 인 direct-upload 상태인지
 2. 현재 작업 브랜치가 planned production branch와 맞는지
@@ -108,7 +114,7 @@ GitHub Actions 기준으로도 아래가 준비돼 있습니다.
 - 현재 route는 `hash route`이므로 `_redirects`를 따로 두지 않습니다.
 - Git-connected Pages 정적 배포 기준으로는 `wrangler.toml`도 아직 필요 없습니다.
 - 자세한 클릭 순서는 [DEPLOYMENT_RUNBOOK_DEMO_LITE_CLOUDFLARE_PAGES.md](/Users/alex/project/worldmap/docs/DEPLOYMENT_RUNBOOK_DEMO_LITE_CLOUDFLARE_PAGES.md)를 봅니다.
-- 현재 `worldmap-demo-lite` 프로젝트는 direct-upload 상태입니다. 기존 프로젝트를 Git integration으로 바꾸는 대신, 새 Git-connected Pages 프로젝트를 만들어 handoff해야 합니다.
+- 현재 운영 기준은 이미 새 Git-connected 프로젝트로 넘어갔고, 기존 `worldmap-demo-lite`는 legacy direct-upload 경로로만 유지합니다.
 
 ## 현재 route
 
