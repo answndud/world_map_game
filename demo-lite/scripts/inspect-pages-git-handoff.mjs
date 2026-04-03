@@ -4,7 +4,7 @@ import { pathToFileURL } from "node:url";
 
 const DEMO_LITE_ROOT = resolve(import.meta.dirname, "..");
 const REPO_ROOT = resolve(DEMO_LITE_ROOT, "..");
-const DEFAULT_PROJECT_NAME = process.env.DEMO_LITE_PAGES_PROJECT_NAME || "worldmap-demo-lite";
+const DEFAULT_PROJECT_NAME = process.env.DEMO_LITE_PAGES_PROJECT_NAME || "world-map-game-demo-lite-git";
 const DEFAULT_PRODUCTION_BRANCH = process.env.DEMO_LITE_PAGES_PRODUCTION_BRANCH || "main";
 
 export function findPagesProject(projects, projectName) {

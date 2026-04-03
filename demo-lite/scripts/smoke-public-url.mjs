@@ -1,6 +1,6 @@
 import { pathToFileURL } from "node:url";
 
-const DEFAULT_BASE_URL = "https://worldmap-demo-lite.pages.dev";
+const DEFAULT_BASE_URL = "https://world-map-game-demo-lite-git.pages.dev";
 
 export function normalizeBaseUrl(input) {
   const value = String(input || "").trim();
