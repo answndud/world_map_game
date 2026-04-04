@@ -7454,3 +7454,172 @@
 - 아직 약한 부분: recommendation은 구조상 질문 수가 많아, 더 과감한 mobile-first로 가려면 hero intro를 아예 접거나 첫 section card를 hero 안으로 더 당기는 선택지도 남아 있다.
 - 면접용 30초 요약: demo-lite 모바일 밀도 1차 조정 뒤에도 hero와 카드 패딩이 아직 조금 컸습니다. 그래서 실제 공개 화면 캡처를 다시 보고 mobile에서만 header, hero, card, status card 간격과 타이포를 한 단계 더 줄여 첫 질문과 첫 보기까지 도달하는 시간을 더 짧게 만들었습니다.
 - 블로그 생략 이유: 이번 조각도 API, 도메인, 테스트 구조 변경이 아니라 demo-lite 공개 셸의 spacing polish라 별도 블로그 글로 분리할 설명 가치는 낮았다.
+
+## 2026-04-04 - 위치 게임 탈락 모달과 결과 상단 recap polish
+
+- 단계: 3. 국가 위치 찾기 게임 Level 1
+- 목적: 위치 게임은 대표 모드인데도 탈락 모달과 결과 상단이 너무 일반적인 문장 위주라, 한 판이 어디서 끊겼고 얼마나 버텼는지 빠르게 읽기 어려웠다. 이번 조각의 목적은 서버 상태 전이는 그대로 두고 terminal feedback를 더 짧고 즉각적으로 읽히게 만드는 것이다.
+- 변경 파일:
+  - `src/main/resources/templates/location-game/play.html`
+  - `src/main/resources/templates/location-game/result.html`
+  - `src/main/resources/static/js/location-game.js`
+  - `src/main/resources/static/css/site.css`
+  - `src/test/java/com/worldmap/game/location/LocationGameFlowIntegrationTest.java`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/113-polish-location-run-recap-in-game-over-and-result-surfaces.md`
+- 요청 흐름 / 데이터 흐름: 런타임 흐름은 그대로 `GET /games/location/play/{sessionId} -> POST /api/games/location/sessions/{sessionId}/answer -> GAME_OVER면 modal, GET /games/location/result/{sessionId} -> SSR debrief`다. 이번에는 `LocationGameService`가 이미 내려주던 `stageNumber`, `clearedStageCount`, `totalScore`, `totalAttemptCount`, `firstTryClearCount`, `currentStageNumber`를 `location-game.js`와 SSR 템플릿이 더 밀도 높은 recap surface로 다시 조립하도록 바꿨다.
+- 데이터 / 상태 변화:
+  - 게임오버 모달은 이제 `탈락 Stage / 클리어 / 총점` 3칸 recap을 함께 보여준다.
+  - 결과 배너 아래에는 `마지막 Stage / 1트 클리어 Stage / 총 시도` 빠른 요약 strip가 추가됐다.
+  - stage overlay와 game-over modal panel에는 `rise-in` entry motion이 붙어 정답/탈락 피드백이 조금 더 즉각적으로 느껴지게 됐다.
+  - DB, Redis, 세션 상태 전이 자체는 바뀌지 않았다.
+- 핵심 도메인 개념:
+  - `terminal feedback surface`: 게임이 끝난 뒤 플레이어가 “어디서 멈췄는지”를 1초 안에 읽을 수 있게 만드는 표현 계층
+  - `read model reuse`: 새 집계를 만들지 않고 기존 answer payload와 result read model을 재조합해 피드백 밀도를 높이는 방식
+- 예외 / 엣지 케이스:
+  - recap은 기존 정책대로 정답 국가명이나 선택 상세를 다시 노출하지 않는다.
+  - 게임오버 모달 recap은 재시작 직전 stale 값이 남지 않게 modal hide 시 비운다.
+  - 결과 페이지 하단의 Stage/Attempt 테이블은 그대로 유지해 상세 복기와 빠른 요약을 분리했다.
+- 테스트:
+  - `node --check src/main/resources/static/js/location-game.js`
+  - `./gradlew test --tests com.worldmap.game.location.LocationGameFlowIntegrationTest`
+  - `git diff --check`
+- 배운 점: terminal UI는 새 데이터를 더 내려주지 않아도, 이미 있는 state를 어떤 순서로 다시 보여 주느냐만 바꿔도 체감이 크게 달라진다. 특히 결과 표와 게임오버 모달은 “상세 기록”과 “빠른 요약”을 분리하는 편이 읽기 쉽다.
+- 아직 약한 부분: 이번 조각은 탈락/결과 feedback를 한 단계 다듬은 수준이고, 위치 게임 자체의 모바일 drag 감도나 사운드 여부는 아직 건드리지 않았다.
+- 면접용 30초 요약: 위치 게임은 서버 상태 전이 자체는 안정적이었지만, 탈락 모달과 결과 상단이 너무 일반적인 문장 위주라 한 판을 빠르게 읽기 어려웠습니다. 그래서 새 집계를 만들지 않고 기존 answer payload와 result read model을 재조합해서, 게임오버 모달에는 `탈락 Stage / 클리어 / 총점`, 결과 상단에는 `마지막 Stage / 1트 클리어 / 총 시도` recap을 추가했습니다. 컨트롤러나 서비스 대신 JS와 SSR 템플릿에서 닫은 이유는 상태 계산을 바꾸는 작업이 아니라 terminal feedback surface를 더 잘 읽히게 만드는 표현 계층 작업이기 때문입니다.
+
+## 2026-04-04 - 위치 게임 터치/펜 drag 억제 기준 고정
+
+- 단계: 3. 국가 위치 찾기 게임 Level 1
+- 목적: 위치 게임은 이미 drag/click 분리와 hit-test fallback이 있었지만, 모바일과 터치펜 환경에서는 회전 직후 polygon click이 너무 쉽게 선택으로 이어질 수 있었다. 이번 조각의 목적은 서버 로직을 건드리지 않고, 브라우저 입력 계층에서 accidental selection 억제 기준을 더 명시적으로 고정하는 것이다.
+- 변경 파일:
+  - `src/main/resources/static/js/location-game.js`
+  - `src/main/resources/templates/location-game/play.html`
+  - `src/main/resources/templates/location-game/start.html`
+  - `src/test/java/com/worldmap/e2e/BrowserSmokeE2ETest.java`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/114-tighten-location-touch-intent-thresholds-and-cooldown.md`
+- 요청 흐름 / 데이터 흐름: 요청과 상태 전이는 그대로 `GET /games/location/play/{sessionId} -> POST /api/games/location/sessions/{sessionId}/answer`다. 달라진 것은 브라우저 입력 흐름이다. `pointerdown -> pointermove -> pointerup / polygonClick / globeClick` 사이에서 `location-game.js`가 pointer type별 threshold와 suppression window를 판단하고, 실제 선택은 그 규칙을 통과할 때만 `selectedCountryIso3Code`를 갱신한다.
+- 데이터 / 상태 변화:
+  - drag threshold를 `mouse 18px / pen 24px / touch 30px`로 분리했다.
+  - 새 pointerdown이 시작되면 이전 suppression cooldown은 초기화해, 직전 drag의 잔여 쿨다운이 의도된 새 탭까지 막지 않게 했다.
+  - browser smoke hook은 `locationMarkDragSuppressed()`를 통해 drag 직후 accidental polygon click 억제 규칙을 직접 재현할 수 있다.
+  - DB, Redis, 세션/Stage/Attempt 상태 자체는 바뀌지 않는다.
+- 핵심 도메인 개념:
+  - `pointer intent threshold`: 입력 장치별로 drag와 tap의 최소 구분값이 다르다는 기준
+  - `post-drag cooldown`: 회전 직후 남는 click/polygon event가 바로 선택으로 이어지지 않게 막는 짧은 보호 구간
+- 예외 / 엣지 케이스:
+  - 이 조각은 실제 휴대폰/태블릿 실기기 최종값이 아니라 브라우저 기준 보수적 1차 값이다.
+  - 선택 억제는 브라우저 레벨 보호 규칙이라 서버 submit/stale guard 규칙과는 독립적이다.
+  - browser smoke는 real drag 좌표 대신 hook을 써서 “억제 직후 막힘 / cooldown 뒤 재선택 가능” 계약만 고정한다.
+- 테스트:
+  - `node --check src/main/resources/static/js/location-game.js`
+  - `./gradlew test --tests com.worldmap.game.location.LocationGameFlowIntegrationTest`
+  - `./gradlew browserSmokeTest --tests com.worldmap.e2e.BrowserSmokeE2ETest`
+  - `git diff --check`
+- 배운 점: 모바일/펜 입력은 drag threshold 하나만으로 닫기보다, 장치별 threshold와 drag 직후 짧은 suppression window를 같이 두는 편이 훨씬 설명 가능하다. 또 이런 규칙은 서버 테스트보다 browser smoke에서 계약을 한 번 고정해 두는 게 안전하다.
+- 아직 약한 부분: threshold 숫자는 현재 브라우저 기준 보수값이라, 실제 휴대폰과 태블릿에서 한 번 더 만져볼 여지가 있다. 사운드나 시각 연출은 여전히 이번 조각 범위 밖이다.
+- 면접용 30초 요약: 위치 게임은 이미 drag와 click을 분리하고 hit-test fallback도 있었지만, 모바일에서는 회전 직후 polygon click이 바로 선택으로 이어질 수 있었습니다. 그래서 입력 장치별로 `mouse 18 / pen 24 / touch 30` threshold를 두고, drag 직후에는 짧은 suppression window를 둬 accidental click을 한 번 더 막았습니다. 이건 서버 상태 전이가 아니라 브라우저 입력 의도 판별 규칙이라 `location-game.js`와 browser smoke로 닫는 게 맞았습니다.
+
+## 2026-04-04 - 위치 게임 compact viewport globe control tuning
+
+- 단계: 3. 국가 위치 찾기 게임 Level 1
+- 목적: 터치/펜 drag 억제 기준을 세운 뒤에도 모바일 viewport에서는 회전 속도와 확대 범위가 desktop 기준 그대로라 체감이 조금 급했다. 이번 조각의 목적은 서버 게임 규칙을 바꾸지 않고, compact viewport에서 지구본 컨트롤을 더 보수적으로 튜닝하는 것이다.
+- 변경 파일:
+  - `src/main/resources/static/js/location-game.js`
+  - `src/main/resources/templates/location-game/play.html`
+  - `src/main/resources/templates/location-game/start.html`
+  - `src/test/java/com/worldmap/e2e/BrowserSmokeE2ETest.java`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/115-tune-location-globe-controls-for-compact-viewports.md`
+- 요청 흐름 / 데이터 흐름: 요청과 상태 전이는 그대로 `GET /games/location/play/{sessionId} -> POST /api/games/location/sessions/{sessionId}/answer`다. 이번에는 브라우저가 `window.innerWidth`를 기준으로 compact viewport 여부를 판단하고, `createBaseGlobe() -> applyViewportGlobeControls() -> handleCountrySelection()` 흐름에서 회전 속도, damping, zoom speed, min/max distance, 선택 후 point-of-view altitude를 다르게 적용한다.
+- 데이터 / 상태 변화:
+  - compact viewport에서는 `rotateSpeed 0.46`, `dampingFactor 0.11`, `zoomSpeed 0.76`, `minDistance 165`, `maxDistance 360`을 쓴다.
+  - 초기 시야와 선택 후 focus altitude도 compact viewport에서 더 멀고 천천히 움직이도록 조정했다.
+  - browser smoke hook은 `locationReadControlSnapshot()`으로 현재 컨트롤 값들을 읽을 수 있다.
+  - DB, Redis, 세션/Stage/Attempt 상태 전이 자체는 바뀌지 않는다.
+- 핵심 도메인 개념:
+  - `viewport-aware interaction tuning`: 같은 게임 규칙이라도 입력 장치와 화면 폭에 따라 지구본 조작 감각은 별도 조정이 필요하다는 기준
+  - `browser-side control contract`: 서버가 아니라 브라우저가 가진 컨트롤 파라미터를 smoke test로 고정하는 방식
+- 예외 / 엣지 케이스:
+  - 이번 조각은 viewport 폭 기준 1차 분기라, 실제 OS/브라우저별 touch physics 차이까지 모두 흡수하는 것은 아니다.
+  - resize 시 컨트롤 값은 다시 적용되지만, 현재 카메라 위치 자체를 강제로 리셋하지는 않는다.
+  - compact tuning은 760px 이하에서만 적용된다.
+- 테스트:
+  - `node --check src/main/resources/static/js/location-game.js`
+  - `./gradlew test --tests com.worldmap.game.location.LocationGameFlowIntegrationTest`
+  - `./gradlew browserSmokeTest --tests com.worldmap.e2e.BrowserSmokeE2ETest`
+  - `git diff --check`
+- 배운 점: 모바일 상호작용은 drag threshold만 조정한다고 끝나지 않는다. 실제 체감은 `rotateSpeed`, `damping`, `zoom range`, `focus altitude`가 같이 결정한다.
+- 아직 약한 부분: compact viewport 분기는 브라우저 폭 기준이어서, 실제 태블릿 landscape처럼 폭은 넓지만 touch 비중이 높은 환경은 한 번 더 다듬을 여지가 있다.
+- 면접용 30초 요약: 위치 게임에서 drag 억제 규칙을 잡은 뒤에도 모바일에서는 지구본 회전과 확대가 아직 조금 급했습니다. 그래서 서버 도메인은 그대로 두고, 브라우저에서 compact viewport일 때만 `rotateSpeed`, `damping`, `zoom range`, `focus altitude`를 더 보수적으로 조정했습니다. 이건 게임 규칙이 아니라 컨트롤 감각 문제라 `location-game.js`와 browser smoke에서 닫는 게 맞았습니다.
+
+## 2026-04-04 - 인구수 게임 모바일 HUD와 결과 핵심 수치 정리
+
+- 단계: 4. 국가 인구수 맞추기 게임 Level 1
+- 목적: 인구수 게임은 서버 루프와 점수 정책은 이미 안정적이었지만, 모바일에서는 플레이 HUD와 결과 상단이 조금 길고 균일해서 `지금 Stage / 점수 / 클리어`를 바로 읽기 어려웠다. 이번 조각의 목적은 서버 상태 전이를 바꾸지 않고, HUD 우선순위와 결과 상단 요약만 더 짧게 정리하는 것이다.
+- 변경 파일:
+  - `src/main/resources/templates/population-game/play.html`
+  - `src/main/resources/templates/population-game/result.html`
+  - `src/main/resources/templates/population-game/start.html`
+  - `src/main/resources/static/js/population-game.js`
+  - `src/main/resources/static/css/site.css`
+  - `src/test/java/com/worldmap/game/population/PopulationGameFlowIntegrationTest.java`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/116-polish-population-mobile-hud-and-result-scan-summary.md`
+- 요청 흐름 / 데이터 흐름: 런타임 흐름은 그대로 `GET /games/population/play/{sessionId} -> GET /api/games/population/sessions/{id}/state -> POST /api/games/population/sessions/{id}/answer -> GET /games/population/result/{sessionId}`다. 이번에는 `PopulationGameService`가 이미 내려주던 `stageNumber`, `difficultyLabel`, `clearedStageCount`, `totalScore`, `livesRemaining`, `currentStageNumber`, `firstTryClearCount`, `totalAttemptCount`를 `population-game.js`와 SSR 템플릿이 더 짧은 순서로 다시 배치하도록 바꿨다.
+- 데이터 / 상태 변화:
+  - 플레이 HUD 상태 카드는 `Stage / 점수 / 클리어 / 하트 / 난이도` 순서로 재배치됐다.
+  - 모바일에서도 인구수 HUD와 결과 통계는 2열 compact grid를 유지하도록 modifier class를 추가했다.
+  - 선택/가이드 문구는 `선택 없음`, `선택: ...`, `가까운 구간을 고른 뒤 제출하세요.`처럼 더 짧게 줄였다.
+  - 결과 배너 아래에는 `총점 / 클리어 / 마지막 Stage`를 한 줄로 묶는 `결과 핵심 수치` 요약이 추가됐다.
+  - DB, Redis, 세션/Stage/Attempt 상태 전이와 점수 정책 자체는 바뀌지 않았다.
+- 핵심 도메인 개념:
+  - `mobile-first HUD priority`: 모바일에서는 같은 상태라도 먼저 보이는 카드 순서가 게임 템포에 직접 영향을 준다는 기준
+  - `read model reuse`: 새 집계를 만들지 않고 기존 state/result read model을 재배치해 가독성을 높이는 방식
+- 예외 / 엣지 케이스:
+  - 이번 조각은 플레이/결과 surface만 다뤘기 때문에 정답/오답 overlay 정책이나 streak bonus 규칙은 그대로 유지한다.
+  - 공통 `.stats-grid` 기본 규칙은 유지하고, 인구수 게임에만 `stats-grid--compact-hud`, `stats-grid--result-summary` 예외를 두었다.
+  - 모바일 2열 유지로 세로 길이는 줄였지만, 실제 실기기에서 버튼 간격이나 카드 padding은 한 번 더 다듬을 여지가 있다.
+- 테스트:
+  - `node --check src/main/resources/static/js/population-game.js`
+  - `./gradlew test --tests com.worldmap.game.population.PopulationGameFlowIntegrationTest`
+  - `git diff --check`
+- 배운 점: 게임의 점수 규칙을 바꾸지 않아도, HUD 카드 순서와 결과 상단 한 줄 요약만 정리하면 모바일 체감이 꽤 크게 달라진다. 특히 인구수 게임처럼 `점수 / 하트 / Stage`를 계속 같이 보는 모드는 공통 그리드를 그대로 쓰기보다 mode별 예외가 필요할 수 있다.
+- 아직 약한 부분: 이번 조각은 가독성 정리라서 아케이드 감도 자체는 건드리지 않았다. 정답/오답 overlay copy, 연속 정답 bonus, 구간 경계 조정은 아직 판단이 남아 있다.
+- 면접용 30초 요약: 인구수 게임은 서버 루프는 안정적이었지만, 모바일에서 HUD와 결과 상단이 조금 길어서 핵심 수치를 빨리 읽기 어려웠습니다. 그래서 점수 정책은 그대로 두고, 플레이 HUD를 `Stage / 점수 / 클리어 / 하트 / 난이도` 순으로 다시 배치하고, 결과 배너 아래에는 `총점 / 클리어 / 마지막 Stage` 한 줄 요약을 추가했습니다. 새 데이터를 계산한 게 아니라 기존 state/result read model을 템플릿과 JS에서 더 짧게 재배열한 조각입니다.
+
+## 2026-04-04 - 인구수 게임 정답/오답 overlay copy 정리
+
+- 단계: 4. 국가 인구수 맞추기 게임 Level 1
+- 목적: 인구수 게임은 자동 다음 Stage/자동 재도전 루프는 이미 맞춰져 있었지만, 플레이 중 실제로 보이는 문구는 아직 설명문에 가까웠다. 이번 조각의 목적은 점수 규칙을 바꾸지 않고, 정답/오답 overlay와 HUD 문구를 더 짧고 아케이드스럽게 정리하는 것이다.
+- 변경 파일:
+  - `src/main/resources/static/js/population-game.js`
+  - `src/test/java/com/worldmap/e2e/BrowserSmokeE2ETest.java`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/117-polish-population-answer-overlay-copy-for-arcade-rhythm.md`
+- 요청 흐름 / 데이터 흐름: 런타임 흐름은 그대로 `GET /api/games/population/sessions/{id}/state -> POST /api/games/population/sessions/{id}/answer -> 정답이면 다음 Stage state 재로드 / 오답이면 같은 Stage state 재로드`다. 이번에는 `population-game.js`가 answer payload의 `awardedScore`, `totalScore`, `livesRemaining`, `selectedOptionLabel`, `outcome`를 더 짧은 overlay/HUD copy로 재조합하도록 바꿨다.
+- 데이터 / 상태 변화:
+  - 정답 overlay는 `정답 / +점수`에서 `정답 / +점수 · 총점`으로 바뀌었다.
+  - 오답 overlay는 `하트 N개 남음`에서 `하트 N개 남음 · 다시 추정`으로 바뀌었다.
+  - HUD 상태 문구는 `직전 선택` 대신 `방금 고른 구간`, `정답 처리 완료` 대신 `다음 Stage 준비 중`으로 정리됐다.
+  - 서버 점수 정책, Stage 생성, 세션/Attempt 상태 전이는 바뀌지 않았다.
+- 핵심 도메인 개념:
+  - `arcade copy policy`: 같은 상태라도 플레이 중에는 설명문보다 다음 행동이 바로 읽히는 copy가 더 중요하다는 기준
+  - `browser-only feedback composition`: 서버가 계산한 값을 브라우저가 표현 목적에 맞게 짧게 재조합하는 방식
+- 예외 / 엣지 케이스:
+  - 이번 조각은 선택 상세나 정답 구간을 다시 노출하지 않는다. 기존 public 정책은 그대로 유지한다.
+  - `총점`은 정답 overlay에만 추가하고, 오답 overlay에는 계속 하트와 재도전 메시지만 남겼다.
+  - 게임오버 모달이나 결과 페이지의 복기 텍스트는 이번 범위에서 바꾸지 않았다.
+- 테스트:
+  - `node --check src/main/resources/static/js/population-game.js`
+  - `./gradlew browserSmokeTest --tests com.worldmap.e2e.BrowserSmokeE2ETest.populationAnswerFeedbackUsesShortArcadeCopy`
+  - `git diff --check`
+- 배운 점: 같은 점수 정책이라도 플레이 중 copy를 어디에 두고 얼마나 짧게 쓰느냐에 따라 리듬이 꽤 달라진다. 특히 자동 전환 게임은 “무슨 일이 일어났는가”보다 “이제 곧 무엇이 일어나는가”가 먼저 읽혀야 한다.
+- 아직 약한 부분: 이번 조각은 문구만 정리했기 때문에 overlay motion, 색 강도, 사운드, streak bonus 같은 더 큰 아케이드 확장은 아직 남아 있다.
+- 면접용 30초 요약: 인구수 게임은 서버 루프 자체는 안정적이었지만, 플레이 중 보이는 copy가 아직 조금 설명문에 가까웠습니다. 그래서 점수 규칙은 그대로 두고, 정답 overlay는 `+점수 · 총점`, 오답 overlay는 `하트 N개 남음 · 다시 추정`, HUD는 `방금 고른 구간`, `다음 Stage 준비 중`처럼 더 짧고 게임스러운 표현으로 정리했습니다. 이건 상태 계산이 아니라 브라우저 표현 정책이라 `population-game.js`와 browser smoke에서 닫는 게 맞았습니다.
