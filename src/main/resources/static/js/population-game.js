@@ -65,6 +65,7 @@ function initPlayPage() {
     const gameOverModal = document.getElementById("population-game-over-modal");
     const gameOverPanel = gameOverModal?.querySelector(".game-over-modal__panel");
     const gameOverSummary = document.getElementById("population-game-over-summary");
+    const gameOverRecap = document.getElementById("population-game-over-recap");
     const restartButton = document.getElementById("population-restart-button");
     const pageShell = document.querySelector(".page-shell");
     const gameOverModalController = window.createGameOverModalController({
@@ -74,7 +75,7 @@ function initPlayPage() {
         restartButton,
         pageShell,
         buildSummaryText: (payload) =>
-            `Stage ${payload.stageNumber}에서 탈락했습니다. 현재 총점 ${payload.totalScore}점, 다시 시작하면 같은 세션으로 Stage 1부터 이어집니다.`
+            `Stage ${payload.stageNumber}에서 하트를 모두 잃었습니다. 이번 러닝 흐름을 확인한 뒤 같은 세션으로 Stage 1부터 다시 시작할 수 있습니다.`
     });
 
     let currentState = null;
@@ -124,9 +125,9 @@ function initPlayPage() {
 
             if (payload.correct) {
                 renderFeedback(feedback, payload);
-                renderStageOverlay(overlay, "정답", `+${payload.awardedScore}`, "success");
-                setSelectionState("정답 처리 완료");
-                setStageHint("정답입니다. 잠시 뒤 다음 Stage로 자동 이동합니다.");
+                renderStageOverlay(overlay, "정답", `+${payload.awardedScore} · 총점 ${payload.totalScore}`, "success");
+                setSelectionState("다음 Stage 준비 중");
+                setStageHint("정답입니다. 잠시 뒤 다음 Stage로 이동합니다.");
 
                 if (payload.outcome === "FINISHED") {
                     setTimeout(() => {
@@ -148,14 +149,14 @@ function initPlayPage() {
             renderStageOverlay(
                 overlay,
                 payload.outcome === "GAME_OVER" ? "탈락" : "오답",
-                payload.outcome === "GAME_OVER" ? "하트를 모두 잃었습니다" : `하트 ${payload.livesRemaining}개 남음`,
+                payload.outcome === "GAME_OVER" ? "하트를 모두 잃었습니다" : `하트 ${payload.livesRemaining}개 남음 · 다시 추정`,
                 "danger"
             );
             setSelectionState(wrongSelectionSummary(payload));
             setStageHint(
                 payload.outcome === "GAME_OVER"
-                    ? "하트를 모두 잃었습니다. 다음 행동을 선택하세요."
-                    : "오답입니다. 잠시 뒤 같은 Stage를 다시 추정할 수 있습니다."
+                    ? "하트를 모두 잃었습니다. 다음 행동을 고르세요."
+                    : "오답입니다. 잠시 뒤 같은 Stage를 다시 추정합니다."
             );
 
             if (payload.outcome === "GAME_OVER") {
@@ -252,30 +253,30 @@ function initPlayPage() {
 
     function renderQuestion(payload) {
         countryName.textContent = payload.targetCountryName;
-        yearLabel.textContent = `기준 연도: ${payload.populationYear} · 가장 가까운 인구 규모 구간을 고르세요.`;
+        yearLabel.textContent = `기준 연도 ${payload.populationYear} · 가장 가까운 구간을 고르세요.`;
     }
 
     function renderStatus(target, payload) {
         target.innerHTML = `
             <article class="stat-card">
-                <span class="subtitle">현재 Stage</span>
+                <span class="subtitle">Stage</span>
                 <strong>${payload.stageNumber}</strong>
             </article>
             <article class="stat-card">
-                <span class="subtitle">난이도</span>
-                <strong>${payload.difficultyLabel}</strong>
-            </article>
-            <article class="stat-card">
-                <span class="subtitle">누적 점수</span>
+                <span class="subtitle">점수</span>
                 <strong>${payload.totalScore}</strong>
             </article>
             <article class="stat-card">
-                <span class="subtitle">클리어 수</span>
+                <span class="subtitle">클리어</span>
                 <strong>${payload.clearedStageCount}</strong>
             </article>
             <article class="stat-card">
                 <span class="subtitle">하트</span>
                 <strong class="heart-row">${renderHearts(payload.livesRemaining)}</strong>
+            </article>
+            <article class="stat-card">
+                <span class="subtitle">난이도</span>
+                <strong>${payload.difficultyLabel}</strong>
             </article>
         `;
     }
@@ -294,8 +295,8 @@ function initPlayPage() {
                 target.querySelectorAll(".option-card").forEach((card) => {
                     card.classList.toggle("is-selected", card.dataset.optionNumber === input.value);
                 });
-                setSelectionState(`선택 중: ${input.dataset.optionLabel}`);
-                setStageHint("선택 제출을 누르면 서버가 정답 여부와 점수를 판정합니다.");
+                setSelectionState(`선택: ${input.dataset.optionLabel}`);
+                setStageHint("제출하면 서버가 정답과 점수를 판정합니다.");
                 submitButton.disabled = interactionLocked || !canSubmitCurrentAnswer();
             });
         });
@@ -341,12 +342,12 @@ function initPlayPage() {
     }
 
     function resetHudGuidance(payload) {
-        setSelectionState("아직 선택하지 않았습니다.");
-        setStageHint(`${payload.difficultyLabel} 구간입니다. 가장 가까운 인구 규모대를 고른 뒤 제출하세요.`);
+        setSelectionState("선택 없음");
+        setStageHint(`${payload.difficultyLabel} 구간입니다. 가까운 인구 규모대를 고른 뒤 제출하세요.`);
     }
 
     function wrongSelectionSummary(payload) {
-        return `직전 선택: ${payload.selectedOptionLabel}`;
+        return `방금 고른 구간: ${payload.selectedOptionLabel}`;
     }
 
     function canSubmitCurrentAnswer() {
@@ -382,10 +383,29 @@ function initPlayPage() {
     }
 
     function showGameOverModal(payload) {
+        if (gameOverRecap) {
+            gameOverRecap.innerHTML = `
+                <article class="recap-card">
+                    <span class="subtitle">탈락 Stage</span>
+                    <strong>Stage ${payload.stageNumber}</strong>
+                </article>
+                <article class="recap-card">
+                    <span class="subtitle">클리어</span>
+                    <strong>${payload.clearedStageCount}개</strong>
+                </article>
+                <article class="recap-card">
+                    <span class="subtitle">총점</span>
+                    <strong>${payload.totalScore}점</strong>
+                </article>
+            `;
+        }
         gameOverModalController.show(payload);
     }
 
     function hideGameOverModal() {
+        if (gameOverRecap) {
+            gameOverRecap.innerHTML = "";
+        }
         gameOverModalController.hide();
     }
 

@@ -130,7 +130,8 @@ class LocationGameFlowIntegrationTest {
 			.andExpect(status().isOk())
 			.andExpect(content().string(containsString("role=\"dialog\"")))
 			.andExpect(content().string(containsString("aria-describedby=\"location-game-over-summary\"")))
-			.andExpect(content().string(containsString("tabindex=\"-1\"")));
+			.andExpect(content().string(containsString("tabindex=\"-1\"")))
+			.andExpect(content().string(containsString("location-game-over-recap")));
 	}
 
 	@Test
@@ -319,6 +320,9 @@ class LocationGameFlowIntegrationTest {
 
 		mockMvc.perform(get("/games/location/result/{sessionId}", sessionId).session(browserSession))
 			.andExpect(status().isOk())
+			.andExpect(content().string(containsString("빠른 요약")))
+			.andExpect(content().string(containsString("마지막 Stage")))
+			.andExpect(content().string(containsString("1트 클리어 Stage")))
 			.andExpect(content().string(containsString("1차 오답 / 하트 2")))
 			.andExpect(content().string(containsString("2차 정답 / 점수 +")))
 			.andExpect(content().string(not(containsString(wrongCountryName))))

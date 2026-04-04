@@ -353,6 +353,110 @@ class BrowserSmokeE2ETest {
 	}
 
 	@Test
+	void locationDragSuppressionBlocksImmediatePolygonSelectionButAllowsRetryAfterCooldown() {
+		startLocationGameFromBrowser("browser-location-drag-intent");
+
+		UUID sessionId = currentLocationSessionId();
+		LocationGameStage firstStage = locationGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
+			.orElseThrow();
+
+		String wrongCountryIso3Code = (String) page.evaluate(
+			"""
+				targetCountryIso3Code => {
+					const globe = window.__worldmapBrowserSmoke?.locationGlobe;
+					const polygonFeatures = globe?.polygonsData?.() || [];
+					const wrongFeature = polygonFeatures.find((feature) =>
+						feature?.properties?.iso3Code
+						&& feature.properties.iso3Code !== targetCountryIso3Code
+					);
+					return wrongFeature?.properties?.iso3Code ?? null;
+				}
+			""",
+			firstStage.getTargetCountryIso3Code()
+		);
+		assertThat(wrongCountryIso3Code).isNotBlank();
+
+		Boolean submitStayedDisabled = (Boolean) page.evaluate(
+			"""
+				wrongCountryIso3Code => {
+					const hook = window.__worldmapBrowserSmoke || {};
+					const globe = hook.locationGlobe;
+					const polygonClickHandler = hook.locationPolygonClickHandler;
+					const polygonFeatures = globe?.polygonsData?.() || [];
+					const wrongFeature = polygonFeatures.find((feature) =>
+						feature?.properties?.iso3Code === wrongCountryIso3Code
+					);
+
+					if (!wrongFeature
+						|| typeof polygonClickHandler !== "function"
+						|| typeof hook.locationMarkDragSuppressed !== "function") {
+						return null;
+					}
+
+					hook.locationMarkDragSuppressed();
+					polygonClickHandler(wrongFeature, null, null);
+					return document.getElementById("location-submit-button")?.disabled === true;
+				}
+			""",
+			wrongCountryIso3Code
+		);
+
+		assertThat(submitStayedDisabled).isEqualTo(true);
+
+		page.waitForTimeout(320);
+		Boolean submitEnabledAfterCooldown = (Boolean) page.evaluate(
+			"""
+				wrongCountryIso3Code => {
+					const hook = window.__worldmapBrowserSmoke || {};
+					const globe = hook.locationGlobe;
+					const polygonClickHandler = hook.locationPolygonClickHandler;
+					const polygonFeatures = globe?.polygonsData?.() || [];
+					const wrongFeature = polygonFeatures.find((feature) =>
+						feature?.properties?.iso3Code === wrongCountryIso3Code
+					);
+
+					if (!wrongFeature || typeof polygonClickHandler !== "function") {
+						return null;
+					}
+
+					polygonClickHandler(wrongFeature, null, null);
+					return document.getElementById("location-submit-button")?.disabled === false;
+				}
+			""",
+			wrongCountryIso3Code
+		);
+
+		assertThat(submitEnabledAfterCooldown).isEqualTo(true);
+	}
+
+	@Test
+	void locationCompactViewportUsesSaferGlobeControlTuning() {
+		page.setViewportSize(390, 844);
+		startLocationGameFromBrowser("browser-location-mobile-controls");
+
+		@SuppressWarnings("unchecked")
+		var snapshot = (java.util.Map<String, Object>) page.evaluate(
+			"""
+				() => {
+					const hook = window.__worldmapBrowserSmoke || {};
+					if (typeof hook.locationReadControlSnapshot !== "function") {
+						return null;
+					}
+					return hook.locationReadControlSnapshot();
+				}
+			"""
+		);
+
+		assertThat(snapshot).isNotNull();
+		assertThat(snapshot.get("compactViewport")).isEqualTo(true);
+		assertThat(((Number) snapshot.get("rotateSpeed")).doubleValue()).isEqualTo(0.46d);
+		assertThat(((Number) snapshot.get("dampingFactor")).doubleValue()).isEqualTo(0.11d);
+		assertThat(((Number) snapshot.get("zoomSpeed")).doubleValue()).isEqualTo(0.76d);
+		assertThat(((Number) snapshot.get("minDistance")).doubleValue()).isEqualTo(165d);
+		assertThat(((Number) snapshot.get("maxDistance")).doubleValue()).isEqualTo(360d);
+	}
+
+	@Test
 	void flagGameOverModalSupportsKeyboardTrapAndRestartFocusReturn() {
 		startFlagGameFromBrowser("browser-flag-modal");
 
@@ -470,6 +574,41 @@ class BrowserSmokeE2ETest {
 
 		assertThat(page.evaluate("() => document.querySelector('.page-shell')?.inert")).isEqualTo(false);
 		assertThat(page.evaluate("() => document.activeElement?.getAttribute('name')")).isEqualTo("population-option");
+	}
+
+	@Test
+	void populationAnswerFeedbackUsesShortArcadeCopy() {
+		startPopulationGameFromBrowser("browser-population-copy");
+
+		UUID sessionId = currentPopulationSessionId();
+		PopulationGameStage firstStage = populationGameStageRepository.findBySessionIdAndStageNumber(sessionId, 1)
+			.orElseThrow();
+		int wrongOptionNumber = findWrongOptionNumber(firstStage.getCorrectOptionNumber());
+
+		String wrongOptionLabel = page.locator(
+			"#population-options label.option-card[data-option-number='" + wrongOptionNumber + "'] strong"
+		).textContent().trim();
+
+		page.locator("#population-options label.option-card[data-option-number='" + wrongOptionNumber + "']").click();
+		page.locator("#population-submit-button").click();
+
+		page.waitForFunction("() => !document.getElementById('population-stage-overlay').hidden");
+		assertThat(page.textContent("#population-stage-overlay")).contains("오답");
+		assertThat(page.textContent("#population-stage-overlay")).contains("다시 추정");
+		assertThat(page.textContent("#population-selection-label").trim()).isEqualTo("방금 고른 구간: " + wrongOptionLabel);
+		assertThat(page.textContent("#population-stage-hint").trim()).isEqualTo("오답입니다. 잠시 뒤 같은 Stage를 다시 추정합니다.");
+
+		waitForPopulationRetryReady();
+
+		page.locator(
+			"#population-options label.option-card[data-option-number='" + firstStage.getCorrectOptionNumber() + "']"
+		).click();
+		page.locator("#population-submit-button").click();
+
+		page.waitForFunction("() => !document.getElementById('population-stage-overlay').hidden");
+		assertThat(page.textContent("#population-stage-overlay")).contains("정답");
+		assertThat(page.textContent("#population-stage-overlay")).contains("총점");
+		assertThat(page.textContent("#population-stage-hint").trim()).isEqualTo("정답입니다. 잠시 뒤 다음 Stage로 이동합니다.");
 	}
 
 	@Test
@@ -657,6 +796,14 @@ class BrowserSmokeE2ETest {
 				+ "&& document.getElementById('population-target-country-name').textContent !== '문제를 불러오는 중...'"
 		);
 		page.waitForFunction("() => document.querySelectorAll('#population-game-status .stat-card').length > 0");
+	}
+
+	private void waitForPopulationRetryReady() {
+		page.waitForFunction("() => !document.getElementById('population-stage-overlay').hidden");
+		page.waitForFunction(
+			"() => document.getElementById('population-stage-overlay').hidden "
+				+ "&& document.getElementById('population-submit-button').disabled"
+		);
 	}
 
 	private void waitForPopulationBattlePlayReady() {

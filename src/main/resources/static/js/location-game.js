@@ -50,6 +50,11 @@ function initStartPage() {
 function initPlayPage() {
     const STAGE_FEEDBACK_DELAY_MS = 950;
     const FINISH_REDIRECT_DELAY_MS = 1100;
+    const COMPACT_VIEWPORT_MAX_WIDTH = 760;
+    const POINTER_DRAG_THRESHOLD_MOUSE = 18;
+    const POINTER_DRAG_THRESHOLD_PEN = 24;
+    const POINTER_DRAG_THRESHOLD_TOUCH = 30;
+    const POINTER_SELECTION_SUPPRESSION_WINDOW_MS = 260;
     const COLORS = {
         active: "rgba(148, 203, 235, 0)",
         activeStroke: "rgba(196, 233, 255, 0.92)",
@@ -63,8 +68,6 @@ function initPlayPage() {
         inactive: "rgba(255, 255, 255, 0)",
         inactiveStroke: "rgba(255, 255, 255, 0.01)"
     };
-    const DRAG_THRESHOLD = 18;
-
     const sessionId = document.body.dataset.sessionId;
     const form = document.getElementById("location-answer-form");
     const statusBox = document.getElementById("location-game-status");
@@ -79,6 +82,7 @@ function initPlayPage() {
     const gameOverModal = document.getElementById("location-game-over-modal");
     const gameOverPanel = gameOverModal?.querySelector(".game-over-modal__panel");
     const gameOverSummary = document.getElementById("location-game-over-summary");
+    const gameOverRecap = document.getElementById("location-game-over-recap");
     const restartButton = document.getElementById("location-restart-button");
     const pageShell = document.querySelector(".page-shell");
     const gameOverModalController = window.createGameOverModalController({
@@ -88,7 +92,7 @@ function initPlayPage() {
         restartButton,
         pageShell,
         buildSummaryText: (payload) =>
-            `Stage ${payload.stageNumber}에서 하트를 모두 잃었습니다. 현재 점수는 ${payload.totalScore}점입니다. 홈으로 돌아가거나 바로 다시 시작할 수 있습니다.`
+            `Stage ${payload.stageNumber}에서 하트를 모두 잃었습니다. 이번 러닝 흐름을 확인한 뒤 같은 세션으로 바로 다시 시작할 수 있습니다.`
     });
 
     let currentState = null;
@@ -105,7 +109,9 @@ function initPlayPage() {
         tracking: false,
         suppressSelection: false,
         startX: 0,
-        startY: 0
+        startY: 0,
+        pointerType: "mouse",
+        selectionBlockedUntil: 0
     };
 
     window.addEventListener("pageshow", gameOverModalController.hide);
@@ -353,13 +359,8 @@ function initPlayPage() {
 
         syncGlobeSize();
         installResizeSync();
-        globe.pointOfView({lat: 18, lng: 24, altitude: 1.86}, 0);
-        globe.controls().enableDamping = true;
-        globe.controls().dampingFactor = 0.08;
-        globe.controls().autoRotate = false;
-        globe.controls().rotateSpeed = 0.62;
-        globe.controls().minDistance = 140;
-        globe.controls().maxDistance = 420;
+        globe.pointOfView({lat: 18, lng: 24, altitude: currentViewportGlobeTuning().initialAltitude}, 0);
+        applyViewportGlobeControls();
     }
 
     function hydrateGlobePolygons() {
@@ -376,8 +377,7 @@ function initPlayPage() {
     }
 
     function handleGlobeSurfaceClick(coords) {
-        if (pointerIntent.suppressSelection) {
-            pointerIntent.suppressSelection = false;
+        if (shouldIgnoreSelection()) {
             return;
         }
 
@@ -394,7 +394,7 @@ function initPlayPage() {
     }
 
     function handleCountrySelection(iso3Code, coords) {
-        if (!currentState || interactionLocked || !iso3Code) {
+        if (shouldIgnoreSelection() || !currentState || interactionLocked || !iso3Code) {
             return;
         }
 
@@ -409,7 +409,8 @@ function initPlayPage() {
         refreshGlobe();
 
         if (globe && coords) {
-            globe.pointOfView({lat: coords.lat, lng: coords.lng, altitude: 1.45}, 600);
+            const tuning = currentViewportGlobeTuning();
+            globe.pointOfView({lat: coords.lat, lng: coords.lng, altitude: tuning.focusAltitude}, tuning.focusAnimationMs);
         }
     }
 
@@ -438,10 +439,29 @@ function initPlayPage() {
     }
 
     function showGameOverModal(payload) {
+        if (gameOverRecap) {
+            gameOverRecap.innerHTML = `
+                <article class="recap-card">
+                    <span class="subtitle">탈락 Stage</span>
+                    <strong>Stage ${payload.stageNumber}</strong>
+                </article>
+                <article class="recap-card">
+                    <span class="subtitle">클리어</span>
+                    <strong>${payload.clearedStageCount}개</strong>
+                </article>
+                <article class="recap-card">
+                    <span class="subtitle">총점</span>
+                    <strong>${payload.totalScore}점</strong>
+                </article>
+            `;
+        }
         gameOverModalController.show(payload);
     }
 
     function hideGameOverModal() {
+        if (gameOverRecap) {
+            gameOverRecap.innerHTML = "";
+        }
         gameOverModalController.hide();
     }
 
@@ -466,6 +486,27 @@ function initPlayPage() {
             refreshGlobe();
             return true;
         };
+
+        browserSmokeHook.locationMarkDragSuppressed = () => {
+            suppressSelectionAfterDrag();
+            return true;
+        };
+
+        browserSmokeHook.locationReadControlSnapshot = () => {
+            const controls = globe?.controls?.();
+            if (!controls) {
+                return null;
+            }
+
+            return {
+                compactViewport: isCompactViewport(),
+                rotateSpeed: controls.rotateSpeed,
+                dampingFactor: controls.dampingFactor,
+                zoomSpeed: controls.zoomSpeed,
+                minDistance: controls.minDistance,
+                maxDistance: controls.maxDistance
+            };
+        };
     }
 
     function syncGlobeSize() {
@@ -481,6 +522,7 @@ function initPlayPage() {
         }
 
         globe.width(size).height(size);
+        applyViewportGlobeControls();
     }
 
     function installResizeSync() {
@@ -491,6 +533,54 @@ function initPlayPage() {
         }
 
         window.addEventListener("resize", syncGlobeSize);
+    }
+
+    function applyViewportGlobeControls() {
+        if (!globe) {
+            return;
+        }
+
+        const controls = globe.controls();
+        const tuning = currentViewportGlobeTuning();
+
+        controls.enableDamping = true;
+        controls.dampingFactor = tuning.dampingFactor;
+        controls.autoRotate = false;
+        controls.enablePan = false;
+        controls.rotateSpeed = tuning.rotateSpeed;
+        controls.zoomSpeed = tuning.zoomSpeed;
+        controls.minDistance = tuning.minDistance;
+        controls.maxDistance = tuning.maxDistance;
+    }
+
+    function currentViewportGlobeTuning() {
+        if (isCompactViewport()) {
+            return {
+                initialAltitude: 2.02,
+                focusAltitude: 1.62,
+                focusAnimationMs: 720,
+                rotateSpeed: 0.46,
+                dampingFactor: 0.11,
+                zoomSpeed: 0.76,
+                minDistance: 165,
+                maxDistance: 360
+            };
+        }
+
+        return {
+            initialAltitude: 1.86,
+            focusAltitude: 1.45,
+            focusAnimationMs: 600,
+            rotateSpeed: 0.62,
+            dampingFactor: 0.08,
+            zoomSpeed: 0.95,
+            minDistance: 140,
+            maxDistance: 420
+        };
+    }
+
+    function isCompactViewport() {
+        return window.innerWidth <= COMPACT_VIEWPORT_MAX_WIDTH;
     }
 
     function installPointerIntentDetection() {
@@ -505,6 +595,8 @@ function initPlayPage() {
             pointerIntent.suppressSelection = false;
             pointerIntent.startX = event.clientX;
             pointerIntent.startY = event.clientY;
+            pointerIntent.pointerType = event.pointerType || "mouse";
+            pointerIntent.selectionBlockedUntil = 0;
         });
 
         globeStage.addEventListener("pointermove", (event) => {
@@ -517,25 +609,57 @@ function initPlayPage() {
                 event.clientY - pointerIntent.startY
             );
 
-            if (distance > DRAG_THRESHOLD) {
-                pointerIntent.suppressSelection = true;
+            if (distance > currentPointerDragThreshold()) {
+                suppressSelectionAfterDrag();
             }
         });
 
         globeStage.addEventListener("pointerup", () => {
             pointerIntent.tracking = false;
+            if (Date.now() >= pointerIntent.selectionBlockedUntil) {
+                pointerIntent.suppressSelection = false;
+            }
         });
 
         globeStage.addEventListener("pointercancel", () => {
             pointerIntent.tracking = false;
             pointerIntent.suppressSelection = false;
+            pointerIntent.selectionBlockedUntil = 0;
         });
 
         globeStage.addEventListener("pointerleave", () => {
             if (pointerIntent.tracking) {
-                pointerIntent.suppressSelection = true;
+                suppressSelectionAfterDrag();
             }
         });
+    }
+
+    function currentPointerDragThreshold() {
+        if (pointerIntent.pointerType === "touch") {
+            return POINTER_DRAG_THRESHOLD_TOUCH;
+        }
+
+        if (pointerIntent.pointerType === "pen") {
+            return POINTER_DRAG_THRESHOLD_PEN;
+        }
+
+        return POINTER_DRAG_THRESHOLD_MOUSE;
+    }
+
+    function suppressSelectionAfterDrag() {
+        pointerIntent.suppressSelection = true;
+        pointerIntent.selectionBlockedUntil = Date.now() + POINTER_SELECTION_SUPPRESSION_WINDOW_MS;
+    }
+
+    function shouldIgnoreSelection() {
+        const blockedByDrag = pointerIntent.suppressSelection;
+        const blockedByCooldown = Date.now() < pointerIntent.selectionBlockedUntil;
+
+        if (blockedByDrag) {
+            pointerIntent.suppressSelection = false;
+        }
+
+        return blockedByDrag || blockedByCooldown;
     }
 
     function polygonCapColor(feature) {
@@ -754,11 +878,11 @@ function wrongFollowUp(payload) {
 
 function renderLevelCopy(heroCopyTarget, stageHintTarget) {
     if (heroCopyTarget) {
-        heroCopyTarget.textContent = "플레이 중 지구본 위 나라 이름은 표시되지 않습니다. 국가를 클릭하면 지구본 위에서만 선택 하이라이트가 보이고, 실제 국가명은 제출 후 판정 단계에서만 공개됩니다. 현재는 상위 72개 주요 국가를 대상으로 먼저 감을 익히는 기본 모드만 운영합니다.";
+        heroCopyTarget.textContent = "플레이 중 지구본 위 나라 이름은 표시되지 않습니다. 짧게 탭하면 선택되고, 길게 드래그하면 회전만 됩니다. 실제 국가명은 제출 후 판정 단계에서만 공개되며, 현재는 상위 72개 주요 국가를 대상으로 먼저 감을 익히는 기본 모드만 운영합니다.";
     }
 
     if (stageHintTarget) {
-        stageHintTarget.textContent = "지구본을 회전해 해당 국가를 찾은 뒤 클릭하세요. 현재는 상위 72개 주요 국가를 대상으로 먼저 안정성과 클릭 정확도를 맞추고 있습니다.";
+        stageHintTarget.textContent = "지구본을 회전해 해당 국가를 찾은 뒤 짧게 탭하거나 클릭해 선택하세요. 현재는 상위 72개 주요 국가를 대상으로 먼저 안정성과 클릭 정확도를 맞추고 있습니다.";
     }
 }
 

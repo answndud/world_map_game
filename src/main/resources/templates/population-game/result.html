@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>국가 인구수 맞추기 결과</title>
-    <link rel="stylesheet" th:href="@{/css/site.css(v='20260330-a11y-keyboard-2')}">
+    <link rel="stylesheet" th:href="@{/css/site.css(v='20260404-population-mobile-hud-1')}">
 </head>
 <body>
 <div class="page-shell">
@@ -25,16 +25,27 @@
                 <p th:text="${result.status.name() == 'GAME_OVER' ? '마지막 Stage에서 하트를 모두 잃었습니다. 어떤 인구 규모 구간에서 막혔는지 Attempt 기록으로 다시 설명할 수 있습니다.' : '현재까지 진행된 엔드리스 인구 규모 러닝 기록입니다.'}">
                     마지막 Stage에서 하트를 모두 잃었습니다.
                 </p>
+                <div class="result-banner__recap" aria-label="빠른 요약">
+                    <article class="recap-card">
+                        <span class="subtitle">마지막 Stage</span>
+                        <strong th:text="'Stage ' + ${result.currentStageNumber}">Stage 6</strong>
+                    </article>
+                    <article class="recap-card">
+                        <span class="subtitle">1트 클리어 Stage</span>
+                        <strong th:text="${result.firstTryClearCount} + '개'">4개</strong>
+                    </article>
+                    <article class="recap-card">
+                        <span class="subtitle">총 시도</span>
+                        <strong th:text="${result.totalAttemptCount} + '회'">8회</strong>
+                    </article>
+                </div>
+                <p class="result-banner__summary-line"
+                   aria-label="결과 핵심 수치"
+                   th:text="'총점 ' + ${result.totalScore} + '점 · 클리어 ' + ${result.clearedStageCount} + '개 · 마지막 Stage ' + ${result.currentStageNumber}">
+                    총점 500점 · 클리어 5개 · 마지막 Stage 6
+                </p>
             </article>
-            <div class="stats-grid">
-                <article class="stat-card">
-                    <span class="subtitle">플레이어</span>
-                    <strong th:text="${result.playerNickname}">Guest</strong>
-                </article>
-                <article class="stat-card">
-                    <span class="subtitle">상태</span>
-                    <strong th:text="${result.status}">FINISHED</strong>
-                </article>
+            <div class="stats-grid stats-grid--result-summary">
                 <article class="stat-card">
                     <span class="subtitle">총 점수</span>
                     <strong th:text="${result.totalScore}">500</strong>
@@ -44,7 +55,11 @@
                     <strong th:text="${result.clearedStageCount}">5</strong>
                 </article>
                 <article class="stat-card">
-                    <span class="subtitle">총 시도 수</span>
+                    <span class="subtitle">도달 Stage</span>
+                    <strong th:text="${result.currentStageNumber}">6</strong>
+                </article>
+                <article class="stat-card">
+                    <span class="subtitle">총 시도</span>
                     <strong th:text="${result.totalAttemptCount}">8</strong>
                 </article>
                 <article class="stat-card">
@@ -52,12 +67,16 @@
                     <strong th:text="${result.firstTryClearCount}">4</strong>
                 </article>
                 <article class="stat-card">
-                    <span class="subtitle">도달 Stage</span>
-                    <strong th:text="${result.currentStageNumber}">6</strong>
-                </article>
-                <article class="stat-card">
                     <span class="subtitle">남은 하트</span>
                     <strong th:text="${result.livesRemaining}">0</strong>
+                </article>
+                <article class="stat-card">
+                    <span class="subtitle">상태</span>
+                    <strong th:text="${result.status}">FINISHED</strong>
+                </article>
+                <article class="stat-card">
+                    <span class="subtitle">플레이어</span>
+                    <strong th:text="${result.playerNickname}">Guest</strong>
                 </article>
             </div>
 

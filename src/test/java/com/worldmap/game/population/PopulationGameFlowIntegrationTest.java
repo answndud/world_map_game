@@ -126,7 +126,11 @@ class PopulationGameFlowIntegrationTest {
 			.andExpect(status().isOk())
 			.andExpect(content().string(containsString("role=\"dialog\"")))
 			.andExpect(content().string(containsString("aria-describedby=\"population-game-over-summary\"")))
-			.andExpect(content().string(containsString("tabindex=\"-1\"")));
+			.andExpect(content().string(containsString("tabindex=\"-1\"")))
+			.andExpect(content().string(containsString("population-game-over-recap")))
+			.andExpect(content().string(containsString("stats-grid--compact-hud")))
+			.andExpect(content().string(containsString(">선택<")))
+			.andExpect(content().string(containsString(">가이드<")));
 	}
 
 	@Test
@@ -316,6 +320,10 @@ class PopulationGameFlowIntegrationTest {
 
 		mockMvc.perform(get("/games/population/result/{sessionId}", sessionId).session(browserSession))
 			.andExpect(status().isOk())
+			.andExpect(content().string(containsString("빠른 요약")))
+			.andExpect(content().string(containsString("결과 핵심 수치")))
+			.andExpect(content().string(containsString("마지막 Stage")))
+			.andExpect(content().string(containsString("1트 클리어 Stage")))
 			.andExpect(content().string(containsString("1차 오답 / 하트 2")))
 			.andExpect(content().string(containsString("2차 정답 / 점수 +")))
 			.andExpect(content().string(not(containsString(wrongLabel))))
