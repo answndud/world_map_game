@@ -140,7 +140,7 @@ class BrowserSmokeE2ETest {
 
 		assertThat(page.title()).isEqualTo("WorldMap");
 		assertThat(page.evaluate("() => document.documentElement.dataset.theme")).isEqualTo("light");
-		assertThat(page.textContent("[data-theme-toggle-label]").trim()).isEqualTo("Light");
+		assertThat(page.textContent("[data-theme-toggle-label]").trim()).isEqualTo("라이트");
 		assertThat(page.locator("header.site-header").count()).isEqualTo(1);
 		assertThat(page.locator("article.mode-card").count()).isEqualTo(6);
 		assertThat(page.locator("a.hero-support-link").textContent().trim()).isEqualTo("오늘 통계 보기");
@@ -676,7 +676,7 @@ class BrowserSmokeE2ETest {
 	void statsPageRendersInRealBrowserWithoutRedis() {
 		page.navigate(baseUrl() + "/stats");
 
-		assertThat(page.title()).isEqualTo("Live Stats");
+		assertThat(page.title()).isEqualTo("서비스 현황");
 		assertThat(page.locator("h1").textContent().trim()).isEqualTo("서비스 현황");
 		assertThat(page.locator(".stats-grid .stat-card").count()).isGreaterThan(0);
 		assertThat(page.locator("a.primary-link").textContent().trim()).isEqualTo("전체 랭킹 보기");
@@ -689,7 +689,7 @@ class BrowserSmokeE2ETest {
 	private void startCapitalGameFromBrowser(String nickname) {
 		page.navigate(baseUrl() + "/games/capital/start");
 
-		assertThat(page.locator("h1").textContent().trim()).isEqualTo("수도 맞히기");
+		assertThat(page.locator("h1").textContent().trim()).isEqualTo("수도 퀴즈");
 
 		page.locator("#capital-nickname").fill(nickname);
 		page.locator("#capital-start-submit").click();
@@ -717,7 +717,7 @@ class BrowserSmokeE2ETest {
 	private void startPopulationBattleGameFromBrowser(String nickname) {
 		page.navigate(baseUrl() + "/games/population-battle/start");
 
-		assertThat(page.locator("h1").textContent().trim()).isEqualTo("인구 비교 퀵 배틀");
+		assertThat(page.locator("h1").textContent().trim()).isEqualTo("인구 비교 배틀");
 
 		page.locator("#population-battle-nickname").fill(nickname);
 		page.locator("#population-battle-start-submit").click();
@@ -738,7 +738,7 @@ class BrowserSmokeE2ETest {
 	private void startFlagGameFromBrowser(String nickname) {
 		page.navigate(baseUrl() + "/games/flag/start");
 
-		assertThat(page.locator("h1").textContent().trim()).isEqualTo("국기 보고 나라 맞히기");
+		assertThat(page.locator("h1").textContent().trim()).isEqualTo("국기 퀴즈");
 
 		page.locator("#flag-nickname").fill(nickname);
 		page.locator("#flag-start-submit").click();
@@ -748,7 +748,7 @@ class BrowserSmokeE2ETest {
 	private void startPopulationGameFromBrowser(String nickname) {
 		page.navigate(baseUrl() + "/games/population/start");
 
-		assertThat(page.locator("h1").textContent().trim()).isEqualTo("국가 인구수 맞추기");
+		assertThat(page.locator("h1").textContent().trim()).isEqualTo("인구수 퀴즈");
 
 		page.locator("#population-nickname").fill(nickname);
 		page.locator("#population-start-submit").click();

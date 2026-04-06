@@ -103,13 +103,13 @@ class StatsPageControllerTest {
 			.andExpect(view().name("stats/index"))
 			.andExpect(model().attributeExists("activity"))
 			.andExpect(content().string(containsString("서비스 현황")))
-			.andExpect(content().string(containsString(">Stats<")))
-			.andExpect(content().string(not(containsString(">Dashboard<"))))
+			.andExpect(content().string(containsString(">서비스 현황<")))
+			.andExpect(content().string(not(containsString(">관리<"))))
 			.andExpect(content().string(containsString("오늘 플레이어")))
 			.andExpect(content().string(containsString("오늘 많이 끝난 게임")))
 			.andExpect(content().string(containsString("오래 버티는 게임 Top 3")))
 			.andExpect(content().string(containsString("짧게 푸는 게임 Top 3")))
-			.andExpect(content().string(containsString("수도 맞히기")))
+			.andExpect(content().string(containsString("수도 퀴즈")))
 			.andExpect(content().string(containsString("국기 퀴즈")))
 			.andExpect(content().string(containsString("인구 비교 배틀")))
 			.andExpect(content().string(containsString("battle_runner")))
@@ -146,6 +146,6 @@ class StatsPageControllerTest {
 
 		mockMvc.perform(get("/stats").session(session))
 			.andExpect(status().isOk())
-			.andExpect(content().string(containsString(">Dashboard<")));
+			.andExpect(content().string(containsString(">관리<")));
 	}
 }

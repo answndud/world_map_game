@@ -22,7 +22,7 @@ function initStartPage() {
         hideCapitalMessage(messageBox);
         submitButton.disabled = true;
         submitButton.textContent = "게임 준비 중...";
-        showCapitalMessage(messageBox, "첫 번째 Stage와 보기 구성을 준비하는 중입니다. 잠시만 기다려주세요.", "info");
+        showCapitalMessage(messageBox, "첫 문제를 준비하는 중입니다.", "info");
 
         try {
             const response = await fetch("/api/games/capital/sessions", {
@@ -74,7 +74,7 @@ function initPlayPage() {
         restartButton,
         pageShell,
         buildSummaryText: (payload) =>
-            `Stage ${payload.stageNumber}에서 탈락했습니다. 현재 총점 ${payload.totalScore}점, 다시 시작하면 같은 세션으로 Stage 1부터 이어집니다.`
+            `Stage ${payload.stageNumber}에서 종료되었습니다.`
     });
 
     let currentState = null;
@@ -126,7 +126,7 @@ function initPlayPage() {
                 renderFeedback(feedback, payload);
                 renderStageOverlay(overlay, "정답", `+${payload.awardedScore}`, "success");
                 setSelectionState("정답 처리 완료");
-                setStageHint("정답입니다. 잠시 뒤 다음 Stage로 자동 이동합니다.");
+                setStageHint("정답입니다. 다음 문제로 넘어갑니다.");
 
                 if (payload.outcome === "FINISHED") {
                     setTimeout(() => {
@@ -154,8 +154,8 @@ function initPlayPage() {
             setSelectionState(`직전 선택: ${payload.selectedCapitalCity}`);
             setStageHint(
                 payload.outcome === "GAME_OVER"
-                    ? "하트를 모두 잃었습니다. 다음 행동을 선택하세요."
-                    : "오답입니다. 잠시 뒤 같은 Stage에서 다시 수도를 고를 수 있습니다."
+                    ? "하트를 모두 잃었습니다."
+                    : "오답입니다. 잠시 뒤 다시 고를 수 있습니다."
             );
 
             if (payload.outcome === "GAME_OVER") {
@@ -176,7 +176,7 @@ function initPlayPage() {
         }
     });
 
-    showCapitalMessage(messageBox, "Stage와 수도 보기 구성을 불러오는 중입니다.", "info");
+    showCapitalMessage(messageBox, "문제를 불러오는 중입니다.", "info");
     hideGameOverModal();
     loadState()
         .then(() => hideCapitalMessage(messageBox))

@@ -7689,3 +7689,69 @@
 - 아직 약한 부분: 지원 제출본으로는 충분하지만, 이후 외부 공개용 영어 README가 따로 필요해지면 다국어 README 분리도 고려할 수 있다.
 - 면접용 30초 요약: README를 지원 링크용 소개 페이지로 바꾼 뒤, 이번에는 한국어 톤과 큰 스크린샷 중심으로 한 번 더 정리했습니다. 핵심은 GitHub 첫 화면에서 텍스트보다 제품 화면이 더 잘 읽히게 만든 것이고, 그래서 3열 표 대신 Main App과 Demo Lite를 각각 큰 이미지 섹션으로 다시 배치했습니다.
 - 블로그 생략 이유: 이번 조각은 README 편집 톤과 이미지 배치 조정이라 별도 블로그 글보다 worklog와 playbook 정리로 충분하다.
+
+## 2026-04-06 - main 공개 화면 제목/설명 copy를 짧은 플레이어 언어로 정리
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: main 공개 화면에는 여전히 `지구본에서 나라를 찾고 계속 올라가세요`, `내 기록 허브`, `PROFILE`, `BEST RUN`처럼 제품보다 내부 설명이나 직역에 가까운 문구가 남아 있었다. 이번 조각의 목적은 public 사용자가 실제로 보는 제목/설명만 다시 훑어, 어색한 문장을 자연스러운 한국어로 바꾸고 불필요한 설명은 삭제하는 것이다.
+- 변경 파일:
+  - `src/main/java/com/worldmap/web/HomeController.java`
+  - `src/main/java/com/worldmap/mypage/application/MyPageService.java`
+  - `src/main/resources/templates/home.html`
+  - `src/main/resources/templates/auth/login.html`
+  - `src/main/resources/templates/auth/signup.html`
+  - `src/main/resources/templates/location-game/start.html`
+  - `src/main/resources/templates/location-game/play.html`
+  - `src/main/resources/templates/location-game/result.html`
+  - `src/main/resources/templates/capital-game/start.html`
+  - `src/main/resources/templates/capital-game/play.html`
+  - `src/main/resources/templates/capital-game/result.html`
+  - `src/main/resources/templates/flag-game/start.html`
+  - `src/main/resources/templates/flag-game/play.html`
+  - `src/main/resources/templates/flag-game/result.html`
+  - `src/main/resources/templates/population-game/start.html`
+  - `src/main/resources/templates/population-game/play.html`
+  - `src/main/resources/templates/population-game/result.html`
+  - `src/main/resources/templates/population-battle-game/start.html`
+  - `src/main/resources/templates/population-battle-game/play.html`
+  - `src/main/resources/templates/population-battle-game/result.html`
+  - `src/main/resources/templates/recommendation/survey.html`
+  - `src/main/resources/templates/recommendation/result.html`
+  - `src/main/resources/templates/ranking/index.html`
+  - `src/main/resources/templates/stats/index.html`
+  - `src/main/resources/templates/mypage.html`
+  - `src/main/resources/static/js/location-game.js`
+  - `src/main/resources/static/js/capital-game.js`
+  - `src/main/resources/static/js/flag-game.js`
+  - `src/main/resources/static/js/population-game.js`
+  - `src/main/resources/static/js/population-battle-game.js`
+  - `src/test/java/com/worldmap/web/HomeControllerTest.java`
+  - `src/test/java/com/worldmap/web/MyPageControllerTest.java`
+  - `src/test/java/com/worldmap/web/MyPageServiceIntegrationTest.java`
+  - `src/test/java/com/worldmap/stats/StatsPageControllerTest.java`
+  - `src/test/java/com/worldmap/e2e/PublicUrlSmokeE2ETest.java`
+  - `src/test/java/com/worldmap/e2e/BrowserSmokeE2ETest.java`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름: public 사용자는 `GET /`, `GET /games/*/start`, `GET /games/*/play/{sessionId}`, `GET /games/*/result/{sessionId}`, `GET /recommendation/*`, `GET /ranking`, `GET /stats`, `GET /mypage`로 들어온다. 이번에는 같은 요청 흐름을 유지한 채, 각 SSR 템플릿과 play JS가 이미 가진 state/result 값을 더 짧은 제목과 한두 줄 안내로만 보여 주도록 바꿨다.
+- 데이터 / 상태 변화:
+  - 서버 세션, Stage, Attempt, 점수 계산, 결과 공개 시점은 바뀌지 않았다.
+  - 홈은 `바로 플레이할 게임`, `게임 선택`, `오늘 기록 보기`처럼 더 직접적인 제목만 남기고, 시작 순서/계정 안내 같은 장문 패널은 제거했다.
+  - 위치/수도/국기/인구수/인구 비교 배틀의 start/play/result 화면은 eyebrow와 장문 hero copy를 제거하고, `지구본에서 나라를 찾으세요`, `국가를 보고 수도를 고르세요`, `인구가 더 많은 나라를 고르세요`처럼 행동이 바로 읽히는 문장만 남겼다.
+  - 마이페이지도 `내 기록 허브`, `PROFILE`, `BEST RUN`, `Performance` 같은 혼합 언어를 걷어내고 `내 기록`, `계정`, `최고 기록`, `기록` 중심으로 정리했다.
+  - 추천/랭킹/서비스 현황 화면의 설명은 한두 줄만 남기고, 중복 패널 설명은 제거했다.
+- 핵심 도메인 개념:
+  - `player-facing copy boundary`: 상태 전이와 정책 설명은 서버/테스트/문서가 책임지고, public UI는 다음 행동이 바로 읽히는 짧은 문장만 남긴다는 기준
+  - `SSR surface simplification`: read model은 그대로 두고 템플릿에서 노출하는 문장 수만 줄여도 제품 인상이 훨씬 정리될 수 있다는 점
+  - `localized naming policy`: 수도/국기/인구 비교/인구수 같은 게임 이름과 결과 라벨을 같은 한국어 체계로 맞추는 기준
+- 예외 / 엣지 케이스:
+  - admin 화면, 에러 페이지, 내부 운영 copy는 이번 범위에서 건드리지 않았다. 이번 조각은 unrelated user가 보는 public surface만 다뤘다.
+  - 게임 루프나 overlay 정책을 바꾼 것이 아니라 play/result copy만 정리한 것이므로, 기존 browser smoke나 서비스 도메인 테스트 범위는 유지된다.
+  - `location-game.js`에서 이미 템플릿에서 제거한 `location-hero-copy` 참조를 같이 정리해 dead lookup이 남지 않게 했다.
+- 테스트:
+  - `./gradlew test --tests com.worldmap.web.HomeControllerTest --tests com.worldmap.stats.StatsPageControllerTest --tests com.worldmap.web.MyPageControllerTest --tests com.worldmap.mypage.MyPageServiceIntegrationTest --tests com.worldmap.e2e.PublicUrlSmokeE2ETest --tests com.worldmap.e2e.BrowserSmokeE2ETest`
+  - `git diff --check`
+- 배운 점: public copy를 줄일 때 가장 중요한 건 “설명을 덜 하는 것”이 아니라 “정책 설명과 플레이어 행동 안내를 분리하는 것”이다. 서버 주도 게임 플랫폼의 설계 이유는 문서와 테스트에 남기고, 실제 화면에는 행동이 바로 읽히는 짧은 문장만 남기는 편이 더 제품답다.
+- 아직 약한 부분: 이번에는 public 화면의 문장만 정리했기 때문에, 게임 결과 화면의 시각 위계나 버튼 배치까지 모두 다시 다듬지는 않았다. 필요하면 다음 polish에서 결과 배너와 통계 카드 밀도까지 한 번 더 줄일 수 있다.
+- 면접용 30초 요약: main 공개 화면의 제목과 설명이 아직 조금 번역투이고 장황해서, unrelated user가 보기엔 제품보다 문서처럼 읽히는 부분이 있었습니다. 그래서 요청 흐름과 서버 상태 규칙은 그대로 둔 채, 홈·게임·추천·랭킹·마이페이지의 public copy만 다시 훑어 어색한 문장은 자연스러운 한국어로 바꾸고, 필요 없는 설명 패널은 삭제했습니다. 핵심은 로직은 안 건드리고, 플레이어가 보는 첫 문장만 더 짧고 직접적으로 만든 것입니다.
+- 블로그 생략 이유: 이번 조각은 API, 도메인 모델, 게임 루프, 테스트 전략 변경이 아니라 public UI copy 정리와 템플릿 축약이 중심이어서 별도 블로그 글보다 worklog와 playbook 기록으로 충분하다.

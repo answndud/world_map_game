@@ -988,6 +988,7 @@
 - GitHub `main` 브랜치 protection에도 `test`, `browser-smoke`를 `strict=true` required status check로 연결해, production-ready 검증 레일이 실제 merge gate로 동작하도록 맞췄다
 - 이 과정에서 `RedisSessionConfigurationIntegrationTest`가 prod session config만 보도록 schema 생성 override를 추가했고, 여러 게임 flow test의 game-over/restart 기대값도 현재 하트 규칙에 맞게 정리해 CI green baseline을 다시 맞췄다
 - 홈 / `/ranking` / `/stats` public shell은 구조는 유지한 채 hero, panel, helper copy를 더 짧게 다듬어 읽기 부담을 줄였다. 게임 선택 / 공개 지표 / 랭킹 설명은 남기되, 같은 뜻을 반복하던 문장과 placeholder copy를 줄여 첫 화면에서 핵심만 먼저 읽히게 정리했다
+- 이어서 홈, 로그인/회원가입, 위치/수도/국기/인구수/인구 비교 배틀 start-play-result, 추천 설문/결과, 마이페이지의 제목과 설명도 다시 훑어, `계속 올라가세요`, `허브`, `PROFILE`, `BEST RUN`, 장문 안내문처럼 플레이어 언어와 어긋나는 copy를 걷어냈다. public 화면은 동작을 바로 이해시키는 짧은 한국어 문장만 남기고, 상태 정책 설명은 여전히 서버와 테스트 문서 쪽에 남기는 식으로 역할을 더 분명히 나눴다
 - `publicUrlSmokeTest` verification task를 추가해, 실제 공개 URL이 생기면 `WORLDMAP_PUBLIC_BASE_URL=https://... ./gradlew publicUrlSmokeTest`로 `/`, `/stats`, `/ranking`, `/login`, `/signup`, `/recommendation/survey`, `/games/capital/start`의 status와 browser-side `TTFB(responseStart) / DOMContentLoaded / load`를 같은 Markdown report로 남길 수 있게 했다
 - 이 레일은 URL이 없을 때는 `test + browser-smoke` 내장 서버를 자동으로 써서 로컬에서도 먼저 검증된다. 즉 “배포 URL이 생기면 그대로 production에 대입할 측정 도구”를 먼저 코드로 고정한 셈이다
 - `check_prod_deploy_preflight.py`로 첫 ECS 배포 전에 `deploy-prod-ecs.yml`이 실제로 요구하는 GitHub repository variables, `workflow_dispatch`, sample task definition, render script가 다 준비됐는지 한 번에 확인하도록 했다. 현재처럼 vars가 하나도 없는 상태에서는 어떤 값이 비었는지 Markdown report로 바로 남긴다

@@ -21,32 +21,32 @@
             <nav class="site-nav" aria-label="메인 이동">
                 <a class="site-nav-link"
                    th:classappend="${activeSection == 'home'} ? ' is-active'"
-                   th:href="@{/}">Home</a>
+                   th:href="@{/}">홈</a>
                 <a class="site-nav-link"
                    th:classappend="${activeSection == 'stats'} ? ' is-active'"
-                   th:href="@{/stats}">Stats</a>
+                   th:href="@{/stats}">서비스 현황</a>
                 <a class="site-nav-link"
                    th:classappend="${activeSection == 'ranking'} ? ' is-active'"
-                   th:href="@{/ranking}">Ranking</a>
+                   th:href="@{/ranking}">랭킹</a>
                 <a class="site-nav-link"
                    th:if="${showDashboardLink}"
                    th:classappend="${activeSection == 'dashboard'} ? ' is-active'"
-                   th:href="@{/dashboard}">Dashboard</a>
+                   th:href="@{/dashboard}">관리</a>
                 <a class="site-nav-link"
                    th:classappend="${activeSection == 'mypage'} ? ' is-active'"
-                   th:href="@{/mypage}">My Page</a>
+                   th:href="@{/mypage}">내 기록</a>
             </nav>
             <button class="theme-toggle"
                     type="button"
                     data-theme-toggle
                     aria-pressed="false"
                     aria-label="테마 전환">
-                <span class="theme-toggle__hint">Theme</span>
-                <strong class="theme-toggle__state" data-theme-toggle-label>Light</strong>
+                <span class="theme-toggle__hint">테마</span>
+                <strong class="theme-toggle__state" data-theme-toggle-label>라이트</strong>
             </button>
         </div>
     </header>
-    <script th:src="@{/js/theme-toggle.js(v='20260325-theme-2')}"></script>
+    <script th:src="@{/js/theme-toggle.js(v='20260406-public-copy-pass-2')}"></script>
 </th:block>
 </body>
 </html>

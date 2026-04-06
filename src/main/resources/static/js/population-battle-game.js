@@ -22,7 +22,7 @@ function initPopulationBattleStartPage() {
         hidePopulationBattleMessage(messageBox);
         submitButton.disabled = true;
         submitButton.textContent = "게임 준비 중...";
-        showPopulationBattleMessage(messageBox, "첫 번째 비교 Stage를 준비하는 중입니다. 잠시만 기다려주세요.", "info");
+        showPopulationBattleMessage(messageBox, "첫 문제를 준비하는 중입니다.", "info");
 
         try {
             const response = await fetch("/api/games/population-battle/sessions", {
@@ -71,7 +71,7 @@ function initPopulationBattlePlayPage() {
         restartButton,
         pageShell,
         buildSummaryText: (payload) =>
-            `하트를 모두 잃었습니다. 최종 점수 ${payload.totalScore}점으로 종료되었습니다.`
+            `총점 ${payload.totalScore}점으로 종료되었습니다.`
     });
 
     let currentState = null;
@@ -123,7 +123,7 @@ function initPopulationBattlePlayPage() {
                 renderFeedback(feedback, payload);
                 renderStageOverlay(overlay, "정답", `+${payload.awardedScore}`, "success");
                 setSelectionState("정답 처리 완료");
-                setStageHint("정답입니다. 잠시 뒤 다음 Stage로 자동 이동합니다.");
+                setStageHint("정답입니다. 다음 문제로 넘어갑니다.");
 
                 if (payload.outcome === "FINISHED") {
                     setTimeout(() => {
@@ -151,8 +151,8 @@ function initPopulationBattlePlayPage() {
             setSelectionState(`직전 선택: ${payload.selectedCountryName}`);
             setStageHint(
                 payload.outcome === "GAME_OVER"
-                    ? "하트를 모두 잃었습니다. 다음 행동을 선택하세요."
-                    : "오답입니다. 잠시 뒤 같은 Stage에서 다시 더 큰 인구의 나라를 고를 수 있습니다."
+                    ? "하트를 모두 잃었습니다."
+                    : "오답입니다. 잠시 뒤 다시 고를 수 있습니다."
             );
 
             if (payload.outcome === "GAME_OVER") {
@@ -173,7 +173,7 @@ function initPopulationBattlePlayPage() {
         }
     });
 
-    showPopulationBattleMessage(messageBox, "Stage와 좌우 비교 보기를 불러오는 중입니다.", "info");
+    showPopulationBattleMessage(messageBox, "문제를 불러오는 중입니다.", "info");
     hideGameOverModal();
     loadState()
         .then(() => hidePopulationBattleMessage(messageBox))

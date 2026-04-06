@@ -130,7 +130,7 @@ class MyPageServiceIntegrationTest {
 
 		MyPageDashboardView dashboard = myPageService.loadDashboard(member.getId());
 		MyPageModePerformanceView locationPerformance = performanceFor(dashboard, "국가 위치 찾기");
-		MyPageModePerformanceView populationPerformance = performanceFor(dashboard, "국가 인구수 맞추기");
+		MyPageModePerformanceView populationPerformance = performanceFor(dashboard, "인구수 퀴즈");
 
 		assertThat(dashboard.totalCompletedRuns()).isEqualTo(2);
 		assertThat(locationPerformance).isNotNull();
@@ -164,28 +164,28 @@ class MyPageServiceIntegrationTest {
 			.extracting(bestRun -> bestRun.gameModeLabel())
 			.containsExactly(
 				"국가 위치 찾기",
-				"수도 맞히기",
-				"국기 보고 나라 맞히기",
-				"인구 비교 퀵 배틀",
-				"국가 인구수 맞추기"
+				"수도 퀴즈",
+				"국기 퀴즈",
+				"인구 비교 배틀",
+				"인구수 퀴즈"
 			);
 		assertThat(dashboard.modePerformances())
 			.extracting(MyPageModePerformanceView::gameModeLabel)
 			.containsExactly(
 				"국가 위치 찾기",
-				"수도 맞히기",
-				"국기 보고 나라 맞히기",
-				"인구 비교 퀵 배틀",
-				"국가 인구수 맞추기"
+				"수도 퀴즈",
+				"국기 퀴즈",
+				"인구 비교 배틀",
+				"인구수 퀴즈"
 			);
 		assertThat(dashboard.recentPlays())
 			.extracting(play -> play.gameModeLabel())
 			.contains(
 				"국가 위치 찾기",
-				"수도 맞히기",
-				"국기 보고 나라 맞히기",
-				"인구 비교 퀵 배틀",
-				"국가 인구수 맞추기"
+				"수도 퀴즈",
+				"국기 퀴즈",
+				"인구 비교 배틀",
+				"인구수 퀴즈"
 			);
 		assertThat(dashboard.recentPlays())
 			.allSatisfy(play -> assertThat(play.currentRank()).isNotNull());

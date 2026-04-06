@@ -22,7 +22,7 @@ function initStartPage() {
         hidePopulationMessage(messageBox);
         submitButton.disabled = true;
         submitButton.textContent = "게임 준비 중...";
-        showPopulationMessage(messageBox, "첫 번째 Stage와 입력 모드를 준비하는 중입니다. 잠시만 기다려주세요.", "info");
+        showPopulationMessage(messageBox, "첫 문제를 준비하는 중입니다.", "info");
 
         try {
             const response = await fetch("/api/games/population/sessions", {
@@ -75,7 +75,7 @@ function initPlayPage() {
         restartButton,
         pageShell,
         buildSummaryText: (payload) =>
-            `Stage ${payload.stageNumber}에서 하트를 모두 잃었습니다. 이번 러닝 흐름을 확인한 뒤 같은 세션으로 Stage 1부터 다시 시작할 수 있습니다.`
+            `Stage ${payload.stageNumber}에서 종료되었습니다.`
     });
 
     let currentState = null;
@@ -127,7 +127,7 @@ function initPlayPage() {
                 renderFeedback(feedback, payload);
                 renderStageOverlay(overlay, "정답", `+${payload.awardedScore} · 총점 ${payload.totalScore}`, "success");
                 setSelectionState("다음 Stage 준비 중");
-                setStageHint("정답입니다. 잠시 뒤 다음 Stage로 이동합니다.");
+                setStageHint("정답입니다. 다음 문제로 넘어갑니다.");
 
                 if (payload.outcome === "FINISHED") {
                     setTimeout(() => {
@@ -155,8 +155,8 @@ function initPlayPage() {
             setSelectionState(wrongSelectionSummary(payload));
             setStageHint(
                 payload.outcome === "GAME_OVER"
-                    ? "하트를 모두 잃었습니다. 다음 행동을 고르세요."
-                    : "오답입니다. 잠시 뒤 같은 Stage를 다시 추정합니다."
+                    ? "하트를 모두 잃었습니다."
+                    : "오답입니다. 잠시 뒤 다시 고를 수 있습니다."
             );
 
             if (payload.outcome === "GAME_OVER") {
@@ -177,7 +177,7 @@ function initPlayPage() {
         }
     });
 
-    showPopulationMessage(messageBox, "Stage와 입력 모드를 불러오는 중입니다.", "info");
+    showPopulationMessage(messageBox, "문제를 불러오는 중입니다.", "info");
     hideGameOverModal();
     loadState()
         .then(() => hidePopulationMessage(messageBox))

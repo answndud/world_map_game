@@ -10,19 +10,15 @@
 <div class="page-shell">
     <th:block th:replace="~{fragments/site-header :: siteHeader('location')}"></th:block>
     <header class="hero compact-hero">
-        <p class="eyebrow">Location Game Result</p>
         <h1>게임 결과</h1>
-        <p class="hero-copy">
-            엔드리스 러닝 동안 서버가 저장한 Stage 진행 흐름과 점수 변화를 다시 보여줍니다.
-        </p>
     </header>
 
     <main class="layout">
         <section class="panel game-panel">
             <article class="result-banner" th:classappend="${result.status.name() == 'GAME_OVER'} ? ' danger' : ' success'">
-                <p class="subtitle">Mission Status</p>
-                <h2 th:text="${result.status.name() == 'GAME_OVER' ? 'Run Over' : 'Mission Debrief'}">Run Over</h2>
-                <p th:text="${result.status.name() == 'GAME_OVER' ? '마지막 Stage에서 하트를 모두 잃었습니다. Attempt 기록을 보고 어떤 국가군에서 막혔는지 확인할 수 있습니다.' : '현재까지 진행된 엔드리스 러닝 기록입니다. 서버가 저장한 Stage와 Attempt 흐름을 그대로 다시 설명할 수 있습니다.'}">
+                <p class="subtitle">결과</p>
+                <h2 th:text="${result.status.name() == 'GAME_OVER' ? '게임 종료' : '현재 기록'}">게임 종료</h2>
+                <p th:text="${result.status.name() == 'GAME_OVER' ? '마지막 문제에서 종료되었습니다.' : '여기까지의 플레이 기록입니다.'}">
                     마지막 Stage에서 하트를 모두 잃었습니다.
                 </p>
                 <div class="result-banner__recap" aria-label="빠른 요약">
@@ -77,9 +73,6 @@
 
             <div class="panel-head">
                 <h2>Stage별 기록</h2>
-                <p>
-                    각 Stage 안에 여러 번의 Attempt가 쌓이고, 하트가 0이 되면 해당 Stage에서 게임이 종료됩니다.
-                </p>
             </div>
 
             <div class="table-shell">

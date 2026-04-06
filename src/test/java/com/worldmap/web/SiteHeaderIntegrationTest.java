@@ -46,14 +46,14 @@ class SiteHeaderIntegrationTest {
 
 		mockMvc.perform(get("/").session(session))
 			.andExpect(status().isOk())
-			.andExpect(content().string(containsString(">Dashboard<")));
+			.andExpect(content().string(containsString(">관리<")));
 
 		member.provisionUser("hash");
 		memberRepository.save(member);
 
 		mockMvc.perform(get("/").session(session))
 			.andExpect(status().isOk())
-			.andExpect(content().string(not(containsString(">Dashboard<"))));
+			.andExpect(content().string(not(containsString(">관리<"))));
 
 		assertThat(session.getAttribute(MEMBER_ROLE_ATTRIBUTE)).isEqualTo(USER.name());
 	}
@@ -65,14 +65,14 @@ class SiteHeaderIntegrationTest {
 
 		mockMvc.perform(get("/").session(session))
 			.andExpect(status().isOk())
-			.andExpect(content().string(not(containsString(">Dashboard<"))));
+			.andExpect(content().string(not(containsString(">관리<"))));
 
 		member.provisionAdmin("hash");
 		memberRepository.save(member);
 
 		mockMvc.perform(get("/").session(session))
 			.andExpect(status().isOk())
-			.andExpect(content().string(containsString(">Dashboard<")));
+			.andExpect(content().string(containsString(">관리<")));
 
 		assertThat(session.getAttribute(MEMBER_ROLE_ATTRIBUTE)).isEqualTo(ADMIN.name());
 	}

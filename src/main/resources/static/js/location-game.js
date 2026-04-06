@@ -22,7 +22,7 @@ function initStartPage() {
         hideLocationMessage(messageBox);
         submitButton.disabled = true;
         submitButton.textContent = "게임 준비 중...";
-        showLocationMessage(messageBox, "게임 화면과 첫 번째 Stage를 준비하는 중입니다. 잠시만 기다려주세요.", "info");
+        showLocationMessage(messageBox, "첫 문제를 준비하는 중입니다.", "info");
 
         try {
             const response = await fetch("/api/games/location/sessions", {
@@ -77,7 +77,6 @@ function initPlayPage() {
     const feedback = document.getElementById("location-answer-feedback");
     const stageOverlay = document.getElementById("location-stage-overlay");
     const messageBox = document.getElementById("location-play-message");
-    const heroCopy = document.getElementById("location-hero-copy");
     const stageHint = document.getElementById("location-stage-hint");
     const gameOverModal = document.getElementById("location-game-over-modal");
     const gameOverPanel = gameOverModal?.querySelector(".game-over-modal__panel");
@@ -92,7 +91,7 @@ function initPlayPage() {
         restartButton,
         pageShell,
         buildSummaryText: (payload) =>
-            `Stage ${payload.stageNumber}에서 하트를 모두 잃었습니다. 이번 러닝 흐름을 확인한 뒤 같은 세션으로 바로 다시 시작할 수 있습니다.`
+            `Stage ${payload.stageNumber}에서 종료되었습니다.`
     });
 
     let currentState = null;
@@ -169,7 +168,7 @@ function initPlayPage() {
                 highlightedWrongIso3Code = null;
                 renderStageOverlay(stageOverlay, "정답", `+${payload.awardedScore}`, "success");
                 if (stageHint) {
-                    stageHint.textContent = "정답입니다. 잠시 뒤 다음 Stage로 자동 이동합니다.";
+                    stageHint.textContent = "정답입니다. 다음 문제로 넘어갑니다.";
                 }
                 refreshGlobe();
 
@@ -199,8 +198,8 @@ function initPlayPage() {
             );
             if (stageHint) {
                 stageHint.textContent = payload.outcome === "GAME_OVER"
-                    ? "하트를 모두 잃었습니다. 다음 행동을 선택하세요."
-                    : "오답입니다. 잠시 뒤 같은 Stage를 다시 시도할 수 있습니다.";
+                    ? "하트를 모두 잃었습니다."
+                    : "오답입니다. 잠시 뒤 다시 시도합니다.";
             }
             refreshGlobe();
 

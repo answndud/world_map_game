@@ -22,7 +22,7 @@ function initStartPage() {
         hideFlagMessage(messageBox);
         submitButton.disabled = true;
         submitButton.textContent = "게임 준비 중...";
-        showFlagMessage(messageBox, "첫 번째 Stage와 국기 보기를 준비하는 중입니다. 잠시만 기다려주세요.", "info");
+        showFlagMessage(messageBox, "첫 문제를 준비하는 중입니다.", "info");
 
         try {
             const response = await fetch("/api/games/flag/sessions", {
@@ -74,7 +74,7 @@ function initPlayPage() {
         restartButton,
         pageShell,
         buildSummaryText: (payload) =>
-            `Stage ${payload.stageNumber}에서 탈락했습니다. 현재 총점 ${payload.totalScore}점, 다시 시작하면 같은 세션으로 Stage 1부터 이어집니다.`
+            `Stage ${payload.stageNumber}에서 종료되었습니다.`
     });
 
     let currentState = null;
@@ -129,8 +129,8 @@ function initPlayPage() {
                 setSelectionState("정답 처리 완료");
                 setStageHint(
                     payload.nextDifficultyGuide
-                        ? `정답입니다. 다음은 ${payload.nextDifficultyLabel}입니다. ${payload.nextDifficultyGuide} 잠시 뒤 자동 이동합니다.`
-                        : "정답입니다. 잠시 뒤 다음 Stage로 자동 이동합니다."
+                        ? `정답입니다. 다음은 ${payload.nextDifficultyLabel}입니다.`
+                        : "정답입니다. 다음 문제로 넘어갑니다."
                 );
 
                 if (payload.outcome === "FINISHED") {
@@ -159,8 +159,8 @@ function initPlayPage() {
             setSelectionState(`직전 선택: ${payload.selectedCountryName}`);
             setStageHint(
                 payload.outcome === "GAME_OVER"
-                    ? "하트를 모두 잃었습니다. 다음 행동을 선택하세요."
-                    : "오답입니다. 잠시 뒤 같은 Stage에서 다시 국가를 고를 수 있습니다."
+                    ? "하트를 모두 잃었습니다."
+                    : "오답입니다. 잠시 뒤 다시 고를 수 있습니다."
             );
 
             if (payload.outcome === "GAME_OVER") {
@@ -181,7 +181,7 @@ function initPlayPage() {
         }
     });
 
-    showFlagMessage(messageBox, "Stage와 국기 보기를 불러오는 중입니다.", "info");
+    showFlagMessage(messageBox, "문제를 불러오는 중입니다.", "info");
     hideGameOverModal();
     loadState()
         .then(() => hideFlagMessage(messageBox))

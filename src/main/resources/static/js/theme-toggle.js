@@ -25,7 +25,7 @@
         document.querySelectorAll("[data-theme-toggle]").forEach(function (button) {
             var label = button.querySelector("[data-theme-toggle-label]");
             if (label) {
-                label.textContent = theme === "light" ? "Light" : "Dark";
+                label.textContent = theme === "light" ? "라이트" : "다크";
             }
 
             button.setAttribute("aria-pressed", theme === "light" ? "true" : "false");

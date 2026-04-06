@@ -84,12 +84,12 @@ class PublicUrlSmokeE2ETest {
 		String baseUrl = publicBaseUrl();
 		List<PublicPageExpectation> expectations = List.of(
 			new PublicPageExpectation("/", "WorldMap", "h1", "WorldMap Command"),
-			new PublicPageExpectation("/stats", "Live Stats", "h1", "서비스 현황"),
+			new PublicPageExpectation("/stats", "서비스 현황", "h1", "서비스 현황"),
 			new PublicPageExpectation("/ranking", "실시간 랭킹", "h1", "실시간 랭킹"),
 			new PublicPageExpectation("/login", "로그인", "h1", "로그인"),
 			new PublicPageExpectation("/signup", "회원가입", "h1", "회원가입"),
 			new PublicPageExpectation("/recommendation/survey", "나에게 어울리는 국가 찾기 설문", "h1", "나에게 어울리는 국가 찾기"),
-			new PublicPageExpectation("/games/capital/start", "수도 맞히기 시작", "h1", "수도 맞히기")
+			new PublicPageExpectation("/games/capital/start", "수도 퀴즈 시작", "h1", "수도 퀴즈")
 		);
 
 		List<PublicPageTiming> timings = new ArrayList<>();

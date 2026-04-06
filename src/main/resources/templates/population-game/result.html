@@ -3,26 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>국가 인구수 맞추기 결과</title>
+    <title>인구수 퀴즈 결과</title>
     <link rel="stylesheet" th:href="@{/css/site.css(v='20260404-population-mobile-hud-1')}">
 </head>
 <body>
 <div class="page-shell">
     <th:block th:replace="~{fragments/site-header :: siteHeader('population')}"></th:block>
     <header class="hero compact-hero">
-        <p class="eyebrow">Population Game Result</p>
         <h1>게임 결과</h1>
-        <p class="hero-copy">
-            Session과 Stage 흐름은 유지하면서, 정답 텍스트보다 점수와 진행 결과를 중심으로 보여줍니다.
-        </p>
     </header>
 
     <main class="layout">
         <section class="panel game-panel">
             <article class="result-banner" th:classappend="${result.status.name() == 'GAME_OVER'} ? ' danger' : ' success'">
-                <p class="subtitle">Scan Result</p>
-                <h2 th:text="${result.status.name() == 'GAME_OVER' ? 'Run Over' : 'Mission Debrief'}">Run Over</h2>
-                <p th:text="${result.status.name() == 'GAME_OVER' ? '마지막 Stage에서 하트를 모두 잃었습니다. 어떤 인구 규모 구간에서 막혔는지 Attempt 기록으로 다시 설명할 수 있습니다.' : '현재까지 진행된 엔드리스 인구 규모 러닝 기록입니다.'}">
+                <p class="subtitle">결과</p>
+                <h2 th:text="${result.status.name() == 'GAME_OVER' ? '게임 종료' : '현재 기록'}">게임 종료</h2>
+                <p th:text="${result.status.name() == 'GAME_OVER' ? '마지막 문제에서 종료되었습니다.' : '여기까지의 플레이 기록입니다.'}">
                     마지막 Stage에서 하트를 모두 잃었습니다.
                 </p>
                 <div class="result-banner__recap" aria-label="빠른 요약">
@@ -82,9 +78,6 @@
 
             <div class="panel-head">
                 <h2>Stage별 기록</h2>
-                <p>
-                    한 Stage 안에 여러 번의 Attempt가 쌓이고, 하트가 0이 되면 해당 Stage에서 게임이 종료됩니다.
-                </p>
             </div>
 
             <div class="table-shell">

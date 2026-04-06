@@ -10,20 +10,14 @@
 <div class="page-shell">
     <th:block th:replace="~{fragments/site-header :: siteHeader('mypage')}"></th:block>
     <header class="hero compact-hero">
-        <p class="eyebrow">Simple Account</p>
         <h1>회원가입</h1>
-        <p class="hero-copy">
-            WorldMap 계정은 닉네임과 비밀번호만 사용합니다.
-            커뮤니티 기능 없이 점수와 랭킹 기록을 계속 남기기 위한 최소 계정입니다.
-            이 브라우저에서 방금 만든 비회원 기록도 로그인과 함께 현재 계정으로 이어집니다.
-        </p>
+        <p class="hero-copy">기록을 저장할 계정을 만듭니다.</p>
     </header>
 
     <main class="layout">
         <section class="panel game-panel">
             <div class="panel-head">
                 <h2>새 계정 만들기</h2>
-                <p>회원가입 후에는 새 게임 기록뿐 아니라, 현재 브라우저의 비회원 기록도 계정 소유로 전환됩니다.</p>
             </div>
 
             <form class="game-form" th:action="@{/signup}" th:object="${signupForm}" method="post">

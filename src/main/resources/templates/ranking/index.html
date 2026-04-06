@@ -11,20 +11,17 @@
 <div class="page-shell">
     <th:block th:replace="~{fragments/site-header :: siteHeader('ranking')}"></th:block>
     <header class="hero compact-hero">
-        <p class="eyebrow">공개 랭킹</p>
         <h1>실시간 랭킹</h1>
-        <p class="hero-copy">
-            방금 끝난 플레이까지 포함해 게임별 전체·일간 Top 10을 바로 비교할 수 있습니다.
-        </p>
+        <p class="hero-copy">게임별 상위 기록입니다.</p>
     </header>
 
     <main class="layout">
         <section class="panel">
             <div class="ranking-toolbar">
                 <div class="ranking-toolbar-copy">
-                    <span class="subtitle">현재 보드만 자동 갱신</span>
+                    <span class="subtitle">자동 갱신</span>
                     <strong id="ranking-auto-refresh-status">현재 보드 15초 간격 ON</strong>
-                    <p class="ranking-toolbar-meta">마지막 갱신 <span id="ranking-last-updated">첫 로드 기준</span></p>
+                    <p class="ranking-toolbar-meta">마지막 갱신 <span id="ranking-last-updated">첫 로드</span></p>
                 </div>
                 <div class="action-buttons">
                     <button id="ranking-refresh-button" class="secondary-button" type="button">지금 새로고침</button>
@@ -34,7 +31,6 @@
                 <section class="panel ranking-filter-shell">
                     <div class="ranking-filter-group">
                         <span class="subtitle">게임 종류</span>
-                        <p class="stat-card-copy">게임 하나를 골라 같은 형식으로 Top 10을 비교합니다.</p>
                         <div class="ranking-filter-buttons" role="group" aria-label="게임 종류 필터">
                             <button class="secondary-button ranking-filter-button is-active"
                                     id="ranking-mode-location"
@@ -97,7 +93,7 @@
                 <aside class="panel ranking-rule-card">
                     <span class="subtitle">동점 처리</span>
                     <h2>정렬 기준</h2>
-                    <p>동점이면 클리어 수, 시도 수, 기록 시간 순서로 앞섭니다.</p>
+                    <p>클리어 수, 시도 수, 기록 시간 순으로 정렬합니다.</p>
                 </aside>
             </div>
             <p id="ranking-refresh-message" class="message-box" data-tone="error" hidden></p>
@@ -141,8 +137,8 @@
 
                 <article class="panel ranking-board-panel"
                          data-ranking-panel="capital:ALL"
-                         data-title="수도 맞히기 · 전체 Top 10"
-                         data-copy="수도 맞히기 전체 랭킹입니다."
+                         data-title="수도 퀴즈 · 전체 Top 10"
+                         data-copy="수도 퀴즈 전체 랭킹입니다."
                          data-initial-rendered="false"
                          hidden>
                     <div class="table-shell">
@@ -167,7 +163,7 @@
 
                 <article class="panel ranking-board-panel"
                          data-ranking-panel="flag:ALL"
-                         data-title="국기 보고 나라 맞히기 · 전체 Top 10"
+                         data-title="국기 퀴즈 · 전체 Top 10"
                          data-copy="국기 퀴즈 전체 랭킹입니다."
                          data-initial-rendered="false"
                          hidden>
@@ -219,8 +215,8 @@
 
                 <article class="panel ranking-board-panel"
                          data-ranking-panel="population-battle:ALL"
-                         data-title="인구 비교 퀵 배틀 · 전체 Top 10"
-                         data-copy="인구 비교 퀵 배틀 전체 랭킹입니다."
+                         data-title="인구 비교 배틀 · 전체 Top 10"
+                         data-copy="인구 비교 배틀 전체 랭킹입니다."
                          data-initial-rendered="false"
                          hidden>
                     <div class="table-shell">
@@ -272,9 +268,9 @@
 
                 <article class="panel ranking-board-panel"
                          data-ranking-panel="capital:DAILY"
-                         data-title="수도 맞히기 · 오늘 Top 10"
-                         data-copy-base="오늘 기준 수도 맞히기 랭킹입니다."
-                         data-copy="오늘 기준 수도 맞히기 랭킹입니다."
+                         data-title="수도 퀴즈 · 오늘 Top 10"
+                         data-copy-base="오늘 기준 수도 퀴즈 랭킹입니다."
+                         data-copy="오늘 기준 수도 퀴즈 랭킹입니다."
                          data-initial-rendered="false"
                          hidden>
                     <div class="table-shell">
@@ -299,7 +295,7 @@
 
                 <article class="panel ranking-board-panel"
                          data-ranking-panel="flag:DAILY"
-                         data-title="국기 보고 나라 맞히기 · 오늘 Top 10"
+                         data-title="국기 퀴즈 · 오늘 Top 10"
                          data-copy-base="오늘 기준 국기 퀴즈 랭킹입니다."
                          data-copy="오늘 기준 국기 퀴즈 랭킹입니다."
                          data-initial-rendered="false"
@@ -326,9 +322,9 @@
 
                 <article class="panel ranking-board-panel"
                          data-ranking-panel="population-battle:DAILY"
-                         data-title="인구 비교 퀵 배틀 · 오늘 Top 10"
-                         data-copy-base="오늘 기준 인구 비교 퀵 배틀 랭킹입니다."
-                         data-copy="오늘 기준 인구 비교 퀵 배틀 랭킹입니다."
+                         data-title="인구 비교 배틀 · 오늘 Top 10"
+                         data-copy-base="오늘 기준 인구 비교 배틀 랭킹입니다."
+                         data-copy="오늘 기준 인구 비교 배틀 랭킹입니다."
                          data-initial-rendered="false"
                          hidden>
                     <div class="table-shell">

@@ -5,18 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>국가 위치 찾기 시작</title>
     <link rel="stylesheet" th:href="@{/css/site.css(v='20260330-a11y-keyboard-2')}">
-    <script th:src="@{/js/location-game.js(v='20260404-compact-globe-tuning-1')}" defer></script>
+    <script th:src="@{/js/location-game.js(v='20260406-public-copy-pass-1')}" defer></script>
 </head>
 <body data-page="location-start">
 <div class="page-shell">
     <th:block th:replace="~{fragments/site-header :: siteHeader('location')}"></th:block>
     <header class="hero compact-hero">
-        <p class="eyebrow">Orbital Mission</p>
         <h1>국가 위치 찾기</h1>
-        <p class="hero-copy">
-            지구본을 회전하며 목표 국가를 찾는 기본 탐색 모드입니다.
-            하트, 점수, Stage, 난이도, 정답 판정은 모두 서버가 관리합니다.
-        </p>
     </header>
 
     <main class="layout">
@@ -24,11 +19,11 @@
             <div class="panel-head">
                 <h2>게임 시작</h2>
                 <p th:if="${authenticatedNickname != null}">
-                    현재 로그인 상태에서는
+                    현재는
                     <strong th:text="${authenticatedNickname}">player</strong>
-                    닉네임으로 기록됩니다. 아래 입력값은 비회원 플레이에서만 사용됩니다.
+                    이름으로 기록됩니다.
                 </p>
-                <p th:unless="${authenticatedNickname != null}">닉네임은 선택 입력입니다. 비워 두면 `Guest`로 시작합니다.</p>
+                <p th:unless="${authenticatedNickname != null}">닉네임은 비워 두어도 됩니다.</p>
             </div>
 
             <form id="location-start-form" class="game-form">
@@ -41,19 +36,19 @@
 
             <div class="rule-grid">
                 <article class="rule-card">
-                    <span class="subtitle">Lives</span>
-                    <strong>3 Hearts</strong>
+                    <span class="subtitle">하트</span>
+                    <strong>3개</strong>
                 </article>
                 <article class="rule-card">
-                    <span class="subtitle">Loop</span>
-                    <strong>Endless Run</strong>
+                    <span class="subtitle">진행</span>
+                    <strong>끝까지 이어서</strong>
                 </article>
                 <article class="rule-card">
-                    <span class="subtitle">Map Pool</span>
+                    <span class="subtitle">문제</span>
                     <strong>상위 72개 주요 국가</strong>
                 </article>
                 <article class="rule-card">
-                    <span class="subtitle">Answer</span>
+                    <span class="subtitle">입력</span>
                     <strong>국가 클릭 후 제출</strong>
                 </article>
             </div>

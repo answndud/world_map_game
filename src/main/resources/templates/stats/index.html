@@ -3,46 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Stats</title>
+    <title>서비스 현황</title>
     <link rel="stylesheet" th:href="@{/css/site.css(v='20260402-human-pass-1')}">
 </head>
 <body>
 <div class="page-shell">
     <th:block th:replace="~{fragments/site-header :: siteHeader('stats')}"></th:block>
     <header class="hero compact-hero">
-        <p class="eyebrow">공개 통계</p>
         <h1>서비스 현황</h1>
-        <p class="hero-copy">
-            오늘 몇 명이 플레이했고 어떤 게임이 많이 끝났는지 공개 기준으로만 보여줍니다.
-        </p>
     </header>
 
     <main class="layout">
         <section class="panel game-panel">
             <div class="panel-head">
                 <h2>오늘 얼마나 플레이했나</h2>
-                <p>서비스 전체 흐름을 먼저 보고, 그다음 게임별 완료 수를 봅니다.</p>
             </div>
             <div class="stats-grid">
                 <article class="stat-card">
                     <span class="subtitle">전체 회원</span>
                     <strong th:text="${activity.totalMemberCount}">0</strong>
-                    <p class="stat-card-copy">기록을 이어가는 전체 회원 수입니다.</p>
                 </article>
                 <article class="stat-card">
                     <span class="subtitle">오늘 플레이어</span>
                     <strong th:text="${activity.todayActivePlayerCount}">0</strong>
-                    <p class="stat-card-copy">오늘 한 번 이상 플레이한 사용자 수입니다.</p>
                 </article>
                 <article class="stat-card">
                     <span class="subtitle">오늘 시작 세션</span>
                     <strong th:text="${activity.todayStartedSessionCount}">0</strong>
-                    <p class="stat-card-copy">오늘 시작된 세션 수입니다.</p>
                 </article>
                 <article class="stat-card">
                     <span class="subtitle">오늘 완료 런</span>
                     <strong th:text="${activity.todayCompletedRunCount}">0</strong>
-                    <p class="stat-card-copy">오늘 끝난 run 수입니다.</p>
                 </article>
             </div>
         </section>
@@ -50,7 +41,6 @@
         <section class="panel game-panel">
             <div class="panel-head">
                 <h2>오늘 많이 끝난 게임</h2>
-                <p>오늘 완료된 run 수를 게임별로 나눠서 봅니다.</p>
             </div>
             <div class="stats-grid">
                 <article class="stat-card">
@@ -58,7 +48,7 @@
                     <strong th:text="${activity.todayLocationCompletedRunCount}">0</strong>
                 </article>
                 <article class="stat-card">
-                    <span class="subtitle">수도 맞히기</span>
+                    <span class="subtitle">수도 퀴즈</span>
                     <strong th:text="${activity.todayCapitalCompletedRunCount}">0</strong>
                 </article>
                 <article class="stat-card">
@@ -70,7 +60,7 @@
                     <strong th:text="${activity.todayPopulationBattleCompletedRunCount}">0</strong>
                 </article>
                 <article class="stat-card">
-                    <span class="subtitle">인구수 맞추기</span>
+                    <span class="subtitle">인구수 퀴즈</span>
                     <strong th:text="${activity.todayPopulationCompletedRunCount}">0</strong>
                 </article>
             </div>
@@ -80,7 +70,6 @@
             <article class="panel">
                 <div class="panel-head">
                     <h2>오래 버티는 게임 Top 3</h2>
-                    <p>끝까지 오래 버틴 점수가 높은 기록입니다.</p>
                 </div>
                 <div class="table-shell">
                     <p class="subtitle">위치 찾기</p>
@@ -131,10 +120,9 @@
             <article class="panel">
                 <div class="panel-head">
                     <h2>짧게 푸는 게임 Top 3</h2>
-                    <p>짧은 퀴즈와 비교형 게임의 상위 기록입니다.</p>
                 </div>
                 <div class="table-shell">
-                    <p class="subtitle">수도 맞히기</p>
+                    <p class="subtitle">수도 퀴즈</p>
                     <table class="result-table">
                         <thead>
                         <tr>
@@ -202,16 +190,10 @@
             </article>
         </section>
 
-        <section class="panel">
-            <div class="panel-head">
-                <h2>이 화면에서 보는 것</h2>
-                <p>오늘 활동량과 상위 기록만 공개합니다. 운영 판단용 내부 지표는 Dashboard에서만 봅니다.</p>
-            </div>
-            <div class="page-actions">
-                <a class="primary-link" th:href="@{/ranking}">전체 랭킹 보기</a>
-                <a class="secondary-button" th:href="@{/recommendation/survey}">추천 설문 시작</a>
-            </div>
-        </section>
+        <div class="page-actions">
+            <a class="primary-link" th:href="@{/ranking}">전체 랭킹 보기</a>
+            <a class="secondary-button" th:href="@{/recommendation/survey}">추천 설문 시작</a>
+        </div>
     </main>
 </div>
 </body>

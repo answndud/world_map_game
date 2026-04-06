@@ -11,11 +11,10 @@
 <div class="page-shell">
     <th:block th:replace="~{fragments/site-header :: siteHeader('recommendation')}"></th:block>
     <header class="hero compact-hero">
-        <p class="eyebrow">Your Match</p>
         <h1>추천 결과</h1>
         <p class="hero-copy">
-            <span th:text="${result.submittedPreferences.size()} + '개 답변을 바탕으로'">20개 답변을 바탕으로</span>
-            지금 생활 취향과 잘 맞는 나라 3곳을 골랐습니다.
+            <span th:text="${result.submittedPreferences.size()} + '개 답변 기준'">20개 답변 기준</span>
+            추천입니다.
         </p>
     </header>
 
@@ -23,7 +22,6 @@
         <section class="panel game-panel">
             <div class="panel-head">
                 <h2>내가 고른 취향</h2>
-                <p>단순 선호보다 어떤 조건을 감수할 수 있는지까지 함께 반영해, 지금의 생활 기준과 잘 맞는 나라를 찾았습니다.</p>
             </div>
 
             <div class="stats-grid">
@@ -37,7 +35,6 @@
         <section class="panel game-panel">
             <div class="panel-head">
                 <h2>잘 맞는 나라 3곳</h2>
-                <p>각 카드에는 잘 맞는 이유와 기본 정보를 함께 정리했습니다.</p>
             </div>
 
             <div class="card-grid">
@@ -73,7 +70,6 @@
         <section class="panel game-panel">
             <div class="panel-head">
                 <h2>추천 만족도</h2>
-                <p>이번 결과가 얼마나 만족스러웠는지 별점으로 알려주세요.</p>
             </div>
 
             <form id="recommendation-feedback-form" class="game-form">

@@ -124,21 +124,21 @@ public class MyPageService {
 		long completedRunCount = populationGameSessionRepository.countByMemberIdAndFinishedAtIsNotNull(memberId);
 		List<PopulationGameStage> clearedStages = populationGameStageRepository
 			.findAllBySessionMemberIdAndSessionFinishedAtIsNotNullAndStatus(memberId, PopulationGameStageStatus.CLEARED);
-		return performanceView("국가 인구수 맞추기", completedRunCount, clearedStages.stream().map(PopulationGameStage::getAttemptCount).toList());
+		return performanceView("인구수 퀴즈", completedRunCount, clearedStages.stream().map(PopulationGameStage::getAttemptCount).toList());
 	}
 
 	private MyPageModePerformanceView capitalPerformanceView(Long memberId) {
 		long completedRunCount = capitalGameSessionRepository.countByMemberIdAndFinishedAtIsNotNull(memberId);
 		List<CapitalGameStage> clearedStages = capitalGameStageRepository
 			.findAllBySessionMemberIdAndSessionFinishedAtIsNotNullAndStatus(memberId, CapitalGameStageStatus.CLEARED);
-		return performanceView("수도 맞히기", completedRunCount, clearedStages.stream().map(CapitalGameStage::getAttemptCount).toList());
+		return performanceView("수도 퀴즈", completedRunCount, clearedStages.stream().map(CapitalGameStage::getAttemptCount).toList());
 	}
 
 	private MyPageModePerformanceView flagPerformanceView(Long memberId) {
 		long completedRunCount = flagGameSessionRepository.countByMemberIdAndFinishedAtIsNotNull(memberId);
 		List<FlagGameStage> clearedStages = flagGameStageRepository
 			.findAllBySessionMemberIdAndSessionFinishedAtIsNotNullAndStatus(memberId, FlagGameStageStatus.CLEARED);
-		return performanceView("국기 보고 나라 맞히기", completedRunCount, clearedStages.stream().map(FlagGameStage::getAttemptCount).toList());
+		return performanceView("국기 퀴즈", completedRunCount, clearedStages.stream().map(FlagGameStage::getAttemptCount).toList());
 	}
 
 	private MyPageModePerformanceView populationBattlePerformanceView(Long memberId) {
@@ -146,7 +146,7 @@ public class MyPageService {
 		List<PopulationBattleGameStage> clearedStages = populationBattleGameStageRepository
 			.findAllBySessionMemberIdAndSessionFinishedAtIsNotNullAndStatus(memberId, PopulationBattleGameStageStatus.CLEARED);
 		return performanceView(
-			"인구 비교 퀵 배틀",
+			"인구 비교 배틀",
 			completedRunCount,
 			clearedStages.stream().map(PopulationBattleGameStage::getAttemptCount).toList()
 		);
@@ -244,10 +244,10 @@ public class MyPageService {
 	private String gameModeLabel(LeaderboardGameMode gameMode) {
 		return switch (gameMode) {
 			case LOCATION -> "국가 위치 찾기";
-			case CAPITAL -> "수도 맞히기";
-			case FLAG -> "국기 보고 나라 맞히기";
-			case POPULATION_BATTLE -> "인구 비교 퀵 배틀";
-			case POPULATION -> "국가 인구수 맞추기";
+			case CAPITAL -> "수도 퀴즈";
+			case FLAG -> "국기 퀴즈";
+			case POPULATION_BATTLE -> "인구 비교 배틀";
+			case POPULATION -> "인구수 퀴즈";
 		};
 	}
 
