@@ -992,6 +992,7 @@
 - `publicUrlSmokeTest` verification task를 추가해, 실제 공개 URL이 생기면 `WORLDMAP_PUBLIC_BASE_URL=https://... ./gradlew publicUrlSmokeTest`로 `/`, `/stats`, `/ranking`, `/login`, `/signup`, `/recommendation/survey`, `/games/capital/start`의 status와 browser-side `TTFB(responseStart) / DOMContentLoaded / load`를 같은 Markdown report로 남길 수 있게 했다
 - 이 레일은 URL이 없을 때는 `test + browser-smoke` 내장 서버를 자동으로 써서 로컬에서도 먼저 검증된다. 즉 “배포 URL이 생기면 그대로 production에 대입할 측정 도구”를 먼저 코드로 고정한 셈이다
 - `check_prod_deploy_preflight.py`로 첫 ECS 배포 전에 `deploy-prod-ecs.yml`이 실제로 요구하는 GitHub repository variables, `workflow_dispatch`, sample task definition, render script가 다 준비됐는지 한 번에 확인하도록 했다. 현재처럼 vars가 하나도 없는 상태에서는 어떤 값이 비었는지 Markdown report로 바로 남긴다
+- 이어서 [README.md](/Users/alex/project/worldmap/README.md)를 다시 제품 소개 페이지 톤으로 손봤다. 첫 문단은 서버 구조 자랑보다 “어떤 경험을 만들고 싶었는가”를 먼저 말하게 바꾸고, main은 다크 모드 지구본 플레이 컷을 대표 화면으로 올리고, `나에게 어울리는 국가 찾기`는 AI를 기획 보조자·설계 보조자·검증 보조자로 어떻게 썼는지 제품/개발자 관점에서 더 자세히 설명하도록 정리했다
 
 다음 후속 개선 후보:
 
