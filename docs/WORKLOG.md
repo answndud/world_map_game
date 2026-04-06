@@ -7786,3 +7786,37 @@
 - 아직 약한 부분: README 톤은 많이 정리됐지만, main 앱이 실제 공개 URL까지 열리면 live 링크와 실제 production screenshot 기준으로 한 번 더 다듬을 여지는 있다.
 - 면접용 30초 요약: README를 다시 제품 소개 페이지로 썼습니다. 이번에는 서버 구조 설명을 맨 앞에 두지 않고, 왜 이런 지리 게임 제품을 만들었는지와 대표 플레이 장면을 먼저 보여 주도록 바꿨습니다. 또 `나에게 어울리는 국가 찾기`는 AI를 런타임 추천기가 아니라 질문 설계와 나라 프로필, 페르소나 검증을 빠르게 실험하는 파트너로 어떻게 썼는지 더 자세히 적어, 공고에서 보는 AI 활용 감각도 같이 드러나게 만들었습니다.
 - 블로그 생략 이유: 이번 조각은 README 편집과 이미지 배치 조정이 중심이고, API·도메인·게임 루프 자체는 바뀌지 않았으므로 별도 블로그 글보다 worklog와 playbook 기록으로 충분하다.
+
+## 2026-04-06 - 위치 게임 지구본이 렌더링되지 않던 클라이언트 회귀 수정
+
+- 단계: 3. 국가 위치 찾기 게임 Level 1
+- 목적: 위치 게임 play 화면에서 지구본이 아예 뜨지 않는 회귀를 복구한다. 이번 범위는 서버 정답 판정이나 Stage 정책이 아니라, 브라우저가 초기화 단계에서 죽지 않고 Globe.gl 캔버스를 실제로 렌더하게 만드는 데 한정한다.
+- 변경 파일:
+  - `src/main/resources/static/js/location-game.js`
+  - `src/main/resources/templates/location-game/start.html`
+  - `src/main/resources/templates/location-game/play.html`
+  - `src/test/java/com/worldmap/e2e/BrowserSmokeE2ETest.java`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 요청은 `GET /games/location/start -> POST /api/games/location/sessions -> GET /games/location/play/{sessionId}`에서 시작한다. 서버는 기존처럼 세션과 Stage를 내려주고, 실제 상태 변화도 `LocationGameService` 안에서 그대로 일어난다. 이번 문제는 play 페이지에서 `location-game.js`가 제거된 설명 노드를 계속 참조하면서 초기화가 중단됐고, 그 결과 `fetchState() -> fetchGlobePayload() -> createBaseGlobe()` 흐름이 끝나기 전에 브라우저가 멈춘 것이었다.
+- 데이터 / 상태 변화:
+  - `heroCopy is not defined` 예외를 일으키던 dead reference를 제거했다.
+  - `renderLevelCopy(...)`는 더 이상 없는 hero copy 요소를 찾지 않고, 현재 stage hint만 짧게 갱신한다.
+  - start/play 템플릿의 `location-game.js` asset version을 `20260406-location-globe-fix-1`로 올려 브라우저가 캐시된 옛 JS를 다시 쓰지 않게 했다.
+  - browser smoke에 `#globe-stage canvas` 존재 여부를 확인하는 회귀 테스트를 추가했다.
+- 핵심 도메인 개념:
+  - `client initialization boundary`: 위치 게임의 점수와 Stage 규칙은 서버에 있지만, Globe.gl 캔버스를 띄우는 책임은 브라우저 초기화 코드에 있다는 점
+  - `presentation regression with server-safe loop`: 서버 도메인은 멀쩡해도 play 셸 JS 한 줄이 잘못되면 대표 모드가 완전히 죽을 수 있다는 점
+  - `asset-version cache busting`: 정적 JS 회귀를 고칠 때는 코드 수정만 아니라 템플릿의 버전 문자열도 같이 올려야 브라우저 캐시 이슈를 확실히 끊을 수 있다는 점
+- 예외 / 엣지 케이스:
+  - headless 브라우저 페이지 스크린샷은 WebGL 캔버스를 제대로 잡지 못할 수 있다. 실제 렌더링 복구 여부는 `window.__worldmapBrowserSmoke.locationGlobe`와 `#globe-stage canvas` 존재로 확인했다.
+  - 콘솔의 404 하나는 globe 회귀 원인이 아니었고, 실제 치명적 원인은 `heroCopy is not defined`였다.
+  - 이번 조각은 작은 클라이언트 회귀 복구라 blog까지 쪼개기보다 worklog와 playbook 기록으로 충분하다고 판단했다.
+- 테스트:
+  - `node --check src/main/resources/static/js/location-game.js`
+  - `./gradlew browserSmokeTest --tests '*locationStartPageCreatesPlayableGuestSessionWithRenderedGlobe' --tests '*locationWrongAnswerCanRetrySameStageWithoutStaleSubmitError'`
+  - `git diff --check`
+- 배운 점: 설명 문구를 줄이는 조각도 위치 게임처럼 상호작용이 큰 화면에서는 단순 copy 정리가 아니라 런타임 초기화 계약을 같이 보는 편이 안전하다. 템플릿에서 요소를 지웠으면 JS 참조도 같이 끊고, 대표 모드라면 browser smoke에서 화면 셸이 아니라 실제 canvas 존재까지 같이 고정해야 한다.
+- 아직 약한 부분: 현재 browser smoke는 canvas 존재와 기본 retry 흐름은 고정하지만, 실기기 WebGL 성능이나 모바일 터치 체감까지 자동으로 증명하지는 않는다.
+- 면접용 30초 요약: 위치 게임 지구본이 안 뜨던 원인은 서버 로직이 아니라 클라이언트 초기화 회귀였습니다. 템플릿에서 제거한 설명 블록을 JS가 계속 참조하면서 `heroCopy is not defined`가 나고, 그 뒤 Globe.gl 초기화가 멈춰 캔버스가 생성되지 않았습니다. 그래서 dead reference를 제거하고 asset version을 올려 캐시를 끊었고, 브라우저 스모크에 `#globe-stage canvas` 존재를 추가해 같은 회귀가 다시 들어오지 않게 막았습니다.
+- 블로그 생략 이유: 이번 조각은 API나 도메인 루프 변경이 아니라 위치 게임 클라이언트 초기화 회귀 복구와 캐시 버전 조정이 중심이라, 별도 블로그보다 worklog와 playbook 기록으로 충분하다.

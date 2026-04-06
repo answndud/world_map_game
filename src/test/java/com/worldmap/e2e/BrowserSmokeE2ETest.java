@@ -157,6 +157,16 @@ class BrowserSmokeE2ETest {
 	}
 
 	@Test
+	void locationStartPageCreatesPlayableGuestSessionWithRenderedGlobe() {
+		startLocationGameFromBrowser("browser-location-smoke");
+
+		assertThat(page.getAttribute("body", "data-page")).isEqualTo("location-play");
+		assertThat(page.textContent("#target-country-name").trim()).isNotEqualTo("문제를 불러오는 중...");
+		assertThat(page.locator("#location-game-status .stat-card").count()).isGreaterThan(0);
+		assertThat(page.locator("#globe-stage canvas").count()).isGreaterThan(0);
+	}
+
+	@Test
 	void capitalGameOverModalSupportsKeyboardTrapAndRestartFocusReturn() {
 		startCapitalGameFromBrowser("browser-modal");
 

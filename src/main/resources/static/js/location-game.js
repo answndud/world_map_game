@@ -271,7 +271,7 @@ function initPlayPage() {
 
         currentState = payload;
         countryName.textContent = payload.targetCountryName;
-        renderLevelCopy(heroCopy, stageHint);
+        renderLevelCopy(stageHint);
         renderStatus(statusBox, payload);
         refreshGlobe();
     }
@@ -875,13 +875,9 @@ function wrongFollowUp(payload) {
     return "잠시 뒤 같은 Stage를 다시 시도할 수 있습니다.";
 }
 
-function renderLevelCopy(heroCopyTarget, stageHintTarget) {
-    if (heroCopyTarget) {
-        heroCopyTarget.textContent = "플레이 중 지구본 위 나라 이름은 표시되지 않습니다. 짧게 탭하면 선택되고, 길게 드래그하면 회전만 됩니다. 실제 국가명은 제출 후 판정 단계에서만 공개되며, 현재는 상위 72개 주요 국가를 대상으로 먼저 감을 익히는 기본 모드만 운영합니다.";
-    }
-
+function renderLevelCopy(stageHintTarget) {
     if (stageHintTarget) {
-        stageHintTarget.textContent = "지구본을 회전해 해당 국가를 찾은 뒤 짧게 탭하거나 클릭해 선택하세요. 현재는 상위 72개 주요 국가를 대상으로 먼저 안정성과 클릭 정확도를 맞추고 있습니다.";
+        stageHintTarget.textContent = "지구본에서 나라를 찾아 선택한 뒤 제출하세요.";
     }
 }
 

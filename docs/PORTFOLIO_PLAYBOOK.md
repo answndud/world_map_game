@@ -224,6 +224,7 @@
 - 위치 stage overlay와 game-over modal panel은 `rise-in` entry motion을 붙여, 정답/탈락 판정이 텍스트만 바뀌는 대신 한 박자 더 분명하게 느껴지도록 보강
 - 위치 게임 입력 억제 규칙을 `mouse 18px / pen 24px / touch 30px` threshold와 post-drag suppression window로 다시 정리하고, accidental polygon click이 즉시 선택으로 이어지지 않는지 browser smoke까지 고정
 - 위치 게임 지구본 컨트롤은 compact viewport에서 `rotateSpeed / damping / zoom range / focus altitude`를 더 보수적으로 다시 조정하고, mobile viewport smoke로 실제 값이 적용되는지 고정
+- 위치 게임 play 화면에서 제거된 설명 블록을 계속 참조하던 클라이언트 회귀를 정리하고, `globe-stage canvas`가 실제로 렌더되는지 browser smoke로 다시 고정
 - 핵심 점수 정책 단위 테스트와 상태 전이 통합 테스트 통과
 
 리부트에서 남은 일:
