@@ -997,6 +997,7 @@
 - 이후 README는 지원 링크용 소개 페이지로 한 번 더 줄여, `웹 기반 게임을 직접 만들고 확장해 온 맥락`이 먼저 보이게 다시 썼다. `AI와 함께 나에게 어울리는 국가 찾기를 만든 방식`은 본문에 길게 넣는 대신 [AI_ASSISTED_COUNTRY_MATCH_DESIGN.md](/Users/alex/project/worldmap/docs/recommendation/AI_ASSISTED_COUNTRY_MATCH_DESIGN.md)로 분리하고, README에는 문제의식과 활용 방식만 남겼다
 - README 스크린샷도 사용자가 다시 촬영한 최신 캡처 세트 기준으로 정리했다. main은 다크모드 컷만 쓰고, 수를 줄인 대신 같은 폭의 2열 배치와 한 줄 캡션으로 제품 흐름이 빠르게 읽히게 맞췄다
 - public copy를 한국어로 줄이는 과정에서 stale 문자열을 기대하던 `AuthFlowIntegrationTest`, `RecommendationPageIntegrationTest`도 현재 화면 기준으로 다시 고정했다. 즉 이번 polish는 화면 문구 변경과 테스트 회귀를 같은 조각 안에서 닫는다
+- README를 한 차례 더 다듬은 뒤에는 `docs/images/readme/`를 다시 점검해, 실제 README가 더 이상 참조하지 않는 보조 캡처와 Finder `.DS_Store`를 제거했다. README에 남은 4장만 유지하고 나머지 이미지를 지워 문서 자산 디렉터리를 더 가볍게 정리했다
 
 다음 후속 개선 후보:
 

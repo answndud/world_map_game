@@ -7869,3 +7869,40 @@
 - 아직 약한 부분: main 앱의 실제 공개 URL이 생기면 README 스크린샷은 production 기준으로 한 번 더 갱신할 여지가 있다.
 - 면접용 30초 요약: README를 지원 링크용 소개 페이지에 맞게 다시 썼습니다. 이번에는 서버 구조 자랑보다 “웹 기반 게임을 직접 만들고, 그 위에 추천과 기록을 어떻게 확장했는가”가 먼저 보이게 했고, `나에게 어울리는 국가 찾기`에서 AI를 어떻게 설계 파트너처럼 썼는지도 별도 문서로 분리했습니다. 또 최근 public copy 정리로 깨진 테스트 기대값을 현재 한국어 화면 기준으로 맞춰 CI가 다시 같은 방향을 보도록 정리했습니다.
 - 블로그 생략 이유: 이번 조각은 README 편집, 캡처 교체, stale 테스트 기대값 정리가 중심이고, 새로운 API나 도메인 루프를 추가한 작업은 아니어서 블로그보다 worklog와 playbook 기록으로 충분하다.
+
+## 2026-04-06 - README 정리 뒤 남은 보조 캡처와 Finder 찌꺼기 삭제
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: README를 제품 소개 페이지로 정리한 뒤에도 `docs/images/readme/` 아래에는 더 이상 쓰지 않는 보조 캡처와 Finder `.DS_Store`가 남아 있었다. 이번 조각의 목적은 실제 README가 참조하는 이미지 4장만 남기고, 연결되지 않는 파일과 운영 가치가 없는 찌꺼기를 삭제해 문서 자산 폴더를 가볍게 유지하는 것이다.
+- 변경 파일:
+  - `docs/images/readme/demo-capital.png` 삭제
+  - `docs/images/readme/demo-home.png` 삭제
+  - `docs/images/readme/main-ranking.png` 삭제
+  - `docs/images/readme/main-stats.png` 삭제
+  - `docs/images/readme/.DS_Store` 삭제
+  - `docs/LOCAL_DEMO_BOOTSTRAP.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 앱 런타임은 바뀌지 않았다. 이번 조각은 `README가 실제로 참조하는 이미지 목록 -> docs/images/readme 디렉터리 -> 불필요한 파일 삭제` 흐름으로만 진행했다. 서버 상태나 브라우저 게임 상태는 전혀 바뀌지 않고, 문서 자산 디렉터리의 파일 집합만 줄었다.
+- 데이터 / 상태 변화:
+  - 현재 README가 쓰는 이미지는 `main-home.png`, `main-location-play-dark.png`, `demo-flag.png`, `demo-recommendation.png` 4장뿐임을 다시 확인했다.
+  - 더 이상 README에서 쓰지 않는 `demo-capital.png`, `demo-home.png`, `main-ranking.png`, `main-stats.png`를 삭제했다.
+  - Finder가 생성한 `.DS_Store`도 함께 제거했다.
+  - 정리 검증 과정에서 드러난 `LOCAL_DEMO_BOOTSTRAP.md`의 깨진 IntelliJ 실행 구성 링크는 일반 코드 표기로 바꿔 문서 무결성도 같이 맞췄다.
+  - 이번 삭제로 정확히 `1,708,054 bytes`를 정리했다.
+- 핵심 도메인 개념:
+  - `README asset set`: README는 실제로 렌더되는 대표 이미지 집합만 유지하고, 후보 캡처를 영구 보관하지 않는다는 기준
+  - `safe doc cleanup`: 코드, 테스트, 배포 문서가 아니라 README 표현에만 연결된 자산만 삭제하는 보수적인 정리 원칙
+- 예외 / 엣지 케이스:
+  - 삭제 후보는 repo 전체 검색으로 README와 다른 Markdown 문서에서 실제 렌더 경로로 참조되지 않는 것만 골랐다.
+  - `docs/WORKLOG.md`의 과거 항목에는 옛 파일명이 기록으로 남아 있지만, Markdown 링크가 아니라 작업 이력 텍스트라 현재 문서 렌더에는 영향을 주지 않는다.
+  - 앱 실행, 테스트, 배포에는 영향이 없도록 이미지와 Finder 파일만 삭제했다.
+- 테스트:
+  - `rg -n "docs/images/readme/|<img" README.md docs -g '*.md'`
+  - 삭제 후보 파일명 repo-wide 검색
+  - README / docs Markdown 링크 및 이미지 경로 확인
+  - `git diff --check`
+- 배운 점: README를 여러 번 다듬는 과정에서는 후보 캡처가 빠르게 늘어난다. 그래서 최종 소개 페이지가 굳은 뒤에는 “지금 실제로 쓰는 자산만 남긴다”는 기준으로 한 번 더 정리해야 저장소가 불필요한 이미지와 Finder 파일로 부풀지 않는다.
+- 아직 약한 부분: main 공개 URL이 생기면 README 캡처를 production 기준으로 다시 찍을 가능성이 있으므로, 그때도 같은 기준으로 오래된 후보 캡처를 한 번 더 정리해야 한다.
+- 면접용 30초 요약: README를 제품 소개 페이지로 정리한 뒤, 실제로 쓰지 않는 보조 캡처와 Finder `.DS_Store`만 다시 점검해 안전하게 지웠습니다. 코드나 문서 흐름에 연결된 파일은 남기고, README가 참조하는 4장만 유지하도록 정리해서 약 1.7MB를 줄였습니다.
+- 블로그 생략 이유: 이번 조각은 API, 도메인, 테스트 전략 변경이 아니라 README 자산 정리와 불필요 파일 삭제가 중심이라 worklog와 playbook 기록으로 충분하다.
