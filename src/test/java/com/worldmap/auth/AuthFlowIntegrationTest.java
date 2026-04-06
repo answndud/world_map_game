@@ -177,7 +177,7 @@ class AuthFlowIntegrationTest {
 		mockMvc.perform(get("/mypage").session(browserSession))
 			.andExpect(status().isOk())
 			.andExpect(view().name("mypage"))
-			.andExpect(content().string(containsString("기록을 남기려면 로그인")))
+			.andExpect(content().string(containsString("로그인하면 점수와 랭킹 기록을 계속 저장할 수 있습니다.")))
 			.andExpect(content().string(not(containsString("로그아웃"))));
 
 		assertThat(browserSession.getAttribute(MEMBER_ID_ATTRIBUTE)).isNull();
@@ -469,11 +469,11 @@ class AuthFlowIntegrationTest {
 
 	private static Stream<Arguments> gameStartPages() {
 		return Stream.of(
-			Arguments.of("/games/location/start", "닉네임은 선택 입력입니다."),
-			Arguments.of("/games/capital/start", "틀리면 같은 Stage를 다시 시도"),
-			Arguments.of("/games/population/start", "틀리면 같은 Stage를 다시 시도"),
-			Arguments.of("/games/flag/start", "틀리면 같은 Stage를 다시 시도"),
-			Arguments.of("/games/population-battle/start", "틀리면 같은 Stage를 다시 시도")
+			Arguments.of("/games/location/start", "닉네임은 비워 두어도 됩니다."),
+			Arguments.of("/games/capital/start", "닉네임은 비워 두어도 됩니다."),
+			Arguments.of("/games/population/start", "닉네임은 비워 두어도 됩니다."),
+			Arguments.of("/games/flag/start", "닉네임은 비워 두어도 됩니다."),
+			Arguments.of("/games/population-battle/start", "닉네임은 비워 두어도 됩니다.")
 		);
 	}
 }

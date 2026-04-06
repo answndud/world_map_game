@@ -34,8 +34,8 @@ class RecommendationPageIntegrationTest {
 			.andExpect(model().attributeExists("surveyForm"))
 			.andExpect(model().attributeExists("surveyQuestions"))
 			.andExpect(content().string(containsString("나에게 어울리는 국가 찾기")))
-			.andExpect(content().string(containsString("Find Your Match")))
-			.andExpect(content().string(containsString("20 Questions")))
+			.andExpect(content().string(containsString("20개 질문에 답하면 추천을 볼 수 있습니다.")))
+			.andExpect(content().string(containsString("설문 시작")))
 			.andExpect(content().string(not(containsString("deterministic"))))
 			.andExpect(content().string(not(containsString("Offline Eval"))));
 	}

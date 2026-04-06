@@ -143,7 +143,7 @@ class BrowserSmokeE2ETest {
 		assertThat(page.textContent("[data-theme-toggle-label]").trim()).isEqualTo("라이트");
 		assertThat(page.locator("header.site-header").count()).isEqualTo(1);
 		assertThat(page.locator("article.mode-card").count()).isEqualTo(6);
-		assertThat(page.locator("a.hero-support-link").textContent().trim()).isEqualTo("오늘 통계 보기");
+		assertThat(page.locator("a.hero-support-link").textContent().trim()).isEqualTo("오늘 기록 보기");
 	}
 
 	@Test
@@ -606,7 +606,7 @@ class BrowserSmokeE2ETest {
 		assertThat(page.textContent("#population-stage-overlay")).contains("오답");
 		assertThat(page.textContent("#population-stage-overlay")).contains("다시 추정");
 		assertThat(page.textContent("#population-selection-label").trim()).isEqualTo("방금 고른 구간: " + wrongOptionLabel);
-		assertThat(page.textContent("#population-stage-hint").trim()).isEqualTo("오답입니다. 잠시 뒤 같은 Stage를 다시 추정합니다.");
+		assertThat(page.textContent("#population-stage-hint").trim()).isEqualTo("오답입니다. 잠시 뒤 다시 고를 수 있습니다.");
 
 		waitForPopulationRetryReady();
 
@@ -618,7 +618,7 @@ class BrowserSmokeE2ETest {
 		page.waitForFunction("() => !document.getElementById('population-stage-overlay').hidden");
 		assertThat(page.textContent("#population-stage-overlay")).contains("정답");
 		assertThat(page.textContent("#population-stage-overlay")).contains("총점");
-		assertThat(page.textContent("#population-stage-hint").trim()).isEqualTo("정답입니다. 잠시 뒤 다음 Stage로 이동합니다.");
+		assertThat(page.textContent("#population-stage-hint").trim()).isEqualTo("정답입니다. 다음 문제로 넘어갑니다.");
 	}
 
 	@Test

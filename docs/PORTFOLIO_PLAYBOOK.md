@@ -994,6 +994,9 @@
 - 이 레일은 URL이 없을 때는 `test + browser-smoke` 내장 서버를 자동으로 써서 로컬에서도 먼저 검증된다. 즉 “배포 URL이 생기면 그대로 production에 대입할 측정 도구”를 먼저 코드로 고정한 셈이다
 - `check_prod_deploy_preflight.py`로 첫 ECS 배포 전에 `deploy-prod-ecs.yml`이 실제로 요구하는 GitHub repository variables, `workflow_dispatch`, sample task definition, render script가 다 준비됐는지 한 번에 확인하도록 했다. 현재처럼 vars가 하나도 없는 상태에서는 어떤 값이 비었는지 Markdown report로 바로 남긴다
 - 이어서 [README.md](/Users/alex/project/worldmap/README.md)를 다시 제품 소개 페이지 톤으로 손봤다. 첫 문단은 서버 구조 자랑보다 “어떤 경험을 만들고 싶었는가”를 먼저 말하게 바꾸고, main은 다크 모드 지구본 플레이 컷을 대표 화면으로 올리고, `나에게 어울리는 국가 찾기`는 AI를 기획 보조자·설계 보조자·검증 보조자로 어떻게 썼는지 제품/개발자 관점에서 더 자세히 설명하도록 정리했다
+- 이후 README는 지원 링크용 소개 페이지로 한 번 더 줄여, `웹 기반 게임을 직접 만들고 확장해 온 맥락`이 먼저 보이게 다시 썼다. `AI와 함께 나에게 어울리는 국가 찾기를 만든 방식`은 본문에 길게 넣는 대신 [AI_ASSISTED_COUNTRY_MATCH_DESIGN.md](/Users/alex/project/worldmap/docs/recommendation/AI_ASSISTED_COUNTRY_MATCH_DESIGN.md)로 분리하고, README에는 문제의식과 활용 방식만 남겼다
+- README 스크린샷도 사용자가 다시 촬영한 최신 캡처 세트 기준으로 정리했다. main은 다크모드 컷만 쓰고, 수를 줄인 대신 같은 폭의 2열 배치와 한 줄 캡션으로 제품 흐름이 빠르게 읽히게 맞췄다
+- public copy를 한국어로 줄이는 과정에서 stale 문자열을 기대하던 `AuthFlowIntegrationTest`, `RecommendationPageIntegrationTest`도 현재 화면 기준으로 다시 고정했다. 즉 이번 polish는 화면 문구 변경과 테스트 회귀를 같은 조각 안에서 닫는다
 
 다음 후속 개선 후보:
 

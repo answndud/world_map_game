@@ -7820,3 +7820,52 @@
 - 아직 약한 부분: 현재 browser smoke는 canvas 존재와 기본 retry 흐름은 고정하지만, 실기기 WebGL 성능이나 모바일 터치 체감까지 자동으로 증명하지는 않는다.
 - 면접용 30초 요약: 위치 게임 지구본이 안 뜨던 원인은 서버 로직이 아니라 클라이언트 초기화 회귀였습니다. 템플릿에서 제거한 설명 블록을 JS가 계속 참조하면서 `heroCopy is not defined`가 나고, 그 뒤 Globe.gl 초기화가 멈춰 캔버스가 생성되지 않았습니다. 그래서 dead reference를 제거하고 asset version을 올려 캐시를 끊었고, 브라우저 스모크에 `#globe-stage canvas` 존재를 추가해 같은 회귀가 다시 들어오지 않게 막았습니다.
 - 블로그 생략 이유: 이번 조각은 API나 도메인 루프 변경이 아니라 위치 게임 클라이언트 초기화 회귀 복구와 캐시 버전 조정이 중심이라, 별도 블로그보다 worklog와 playbook 기록으로 충분하다.
+
+## 2026-04-06 - README를 지원 링크용 제품 소개 페이지로 다시 정리하고 stale copy 테스트를 맞춤
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: README를 기술 자랑 중심 설명서가 아니라 “웹 기반 게임을 직접 기획하고 확장해 온 맥락”이 먼저 보이는 소개 페이지로 다시 쓴다. 동시에 최근 public copy 정리 뒤 stale 문자열을 기대하던 테스트를 현재 화면 기준으로 다시 맞춘다.
+- 변경 파일:
+  - `README.md`
+  - `docs/recommendation/AI_ASSISTED_COUNTRY_MATCH_DESIGN.md`
+  - `src/test/java/com/worldmap/auth/AuthFlowIntegrationTest.java`
+  - `src/test/java/com/worldmap/recommendation/RecommendationPageIntegrationTest.java`
+  - `src/main/resources/templates/location-game/play.html`
+  - `docs/images/readme/main-home.png`
+  - `docs/images/readme/main-location-play-dark.png`
+  - `docs/images/readme/main-stats.png`
+  - `docs/images/readme/main-ranking.png`
+  - `docs/images/readme/demo-home.png`
+  - `docs/images/readme/demo-capital.png`
+  - `docs/images/readme/demo-flag.png`
+  - `docs/images/readme/demo-recommendation.png`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름:
+  - README 조각은 `방문자 -> GitHub 저장소 -> README`에서 시작한다.
+  - 테스트 조각은 `MockMvc / test profile -> SSR HTML 비교`에서 시작한다.
+  - 서버 도메인 상태는 바뀌지 않고, 바뀐 것은 public copy를 기준으로 읽는 문서와 테스트 기대값이다.
+- 데이터 / 상태 변화:
+  - README 첫 문단은 서버 구현 방식보다 “웹 기반 게임을 직접 만들고, AI를 활용해 기능을 확장해 왔다”는 프로젝트 맥락이 먼저 보이게 다시 썼다.
+  - `AI와 함께 나에게 어울리는 국가 찾기를 만든 방식`은 README 본문에서 분리해 [AI_ASSISTED_COUNTRY_MATCH_DESIGN.md](/Users/alex/project/worldmap/docs/recommendation/AI_ASSISTED_COUNTRY_MATCH_DESIGN.md)로 옮겼다.
+  - 추천 설계 문서는 질문 축 확장, 국가 프로필 정의, persona / 만족도 루프, runtime deterministic 유지 이유를 실제 코드 파일과 함께 설명하도록 정리했다.
+  - README 스크린샷은 사용자가 새로 촬영한 최신 캡처 세트로 교체했고, main은 다크모드 컷만 사용하며 2열 배치 + 한 줄 캡션으로 수를 줄였다.
+  - `AuthFlowIntegrationTest`는 guest start page와 mypage 비로그인 안내 문구를 현재 한국어 copy 기준으로 맞췄다.
+  - `RecommendationPageIntegrationTest`는 더 이상 존재하지 않는 `Find Your Match`, `20 Questions` 기대를 제거하고 현재 `설문 시작`, `20개 질문에 답하면 추천을 볼 수 있습니다.`를 본다.
+  - 위치 게임 play 화면 제목도 `국가 위치 찾기`로 짧게 맞춰 최신 캡처와 실제 화면이 어긋나지 않게 했다.
+- 핵심 도메인 개념:
+  - `README as product landing page`: README는 구현 세부를 다 설명하는 곳이 아니라, 프로젝트의 문제의식과 제품 흐름을 가장 먼저 전달하는 진입 문서라는 기준
+  - `AI as design partner`: 추천 기능에서 AI를 런타임 결과 생성기가 아니라 질문/프로필/페르소나/문서화 실험을 빠르게 돌리는 설계 파트너로 썼다는 프레임
+  - `copy-aligned tests`: public copy를 줄이거나 자연스럽게 바꿨다면, SSR integration test도 같은 문구를 기준으로 즉시 따라와야 한다는 원칙
+- 예외 / 엣지 케이스:
+  - README용 캡처는 main 공개 URL이 없어서 로컬 `local` 프로필 기준이고, demo-lite는 실제 공개 URL 기준이다.
+  - 이번 조각은 README/이미지/테스트 기대값 정리라서, 추천 엔진 로직이나 세션 도메인 모델은 바뀌지 않았다.
+  - 사용자가 직접 다시 찍은 캡처 세트를 최대한 유지하되, README에서는 수를 줄여 읽기 흐름만 정리했다.
+- 테스트:
+  - `./gradlew test`
+  - `git diff --check`
+  - README / docs Markdown 링크 및 이미지 경로 확인
+- 배운 점: README가 설명을 많이 한다고 강해지지는 않는다. 오히려 어떤 프로젝트를 왜 만들었는지, AI를 어디에 어떻게 썼는지, 어떤 장면이 대표 경험인지가 먼저 보여야 읽는 사람이 더 빨리 이해한다. 그리고 public copy를 손볼 때는 화면만이 아니라 MockMvc 기반 테스트 기대값도 같은 턴에 같이 정리해야 CI가 안 흔들린다.
+- 아직 약한 부분: main 앱의 실제 공개 URL이 생기면 README 스크린샷은 production 기준으로 한 번 더 갱신할 여지가 있다.
+- 면접용 30초 요약: README를 지원 링크용 소개 페이지에 맞게 다시 썼습니다. 이번에는 서버 구조 자랑보다 “웹 기반 게임을 직접 만들고, 그 위에 추천과 기록을 어떻게 확장했는가”가 먼저 보이게 했고, `나에게 어울리는 국가 찾기`에서 AI를 어떻게 설계 파트너처럼 썼는지도 별도 문서로 분리했습니다. 또 최근 public copy 정리로 깨진 테스트 기대값을 현재 한국어 화면 기준으로 맞춰 CI가 다시 같은 방향을 보도록 정리했습니다.
+- 블로그 생략 이유: 이번 조각은 README 편집, 캡처 교체, stale 테스트 기대값 정리가 중심이고, 새로운 API나 도메인 루프를 추가한 작업은 아니어서 블로그보다 worklog와 playbook 기록으로 충분하다.
