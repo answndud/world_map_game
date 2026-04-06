@@ -998,6 +998,7 @@
 - README 스크린샷도 사용자가 다시 촬영한 최신 캡처 세트 기준으로 정리했다. main은 다크모드 컷만 쓰고, 수를 줄인 대신 같은 폭의 2열 배치와 한 줄 캡션으로 제품 흐름이 빠르게 읽히게 맞췄다
 - public copy를 한국어로 줄이는 과정에서 stale 문자열을 기대하던 `AuthFlowIntegrationTest`, `RecommendationPageIntegrationTest`도 현재 화면 기준으로 다시 고정했다. 즉 이번 polish는 화면 문구 변경과 테스트 회귀를 같은 조각 안에서 닫는다
 - README를 한 차례 더 다듬은 뒤에는 `docs/images/readme/`를 다시 점검해, 실제 README가 더 이상 참조하지 않는 보조 캡처와 Finder `.DS_Store`를 제거했다. README에 남은 4장만 유지하고 나머지 이미지를 지워 문서 자산 디렉터리를 더 가볍게 정리했다
+- 이어서 저장소 전체를 다시 훑어 `build/`, `demo-lite/dist/`, `demo-lite/test-results/`, 빈 `.wrangler/`, 루트 `HELP.md` 같은 생성 산출물과 잡파일도 정리했다. 반대로 `node_modules`, `.gradle`, `.idea`, `.env.local`, `demo-lite/public/generated/`처럼 지우면 바로 개발 흐름에 영향을 줄 수 있는 로컬 자산은 남겨 두는 보수적인 기준을 유지했다
 
 다음 후속 개선 후보:
 
