@@ -7623,3 +7623,42 @@
 - 배운 점: 같은 점수 정책이라도 플레이 중 copy를 어디에 두고 얼마나 짧게 쓰느냐에 따라 리듬이 꽤 달라진다. 특히 자동 전환 게임은 “무슨 일이 일어났는가”보다 “이제 곧 무엇이 일어나는가”가 먼저 읽혀야 한다.
 - 아직 약한 부분: 이번 조각은 문구만 정리했기 때문에 overlay motion, 색 강도, 사운드, streak bonus 같은 더 큰 아케이드 확장은 아직 남아 있다.
 - 면접용 30초 요약: 인구수 게임은 서버 루프 자체는 안정적이었지만, 플레이 중 보이는 copy가 아직 조금 설명문에 가까웠습니다. 그래서 점수 규칙은 그대로 두고, 정답 overlay는 `+점수 · 총점`, 오답 overlay는 `하트 N개 남음 · 다시 추정`, HUD는 `방금 고른 구간`, `다음 Stage 준비 중`처럼 더 짧고 게임스러운 표현으로 정리했습니다. 이건 상태 계산이 아니라 브라우저 표현 정책이라 `population-game.js`와 browser smoke에서 닫는 게 맞았습니다.
+
+## 2026-04-06 - README를 지원 링크용 제품 소개 페이지로 재작성
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 기존 [README.md](/Users/alex/project/worldmap/README.md)는 저장소 설명으로는 충분했지만, 채용 링크에 바로 붙일 소개 페이지로 보기에는 개발 문서 성격이 강했다. 이번 조각의 목적은 README를 “실제 제품 소개 + 기술 강점 + 검증 방식 + AI 활용 방식”이 한 번에 보이는 landing page로 다시 쓰는 것이다.
+- 변경 파일:
+  - `README.md`
+  - `docs/images/readme/main-home.png`
+  - `docs/images/readme/main-location-start.png`
+  - `docs/images/readme/main-ranking.png`
+  - `docs/images/readme/demo-home.png`
+  - `docs/images/readme/demo-capital.png`
+  - `docs/images/readme/demo-recommendation.png`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 앱 런타임 코드는 바뀌지 않았다. 바뀐 것은 `방문자 -> GitHub repo -> README` 읽기 흐름이다. 이번에는 `Main App / Demo Lite / Live Links / Screenshots / Technical Highlights / How I Worked With AI / Verification / Docs` 순서로 재배치해, 제품 소개와 기술 검토 포인트가 첫 화면에서 바로 읽히도록 바꿨다.
+- 데이터 / 상태 변화:
+  - `README.md`는 더 이상 저장소 전반의 긴 설명서가 아니라 제출용 소개 페이지 역할을 맡는다.
+  - `Main App`과 `Demo Lite`를 같은 프로젝트의 두 트랙으로 분리해 설명한다.
+  - 실제 스크린샷 6장을 `docs/images/readme/` 아래에 추가해 README에서 바로 렌더한다.
+  - `How I Worked With AI` 섹션을 추가해 AI 사용을 “자동완성”이 아니라 설계/구현/검증 보조 워크플로로 설명한다.
+- 핵심 도메인 개념:
+  - `README as product landing page`: GitHub 첫 화면에서 제품, 기술 포인트, 검증 전략이 동시에 보여야 한다는 기준
+  - `two-track presentation`: full Spring Boot app과 public static demo를 경쟁 관계가 아니라 서로 다른 공개 단계의 제품 트랙으로 설명하는 방식
+  - `AI-assisted but human-owned workflow`: AI를 썼다는 사실보다, 어떤 부분을 AI로 가속하고 어떤 책임은 사람이 끝까지 졌는지를 설명하는 구조
+- 예외 / 엣지 케이스:
+  - `Main App`은 아직 공개 production URL이 없기 때문에 스크린샷은 local `local` profile 기동 기준으로 캡처했다.
+  - `Demo Lite` 스크린샷은 live Cloudflare Pages URL 기준으로 캡처했다.
+  - 이번 조각은 소개 문서 재작성이라 앱 기능, API, 게임 루프, 검증 레일 자체는 바뀌지 않았다.
+- 테스트:
+  - `curl -I http://localhost:8080`
+  - `curl -I https://world-map-game-demo-lite-git.pages.dev/`
+  - Chrome headless desktop screenshot capture for 6 README images
+  - Markdown link/image path consistency check
+  - `git diff --check`
+- 배운 점: README는 내용이 많다고 좋은 문서가 아니다. 채용 링크에 붙을 README는 “무엇을 만들었는가”보다 “왜 이 프로젝트가 강한 샘플인가”가 먼저 보이게 설계해야 한다.
+- 아직 약한 부분: main 앱의 실제 play 화면을 README에 넣고 싶다면 추후 자동 브라우저 캡처 도구를 조금 더 다듬어 위치 게임 play 장면까지 바로 뽑는 흐름을 만들 수 있다. 지금은 안정적인 대표 화면 위주로 먼저 고정했다.
+- 면접용 30초 요약: README를 개발 설명서에서 제품 소개 페이지로 바꿨습니다. main 앱과 demo-lite를 분리해서 보여 주고, 실제 화면 스크린샷 6장과 기술 강점, 검증 방식, AI 활용 방식을 한 페이지에 정리해 채용 링크에 붙여도 바로 읽히는 형태로 만든 조각입니다.
+- 블로그 생략 이유: 이번 조각은 API나 도메인 변경이 아니라 README 편집과 스크린샷 자산 추가이므로 별도 블로그 글보다 worklog와 playbook 정리로 충분하다.
