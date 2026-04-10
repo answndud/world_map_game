@@ -13,7 +13,7 @@ permissions:
 
 concurrency:
   group: worldmap-verify-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master' }}
 
 jobs:
   test:

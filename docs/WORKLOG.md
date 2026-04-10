@@ -8262,3 +8262,31 @@
 - 배운 점: 홈만 예뻐지고 feature 화면이 예전 톤으로 남아 있으면 사용자는 제품이 아니라 페이지 모음처럼 느낀다. 이런 경우에는 파일별로 하나씩 고치기보다, 실제로 공유되는 공통 클래스가 무엇인지 먼저 찾아 한 번에 옮기는 편이 맞다.
 - 아직 약한 부분: 지금은 route hero와 status strip까지는 같은 family로 맞췄지만, 각 게임 내부 문제 panel과 option card는 여전히 상대적으로 중립적인 톤이다. 필요하면 다음 조각에서 route별 내부 panel까지 같은 원칙으로 더 묶을 수 있다.
 - 면접용 30초 요약: 홈 hero만 파랗게 바뀐 상태에서는 각 게임 화면에 들어가면 다시 검은 hero가 나와 톤이 끊겼습니다. 그래서 이번에는 수도, 국기, 인구수, 배틀, 추천이 공통으로 쓰는 `demo-route-hero`와 `demo-status-card` 클래스를 찾아 blue gradient와 blue glass 기준으로 다시 맞췄습니다. 덕분에 홈에서 게임 화면으로 넘어가도 같은 제품 안에 있는 느낌이 더 자연스럽게 유지됩니다.
+
+## 2026-04-10 - main 브랜치 verify 취소 혼선 방지
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: `main`에 짧은 간격으로 push가 들어가면 GitHub Actions `verify`와 `demo-lite-verify`가 `cancel-in-progress: true` 때문에 직전 run을 취소했고, 실제 코드 실패가 아닌데도 UI에서는 `Some checks were not successful`처럼 보이는 혼선이 생겼다. 이번 조각의 목적은 PR에서는 기존 취소 전략을 유지하되, `main`/`master` push는 끝까지 돌도록 concurrency 정책을 조정하는 것이다.
+- 변경 파일:
+  - `.github/workflows/verify.yml`
+  - `.github/workflows/demo-lite-verify.yml`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 애플리케이션 요청 흐름은 바뀌지 않는다. 바뀐 것은 GitHub Actions scheduler 동작이다. 이제 `main`/`master`에 push가 들어오면 기존 run을 중간에 취소하지 않고 완료까지 두고, PR ref나 기타 ref에서만 이전 run을 취소한다.
+- 데이터 / 상태 변화:
+  - [verify.yml](/Users/alex/project/worldmap/.github/workflows/verify.yml) concurrency의 `cancel-in-progress`가 `main`/`master`에서는 `false`가 되도록 바뀌었다.
+  - [demo-lite-verify.yml](/Users/alex/project/worldmap/.github/workflows/demo-lite-verify.yml)도 같은 조건으로 맞췄다.
+  - 이제 배포 브랜치에서는 새 push 때문에 직전 run이 `cancelled`로 끝나 branch checks를 혼란스럽게 만드는 일이 줄어든다.
+- 핵심 도메인 개념:
+  - `branch-specific concurrency policy`: PR에서는 빠른 피드백이 중요하지만, 배포 브랜치에서는 취소 없는 완주가 더 중요하다는 기준
+  - `check signal hygiene`: 코드 실패와 scheduler cancellation을 UI에서 섞어 보이지 않게 해야 운영 판단이 쉬워진다는 기준
+- 예외 / 엣지 케이스:
+  - `main`에 정말 빠르게 여러 번 push하면 run이 겹쳐 대기열은 늘 수 있다. 대신 취소 혼선은 줄어든다.
+  - 이번 조각은 Node 20 deprecation 경고를 해결하지는 않는다. 그건 action version 업그레이드나 runner 정책 대응의 별도 조각이다.
+  - 블로그는 생략한다. 이번 변경은 CI 운영 정책 정리라 worklog와 playbook 갱신으로 충분하다.
+- 테스트:
+  - `git diff --check`
+  - 실제 확인은 다음 `main` push에서 직전 run이 `cancelled`로 바뀌지 않는지 GitHub Actions run 기록으로 본다
+- 배운 점: CI에서 `cancel-in-progress`는 무조건 좋은 기본값이 아니다. PR에는 맞아도 배포 브랜치에는 오히려 signal을 흐릴 수 있다. 특히 branch protection과 사람이 보는 Actions UI를 함께 고려하면, ref별로 concurrency 정책을 다르게 주는 편이 더 실무적이다.
+- 아직 약한 부분: 이 조각은 취소 혼선만 줄인다. browser-smoke 시간이 길거나 Node 20 경고가 남는 문제는 여전히 별도 관리가 필요하다.
+- 면접용 30초 요약: main 브랜치에 연속 push가 들어올 때 GitHub Actions가 이전 verify run을 자동 취소하면서, 실제 코드 실패가 아닌데도 체크가 실패처럼 보이는 문제가 있었습니다. 그래서 이번에는 workflow concurrency를 ref별로 나눠서 PR은 계속 cancel-in-progress를 쓰고, main/master push는 취소하지 않도록 바꿨습니다. 덕분에 배포 브랜치에서는 체크 신호가 더 안정적으로 보이게 됐습니다.
