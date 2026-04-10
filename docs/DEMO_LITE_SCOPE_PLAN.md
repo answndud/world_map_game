@@ -254,6 +254,15 @@
 
 즉 현재 `demo-lite` 홈은 단순 route index가 아니라, **playable surface 4개 위에 얇은 browser-side read model을 한 번 더 올린 요약 대시보드**에 가깝다.
 
+추가로 [style.css](/Users/alex/project/worldmap/demo-lite/src/style.css), [app.js](/Users/alex/project/worldmap/demo-lite/src/app.js), [routes.js](/Users/alex/project/worldmap/demo-lite/src/routes.js)를 다시 잡아 `demo-lite` 전체 visual shell도 한 번 더 리디자인했다.
+
+- 기준은 `Coinbase-inspired blue / white / near-black` visual system이다.
+- 홈은 `dark hero + white card grid + browser recent summary` 위계로 재배치했다.
+- feature route hero도 같은 토큰 안에서 dark section과 pill CTA를 공유하게 맞췄다.
+- [public/_headers](/Users/alex/project/worldmap/demo-lite/public/_headers)는 Google Fonts를 쓰되 Cloudflare Pages CSP를 최소 허용만 열도록 같이 조정했다.
+
+즉 이번 조각의 의도는 기능 추가가 아니라, 이미 열어 둔 retained surfaces가 `촌스러운 정적 샘플`이 아니라 `공개 가능한 제품 체험판`으로 읽히게 만드는 것이었다.
+
 ## v1 이후 후보
 
 `demo-lite v1`을 닫은 뒤에만 아래를 검토한다.

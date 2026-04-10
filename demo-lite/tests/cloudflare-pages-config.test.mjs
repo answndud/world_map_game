@@ -16,6 +16,8 @@ test("demo-lite ships Cloudflare Pages _headers with security and cache rules", 
 
   assert.match(headers, /\/\*/);
   assert.match(headers, /Content-Security-Policy:/);
+  assert.match(headers, /style-src 'self' https:\/\/fonts\.googleapis\.com/);
+  assert.match(headers, /font-src 'self' https:\/\/fonts\.gstatic\.com/);
   assert.match(headers, /X-Content-Type-Options:\s+nosniff/);
   assert.match(headers, /\/assets\/\*/);
   assert.match(headers, /\/generated\/flags\/\*/);

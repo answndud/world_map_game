@@ -5,6 +5,7 @@
 현재는 아래까지 실제로 열려 있습니다.
 
 - 전용 header/navigation
+- Coinbase-inspired `blue / white / near-black` visual shell + pill CTA + dark feature hero
 - retained route map
 - 메인 저장소 정적 데이터/국기 자산을 `public/generated`로 복사해 읽는 shared data adapter
 - `#/games/capital` local-state 수도 맞히기 한 판
@@ -63,7 +64,7 @@ npm run smoke:public -- https://world-map-game-demo-lite-git.pages.dev
 
 1. `package.json` build 스크립트에 `sync:shared`, `verify:shared`, `vite build`가 모두 있는지
 2. `.node-version`이 concrete Node 버전으로 고정돼 있는지
-3. `public/_headers`에 기본 보안 헤더와 캐시 규칙이 들어 있는지
+3. `public/_headers`에 기본 보안 헤더, 캐시 규칙, 외부 폰트 허용 CSP가 들어 있는지
 
 `npm run smoke:public`은 실제 공개 URL에 대해 아래를 확인합니다.
 
@@ -112,6 +113,7 @@ GitHub Actions 기준으로도 아래가 준비돼 있습니다.
 중요:
 
 - 현재 route는 `hash route`이므로 `_redirects`를 따로 두지 않습니다.
+- Google Fonts(`Manrope`, `Space Grotesk`)를 쓰기 때문에 `_headers`의 CSP는 `fonts.googleapis.com`, `fonts.gstatic.com`만 최소 허용합니다.
 - Git-connected Pages 정적 배포 기준으로는 `wrangler.toml`도 아직 필요 없습니다.
 - 자세한 클릭 순서는 [DEPLOYMENT_RUNBOOK_DEMO_LITE_CLOUDFLARE_PAGES.md](/Users/alex/project/worldmap/docs/DEPLOYMENT_RUNBOOK_DEMO_LITE_CLOUDFLARE_PAGES.md)를 봅니다.
 - 현재 운영 기준은 이미 새 Git-connected 프로젝트로 넘어갔고, 기존 `worldmap-demo-lite`는 legacy direct-upload 경로로만 유지합니다.

@@ -13,8 +13,13 @@ function renderHeader(activePath) {
   return `
     <header class="demo-header">
       <a class="demo-brand" href="#/">
-        <span class="demo-brand-mark">WorldMap</span>
+        <span class="demo-brand-mark">worldmap</span>
+        <strong>demo-lite</strong>
       </a>
+      <div class="demo-header-meta">
+        <span class="demo-chip">static demo</span>
+        <span class="demo-note">cloudflare pages</span>
+      </div>
     </header>
   `;
 }
@@ -35,9 +40,30 @@ function renderHome(activitySummary) {
     .map(
       (route) => `
         <a class="demo-card demo-card--route" href="#${route.path}">
+          <div class="demo-card-top">
+            <span class="demo-chip">${route.navLabel}</span>
+            <span class="demo-note">${route.cardMeta ?? "바로 열기"}</span>
+          </div>
           <h2>${route.title}</h2>
           <p>${route.summary}</p>
+          <span class="demo-card-link">열기</span>
         </a>
+      `
+    )
+    .join("");
+
+  const supportMetrics = [
+    { label: "Playable", value: "5 surfaces" },
+    { label: "Storage", value: "browser only" },
+    { label: "Data", value: "194 countries" },
+    { label: "Deploy", value: "pages.dev" }
+  ]
+    .map(
+      (card) => `
+        <article class="demo-support-metric">
+          <span>${card.label}</span>
+          <strong>${card.value}</strong>
+        </article>
       `
     )
     .join("");
@@ -70,15 +96,47 @@ function renderHome(activitySummary) {
 
   return `
     <section class="demo-hero">
-      <h1>World Map Game</h1>
-      <p class="demo-copy">
-        수도 퀴즈, 국기 퀴즈, 인구수 퀴즈, 인구 비교 배틀, 국가 추천을 바로 즐겨보세요.
-      </p>
+      <div class="demo-hero-grid">
+        <div class="demo-hero-copy">
+          <div class="demo-route-hero-top">
+            <span class="demo-chip">worldmap demo-lite</span>
+            <span class="demo-chip">5 playable surfaces</span>
+            <span class="demo-chip">browser-only loop</span>
+          </div>
+          <h1>빠르게 열리고, 바로 플레이되는 WorldMap.</h1>
+          <p class="demo-copy">
+            수도, 국기, 인구수, 인구 배틀, 국가 추천까지 한 번에 체험할 수 있는 정적 공개 버전입니다.
+            서버 상태를 설명하는 대신, 지금 손에 잡히는 플레이 감각과 제품 톤을 먼저 보여 줍니다.
+          </p>
+          <div class="demo-actions">
+            <a class="demo-button" href="#/recommendation">추천부터 시작</a>
+            <a class="demo-ghost" href="#/games/flag">국기 퀴즈 열기</a>
+          </div>
+        </div>
+
+        <aside class="demo-support-card">
+          <div class="demo-panel-head demo-panel-head--compact">
+            <p class="demo-panel-kicker">Product Snapshot</p>
+            <h2>정적 배포로 남긴 핵심 경험</h2>
+            <p>Cloudflare Pages 위에서 게임 4종과 추천 1종을 브라우저 상태만으로 닫았습니다.</p>
+          </div>
+          <div class="demo-support-metrics">
+            ${supportMetrics}
+          </div>
+          <ul class="demo-support-list">
+            <li>퀴즈 4종은 모두 5문제 러닝과 browser best score를 유지합니다.</li>
+            <li>추천은 20문항 설문과 top 3 비교 카드까지 바로 읽을 수 있습니다.</li>
+            <li>최근 플레이와 추천 결과는 홈에서 다시 요약됩니다.</li>
+          </ul>
+        </aside>
+      </div>
     </section>
 
     <section class="demo-panel">
       <div class="demo-panel-head">
-        <h2>게임 목록</h2>
+        <p class="demo-panel-kicker">Playable Surfaces</p>
+        <h2>짧은 퀴즈와 탐색형 추천을 같은 셸에 묶었습니다.</h2>
+        <p>각 화면은 browser-only loop지만, 톤과 정보 위계는 하나의 제품처럼 읽히도록 정리했습니다.</p>
       </div>
       <div class="demo-feature-grid">
         ${cards}
@@ -88,7 +146,9 @@ function renderHome(activitySummary) {
     <section class="demo-split-grid">
       <section class="demo-panel">
         <div class="demo-panel-head">
-          <h2>최근 플레이 요약</h2>
+          <p class="demo-panel-kicker">Recent Snapshot</p>
+          <h2>최근 브라우저 기록</h2>
+          <p>지금 이 브라우저에서 어떤 모드를 더 자주 열었는지 빠르게 확인할 수 있습니다.</p>
         </div>
         <div class="demo-metric-grid demo-metric-grid--home">
           ${activityCards}
@@ -97,7 +157,9 @@ function renderHome(activitySummary) {
 
       <section class="demo-panel">
         <div class="demo-panel-head">
-          <h2>최근 기록</h2>
+          <p class="demo-panel-kicker">Latest Runs</p>
+          <h2>마지막 결과</h2>
+          <p>완료한 퀴즈와 최근 추천 결과를 시간순으로 다시 읽습니다.</p>
         </div>
         <ul class="demo-history-list">
           ${

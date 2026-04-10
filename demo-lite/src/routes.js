@@ -10,35 +10,40 @@ export const RETAINED_ROUTES = [
     navLabel: "수도",
     title: "수도 퀴즈",
     kind: "feature",
-    summary: "국가의 수도를 맞추는 퀴즈입니다."
+    summary: "국가와 수도를 빠르게 연결하는 가장 가벼운 퀴즈입니다.",
+    cardMeta: "5문제 러닝"
   },
   {
     path: "/games/flag",
     navLabel: "국기",
     title: "국기 퀴즈",
     kind: "feature",
-    summary: "국기만 보고 어느 나라인지 맞히는 퀴즈입니다."
+    summary: "국기만 보고 나라를 골라내는 시각형 퀴즈입니다.",
+    cardMeta: "same-continent 보기"
   },
   {
     path: "/games/population",
     navLabel: "인구수",
     title: "인구수 퀴즈",
     kind: "feature",
-    summary: "나라의 인구 규모 구간을 맞히는 퀴즈입니다."
+    summary: "숫자 암기보다 규모 감각으로 푸는 인구 구간 퀴즈입니다.",
+    cardMeta: "4지선다"
   },
   {
     path: "/games/population-battle",
     navLabel: "배틀",
     title: "인구 비교 배틀",
     kind: "feature",
-    summary: "두 나라 중 인구가 더 많은 쪽을 고르는 퀴즈입니다."
+    summary: "두 나라 중 더 큰 인구를 즉시 고르는 반응형 배틀입니다.",
+    cardMeta: "2지선다"
   },
   {
     path: "/recommendation",
     navLabel: "추천",
     title: "나에게 어울리는 국가 찾기",
     kind: "feature",
-    summary: "20문항 답변을 바탕으로 지금 어울리는 국가 3곳을 골라 줍니다."
+    summary: "20문항 생활 취향 설문으로 지금 맞는 국가 3곳을 비교해 줍니다.",
+    cardMeta: "20문항 설문"
   }
 ];
 

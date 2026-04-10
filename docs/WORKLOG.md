@@ -8118,3 +8118,42 @@
 - 아직 약한 부분: 문서 동기화 규칙은 이제 완전히 문서 기반이라, 나중에 다시 반복성이 커지면 별도 스킬이나 템플릿 자동화가 다시 필요할 수 있다. 다만 지금 규모에서는 문서 직접 동기화가 더 단순하다.
 - 면접용 30초 요약: 프로젝트 안에 두었던 `worldmap-doc-sync` 스킬 번들이 삭제된 상태였는데, AGENTS와 운영 문서는 여전히 그 파일을 현재형으로 참조하고 있었습니다. 그래서 이번에는 삭제 파일만 커밋하는 대신, 문서 동기화 절차가 이제 별도 스킬이 아니라 `AGENTS.md`와 `docs/` 규칙을 직접 따르는 방식이라고 같이 정리했습니다. 덕분에 저장소 현재 상태와 운영 문서가 다시 일치하게 됐습니다.
 - 블로그 생략 이유: 이번 조각은 공개 기능, API, 도메인, 테스트 전략 변경이 아니라 프로젝트 로컬 AI 작업 도구 정리와 문서 참조 수정이 중심이라 worklog와 운영 문서 갱신으로 충분하다.
+
+## 2026-04-10 - demo-lite Coinbase-style visual shell 리디자인
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: `demo-lite`는 기능 범위는 이미 충분했지만, 현재 공개 셸이 촌스럽고 아마추어처럼 보여 제품 신뢰감을 깎고 있었다. 이번 조각의 목적은 runtime 로직은 그대로 두고, `design-coinbase-style` 기준으로 `blue / white / near-black` visual system을 다시 입혀 Cloudflare Pages 공개 데모가 더 제품답게 읽히게 만드는 것이다.
+- 변경 파일:
+  - `demo-lite/index.html`
+  - `demo-lite/src/app.js`
+  - `demo-lite/src/routes.js`
+  - `demo-lite/src/style.css`
+  - `demo-lite/public/_headers`
+  - `demo-lite/tests/cloudflare-pages-config.test.mjs`
+  - `demo-lite/README.md`
+  - `docs/DEMO_LITE_SCOPE_PLAN.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/122-redesign-demo-lite-shell-with-coinbase-style.md`
+- 요청 흐름 / 데이터 흐름: 요청 시작점과 상태 변경 책임은 그대로다. 브라우저는 여전히 `hash route -> app.js -> feature runtime` 흐름으로 들어가고, 각 게임과 추천 화면이 local state와 localStorage를 관리한다. 이번 조각에서 바뀐 것은 state machine이 아니라 shell rendering이다. [app.js](/Users/alex/project/worldmap/demo-lite/src/app.js)가 홈 hero, product snapshot, route card 메타데이터를 다시 렌더하고, [style.css](/Users/alex/project/worldmap/demo-lite/src/style.css)가 그 위계를 `dark hero -> white card grid -> compact recent summary`로 다시 정의한다.
+- 데이터 / 상태 변화:
+  - route metadata에 `cardMeta`를 붙여 각 retained surface를 `5문제 러닝`, `same-continent 보기`, `20문항 설문` 같은 짧은 라벨로 먼저 읽게 했다.
+  - 홈 hero 오른쪽 snapshot card는 더 이상 브라우저 최근 기록을 재사용하지 않고, `5 surfaces / browser only / 194 countries / pages.dev` 같은 제품 고정 사실을 보여 준다.
+  - visual token은 `#0052ff`, `#0a0b0d`, `#eef0f3` 기준으로 다시 고정됐고, CTA는 56px pill로 통일됐다.
+  - Google Fonts(`Manrope`, `Space Grotesk`)를 쓰기 때문에 [public/_headers](/Users/alex/project/worldmap/demo-lite/public/_headers)의 CSP도 `fonts.googleapis.com`, `fonts.gstatic.com`만 최소 허용으로 조정했다.
+- 핵심 도메인 개념:
+  - `public demo shell`: runtime 로직과 별개로, 공개 체험판이 어떤 제품 인상을 주는지는 shell layer가 책임진다는 기준
+  - `product facts vs browser facts`: 홈 hero의 snapshot은 사용자 개인 recent state가 아니라, 공개 데모 자체의 범위를 설명하는 고정 사실을 보여 줘야 한다는 기준
+  - `visual contract + deploy contract`: 외부 폰트를 쓰면 CSS만 바꾸는 게 아니라 Pages CSP와 테스트도 같이 바뀌어야 한다는 기준
+- 예외 / 엣지 케이스:
+  - 이번 조각은 capital/flag/population/battle/recommendation의 점수 계산, 문제 선택, 최근 기록 저장 방식을 바꾸지 않는다.
+  - 외부 폰트는 디자인 품질에는 도움이 되지만 CSP에서 명시적으로 열지 않으면 production에서 즉시 깨지므로, `style.css`와 `_headers`는 한 묶음으로 봐야 한다.
+  - `.agents/`는 현재 미추적 상태라 이번 커밋 범위에 넣지 않는다.
+- 테스트:
+  - `cd demo-lite && npm test`
+  - `cd demo-lite && npm run build`
+  - `cd demo-lite && npm run verify:pages`
+  - `git diff --check`
+- 배운 점: 정적 공개 데모는 기능 수보다 첫 인상 품질이 더 크게 작동한다. 같은 브라우저 로직이어도 shell이 제품처럼 읽히지 않으면 체험판 전체가 임시 샘플처럼 보인다. 반대로 디자인 시스템을 다시 잡을 때는 CSS만 보는 게 아니라 CSP, 폰트 로딩, 카드 정보 구조까지 같이 봐야 실제 운영 품질로 닫힌다.
+- 아직 약한 부분: 이번 조각은 셸과 위계 정리까지는 닫았지만, 실제 공개 URL screenshot을 다시 README에 교체하거나 route별 미세한 motion을 넣는 작업까지는 하지 않았다. 다음 후보는 기능 추가보다 공개 캡처 갱신과 미세 상호작용 보강 같은 presentation polish다.
+- 면접용 30초 요약: `demo-lite`는 기능은 충분했지만 디자인이 아마추어처럼 보여 제품 신뢰감이 약했습니다. 그래서 이번에는 게임 로직은 그대로 두고 홈과 feature shell을 `Coinbase-style blue / white / dark` 토큰으로 다시 설계했습니다. hero, snapshot card, route grid, pill CTA를 다시 짰고, Google Fonts를 쓴 만큼 Cloudflare Pages CSP와 테스트도 같이 고쳐 공개 URL과 로컬이 같은 톤으로 보이게 맞췄습니다.
