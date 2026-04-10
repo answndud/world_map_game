@@ -8290,3 +8290,31 @@
 - 배운 점: CI에서 `cancel-in-progress`는 무조건 좋은 기본값이 아니다. PR에는 맞아도 배포 브랜치에는 오히려 signal을 흐릴 수 있다. 특히 branch protection과 사람이 보는 Actions UI를 함께 고려하면, ref별로 concurrency 정책을 다르게 주는 편이 더 실무적이다.
 - 아직 약한 부분: 이 조각은 취소 혼선만 줄인다. browser-smoke 시간이 길거나 Node 20 경고가 남는 문제는 여전히 별도 관리가 필요하다.
 - 면접용 30초 요약: main 브랜치에 연속 push가 들어올 때 GitHub Actions가 이전 verify run을 자동 취소하면서, 실제 코드 실패가 아닌데도 체크가 실패처럼 보이는 문제가 있었습니다. 그래서 이번에는 workflow concurrency를 ref별로 나눠서 PR은 계속 cancel-in-progress를 쓰고, main/master push는 취소하지 않도록 바꿨습니다. 덕분에 배포 브랜치에서는 체크 신호가 더 안정적으로 보이게 됐습니다.
+
+## 2026-04-10 - GitHub Actions Node 20 deprecation 경고 정리
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: concurrency 조정 뒤에도 GitHub Actions UI에는 `actions/checkout@v4`, `actions/setup-java@v4`, `actions/setup-node@v4`가 Node 20 기반이라 곧 기본 runner에서 경고가 난다는 annotation이 남아 있었다. 이번 조각의 목적은 임시 env flag로 버티지 않고, workflow가 쓰는 GitHub 공식 action version을 Node 24 대응 stable major로 올려 경고 원인을 직접 제거하는 것이다.
+- 변경 파일:
+  - `.github/workflows/verify.yml`
+  - `.github/workflows/demo-lite-verify.yml`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 애플리케이션 요청 흐름은 바뀌지 않는다. 바뀐 것은 GitHub-hosted runner 위에서 workflow가 어떤 JavaScript action runtime을 쓰는가다. `verify`는 여전히 `test -> browser-smoke` 순서로 돌고, `demo-lite-verify`도 그대로 `tests -> build -> verify:pages`를 실행한다. 다만 checkout/setup-java/setup-node action 자체가 Node 24 기반 stable major로 바뀌었다.
+- 데이터 / 상태 변화:
+  - [verify.yml](/Users/alex/project/worldmap/.github/workflows/verify.yml)은 `actions/checkout@v5`, `actions/setup-java@v5`, `actions/setup-node@v6`를 사용한다.
+  - [demo-lite-verify.yml](/Users/alex/project/worldmap/.github/workflows/demo-lite-verify.yml)은 `actions/checkout@v5`, `actions/setup-node@v6`를 사용한다.
+  - GitHub Actions UI에 뜨던 Node 20 deprecation annotation은 다음 run부터 줄어들어야 한다.
+- 핵심 도메인 개념:
+  - `toolchain drift cleanup`: 앱 코드가 아니라 CI toolchain도 플랫폼 정책 변화에 맞춰 주기적으로 올려야 한다는 기준
+  - `fix the source, not the warning`: `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24` 같은 임시 우회보다, 공식 action major를 올려 경고 원인을 없애는 편이 더 안정적이라는 기준
+- 예외 / 엣지 케이스:
+  - 이번 조각은 stable major만 올린다. `actions/checkout@v6-beta` 같은 pre-release는 쓰지 않는다.
+  - 로컬에서 GitHub-hosted runner 전체를 재현하진 못하므로, 실제 annotation 제거는 push 뒤 Actions run 기록으로 확인해야 한다.
+  - 블로그는 생략한다. 이번 변경은 CI 운영/tooling 정리라 worklog와 playbook 갱신으로 충분하다.
+- 테스트:
+  - `git diff --check`
+  - 실제 확인은 다음 `main` run에서 Node 20 deprecation annotation이 사라지는지 GitHub Actions UI로 본다
+- 배운 점: 플랫폼 경고는 보통 “나중에” 처리하기 쉽지만, 이런 건 결국 배포 브랜치의 신뢰도 문제로 돌아온다. warning을 보는 사람 입장에서는 코드가 아니라도 시스템이 낡아 보이기 때문이다. CI도 제품 일부라고 보고 action major를 주기적으로 올리는 편이 맞다.
+- 아직 약한 부분: action major는 올렸지만, 미래에 또 runner 정책이 바뀌면 같은 확인이 반복될 수 있다. 즉 이것도 코드처럼 정기 점검 대상이다.
+- 면접용 30초 요약: main 브랜치 취소 혼선을 줄인 뒤에도 GitHub Actions에는 Node 20 deprecation 경고가 남아 있었습니다. 그래서 이번에는 우회 env를 넣는 대신, verify workflow들이 쓰는 공식 action을 Node 24 대응 stable major로 직접 올렸습니다. 덕분에 CI는 단순히 통과하는 수준이 아니라, GitHub runner 정책 변화에도 더 오래 견디는 상태로 정리됐습니다.

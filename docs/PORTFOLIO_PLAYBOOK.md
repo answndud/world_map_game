@@ -877,6 +877,7 @@
 - 마지막으로 [demo-lite/src/app.js](/Users/alex/project/worldmap/demo-lite/src/app.js) home route card 하단의 `열기` 라벨과 [demo-lite/src/style.css](/Users/alex/project/worldmap/demo-lite/src/style.css)의 `demo-card-link` dead style도 제거했다. 카드 전체가 이미 앵커라서 같은 뜻의 하단 텍스트를 한 번 더 남기면 정보보다 클릭 유도만 중복되기 때문이다
 - 그리고 home만 blue로 바뀌고 각 게임/추천의 [demo-lite/src/style.css](/Users/alex/project/worldmap/demo-lite/src/style.css) `demo-route-hero`가 여전히 검은 계열로 남지 않게, 공통 route hero와 그 안의 chip/ghost/status card도 전부 같은 blue family로 옮겼다. 수도/국기/인구수/배틀/추천은 모두 같은 `demo-route-hero` 클래스를 공유하므로, 이 조각 하나로 시작/결과 hero와 status strip가 전부 더 밝은 blue gradient와 blue glass로 맞춰졌다
 - CI 운영 정리로 [verify.yml](/Users/alex/project/worldmap/.github/workflows/verify.yml)과 [demo-lite-verify.yml](/Users/alex/project/worldmap/.github/workflows/demo-lite-verify.yml)의 concurrency도 손봤다. 이제 `main`/`master` push는 in-progress run을 취소하지 않고 끝까지 돌리며, PR나 기타 ref만 기존처럼 `cancel-in-progress`가 동작한다. 덕분에 main 배포 브랜치에서는 새 push 때문에 직전 run이 `cancelled`로 찍혀 “Some checks were not successful”처럼 보이는 혼선을 줄일 수 있다
+- 이어서 같은 workflow 두 파일의 GitHub 공식 action version도 Node 24 대응 stable major로 올렸다. [verify.yml](/Users/alex/project/worldmap/.github/workflows/verify.yml)은 `actions/checkout@v5`, `actions/setup-java@v5`, `actions/setup-node@v6`를 쓰고, [demo-lite-verify.yml](/Users/alex/project/worldmap/.github/workflows/demo-lite-verify.yml)도 `checkout@v5`, `setup-node@v6`로 맞췄다. 즉 concurrency 혼선을 줄이는 것에서 끝내지 않고, GitHub가 경고한 Node 20 deprecation 자체도 workflow 버전 업그레이드로 같이 정리했다
 - README에 실시간 전달 결정과 발표용 문서 세트 링크 반영
 
 다음에 이어서 할 일:
