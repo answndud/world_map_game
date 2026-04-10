@@ -8014,3 +8014,37 @@
 - 배운 점: demo-lite recommendation에서 중요한 건 무조건 더 많은 UI나 저장 기능을 붙이는 게 아니라, `지금 이 계산이 메인과 얼마나 같은가`를 버전과 대표 시나리오로 말할 수 있게 만드는 것이다. 버전 상수와 anchor test만 있어도 브라우저 포트의 설명 가능성이 크게 올라간다.
 - 아직 약한 부분: demo-lite recommendation은 여전히 browser-only runtime이라, 운영 feedback 수집과 baseline drift 점검은 메인 앱 문맥에서만 닫힌다. 다음 후보는 추천 결과 설명 카드나 공유 copy를 다듬는 쪽이지, 같은 범위의 parity 주장 문구를 더 늘리는 쪽은 아니다.
 - 면접용 30초 요약: demo-lite 추천은 이미 메인 설문 구조를 많이 가져왔지만, 어디까지 같은지 말하는 기준이 약했습니다. 그래서 이번에는 계산식을 더 키우지 않고 `survey-v4 / engine-v20` 버전 상수를 코드에 박고, 메인 recommendation anchor 시나리오 4개를 브라우저 Node 테스트로 그대로 옮겨 `미국 / 캐나다 / 말레이시아 / 뉴질랜드` 1위를 고정했습니다. 덕분에 demo-lite 추천은 “비슷하다”가 아니라 “현재 메인 엔진과 이 시나리오까지는 같다”로 설명할 수 있게 됐습니다.
+
+## 2026-04-10 - demo-lite recommendation 결과 요약과 공유 copy 정리
+
+- 단계: 6. 설문 기반 추천 엔진
+- 목적: `demo-lite` recommendation은 top 3 국가를 보여 주지만, 플레이어가 결과를 한 문장으로 이해하거나 바로 공유하기에는 설명 밀도가 약했다. 이번 조각의 목적은 추천 계산식을 바꾸지 않고, 브라우저 포트 결과를 `선호 키워드 + 요약 문장 + 복사 가능한 share text`로 더 설명 가능하게 만드는 것이다.
+- 변경 파일:
+  - `demo-lite/src/features/recommendation.js`
+  - `demo-lite/tests/recommendation.test.mjs`
+  - `demo-lite/README.md`
+  - `docs/DEMO_LITE_SCOPE_PLAN.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/120-polish-demo-lite-recommendation-result-summary-and-share-copy.md`
+- 요청 흐름 / 데이터 흐름: 요청 시작점은 그대로 `#/recommendation`이다. 사용자가 20문항을 제출하면 [recommendation.js](/Users/alex/project/worldmap/demo-lite/src/features/recommendation.js)가 top 3를 계산한 뒤, 같은 결과 객체 안에서 `highlight labels`, `narrative`, `shareText`를 추가로 만든다. 즉 계산 책임은 같은 recommendation runtime 안에 두고, 결과 화면은 이 read model을 렌더해 `추천 요약 카드 -> 공유용 한 줄 문장 -> top 3 카드` 순으로 보여 준다.
+- 데이터 / 상태 변화:
+  - 추천 결과 객체에 `summary.headline`, `summary.highlightLabels`, `summary.narrative`, `summary.shareText`가 추가됐다.
+  - 결과 화면은 `선호 키워드 4개`, `top1 설명 문장`, `복사 버튼`을 함께 노출한다.
+  - 복사 버튼은 `navigator.clipboard` 우선, 실패 시 legacy textarea copy fallback을 사용한다.
+  - 추천 계산 순위, localStorage recent top1 기록, Pages 배포 계약은 바뀌지 않았다.
+- 핵심 도메인 개념:
+  - `result read model`: 점수 계산과 별개로, 플레이어가 바로 읽을 수 있는 요약 표현을 따로 만든다는 기준
+  - `copy-ready recommendation summary`: 결과를 화면 안에서만 끝내지 않고, 외부 메신저/메모로 옮길 수 있는 한 줄 문장을 제공하는 기준
+- 예외 / 엣지 케이스:
+  - 이번 조각은 추천 엔진 가중치나 anchor scenario를 다시 조정하지 않는다.
+  - summary는 20문항 전체를 자연어로 모두 풀어쓰지 않고, `기후 / 환경 / 비용 / 적응성` 같은 핵심 신호만 3~4개 키워드로 압축한다.
+  - 복사 API가 막힌 환경에서도 결과 문장은 화면에 그대로 남으므로 직접 복사는 가능하다.
+- 테스트:
+  - `cd demo-lite && npm test`
+  - `cd demo-lite && npm run build`
+  - `cd demo-lite && npm run verify:pages`
+  - `git diff --check`
+- 배운 점: recommendation 결과를 더 설득력 있게 보이게 하는 가장 싼 방법은 엔진을 더 복잡하게 만드는 게 아니라, 이미 계산된 결과를 사용자가 바로 말할 수 있는 문장으로 다시 정리하는 것이다. 특히 demo-lite처럼 persistence가 없는 앱에서는 결과 read model의 역할이 더 크다.
+- 아직 약한 부분: 지금 summary는 `왜 2위/3위가 밀렸는지`까지는 보여 주지 않는다. 다음 후보는 top 3 비교 기준 breakdown이나 질문 프리셋처럼, 결과 해석을 한 단계 더 도와주는 보조 카드다.
+- 면접용 30초 요약: demo-lite 추천은 top 3를 계산하는 데는 문제가 없었지만, 결과를 보고 바로 설명하거나 공유하기엔 아직 밋밋했습니다. 그래서 이번에는 엔진을 건드리지 않고 결과 객체에 `선호 키워드`, `top1 설명 문장`, `복사 가능한 한 줄 요약`을 추가했습니다. 덕분에 플레이어는 `왜 이 나라가 1위인지`를 더 빨리 읽을 수 있고, demo-lite 추천도 단순 카드 나열이 아니라 설명 가능한 결과 화면으로 말할 수 있게 됐습니다.

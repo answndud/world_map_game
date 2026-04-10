@@ -11,7 +11,7 @@
 - `#/games/flag` local-state 국기 퀴즈 한 판
 - `#/games/population` local-state 인구수 퀴즈 한 판
 - `#/games/population-battle` local-state 인구 비교 배틀 한 판
-- `#/recommendation` `survey-v4 / engine-v20` 20문항 local-state 추천 결과 loop
+- `#/recommendation` `survey-v4 / engine-v20` 20문항 local-state 추천 결과 loop + 결과 요약 복사
 - `#/` home에서 browser recent play / cross-mode summary
 - `#/` home에서 recent streak / copyable one-line summary
 

@@ -83,6 +83,10 @@ test("calculateRecommendationResult returns top three candidates and submitted s
   assert.ok(result.recommendations[0].countryNameKr);
   assert.ok(result.recommendations[0].capitalCity);
   assert.ok(result.recommendations[0].reasons.length >= 1);
+  assert.ok(result.summary.headline);
+  assert.ok(result.summary.narrative.includes(result.recommendations[0].countryNameKr));
+  assert.ok(result.summary.highlightLabels.length >= 3);
+  assert.ok(result.summary.shareText.includes(`1위 ${result.recommendations[0].countryNameKr}`));
 });
 
 test("warm fast premium city-oriented answers rank singapore first", () => {
@@ -275,4 +279,9 @@ test("exploratory nature runway answers rank new zealand first", () => {
   });
 
   assert.equal(result.recommendations[0].iso3Code, "NZL");
+  assert.ok(result.summary.highlightLabels.includes("자연 접근성"));
+  assert.ok(result.summary.highlightLabels.includes("비용 효율"));
+  assert.ok(result.summary.shareText.includes("1위 뉴질랜드"));
+  assert.ok(result.summary.shareText.includes("2위"));
+  assert.ok(result.summary.shareText.includes("3위"));
 });

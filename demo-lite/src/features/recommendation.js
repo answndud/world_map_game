@@ -57,6 +57,42 @@ const CONTINENT_LABELS = {
   OCEANIA: "오세아니아"
 };
 
+const CLIMATE_HIGHLIGHT_LABELS = {
+  WARM: "따뜻한 기후",
+  MILD: "온화한 기후",
+  COLD: "선선한 기후"
+};
+
+const ENVIRONMENT_HIGHLIGHT_LABELS = {
+  CITY: "도시 편의",
+  MIXED: "도시·자연 균형",
+  NATURE: "자연 접근성"
+};
+
+const COST_HIGHLIGHT_LABELS = {
+  VALUE_FIRST: "비용 효율",
+  BALANCED: "비용·품질 균형",
+  QUALITY_FIRST: "생활 품질"
+};
+
+const PACE_HIGHLIGHT_LABELS = {
+  FAST: "빠른 리듬",
+  BALANCED: "균형 리듬",
+  RELAXED: "느긋한 리듬"
+};
+
+const SETTLEMENT_HIGHLIGHT_LABELS = {
+  EXPERIENCE: "가벼운 시작",
+  BALANCED: "정착 균형",
+  STABILITY: "장기 정착"
+};
+
+const WORK_LIFE_HIGHLIGHT_LABELS = {
+  DRIVE_FIRST: "성장 기회",
+  BALANCED: "성장·생활 균형",
+  LIFE_FIRST: "생활 균형"
+};
+
 const QUESTIONS = [
   {
     id: "climatePreference",
@@ -477,6 +513,83 @@ function coherenceBonus(climateDistance, costDistance, environmentDistance, hous
 
 function exactMatchCount(...distances) {
   return distances.filter((distanceValue) => distanceValue === 0).length;
+}
+
+function uniqueLabels(labels) {
+  return labels.filter((label, index, all) => Boolean(label) && all.indexOf(label) === index);
+}
+
+function hasFinalConsonant(word) {
+  const lastChar = word?.trim()?.slice(-1);
+  if (!lastChar) {
+    return false;
+  }
+
+  const codePoint = lastChar.charCodeAt(0);
+  if (codePoint < 0xac00 || codePoint > 0xd7a3) {
+    return false;
+  }
+
+  return (codePoint - 0xac00) % 28 !== 0;
+}
+
+function subjectParticle(word) {
+  return hasFinalConsonant(word) ? "이" : "가";
+}
+
+function buildPreferenceHighlights(answers) {
+  const candidateLabels = [
+    CLIMATE_HIGHLIGHT_LABELS[answers.climatePreference.value],
+    ENVIRONMENT_HIGHLIGHT_LABELS[answers.environmentPreference.value],
+    answers.costQualityPreference.value !== "BALANCED"
+      ? COST_HIGHLIGHT_LABELS[answers.costQualityPreference.value]
+      : null,
+    answers.pacePreference.value !== "BALANCED" ? PACE_HIGHLIGHT_LABELS[answers.pacePreference.value] : null,
+    answers.englishSupportNeed.value === "HIGH" ? "영어 적응" : null,
+    answers.safetyPriority.value === "HIGH" ? "안전" : null,
+    answers.publicServicePriority.value === "HIGH" ? "공공 서비스" : null,
+    answers.foodImportance.value === "HIGH" ? "음식 만족도" : null,
+    answers.mobilityPreference.value === "TRANSIT_FIRST" ? "대중교통 중심" : null,
+    answers.workLifePreference.value !== "BALANCED"
+      ? WORK_LIFE_HIGHLIGHT_LABELS[answers.workLifePreference.value]
+      : null,
+    answers.settlementPreference.value !== "BALANCED"
+      ? SETTLEMENT_HIGHLIGHT_LABELS[answers.settlementPreference.value]
+      : null
+  ];
+
+  const fallbackLabels = [
+    COST_HIGHLIGHT_LABELS[answers.costQualityPreference.value],
+    PACE_HIGHLIGHT_LABELS[answers.pacePreference.value],
+    WORK_LIFE_HIGHLIGHT_LABELS[answers.workLifePreference.value],
+    SETTLEMENT_HIGHLIGHT_LABELS[answers.settlementPreference.value]
+  ];
+
+  return uniqueLabels([...candidateLabels, ...fallbackLabels]).slice(0, 4);
+}
+
+function buildRecommendationSummary(answers, recommendations) {
+  const highlightLabels = buildPreferenceHighlights(answers);
+  const [topRecommendation, secondRecommendation, thirdRecommendation] = recommendations;
+  const headline = `${highlightLabels.slice(0, 3).join(" · ")} 기준`;
+  const primaryReason = topRecommendation?.reasons?.[0] ?? topRecommendation?.hookLine ?? "";
+  const comparisonTrail = [secondRecommendation, thirdRecommendation]
+    .filter(Boolean)
+    .map((candidate) => candidate.countryNameKr)
+    .join(", ");
+  const narrative = topRecommendation
+    ? `${highlightLabels.slice(0, 3).join(", ")}을 중요하게 본 답변이라 ${topRecommendation.countryNameKr}${subjectParticle(topRecommendation.countryNameKr)} 1위로 나왔습니다. ${primaryReason}${comparisonTrail ? ` 이어서 ${comparisonTrail}도 함께 비교할 만합니다.` : ""}`
+    : "아직 추천 결과가 없습니다.";
+  const shareText = topRecommendation
+    ? `WorldMap demo-lite 추천 결과: 1위 ${topRecommendation.countryNameKr}${secondRecommendation ? `, 2위 ${secondRecommendation.countryNameKr}` : ""}${thirdRecommendation ? `, 3위 ${thirdRecommendation.countryNameKr}` : ""}. 내 기준은 ${highlightLabels.join(", ")}.`
+    : "WorldMap demo-lite 추천 결과를 아직 계산하지 않았습니다.";
+
+  return {
+    headline,
+    highlightLabels,
+    narrative,
+    shareText
+  };
 }
 
 function settlementPoints(profile, answer) {
@@ -1333,8 +1446,39 @@ export function calculateRecommendationResult(countries, rawAnswers) {
       title: question.title,
       selectedLabel: answers[question.id].label
     })),
-    recommendations
+    recommendations,
+    summary: buildRecommendationSummary(answers, recommendations)
   };
+}
+
+async function copyText(text) {
+  if (!text) {
+    return false;
+  }
+
+  try {
+    if (globalThis.navigator?.clipboard?.writeText) {
+      await globalThis.navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch (_error) {
+    // fall through to legacy copy path
+  }
+
+  try {
+    const textarea = globalThis.document.createElement("textarea");
+    textarea.value = text;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "absolute";
+    textarea.style.left = "-9999px";
+    globalThis.document.body.append(textarea);
+    textarea.select();
+    const copied = globalThis.document.execCommand("copy");
+    textarea.remove();
+    return copied;
+  } catch (_error) {
+    return false;
+  }
 }
 
 function renderQuestion(question, questionNumber, selectedValue) {
@@ -1454,6 +1598,28 @@ function renderResult(result) {
       <div class="demo-actions">
         <button class="demo-button" type="button" data-recommendation-action="restart">설문 다시 하기</button>
         <a class="demo-ghost" href="#/">홈으로 돌아가기</a>
+      </div>
+    </section>
+
+    <section class="demo-panel demo-panel--muted">
+      <div class="demo-panel-head">
+        <p class="demo-panel-kicker">추천 요약</p>
+        <h2>${result.summary.headline}</h2>
+        <p>${result.summary.narrative}</p>
+      </div>
+      <div class="demo-route-hero-top">
+        ${result.summary.highlightLabels.map((label) => `<span class="demo-chip">${label}</span>`).join("")}
+      </div>
+      <div class="demo-share-box">
+        <div class="demo-share-box__top">
+          <div class="demo-card-meta">
+            <strong>공유용 한 줄 요약</strong>
+            <span class="demo-card-note">top 3와 선호 키워드를 한 문장으로 정리했습니다.</span>
+          </div>
+          <button class="demo-button demo-copy-button" type="button" data-recommendation-action="copy-share">요약 복사</button>
+        </div>
+        <p class="demo-share-text">${result.summary.shareText}</p>
+        <p class="demo-copy demo-copy--small" data-recommendation-share-feedback>메신저나 메모에 그대로 붙여 넣을 수 있습니다.</p>
       </div>
     </section>
 
@@ -1582,6 +1748,24 @@ export function mountRecommendationDemo(container, countries) {
     container.querySelector("[data-recommendation-action='restart']")?.addEventListener("click", () => {
       currentResult = null;
       renderSurvey();
+    });
+    container.querySelector("[data-recommendation-action='copy-share']")?.addEventListener("click", async (event) => {
+      const copied = await copyText(currentResult.summary.shareText);
+      const button = event.currentTarget;
+      const feedback = container.querySelector("[data-recommendation-share-feedback]");
+
+      if (feedback) {
+        feedback.textContent = copied
+          ? "추천 요약을 복사했습니다."
+          : "자동 복사는 실패했습니다. 아래 문장을 직접 복사해 주세요.";
+      }
+
+      if (button && "textContent" in button) {
+        button.textContent = copied ? "복사 완료" : "다시 시도";
+        window.setTimeout(() => {
+          button.textContent = "요약 복사";
+        }, 1600);
+      }
     });
   }
 

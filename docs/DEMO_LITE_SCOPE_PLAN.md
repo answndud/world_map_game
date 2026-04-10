@@ -228,7 +228,7 @@
 - [population-battle-game.js](/Users/alex/project/worldmap/demo-lite/src/features/population-battle-game.js)
   - `인구 순위 gap 기반 2-choice 배틀 + 5 Stage 구간 + 같은 문제 재시도 + localStorage best score`
 - [recommendation.js](/Users/alex/project/worldmap/demo-lite/src/features/recommendation.js)
-  - `survey-v4 / engine-v20 + 20문항 설문 + 30국가 deterministic top 3 + feedback 저장 제거`
+  - `survey-v4 / engine-v20 + 20문항 설문 + 30국가 deterministic top 3 + 추천 요약/공유 copy + feedback 저장 제거`
 - [recommendation.test.mjs](/Users/alex/project/worldmap/demo-lite/tests/recommendation.test.mjs)
   - `메인 anchor scenario(USA / CAN / MYS / NZL) top1을 browser-side test로 고정`
 
@@ -259,7 +259,7 @@
 `demo-lite v1`을 닫은 뒤에만 아래를 검토한다.
 
 1. 위치 게임 추가
-2. 추천 결과 설명 카드 / 공유 copy polish
+2. 추천 결과 비교 기준 breakdown 카드
 3. localStorage 기반 "내 브라우저 최고 점수"
 4. full version 비교 소개 섹션 추가
 
