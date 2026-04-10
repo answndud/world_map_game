@@ -30,12 +30,10 @@
 
 ## 현재 구현 상태
 
-현재 실제로 만든 커스텀 스킬은 아래 하나다.
+현재 저장소에 유지되는 프로젝트 로컬 커스텀 스킬 번들은 없다.
 
-- `/Users/alex/project/worldmap/.agents/skills/worldmap-doc-sync`
-  - 기능 작업 이후 `docs/WORKLOG.md`, `docs/PORTFOLIO_PLAYBOOK.md`, `README.md`, `blog/` 업데이트를 판단하고 동기화하는 스킬
-
-나머지 추천 스킬은 아직 설계 후보 상태다.
+- 문서 동기화는 별도 `worldmap-doc-sync` 스킬 대신 `AGENTS.md`와 `docs/` 규칙을 직접 따르는 방식으로 유지한다.
+- 나머지 스킬 아이디어는 여전히 설계 후보 상태다.
 
 ## 공식 레퍼런스에서 읽은 핵심 신호
 
@@ -152,11 +150,11 @@
 
 스킬은 "무엇이든 해주는 도우미"가 아니라, 반복적으로 같은 구조가 나오는 작업에만 만드는 것이 맞다.
 
-이 프로젝트에서 바로 가치가 있는 스킬은 아래 4개다.
+이 프로젝트에서 한때 검토했거나 앞으로 필요할 수 있는 스킬 후보는 아래와 같다.
 
 ## 추천 스킬 구성
 
-### 1. `worldmap-doc-sync`
+### 1. `worldmap-doc-sync` (retired)
 
 목적:
 
@@ -181,13 +179,12 @@
 - `references/worklog-entry-template.md`
 - `references/blog-update-rules.md`
 
-구현 상태:
+현재 상태:
 
-- 구현 완료
-- 프로젝트 로컬 설치 위치: `/Users/alex/project/worldmap/.agents/skills/worldmap-doc-sync`
-- `agents/openai.yaml`에서 `allow_implicit_invocation: false`로 설정해 명시적으로만 사용
+- 저장소에서는 제거됨
+- 역할은 `AGENTS.md`와 `docs/WORKLOG.md` / `docs/PORTFOLIO_PLAYBOOK.md` / `README.md` / `blog/` 직접 동기화 규칙으로 흡수됨
 
-이 스킬은 문서 누락 방지를 위해 가장 먼저 만든다.
+즉 문서 누락 방지라는 목적은 유지하되, 별도 프로젝트 로컬 스킬 번들은 더 이상 유지하지 않는다.
 
 ### 2. `worldmap-country-data`
 
@@ -438,7 +435,7 @@ Claude 공식 문서 기준으로도, description을 명확히 쓰고 tool acces
 
 - 현재 `AGENTS.md`는 유지
 - 이 문서를 기준으로 AI 운영 원칙을 고정
-- `worldmap-doc-sync` 스킬을 문서 동기화 기본 도구로 사용
+- 문서 동기화는 별도 스킬이 아니라 `AGENTS.md + docs/` 규칙을 직접 따른다
 - 실제 기능 구현은 계속 `단일 메인 에이전트` 중심으로 진행
 
 ### 2단계
@@ -462,11 +459,7 @@ Claude 공식 문서 기준으로도, description을 명확히 쓰고 tool acces
 
 1. 개발용 에이전트 운영은 `AGENTS.md + docs/ + Work Log` 중심으로 간다.
 2. 구현은 기본적으로 단일 메인 에이전트가 맡는다.
-3. 스킬은 4개만 먼저 준비한다.
-   - `worldmap-doc-sync`
-   - `worldmap-country-data`
-   - `worldmap-game-domain`
-   - `worldmap-ai-recommendation`
+3. 프로젝트 로컬 스킬은 꼭 필요할 때만 추가하고, 현재 저장소에는 상시 유지되는 프로젝트 로컬 스킬 번들을 두지 않는다.
 4. 서비스 런타임에는 LLM을 붙이지 않는다.
 5. 멀티 에이전트는 `리서치 / 리뷰 / 병렬 문서화 / 설문 시나리오 생성`에 한정한다.
 

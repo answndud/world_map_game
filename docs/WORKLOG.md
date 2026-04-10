@@ -8083,3 +8083,38 @@
 - 배운 점: 추천 결과를 더 설명 가능하게 만드는 데 꼭 raw score table이 필요한 건 아니다. 오히려 demo-lite처럼 정적 체험판에서는, 같은 다섯 축으로 top3를 다시 읽게 만드는 비교 카드가 더 짧고 이해하기 쉽다.
 - 아직 약한 부분: 지금도 비교 카드는 `왜 이 bonus가 붙었는지`보다 `후보 성향이 어떻게 다른지`에 집중한다. 다음 후보는 대표 페르소나 프리셋이나 quick-start처럼, 설문에 들어가기 전의 진입 비용을 낮추는 쪽이다.
 - 면접용 30초 요약: demo-lite 추천 결과는 1위 설명과 공유 문장까지는 정리됐지만, 2위와 3위를 같은 기준으로 비교해 읽는 화면은 없었습니다. 그래서 이번에는 엔진을 다시 손대지 않고 결과 객체에 `comparison.rows`를 추가해서, top3를 `기후 / 생활 환경 / 생활비 / 초기 적응 / 정착 기반` 다섯 축으로 나란히 보여 주게 했습니다. 덕분에 추천 결과는 단순 top3 카드가 아니라, 후보 간 차이를 같은 언어로 설명할 수 있는 비교 화면이 됐습니다.
+
+## 2026-04-10 - 프로젝트 로컬 `worldmap-doc-sync` 스킬 번들 제거
+
+- 단계: 0. 문서와 규칙 정리
+- 목적: 저장소에서 프로젝트 로컬 스킬 번들이 삭제된 상태였는데, `AGENTS.md`와 운영 문서는 여전히 그 경로를 현재형으로 참조하고 있었다. 이번 조각의 목적은 삭제 파일을 커밋하는 동시에, 현재 기준 문서가 더 이상 없는 스킬을 가리키지 않도록 정리하는 것이다.
+- 변경 파일:
+  - `.agents/skills/worldmap-doc-sync/SKILL.md` 삭제
+  - `.agents/skills/worldmap-doc-sync/agents/openai.yaml` 삭제
+  - `.agents/skills/worldmap-doc-sync/references/blog-update-rules.md` 삭제
+  - `.agents/skills/worldmap-doc-sync/references/doc-impact-map.md` 삭제
+  - `.agents/skills/worldmap-doc-sync/references/worklog-entry-template.md` 삭제
+  - `AGENTS.md`
+  - `docs/AI_AGENT_OPERATING_MODEL.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 애플리케이션 런타임 요청은 바뀌지 않는다. 바뀐 것은 AI 작업 절차 문서다. 이제 문서 동기화가 필요할 때 에이전트는 삭제된 프로젝트 로컬 스킬을 찾지 않고, `AGENTS.md -> docs/PORTFOLIO_PLAYBOOK.md -> docs/WORKLOG.md -> blog/` 규칙을 직접 따라 같은 턴에 동기화한다.
+- 데이터 / 상태 변화:
+  - `.agents/skills/worldmap-doc-sync/` 아래 프로젝트 로컬 스킬 번들이 저장소에서 제거됐다.
+  - `AGENTS.md`는 더 이상 존재하지 않는 `$worldmap-doc-sync` 경로를 안내하지 않는다.
+  - `docs/AI_AGENT_OPERATING_MODEL.md`는 현재 저장소에 유지되는 프로젝트 로컬 스킬 번들이 없다고 명시한다.
+  - `docs/PORTFOLIO_PLAYBOOK.md` 0단계 완료 항목도 `스킬 구현` 대신 `문서 동기화 규칙 정리`로 현재형 설명을 맞췄다.
+- 핵심 도메인 개념:
+  - `docs as source of process truth`: 작업 절차 자체는 별도 스킬 번들보다 저장소 문서가 직접 source of truth가 되는 편이 더 안정적이라는 기준
+  - `retired local skill bundle`: 한때 썼던 프로젝트 로컬 스킬을 제거할 때는 파일 삭제만이 아니라 현재 문서 참조도 같이 정리해야 한다는 기준
+- 예외 / 엣지 케이스:
+  - 과거 `docs/WORKLOG.md` 항목에는 `worldmap-doc-sync` 구현 이력이 남아 있다. 이건 역사 기록이라 유지한다.
+  - 새로 생긴 `.codex/` 미추적 파일은 이번 커밋 범위에 넣지 않았다.
+  - 이번 조각은 기능 코드나 추천/게임 런타임을 전혀 바꾸지 않는다.
+- 테스트:
+  - `rg -n "worldmap-doc-sync|\\.agents/skills/worldmap-doc-sync" AGENTS.md docs`
+  - `git diff --check`
+- 배운 점: 프로젝트 로컬 도구를 제거할 때는 파일만 지우는 것으로 끝나지 않는다. 현재형 운영 문서가 계속 그 도구를 기준으로 쓰이면 다음 작업부터 바로 잘못된 경로를 밟게 된다. 그래서 workflow cleanup은 참조 정리까지 한 묶음으로 닫아야 한다.
+- 아직 약한 부분: 문서 동기화 규칙은 이제 완전히 문서 기반이라, 나중에 다시 반복성이 커지면 별도 스킬이나 템플릿 자동화가 다시 필요할 수 있다. 다만 지금 규모에서는 문서 직접 동기화가 더 단순하다.
+- 면접용 30초 요약: 프로젝트 안에 두었던 `worldmap-doc-sync` 스킬 번들이 삭제된 상태였는데, AGENTS와 운영 문서는 여전히 그 파일을 현재형으로 참조하고 있었습니다. 그래서 이번에는 삭제 파일만 커밋하는 대신, 문서 동기화 절차가 이제 별도 스킬이 아니라 `AGENTS.md`와 `docs/` 규칙을 직접 따르는 방식이라고 같이 정리했습니다. 덕분에 저장소 현재 상태와 운영 문서가 다시 일치하게 됐습니다.
+- 블로그 생략 이유: 이번 조각은 공개 기능, API, 도메인, 테스트 전략 변경이 아니라 프로젝트 로컬 AI 작업 도구 정리와 문서 참조 수정이 중심이라 worklog와 운영 문서 갱신으로 충분하다.

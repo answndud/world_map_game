@@ -1,7 +1,0 @@
-interface:
-  display_name: "WorldMap Doc Sync"
-  short_description: "Update WorldMap docs after feature work"
-  default_prompt: "Use $worldmap-doc-sync to update the WorldMap playbook, work log, and related docs after implementing a feature."
-
-policy:
-  allow_implicit_invocation: false

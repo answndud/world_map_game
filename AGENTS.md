@@ -102,7 +102,7 @@
 
 이런 작은 변경은 블로그를 생략할 수 있다. 다만 생략했다면 왜 생략했는지 결과 설명이나 작업 로그에 짧게 남긴다.
 
-문서 동기화가 필요한 경우, 프로젝트 로컬 스킬 [`$worldmap-doc-sync`](/Users/alex/project/worldmap/.agents/skills/worldmap-doc-sync/SKILL.md)을 명시적으로 사용한다.
+문서 동기화가 필요한 경우, 별도 로컬 스킬에 기대지 말고 같은 턴에 `README.md`, `docs/PORTFOLIO_PLAYBOOK.md`, `docs/WORKLOG.md`, `blog/`를 직접 동기화한다.
 
 ## 답변 규칙
 
