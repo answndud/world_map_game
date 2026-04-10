@@ -8157,3 +8157,108 @@
 - 배운 점: 정적 공개 데모는 기능 수보다 첫 인상 품질이 더 크게 작동한다. 같은 브라우저 로직이어도 shell이 제품처럼 읽히지 않으면 체험판 전체가 임시 샘플처럼 보인다. 반대로 디자인 시스템을 다시 잡을 때는 CSS만 보는 게 아니라 CSP, 폰트 로딩, 카드 정보 구조까지 같이 봐야 실제 운영 품질로 닫힌다.
 - 아직 약한 부분: 이번 조각은 셸과 위계 정리까지는 닫았지만, 실제 공개 URL screenshot을 다시 README에 교체하거나 route별 미세한 motion을 넣는 작업까지는 하지 않았다. 다음 후보는 기능 추가보다 공개 캡처 갱신과 미세 상호작용 보강 같은 presentation polish다.
 - 면접용 30초 요약: `demo-lite`는 기능은 충분했지만 디자인이 아마추어처럼 보여 제품 신뢰감이 약했습니다. 그래서 이번에는 게임 로직은 그대로 두고 홈과 feature shell을 `Coinbase-style blue / white / dark` 토큰으로 다시 설계했습니다. hero, snapshot card, route grid, pill CTA를 다시 짰고, Google Fonts를 쓴 만큼 Cloudflare Pages CSP와 테스트도 같이 고쳐 공개 URL과 로컬이 같은 톤으로 보이게 맞췄습니다.
+
+## 2026-04-10 - demo-lite home hero 블루 톤 완화
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: 직전 리디자인 뒤에도 home `demo-hero`와 오른쪽 snapshot card는 여전히 검은 landing card처럼 보여 첫 인상이 너무 무겁고 대비가 강했다. 이번 조각의 목적은 구조는 그대로 두고, 검은 계열을 더 밝은 blue gradient로 옮기고 명도 차를 낮춰 첫 화면을 덜 공격적으로 만드는 것이다.
+- 변경 파일:
+  - `demo-lite/src/style.css`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 요청 흐름은 바뀌지 않는다. 브라우저는 그대로 `#/ -> app.js -> demo-hero markup`을 렌더하고, feature/game state도 그대로 유지된다. 이번 조각은 CSS token과 section surface만 바꿨기 때문에 상태 전이나 저장 로직은 없다.
+- 데이터 / 상태 변화:
+  - `demo-hero` 배경은 near-black gradient 대신 중간 명도의 blue gradient와 두 개의 blue glow로 바뀌었다.
+  - 오른쪽 `demo-support-card`, `demo-support-metric`, hero chip, ghost button도 검은 유리판 대신 반투명 blue glass 쪽으로 옮겼다.
+  - headline과 보조 텍스트는 pure white 대비를 조금 낮추고, 전체 shadow도 blue tint로 바꿨다.
+- 핵심 도메인 개념:
+  - `contrast tuning after redesign`: 구조를 다시 짠 뒤에도 surface 대비가 과하면 공개 데모 인상이 지나치게 무거워질 수 있으므로, 후속으로 색 대비를 별도 튜닝해야 한다는 기준
+  - `same shell, softer mood`: markup을 다시 바꾸지 않고도 CSS surface 조정만으로 제품 톤을 훨씬 부드럽게 만들 수 있다는 기준
+- 예외 / 엣지 케이스:
+  - 이번 조각은 route hero나 feature runtime 전체를 다시 바꾸지 않고, 사용자가 지적한 home `demo-hero` 범위만 우선 조정한다.
+  - 블로그는 생략한다. 이번 변경은 새 기능, 도메인, 테스트 전략 추가가 아니라 색상/대비 미세 조정이라 worklog와 playbook 갱신으로 충분하다.
+- 테스트:
+  - `cd demo-lite && npm run build`
+  - `git diff --check`
+- 배운 점: visual redesign은 한 번에 끝나지 않는다. 레이아웃과 타이포를 먼저 잡아도 surface 대비가 과하면 여전히 "무겁다"는 인상이 남는다. 이럴 때는 구조를 또 갈아엎기보다, 해당 section의 base color와 glass layer만 따로 낮추는 편이 더 효율적이다.
+- 아직 약한 부분: 현재 조정은 home hero 중심이라 route별 dark hero까지 같은 밝기 원칙으로 맞춘 것은 아니다. 필요하면 다음 조각에서 feature route hero도 같은 blue contrast 정책으로 확장할 수 있다.
+- 면접용 30초 요약: demo-lite 홈 hero는 구조는 좋아졌지만 색이 너무 검어서 첫 인상이 무거웠습니다. 그래서 이번에는 마크업은 그대로 두고 CSS만 조정해서 near-black 배경과 카드들을 더 밝은 blue gradient, blue glass 톤으로 바꿨고 텍스트 대비도 한 단계 낮췄습니다. 결과적으로 같은 구조를 유지하면서도 첫 화면이 덜 공격적이고 더 제품답게 보이게 됐습니다.
+
+## 2026-04-10 - demo-lite home 카드 박스 블루 틴트 보정
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: home hero를 blue 톤으로 옮긴 뒤에는 아래 `Playable Surfaces`, `Recent Snapshot`, `Latest Runs` 패널과 카드들이 상대적으로 너무 희고 심심하게 보여, 위 hero와 아래 카드 family가 분리돼 보였다. 이번 조각의 목적은 구조와 정보는 그대로 두고, home의 panel/card surface를 더 옅은 blue 계열로 맞춰 전체 톤을 이어 주는 것이다.
+- 변경 파일:
+  - `demo-lite/src/style.css`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 요청 흐름은 그대로다. 사용자가 `#/`에 들어오면 [app.js](/Users/alex/project/worldmap/demo-lite/src/app.js)가 같은 home markup을 렌더하고, 이번 조각은 그 아래 panel/card surface만 CSS로 다시 칠한다. 따라서 route 전환, localStorage, 게임/추천 state는 바뀌지 않는다.
+- 데이터 / 상태 변화:
+  - `demo-panel`과 `demo-panel--muted`는 white base에서 pale blue gradient base로 바뀌었다.
+  - `demo-card`, `demo-metric`, `demo-history-list li`도 border와 background가 더 옅은 blue tint를 가지게 됐다.
+  - route card hover/focus도 같은 blue family 안에서 조금 더 밝아지도록 shadow와 background를 같이 조정했다.
+- 핵심 도메인 개념:
+  - `hero-to-panel continuity`: home hero만 푸르고 아래 카드가 무채색이면 화면이 두 제품처럼 갈라져 보이므로, panel surface도 같은 색 family를 이어 받아야 한다는 기준
+  - `surface tint over structure change`: 정보 위계는 맞는데 인상만 밋밋할 때는 markup을 다시 바꾸기보다 surface tint를 먼저 조정하는 편이 더 효율적이라는 기준
+- 예외 / 엣지 케이스:
+  - 이번 조각은 home 하단 panel/card 중심 조정이라, feature route의 일반 panel까지 의도보다 너무 파래 보이면 다음 조각에서 home 전용 selector로 다시 좁힐 수 있다.
+  - 블로그는 생략한다. 이번 변경은 공개 기능이나 도메인 설명 확장이 아니라 home surface 톤 보정이라 worklog와 playbook 갱신으로 충분하다.
+- 테스트:
+  - `cd demo-lite && npm run build`
+  - `git diff --check`
+- 배운 점: 한 화면 안에서도 hero와 body section이 서로 다른 색 family를 쓰면 디자인이 금방 분리돼 보인다. 특히 landing 성격의 홈에서는 아래 panel도 hero에서 이미 제시한 색 톤을 약하게 이어받아야 전체가 더 정돈돼 보인다.
+- 아직 약한 부분: 현재는 home 기준으로 더 좋아질 가능성이 높지만, feature route의 일반 panel까지 같은 global selector를 공유하므로 실제 사용감은 한 번 더 보고 판단하는 게 안전하다.
+- 면접용 30초 요약: home hero를 파랗게 바꾼 뒤 아래 카드들은 너무 흰색이라 위아래가 다른 제품처럼 보였습니다. 그래서 이번에는 구조는 그대로 두고 panel, route card, recent summary card의 배경과 border를 옅은 blue tint로 다시 조정했습니다. 덕분에 hero와 아래 섹션이 같은 색 family 안에서 더 자연스럽게 이어지게 됐습니다.
+
+## 2026-04-10 - demo-lite home 카드 하단 `열기` 라벨 제거
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: home route card는 이미 카드 전체가 앵커라서, 하단 `열기` 텍스트는 정보가 아니라 같은 행동 유도를 한 번 더 반복하고 있었다. 이번 조각의 목적은 클릭 구조는 그대로 두고, 중복 라벨만 걷어 카드 정보를 더 짧고 명확하게 만드는 것이다.
+- 변경 파일:
+  - `demo-lite/src/app.js`
+  - `demo-lite/src/style.css`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 요청 흐름은 바뀌지 않는다. 사용자가 home에서 카드를 누르면 여전히 같은 `href="#/..."` 앵커로 route가 열린다. 이번 조각은 하단 라벨만 제거한 것이므로 state, routing, localStorage 저장은 모두 그대로다.
+- 데이터 / 상태 변화:
+  - home route card markup에서 `demo-card-link` 하단 `열기` 텍스트를 제거했다.
+  - [style.css](/Users/alex/project/worldmap/demo-lite/src/style.css)의 `demo-card-link` dead selector도 같이 제거했다.
+- 핵심 도메인 개념:
+  - `single click affordance`: 카드 전체가 이미 클릭 가능한 surface라면 같은 행동을 설명하는 텍스트를 한 번 더 붙이지 않는 편이 더 직접적이라는 기준
+  - `remove dead style with markup`: 마크업을 줄일 때는 연결된 selector도 같이 지워야 CSS가 누적되지 않는다는 기준
+- 예외 / 엣지 케이스:
+  - 상단 `cardMeta`는 그대로 둔다. 이 라인은 행동 유도가 아니라 각 surface의 성격을 먼저 읽게 하는 정보 라벨이다.
+  - 블로그는 생략한다. 이번 조각은 버튼/링크 라벨 정리에 가까운 작은 UI 정리라 worklog와 playbook 갱신으로 충분하다.
+- 테스트:
+  - `cd demo-lite && npm run build`
+  - `git diff --check`
+- 배운 점: 클릭 가능성을 더 명확히 하려면 항상 라벨을 더 붙이는 게 답은 아니다. 이미 충분히 큰 클릭 surface가 있을 때는 오히려 중복 라벨을 제거하는 편이 정보 밀도가 좋아진다.
+- 아직 약한 부분: 현재 home route card는 정보량이 꽤 잘 정리됐지만, 나중에 icon이나 micro-motion을 더 넣고 싶어질 수 있다. 다만 지금 단계에서는 텍스트를 더하는 것보다 줄이는 편이 우선이다.
+- 면접용 30초 요약: demo-lite 홈 카드들은 이미 카드 전체를 누르면 이동하는 구조였는데, 아래 `열기` 텍스트가 같은 뜻을 한 번 더 반복하고 있었습니다. 그래서 이번에는 route 이동 방식은 그대로 두고 하단 라벨과 관련 CSS만 제거해 카드 정보를 더 짧고 명확하게 정리했습니다.
+
+## 2026-04-10 - demo-lite feature route hero 블루 톤 통일
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: home `demo-hero`만 blue family로 바뀐 뒤에도, 실제 각 게임과 추천 화면의 `demo-route-hero`는 여전히 near-black base를 유지하고 있었다. 이번 조각의 목적은 `capital / flag / population / battle / recommendation`이 공통으로 쓰는 route hero와 status glass를 모두 home hero와 같은 blue family로 맞춰, 화면 전환 시 다시 검게 떨어지는 느낌을 없애는 것이다.
+- 변경 파일:
+  - `demo-lite/src/style.css`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+- 요청 흐름 / 데이터 흐름: 요청 흐름은 그대로다. 각 feature route는 여전히 `hash route -> feature renderer -> demo-route-hero markup` 순서로 렌더된다. 이번 조각은 공통 CSS class를 조정한 것이므로, 수도/국기/인구수/배틀/추천의 시작 hero와 결과 hero가 모두 같은 구조 위에서 색만 바뀐다. 상태 전이, 문제 선택, 추천 계산, localStorage 저장은 전혀 건드리지 않는다.
+- 데이터 / 상태 변화:
+  - `demo-route-hero` 배경은 near-black gradient에서 blue gradient base로 바뀌고, 하단 highlight line도 같이 추가됐다.
+  - `demo-route-hero .demo-chip`, `.demo-ghost`, `.demo-note`, `.demo-route-meta p`도 home hero와 비슷한 blue glass 대비로 내려왔다.
+  - `demo-status-card`는 어두운 반투명 박스 대신 pale blue glass로 바뀌고, 각 `data-tone` border도 모두 blue family 안으로 다시 정리됐다.
+  - `capital / flag / population / battle / recommendation`의 tone 차이는 남기되, orange/green처럼 다른 family로 튀던 glow는 blue 계열 안에서만 변주하도록 바꿨다.
+- 핵심 도메인 개념:
+  - `shared route shell`: 여러 게임이 같은 `demo-route-hero` 클래스를 공유할 때는 한쪽만 수정하면 안 되고, 공통 shell 기준으로 한 번에 맞춰야 일관성이 생긴다는 기준
+  - `same-family variation`: mode별 차이는 glow와 gradient 변수로 남기되, 전체 제품 톤은 같은 색 family 안에서 유지하는 기준
+- 예외 / 엣지 케이스:
+  - 이번 조각은 feature route hero와 status strip만 조정한다. 그 아래 일반 panel, 문제 카드, 결과 card까지 모두 다시 손보지는 않는다.
+  - 블로그는 생략한다. 이번 변경은 기능/도메인 추가가 아니라 공통 visual shell의 후속 정리라 worklog와 playbook 갱신으로 충분하다.
+- 테스트:
+  - `cd demo-lite && npm run build`
+  - `git diff --check`
+- 배운 점: 홈만 예뻐지고 feature 화면이 예전 톤으로 남아 있으면 사용자는 제품이 아니라 페이지 모음처럼 느낀다. 이런 경우에는 파일별로 하나씩 고치기보다, 실제로 공유되는 공통 클래스가 무엇인지 먼저 찾아 한 번에 옮기는 편이 맞다.
+- 아직 약한 부분: 지금은 route hero와 status strip까지는 같은 family로 맞췄지만, 각 게임 내부 문제 panel과 option card는 여전히 상대적으로 중립적인 톤이다. 필요하면 다음 조각에서 route별 내부 panel까지 같은 원칙으로 더 묶을 수 있다.
+- 면접용 30초 요약: 홈 hero만 파랗게 바뀐 상태에서는 각 게임 화면에 들어가면 다시 검은 hero가 나와 톤이 끊겼습니다. 그래서 이번에는 수도, 국기, 인구수, 배틀, 추천이 공통으로 쓰는 `demo-route-hero`와 `demo-status-card` 클래스를 찾아 blue gradient와 blue glass 기준으로 다시 맞췄습니다. 덕분에 홈에서 게임 화면으로 넘어가도 같은 제품 안에 있는 느낌이 더 자연스럽게 유지됩니다.

@@ -46,7 +46,6 @@ function renderHome(activitySummary) {
           </div>
           <h2>${route.title}</h2>
           <p>${route.summary}</p>
-          <span class="demo-card-link">열기</span>
         </a>
       `
     )
