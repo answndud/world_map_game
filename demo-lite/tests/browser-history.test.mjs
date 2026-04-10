@@ -23,6 +23,7 @@ test("recordDemoLiteGameRun prepends recent game entries and readDemoLiteActivit
   const storage = createMemoryStorage({
     "worldmap-demo-lite:capital-best-score": "480",
     "worldmap-demo-lite:flag-best-score": "360",
+    "worldmap-demo-lite:population-best-score": "620",
     "worldmap-demo-lite:population-battle-best-score": "540"
   });
 
@@ -54,11 +55,12 @@ test("recordDemoLiteGameRun prepends recent game entries and readDemoLiteActivit
 
   assert.equal(summary.totalTrackedEntries, 2);
   assert.equal(summary.activeModeCount, 2);
-  assert.equal(summary.highestScore, 540);
+  assert.equal(summary.highestScore, 620);
   assert.equal(summary.recentEntries[0].mode, "flag");
   assert.equal(summary.recentEntries[1].mode, "capital");
   assert.equal(summary.modeSnapshots.find((snapshot) => snapshot.mode === "capital").primary, "480점");
   assert.equal(summary.modeSnapshots.find((snapshot) => snapshot.mode === "flag").primary, "360점");
+  assert.equal(summary.modeSnapshots.find((snapshot) => snapshot.mode === "population").primary, "620점");
 });
 
 test("recommendation entries expose latest top1 in activity summary", () => {

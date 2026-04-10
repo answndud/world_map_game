@@ -1,12 +1,14 @@
 const HISTORY_STORAGE_KEY = "worldmap-demo-lite:recent-history";
 const CAPITAL_BEST_SCORE_KEY = "worldmap-demo-lite:capital-best-score";
 const FLAG_BEST_SCORE_KEY = "worldmap-demo-lite:flag-best-score";
+const POPULATION_BEST_SCORE_KEY = "worldmap-demo-lite:population-best-score";
 const POPULATION_BATTLE_BEST_SCORE_KEY = "worldmap-demo-lite:population-battle-best-score";
 const MAX_RECENT_ENTRIES = 8;
 
 const MODE_META = {
   capital: { label: "수도", title: "수도 퀴즈" },
   flag: { label: "국기", title: "국기 퀴즈" },
+  population: { label: "인구수", title: "인구수 퀴즈" },
   "population-battle": { label: "배틀", title: "인구 비교 배틀" },
   recommendation: { label: "추천", title: "국가 추천" }
 };
@@ -14,6 +16,7 @@ const MODE_META = {
 const SCORE_KEYS = {
   capital: CAPITAL_BEST_SCORE_KEY,
   flag: FLAG_BEST_SCORE_KEY,
+  population: POPULATION_BEST_SCORE_KEY,
   "population-battle": POPULATION_BATTLE_BEST_SCORE_KEY
 };
 
@@ -251,6 +254,7 @@ export function readDemoLiteActivitySummary(options = {}) {
   const highestScore = Math.max(
     safeReadNumber(storage, CAPITAL_BEST_SCORE_KEY),
     safeReadNumber(storage, FLAG_BEST_SCORE_KEY),
+    safeReadNumber(storage, POPULATION_BEST_SCORE_KEY),
     safeReadNumber(storage, POPULATION_BATTLE_BEST_SCORE_KEY)
   );
   const recentModes = new Set(recentEntries.map((entry) => entry.mode));
@@ -267,6 +271,7 @@ export function readDemoLiteActivitySummary(options = {}) {
     modeSnapshots: [
       buildModeSnapshot("capital", recentEntries, storage),
       buildModeSnapshot("flag", recentEntries, storage),
+      buildModeSnapshot("population", recentEntries, storage),
       buildModeSnapshot("population-battle", recentEntries, storage),
       buildModeSnapshot("recommendation", recentEntries, storage)
     ]

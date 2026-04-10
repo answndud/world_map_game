@@ -62,40 +62,39 @@
 
 ### 남길 화면
 
-`demo-lite v1`에서 남길 화면은 아래다.
+현재 `demo-lite`에서 남길 화면은 아래다.
 
-1. `/`
+1. `#/`
    - 홈
    - 게임 선택과 제품 소개의 최소 shell
-2. `/games/capital/start`
+2. `#/games/capital`
    - 수도 맞히기
-3. `/games/flag/start`
+3. `#/games/flag`
    - 국기 보고 나라 맞히기
-4. `/games/population-battle/start`
+4. `#/games/population`
+   - 국가 인구수 맞추기
+5. `#/games/population-battle`
    - 인구 비교 퀵 배틀
-5. `/recommendation/survey`
-   - 설문 입력
-6. `/recommendation/result`
-   - 추천 결과 표시
+6. `#/recommendation`
+   - 설문 입력과 추천 결과 표시
 
 ### 남기지 않을 화면
 
-아래는 `demo-lite v1`에서 제외한다.
+아래는 현재 `demo-lite`에서 제외한다.
 
 1. `/games/location/**`
-2. `/games/population/**`
-3. `/ranking`
-4. `/stats`
-5. `/signup`, `/login`, `/logout`
-6. `/mypage`
-7. `/dashboard/**`
-8. `/api/recommendation/feedback`
+2. `/ranking`
+3. `/stats`
+4. `/signup`, `/login`, `/logout`
+5. `/mypage`
+6. `/dashboard/**`
+7. `/api/recommendation/feedback`
 
 ## 왜 이 범위인가
 
-### 1. 수도 / 국기 / 인구 배틀은 free-demo에 맞다
+### 1. 수도 / 국기 / 인구수 / 인구 배틀은 free-demo에 맞다
 
-이 세 게임은 아래 이유로 `demo-lite`에 잘 맞는다.
+이 네 게임은 아래 이유로 `demo-lite`에 잘 맞는다.
 
 - 문제/보기 구조가 단순하다
 - 정적 국가 데이터로 충분히 설명할 수 있다
@@ -132,14 +131,15 @@
 
 즉 위치 게임은 "보여 주면 좋다"보다 "무료 demo-lite를 빠르고 안정적으로 닫는가" 관점에서 후순위다.
 
-### 4. 인구수 4지선다도 v1에서는 뺀다
+### 4. 인구수 4지선다는 shared country data만으로 안전하게 추가할 수 있다
 
-인구수 맞추기는 구조상 옮길 수는 있지만, `capital / flag / population-battle`보다 free demo에서 덜 차별적이다.
+인구수 맞추기는 `countries.json`만으로 구간형 보기 4개를 만들 수 있고, 현재 `capital / flag / population-battle` local-state loop와 같은 패턴으로 닫을 수 있다.
 
-즉 `demo-lite v1`은 아래 세 가지를 보여 주는 편이 낫다.
+즉 현재 `demo-lite`는 아래 네 가지 플레이 감각을 함께 보여 준다.
 
 - 텍스트 퀴즈
 - 이미지 퀴즈
+- 구간 추정 퀴즈
 - 비교형 퀴즈
 
 ## demo-lite에서 유지할 제품 메시지
@@ -199,8 +199,8 @@
 아래를 만족하면 `demo-lite v1` 범위가 닫힌다.
 
 1. 무료 플랜에서 공개 URL이 뜬다.
-2. 홈에서 대표 게임 3종과 추천 설문으로 바로 진입할 수 있다.
-3. 수도/국기/인구 배틀이 DB 없이 한 판 끝까지 동작한다.
+2. 홈에서 대표 게임 4종과 추천 설문으로 바로 진입할 수 있다.
+3. 수도/국기/인구수/인구 배틀이 DB 없이 한 판 끝까지 동작한다.
 4. 추천 설문이 저장 없이 결과 3개를 보여 준다.
 5. 로그인, 랭킹, 통계, 운영 화면이 없어도 제품 설명이 어색하지 않다.
 
@@ -211,24 +211,28 @@
 - [demo-lite](/Users/alex/project/worldmap/demo-lite) 디렉터리 생성
 - [package.json](/Users/alex/project/worldmap/demo-lite/package.json), [vite.config.mjs](/Users/alex/project/worldmap/demo-lite/vite.config.mjs) 추가
 - [index.html](/Users/alex/project/worldmap/demo-lite/index.html), [main.js](/Users/alex/project/worldmap/demo-lite/src/main.js), [app.js](/Users/alex/project/worldmap/demo-lite/src/app.js), [routes.js](/Users/alex/project/worldmap/demo-lite/src/routes.js), [style.css](/Users/alex/project/worldmap/demo-lite/src/style.css)로 별도 app shell 생성
-- `#/`, `#/games/capital`, `#/games/flag`, `#/games/population-battle`, `#/recommendation` retained route map 고정
+- `#/`, `#/games/capital`, `#/games/flag`, `#/games/population`, `#/games/population-battle`, `#/recommendation` retained route map 고정
 - [sync-shared-assets.mjs](/Users/alex/project/worldmap/demo-lite/scripts/sync-shared-assets.mjs)와 [shared-data.js](/Users/alex/project/worldmap/demo-lite/src/lib/shared-data.js)로 메인 저장소의 `countries.json`, `flag-assets.json`, `flags/*`를 `public/generated/`로 복사하고 fetch하는 계약 추가
 - [README.md](/Users/alex/project/worldmap/demo-lite/README.md)로 별도 실행 명령 분리
 
 즉 첫 구현 조각의 목적은 실제 게임 이식이 아니라, **free-tier 공개용 sibling 앱의 entrypoint와 navigation을 먼저 고정하는 것**이다.
 
-후속 실제 구현으로는 아래 세 retained game과 20문항 recommendation loop가 먼저 열려 있다.
+후속 실제 구현으로는 아래 네 retained game과 20문항 recommendation loop가 먼저 열려 있다.
 
 - [capital-game.js](/Users/alex/project/worldmap/demo-lite/src/features/capital-game.js)
   - `수도 맞히기 5문제 러닝 + 3 lives + 같은 문제 재시도 + localStorage best score`
 - [flag-game.js](/Users/alex/project/worldmap/demo-lite/src/features/flag-game.js)
   - `국기 퀴즈 5문제 러닝 + same-continent 우선 distractor + 같은 문제 재시도 + localStorage best score`
+- [population-game.js](/Users/alex/project/worldmap/demo-lite/src/features/population-game.js)
+  - `인구 규모 구간 4선다 + 5문제 러닝 + 같은 문제 재시도 + localStorage best score`
 - [population-battle-game.js](/Users/alex/project/worldmap/demo-lite/src/features/population-battle-game.js)
   - `인구 순위 gap 기반 2-choice 배틀 + 5 Stage 구간 + 같은 문제 재시도 + localStorage best score`
 - [recommendation.js](/Users/alex/project/worldmap/demo-lite/src/features/recommendation.js)
-  - `20문항 설문 + 30국가 deterministic top 3 + feedback 저장 제거`
+  - `survey-v4 / engine-v20 + 20문항 설문 + 30국가 deterministic top 3 + feedback 저장 제거`
+- [recommendation.test.mjs](/Users/alex/project/worldmap/demo-lite/tests/recommendation.test.mjs)
+  - `메인 anchor scenario(USA / CAN / MYS / NZL) top1을 browser-side test로 고정`
 
-즉 현재 `demo-lite v1`은 retained route shell만 있는 상태가 아니라, retained game 3종과 20문항 recommendation surface까지 브라우저 메모리 상태만으로 끝까지 체험할 수 있다.
+즉 현재 `demo-lite v1`은 retained route shell만 있는 상태가 아니라, retained game 4종과 20문항 recommendation surface까지 브라우저 메모리 상태만으로 끝까지 체험할 수 있다.
 
 후속 마감 조각으로는 [browser-history.js](/Users/alex/project/worldmap/demo-lite/src/lib/browser-history.js)를 추가해,
 
@@ -255,7 +259,7 @@
 `demo-lite v1`을 닫은 뒤에만 아래를 검토한다.
 
 1. 위치 게임 추가
-2. 인구수 4지선다 추가
+2. 추천 결과 설명 카드 / 공유 copy polish
 3. localStorage 기반 "내 브라우저 최고 점수"
 4. full version 비교 소개 섹션 추가
 

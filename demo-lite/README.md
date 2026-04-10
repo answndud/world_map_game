@@ -9,8 +9,9 @@
 - 메인 저장소 정적 데이터/국기 자산을 `public/generated`로 복사해 읽는 shared data adapter
 - `#/games/capital` local-state 수도 맞히기 한 판
 - `#/games/flag` local-state 국기 퀴즈 한 판
+- `#/games/population` local-state 인구수 퀴즈 한 판
 - `#/games/population-battle` local-state 인구 비교 배틀 한 판
-- `#/recommendation` 20문항 local-state 추천 결과 loop
+- `#/recommendation` `survey-v4 / engine-v20` 20문항 local-state 추천 결과 loop
 - `#/` home에서 browser recent play / cross-mode summary
 - `#/` home에서 recent streak / copyable one-line summary
 
@@ -26,10 +27,9 @@
 - 이전 `worldmap-demo-lite` 프로젝트는 direct-upload legacy 경로로만 남겨 두고, 운영 기준으로는 보지 않습니다.
 - 저장소 쪽 배포 준비와 검증은 [demo-lite-verify.yml](/Users/alex/project/worldmap/.github/workflows/demo-lite-verify.yml)에서 닫습니다.
 
-아직 없는 것:
+의도적으로 없는 것:
 
 - feedback 저장과 ops review
-- `engine-v20` combo bonus 100% parity
 
 ## 실행
 
@@ -121,6 +121,7 @@ GitHub Actions 기준으로도 아래가 준비돼 있습니다.
 - `#/`
 - `#/games/capital`
 - `#/games/flag`
+- `#/games/population`
 - `#/games/population-battle`
 - `#/recommendation`
 
@@ -128,6 +129,7 @@ GitHub Actions 기준으로도 아래가 준비돼 있습니다.
 
 - `#/games/capital`
 - `#/games/flag`
+- `#/games/population`
 - `#/games/population-battle`
 - `#/recommendation`
 

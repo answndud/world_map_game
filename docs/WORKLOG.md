@@ -7940,3 +7940,77 @@
 - 아직 약한 부분: `.gradle`과 `demo-lite/node_modules`는 용량을 많이 차지하지만, 이번 기준에서는 로컬 개발 편의를 위해 남겨 두었다. 나중에 완전한 출하 전 청소가 필요하면 별도 명령이나 스크립트로 선택 삭제하는 편이 맞다.
 - 면접용 30초 요약: README 캡처만이 아니라 저장소 전체를 다시 보고, 프로젝트 동작에 영향 없는 생성 산출물과 잡파일만 골라 지웠습니다. `build/`, `demo-lite/dist/`, 테스트 결과, 빈 배포 캐시, 기본 `HELP.md`를 정리해서 저장소 루트 기준 약 14MB를 줄였고, 대신 `node_modules`, `.gradle`, `.env.local`, shared generated 자산처럼 개발 흐름에 바로 영향을 줄 수 있는 건 남겨 두는 보수적 기준을 유지했습니다.
 - 블로그 생략 이유: 이번 조각은 API, 도메인, 게임 루프, 테스트 전략 변경이 아니라 저장소 위생 정리와 생성 산출물 삭제가 중심이라 worklog와 playbook 기록으로 충분하다.
+
+## 2026-04-10 - demo-lite에 인구수 퀴즈 route 추가
+
+- 단계: 10. 포트폴리오 정리와 발표 준비
+- 목적: `demo-lite`는 Cloudflare Pages 정적 배포를 유지하면서도 아직 `텍스트 / 이미지 / 비교형` 세 축만 보여 주고 있었다. 이번 조각의 목적은 Pages 설정을 건드리지 않고 `인구수 4지선다`를 같은 local-state 패턴으로 추가해, demo-lite가 `구간 추정형` 게임까지 보여 주는 공개 체험판이 되게 만드는 것이다.
+- 변경 파일:
+  - `demo-lite/src/features/population-game.js`
+  - `demo-lite/src/app.js`
+  - `demo-lite/src/routes.js`
+  - `demo-lite/src/lib/browser-history.js`
+  - `demo-lite/src/style.css`
+  - `demo-lite/tests/population-game.test.mjs`
+  - `demo-lite/tests/browser-history.test.mjs`
+  - `demo-lite/README.md`
+  - `README.md`
+  - `docs/DEMO_LITE_SCOPE_PLAN.md`
+  - `docs/DEMO_LITE_DECOMPOSITION_PLAN.md`
+  - `docs/WORKLOG.md`
+  - `blog/118-add-demo-lite-population-quiz-with-local-state-loop.md`
+- 요청 흐름 / 데이터 흐름: 요청은 여전히 Cloudflare Pages 정적 앱의 `hash route -> app.js -> feature mount` 흐름이다. 이번에는 `#/games/population` route가 [population-game.js](/Users/alex/project/worldmap/demo-lite/src/features/population-game.js)를 mount하고, shared `countries.json`에서 `nameKr / population / populationYear`를 읽어 `population scale band 4-choice` 문제를 브라우저 메모리 상태로 만든다. 정답/오답 판정, 점수 누적, 재시도, 결과 화면까지 모두 클라이언트 안에서 닫히고, 종료 뒤에는 기존 [browser-history.js](/Users/alex/project/worldmap/demo-lite/src/lib/browser-history.js)에 mode별 기록만 남긴다.
+- 데이터 / 상태 변화:
+  - 새 retained route `#/games/population`이 추가됐다.
+  - `population-best-score` localStorage key와 `population` mode meta가 activity summary에 추가됐다.
+  - 인구수 퀴즈는 `5 rounds + 3 lives + same-stage retry + localStorage best score` 루프로 동작한다.
+  - 보기 생성은 main 앱과 같은 `연속된 4개 인구 규모 band` 규칙을 따르며, 실제 인구수는 결과 요약과 정답 feedback에서만 다시 본다.
+  - Cloudflare Pages 설정, hash routing, generated asset fetch 계약, static headers는 바뀌지 않았다.
+- 핵심 도메인 개념:
+  - `static-host-safe feature expansion`: DB/Functions 없이도 shared JSON만으로 새 게임 모드를 늘리는 방식
+  - `copy-and-simplify loop reuse`: main의 인구수 구간 규칙 아이디어를 가져오되, Spring service가 아니라 별도 lightweight runtime으로 다시 닫는 방식
+- 예외 / 엣지 케이스:
+  - 이번 조각은 main 앱의 endless session/stage/attempt persistence를 재현하지 않는다. demo-lite에서는 여전히 5문제 러닝과 browser-local best score까지만 남긴다.
+  - recommendation parity와 combo bonus는 아직 그대로다. 이번 범위는 새 retained game 추가에 집중했다.
+  - history는 새 mode를 읽을 수 있게만 확장했고, 별도 브라우저 전적 기능 자체는 추가하지 않았다.
+- 테스트:
+  - `cd demo-lite && npm test`
+  - `cd demo-lite && npm run build`
+  - `cd demo-lite && npm run verify:pages`
+- 배운 점: `demo-lite`는 배포 설정을 바꾸지 않아도, shared country data와 local-state loop 패턴만 잘 재사용하면 생각보다 안전하게 새 게임을 늘릴 수 있다. 핵심은 main의 service를 억지로 끌어오는 게 아니라, 규칙 아이디어만 가져와 별도 lightweight runtime으로 닫는 것이다.
+- 아직 약한 부분: 인구수 퀴즈는 현재 `combo bonus`나 recommendation parity 같은 다음 조각과는 분리돼 있다. 또 location game처럼 WebGL이나 공용 랭킹이 필요한 surface는 여전히 같은 방식으로 쉽게 늘리기 어렵다.
+- 면접용 30초 요약: `demo-lite`는 Cloudflare Pages 정적 배포를 유지해야 했기 때문에, backend 없이 shared JSON만으로 늘릴 수 있는 새 게임이 필요했습니다. 그래서 main 앱의 인구수 구간 문제 아이디어를 가져오되 Spring service를 재사용하지 않고, `5문제 + 3하트 + 같은 문제 재시도 + localStorage 최고 점수` local-state 루프로 다시 만들었습니다. 이로써 demo-lite는 텍스트/이미지/비교형에 더해 구간 추정형 퀴즈까지 보여 주는 공개 체험판이 됐습니다.
+
+## 2026-04-10 - demo-lite recommendation engine-v20 정합성 테스트 고정
+
+- 단계: 6. 설문 기반 추천 엔진
+- 목적: `demo-lite` recommendation은 이미 20문항·30국가 구조까지 왔지만, 문서에는 아직 `engine-v20 parity 미완료`처럼 읽히는 표현이 남아 있었다. 이번 조각의 목적은 추천 계산식을 더 키우는 것이 아니라, 현재 브라우저 포트가 메인 `survey-v4 / engine-v20`와 어디까지 같은지 버전 상수와 anchor test로 명확히 고정하는 것이다.
+- 변경 파일:
+  - `demo-lite/src/features/recommendation.js`
+  - `demo-lite/tests/recommendation.test.mjs`
+  - `demo-lite/README.md`
+  - `docs/DEMO_LITE_SCOPE_PLAN.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/119-lock-demo-lite-recommendation-engine-v20-parity.md`
+- 요청 흐름 / 데이터 흐름: 추천 요청은 여전히 정적 `hash route -> app.js -> recommendation.js` 흐름에서 시작된다. 사용자가 `#/recommendation`에서 20문항을 제출하면 [recommendation.js](/Users/alex/project/worldmap/demo-lite/src/features/recommendation.js)가 브라우저 안에서 상위 3개 국가를 계산하고, 종료 뒤에는 [browser-history.js](/Users/alex/project/worldmap/demo-lite/src/lib/browser-history.js)가 최근 top1만 localStorage에 남긴다. 이번 조각은 이 runtime 흐름 자체를 바꾸지 않고, `survey-v4 / engine-v20` 버전 상수와 메인 anchor scenario top1 테스트를 추가해 결과 해석 기준만 더 단단히 고정했다.
+- 데이터 / 상태 변화:
+  - `demo-lite` recommendation runtime이 `survey-v4`, `engine-v20`을 명시적 상수로 export한다.
+  - Node 테스트가 메인 anchor scenario 4개를 그대로 사용해 `USA / CAN / MYS / NZL` 1위를 고정한다.
+  - README와 scope plan에서 더 이상 `engine-v20 parity가 아직 안 됐다`는 현재형 설명을 하지 않는다.
+  - feedback 저장, ops review, 서버 persistence가 여전히 빠져 있다는 점은 의도적 제외 범위로 남긴다.
+- 핵심 도메인 개념:
+  - `versioned browser port`: 로컬 추천 함수도 메인 엔진과 같은 버전 라벨을 가져야 설명 책임이 선명해진다는 기준
+  - `anchor scenario lock`: 점수식을 길게 비교하기보다 대표 생활 성향 시나리오의 1위 국가를 고정해 정합성을 증명하는 방식
+- 예외 / 엣지 케이스:
+  - 이번 조각은 demo-lite가 feedback persistence나 운영 tuning loop까지 메인과 완전히 같다고 주장하지 않는다.
+  - 현재 정합성은 `메인 시나리오 몇 개가 같은 1위를 내는가`를 기준으로 잠근 것이고, 전체 운영 baseline 18개나 admin 화면까지 브라우저에 가져오지는 않는다.
+  - 즉 `engine-v20 runtime parity`와 `ops loop parity`는 계속 구분해서 설명해야 한다.
+- 테스트:
+  - `cd demo-lite && npm test`
+  - `cd demo-lite && npm run build`
+  - `cd demo-lite && npm run verify:pages`
+  - `git diff --check`
+- 배운 점: demo-lite recommendation에서 중요한 건 무조건 더 많은 UI나 저장 기능을 붙이는 게 아니라, `지금 이 계산이 메인과 얼마나 같은가`를 버전과 대표 시나리오로 말할 수 있게 만드는 것이다. 버전 상수와 anchor test만 있어도 브라우저 포트의 설명 가능성이 크게 올라간다.
+- 아직 약한 부분: demo-lite recommendation은 여전히 browser-only runtime이라, 운영 feedback 수집과 baseline drift 점검은 메인 앱 문맥에서만 닫힌다. 다음 후보는 추천 결과 설명 카드나 공유 copy를 다듬는 쪽이지, 같은 범위의 parity 주장 문구를 더 늘리는 쪽은 아니다.
+- 면접용 30초 요약: demo-lite 추천은 이미 메인 설문 구조를 많이 가져왔지만, 어디까지 같은지 말하는 기준이 약했습니다. 그래서 이번에는 계산식을 더 키우지 않고 `survey-v4 / engine-v20` 버전 상수를 코드에 박고, 메인 recommendation anchor 시나리오 4개를 브라우저 Node 테스트로 그대로 옮겨 `미국 / 캐나다 / 말레이시아 / 뉴질랜드` 1위를 고정했습니다. 덕분에 demo-lite 추천은 “비슷하다”가 아니라 “현재 메인 엔진과 이 시나리오까지는 같다”로 설명할 수 있게 됐습니다.

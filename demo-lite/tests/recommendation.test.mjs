@@ -3,8 +3,10 @@ import assert from "node:assert/strict";
 
 import {
   calculateRecommendationResult,
+  DEMO_LITE_RECOMMENDATION_ENGINE_VERSION,
   DEMO_LITE_RECOMMENDATION_PROFILE_COUNT,
-  DEMO_LITE_RECOMMENDATION_QUESTION_COUNT
+  DEMO_LITE_RECOMMENDATION_QUESTION_COUNT,
+  DEMO_LITE_RECOMMENDATION_SURVEY_VERSION
 } from "../src/features/recommendation.js";
 
 function fixtureCountry(iso3Code, nameKr, nameEn, continent, capitalCityKr, population) {
@@ -45,6 +47,8 @@ const FIXTURE_COUNTRIES = [
 ];
 
 test("demo-lite recommendation keeps 20 questions and 30 country profiles", () => {
+  assert.equal(DEMO_LITE_RECOMMENDATION_SURVEY_VERSION, "survey-v4");
+  assert.equal(DEMO_LITE_RECOMMENDATION_ENGINE_VERSION, "engine-v20");
   assert.equal(DEMO_LITE_RECOMMENDATION_QUESTION_COUNT, 20);
   assert.equal(DEMO_LITE_RECOMMENDATION_PROFILE_COUNT, 30);
 });
@@ -163,4 +167,112 @@ test("warm affordable foodie answers rank malaysia first", () => {
 
   assert.equal(result.recommendations[0].iso3Code, "MYS");
   assert.ok(result.recommendations.slice(0, 3).some((candidate) => candidate.iso3Code === "THA"));
+});
+
+test("temperate high english global city answers rank united states first", () => {
+  const result = calculateRecommendationResult(FIXTURE_COUNTRIES, {
+    climatePreference: "MILD",
+    seasonStylePreference: "STABLE",
+    seasonTolerance: "LOW",
+    pacePreference: "FAST",
+    crowdPreference: "LIVELY",
+    costQualityPreference: "QUALITY_FIRST",
+    housingPreference: "BALANCED",
+    environmentPreference: "CITY",
+    mobilityPreference: "BALANCED",
+    englishSupportNeed: "HIGH",
+    newcomerSupportNeed: "HIGH",
+    safetyPriority: "LOW",
+    publicServicePriority: "LOW",
+    digitalConveniencePriority: "HIGH",
+    foodImportance: "LOW",
+    diversityImportance: "HIGH",
+    cultureLeisureImportance: "HIGH",
+    workLifePreference: "DRIVE_FIRST",
+    settlementPreference: "BALANCED",
+    futureBasePreference: "BALANCED"
+  });
+
+  assert.equal(result.recommendations[0].iso3Code, "USA");
+});
+
+test("temperate family bridge answers rank canada first", () => {
+  const result = calculateRecommendationResult(FIXTURE_COUNTRIES, {
+    climatePreference: "MILD",
+    seasonStylePreference: "BALANCED",
+    seasonTolerance: "LOW",
+    pacePreference: "BALANCED",
+    crowdPreference: "BALANCED",
+    costQualityPreference: "QUALITY_FIRST",
+    housingPreference: "BALANCED",
+    environmentPreference: "MIXED",
+    mobilityPreference: "BALANCED",
+    englishSupportNeed: "HIGH",
+    newcomerSupportNeed: "HIGH",
+    safetyPriority: "HIGH",
+    publicServicePriority: "MEDIUM",
+    digitalConveniencePriority: "MEDIUM",
+    foodImportance: "LOW",
+    diversityImportance: "LOW",
+    cultureLeisureImportance: "MEDIUM",
+    workLifePreference: "BALANCED",
+    settlementPreference: "BALANCED",
+    futureBasePreference: "BALANCED"
+  });
+
+  assert.equal(result.recommendations[0].iso3Code, "CAN");
+});
+
+test("warm value balanced public answers rank malaysia first", () => {
+  const result = calculateRecommendationResult(FIXTURE_COUNTRIES, {
+    climatePreference: "WARM",
+    seasonStylePreference: "STABLE",
+    seasonTolerance: "MEDIUM",
+    pacePreference: "BALANCED",
+    crowdPreference: "BALANCED",
+    costQualityPreference: "VALUE_FIRST",
+    housingPreference: "BALANCED",
+    environmentPreference: "MIXED",
+    mobilityPreference: "BALANCED",
+    englishSupportNeed: "MEDIUM",
+    newcomerSupportNeed: "MEDIUM",
+    safetyPriority: "MEDIUM",
+    publicServicePriority: "HIGH",
+    digitalConveniencePriority: "MEDIUM",
+    foodImportance: "MEDIUM",
+    diversityImportance: "MEDIUM",
+    cultureLeisureImportance: "MEDIUM",
+    workLifePreference: "BALANCED",
+    settlementPreference: "BALANCED",
+    futureBasePreference: "BALANCED"
+  });
+
+  assert.equal(result.recommendations[0].iso3Code, "MYS");
+});
+
+test("exploratory nature runway answers rank new zealand first", () => {
+  const result = calculateRecommendationResult(FIXTURE_COUNTRIES, {
+    climatePreference: "MILD",
+    seasonStylePreference: "BALANCED",
+    seasonTolerance: "MEDIUM",
+    pacePreference: "RELAXED",
+    crowdPreference: "CALM",
+    costQualityPreference: "VALUE_FIRST",
+    housingPreference: "SPACE_FIRST",
+    environmentPreference: "NATURE",
+    mobilityPreference: "TRANSIT_FIRST",
+    englishSupportNeed: "MEDIUM",
+    newcomerSupportNeed: "LOW",
+    safetyPriority: "HIGH",
+    publicServicePriority: "MEDIUM",
+    digitalConveniencePriority: "LOW",
+    foodImportance: "LOW",
+    diversityImportance: "LOW",
+    cultureLeisureImportance: "LOW",
+    workLifePreference: "LIFE_FIRST",
+    settlementPreference: "EXPERIENCE",
+    futureBasePreference: "LIGHT_START"
+  });
+
+  assert.equal(result.recommendations[0].iso3Code, "NZL");
 });

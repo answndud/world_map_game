@@ -20,6 +20,13 @@ export const RETAINED_ROUTES = [
     summary: "국기만 보고 어느 나라인지 맞히는 퀴즈입니다."
   },
   {
+    path: "/games/population",
+    navLabel: "인구수",
+    title: "인구수 퀴즈",
+    kind: "feature",
+    summary: "나라의 인구 규모 구간을 맞히는 퀴즈입니다."
+  },
+  {
     path: "/games/population-battle",
     navLabel: "배틀",
     title: "인구 비교 배틀",

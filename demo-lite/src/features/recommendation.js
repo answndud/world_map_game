@@ -1,5 +1,8 @@
 import { recordDemoLiteRecommendationResult } from "../lib/browser-history.js";
 
+export const DEMO_LITE_RECOMMENDATION_SURVEY_VERSION = "survey-v4";
+export const DEMO_LITE_RECOMMENDATION_ENGINE_VERSION = "engine-v20";
+
 const CLIMATE_WEIGHT = 4;
 const SEASON_STYLE_WEIGHT = 3;
 const WEATHER_ADAPTATION_WEIGHT = 4;

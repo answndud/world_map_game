@@ -1,5 +1,6 @@
 import { mountCapitalGame, renderCapitalGamePage } from "./features/capital-game.js";
 import { mountFlagGame, renderFlagGamePage } from "./features/flag-game.js";
+import { mountPopulationGame, renderPopulationGamePage } from "./features/population-game.js";
 import { mountPopulationBattleGame, renderPopulationBattleGamePage } from "./features/population-battle-game.js";
 import { mountRecommendationDemo, renderRecommendationDemoPage } from "./features/recommendation.js";
 import { readDemoLiteActivitySummary } from "./lib/browser-history.js";
@@ -71,7 +72,7 @@ function renderHome(activitySummary) {
     <section class="demo-hero">
       <h1>World Map Game</h1>
       <p class="demo-copy">
-        수도 퀴즈, 국기 퀴즈, 인구 비교 배틀, 국가 추천을 바로 즐겨보세요.
+        수도 퀴즈, 국기 퀴즈, 인구수 퀴즈, 인구 비교 배틀, 국가 추천을 바로 즐겨보세요.
       </p>
     </section>
 
@@ -119,6 +120,10 @@ function renderFeature(route) {
     return renderFlagGamePage();
   }
 
+  if (route.path === "/games/population") {
+    return renderPopulationGamePage();
+  }
+
   if (route.path === "/games/population-battle") {
     return renderPopulationBattleGamePage();
   }
@@ -159,6 +164,11 @@ function mountRoute(route, root, catalog) {
   if (route.path === "/games/flag") {
     const target = root.querySelector("#demo-flag-root");
     return mountFlagGame(target, catalog.countries, catalog.flagAssets);
+  }
+
+  if (route.path === "/games/population") {
+    const target = root.querySelector("#demo-population-root");
+    return mountPopulationGame(target, catalog.countries);
   }
 
   if (route.path === "/games/population-battle") {
