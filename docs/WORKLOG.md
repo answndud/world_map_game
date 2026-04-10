@@ -8048,3 +8048,38 @@
 - 배운 점: recommendation 결과를 더 설득력 있게 보이게 하는 가장 싼 방법은 엔진을 더 복잡하게 만드는 게 아니라, 이미 계산된 결과를 사용자가 바로 말할 수 있는 문장으로 다시 정리하는 것이다. 특히 demo-lite처럼 persistence가 없는 앱에서는 결과 read model의 역할이 더 크다.
 - 아직 약한 부분: 지금 summary는 `왜 2위/3위가 밀렸는지`까지는 보여 주지 않는다. 다음 후보는 top 3 비교 기준 breakdown이나 질문 프리셋처럼, 결과 해석을 한 단계 더 도와주는 보조 카드다.
 - 면접용 30초 요약: demo-lite 추천은 top 3를 계산하는 데는 문제가 없었지만, 결과를 보고 바로 설명하거나 공유하기엔 아직 밋밋했습니다. 그래서 이번에는 엔진을 건드리지 않고 결과 객체에 `선호 키워드`, `top1 설명 문장`, `복사 가능한 한 줄 요약`을 추가했습니다. 덕분에 플레이어는 `왜 이 나라가 1위인지`를 더 빨리 읽을 수 있고, demo-lite 추천도 단순 카드 나열이 아니라 설명 가능한 결과 화면으로 말할 수 있게 됐습니다.
+
+## 2026-04-10 - demo-lite recommendation top3 비교 기준 카드 추가
+
+- 단계: 6. 설문 기반 추천 엔진
+- 목적: 결과 요약과 공유 문장을 추가한 뒤에도, top 3 국가를 같은 축으로 나란히 읽는 화면은 아직 없었다. 이번 조각의 목적은 추천 엔진을 다시 바꾸지 않고, `왜 1위가 앞서는지 / 2위와 3위는 어디가 다른지`를 같은 다섯 축으로 비교하는 breakdown 카드를 결과 화면에 붙이는 것이다.
+- 변경 파일:
+  - `demo-lite/src/features/recommendation.js`
+  - `demo-lite/src/style.css`
+  - `demo-lite/tests/recommendation.test.mjs`
+  - `demo-lite/README.md`
+  - `docs/DEMO_LITE_SCOPE_PLAN.md`
+  - `docs/PORTFOLIO_PLAYBOOK.md`
+  - `docs/WORKLOG.md`
+  - `blog/121-add-demo-lite-recommendation-breakdown-card.md`
+- 요청 흐름 / 데이터 흐름: 요청 시작은 그대로 `#/recommendation`이다. 사용자가 설문을 제출하면 [recommendation.js](/Users/alex/project/worldmap/demo-lite/src/features/recommendation.js)가 top 3와 summary를 만든 뒤, 같은 결과 객체 안에서 `comparison.rows`를 한 번 더 만든다. 이 rows는 `기후 감각 / 생활 환경 / 생활비 감각 / 초기 적응 / 정착 기반` 5축으로 고정되고, 각 축마다 `TOP1~TOP3` 국가의 짧은 descriptor를 같이 담는다. 결과 화면은 이 read model을 [style.css](/Users/alex/project/worldmap/demo-lite/src/style.css) 전용 카드로 렌더한다.
+- 데이터 / 상태 변화:
+  - 추천 결과 객체에 `comparison.rows`가 추가됐다.
+  - 각 row는 `title`, `selectedLabel`, `candidates[{rank,countryNameKr,value}]` 구조를 가진다.
+  - descriptor는 profile의 기존 numeric 속성에서 계산한 짧은 label일 뿐, 추천 순위 계산 자체는 바뀌지 않는다.
+  - localStorage recent top1 기록, share copy, Pages 배포 계약은 그대로다.
+- 핵심 도메인 개념:
+  - `comparison read model`: top 3 결과를 같은 축으로 다시 읽게 해 주는 설명 전용 모델
+  - `same-axis comparison`: 추천 순위와 별도로, 플레이어가 후보 간 차이를 같은 기준에서 읽어야 설명력이 올라간다는 기준
+- 예외 / 엣지 케이스:
+  - 이번 조각은 `왜 특정 bonus가 발동했는지`까지 raw score를 모두 공개하지 않는다. 데모 화면에서는 숫자 디버그 대신 짧은 descriptor만 보여 준다.
+  - 다섯 축은 current recommendation 설명에 맞춘 고정 세트라서, 모든 질문 20개를 하나하나 다시 풀어쓰지는 않는다.
+  - 비교 카드는 read model이기 때문에 추천 순위, top3 국가, share text와 어긋나면 안 되고, 그래서 테스트로 row 제목과 후보 수를 함께 고정했다.
+- 테스트:
+  - `cd demo-lite && npm test`
+  - `cd demo-lite && npm run build`
+  - `cd demo-lite && npm run verify:pages`
+  - `git diff --check`
+- 배운 점: 추천 결과를 더 설명 가능하게 만드는 데 꼭 raw score table이 필요한 건 아니다. 오히려 demo-lite처럼 정적 체험판에서는, 같은 다섯 축으로 top3를 다시 읽게 만드는 비교 카드가 더 짧고 이해하기 쉽다.
+- 아직 약한 부분: 지금도 비교 카드는 `왜 이 bonus가 붙었는지`보다 `후보 성향이 어떻게 다른지`에 집중한다. 다음 후보는 대표 페르소나 프리셋이나 quick-start처럼, 설문에 들어가기 전의 진입 비용을 낮추는 쪽이다.
+- 면접용 30초 요약: demo-lite 추천 결과는 1위 설명과 공유 문장까지는 정리됐지만, 2위와 3위를 같은 기준으로 비교해 읽는 화면은 없었습니다. 그래서 이번에는 엔진을 다시 손대지 않고 결과 객체에 `comparison.rows`를 추가해서, top3를 `기후 / 생활 환경 / 생활비 / 초기 적응 / 정착 기반` 다섯 축으로 나란히 보여 주게 했습니다. 덕분에 추천 결과는 단순 top3 카드가 아니라, 후보 간 차이를 같은 언어로 설명할 수 있는 비교 화면이 됐습니다.

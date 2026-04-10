@@ -87,6 +87,13 @@ test("calculateRecommendationResult returns top three candidates and submitted s
   assert.ok(result.summary.narrative.includes(result.recommendations[0].countryNameKr));
   assert.ok(result.summary.highlightLabels.length >= 3);
   assert.ok(result.summary.shareText.includes(`1위 ${result.recommendations[0].countryNameKr}`));
+  assert.equal(result.comparison.rows.length, 5);
+  assert.deepEqual(
+    result.comparison.rows.map((row) => row.title),
+    ["기후 감각", "생활 환경", "생활비 감각", "초기 적응", "정착 기반"]
+  );
+  assert.ok(result.comparison.rows.every((row) => row.candidates.length === 3));
+  assert.equal(result.comparison.rows[0].candidates[0].countryNameKr, result.recommendations[0].countryNameKr);
 });
 
 test("warm fast premium city-oriented answers rank singapore first", () => {
@@ -284,4 +291,11 @@ test("exploratory nature runway answers rank new zealand first", () => {
   assert.ok(result.summary.shareText.includes("1위 뉴질랜드"));
   assert.ok(result.summary.shareText.includes("2위"));
   assert.ok(result.summary.shareText.includes("3위"));
+  assert.ok(result.comparison.rows.some((row) => row.title === "생활비 감각"));
+  assert.ok(result.comparison.rows.some((row) => row.title === "정착 기반"));
+  assert.ok(
+    result.comparison.rows
+      .flatMap((row) => row.candidates)
+      .some((candidate) => candidate.countryNameKr === "뉴질랜드" && candidate.value === "기반 강함")
+  );
 });

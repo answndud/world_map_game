@@ -592,6 +592,101 @@ function buildRecommendationSummary(answers, recommendations) {
   };
 }
 
+function describeClimateTone(profile) {
+  if (profile.climateValue >= 4) {
+    return "따뜻한 편";
+  }
+  if (profile.climateValue <= 2) {
+    return "선선한 편";
+  }
+  return "온화한 편";
+}
+
+function describeEnvironmentTone(profile) {
+  if (profile.urbanityValue >= 4) {
+    return "도시 쪽";
+  }
+  if (profile.urbanityValue <= 2) {
+    return "자연 쪽";
+  }
+  return "균형형";
+}
+
+function describeCostTone(profile) {
+  if (profile.priceLevel <= 2) {
+    return "부담 낮음";
+  }
+  if (profile.priceLevel === 3) {
+    return "중간";
+  }
+  if (profile.priceLevel === 4) {
+    return "높은 편";
+  }
+  return "매우 높음";
+}
+
+function describeStartEase(profile) {
+  const easeScore = normalizedAverage(profile.englishSupport, profile.newcomerFriendliness, profile.digitalConvenience);
+  if (easeScore >= 4) {
+    return "초기 적응 쉬움";
+  }
+  if (easeScore >= 3) {
+    return "보통";
+  }
+  return "준비 필요";
+}
+
+function describeSettlementBase(profile) {
+  const baseScore = futureBase(profile);
+  if (baseScore >= 4) {
+    return "기반 강함";
+  }
+  if (baseScore >= 3) {
+    return "균형형";
+  }
+  return "가벼운 편";
+}
+
+function buildComparisonRows(answers, recommendations) {
+  const rowSpecs = [
+    {
+      title: "기후 감각",
+      selectedLabel: answers.climatePreference.label,
+      describeValue: describeClimateTone
+    },
+    {
+      title: "생활 환경",
+      selectedLabel: answers.environmentPreference.label,
+      describeValue: describeEnvironmentTone
+    },
+    {
+      title: "생활비 감각",
+      selectedLabel: answers.costQualityPreference.label,
+      describeValue: describeCostTone
+    },
+    {
+      title: "초기 적응",
+      selectedLabel: `영어 ${answers.englishSupportNeed.label} · 적응 ${answers.newcomerSupportNeed.label}`,
+      describeValue: describeStartEase
+    },
+    {
+      title: "정착 기반",
+      selectedLabel: `안전 ${answers.safetyPriority.label} · 기반 ${answers.futureBasePreference.label}`,
+      describeValue: describeSettlementBase
+    }
+  ];
+
+  return rowSpecs.map((rowSpec) => ({
+    title: rowSpec.title,
+    selectedLabel: rowSpec.selectedLabel,
+    candidates: recommendations.map((candidate) => ({
+      rank: candidate.rank,
+      countryNameKr: candidate.countryNameKr,
+      value: rowSpec.describeValue(candidate)
+    }))
+  }));
+}
+
 function settlementPoints(profile, answer) {
   switch (answer.value) {
     case "EXPERIENCE":
@@ -1447,7 +1542,10 @@ export function calculateRecommendationResult(countries, rawAnswers) {
       selectedLabel: answers[question.id].label
     })),
     recommendations,
-    summary: buildRecommendationSummary(answers, recommendations)
+    summary: buildRecommendationSummary(answers, recommendations),
+    comparison: {
+      rows: buildComparisonRows(answers, recommendations)
+    }
   };
 }
 
@@ -1566,6 +1664,31 @@ function renderResult(result) {
     )
     .join("");
 
+  const comparisonCards = result.comparison.rows
+    .map(
+      (row) => `
+        <article class="demo-compare-card">
+          <div class="demo-card-meta">
+            <strong>${row.title}</strong>
+            <span class="demo-card-note">내 기준: ${row.selectedLabel}</span>
+          </div>
+          <div class="demo-compare-values">
+            ${row.candidates
+              .map(
+                (candidate) => `
+                  <article class="demo-compare-value" data-rank="${candidate.rank}">
+                    <span>TOP ${candidate.rank} · ${candidate.countryNameKr}</span>
+                    <strong>${candidate.value}</strong>
+                  </article>
+                `
+              )
+              .join("")}
+          </div>
+        </article>
+      `
+    )
+    .join("");
+
   return `
     <section class="demo-route-hero" data-tone="recommendation">
       <div class="demo-route-hero-top">
@@ -1620,6 +1743,16 @@ function renderResult(result) {
         </div>
         <p class="demo-share-text">${result.summary.shareText}</p>
         <p class="demo-copy demo-copy--small" data-recommendation-share-feedback>메신저나 메모에 그대로 붙여 넣을 수 있습니다.</p>
+      </div>
+    </section>
+
+    <section class="demo-panel">
+      <div class="demo-panel-head">
+        <h2>같은 기준으로 비교해 보기</h2>
+        <p>상위 3개 국가를 같은 축으로 나란히 두고 보면 차이를 더 빨리 읽을 수 있습니다.</p>
+      </div>
+      <div class="demo-compare-grid">
+        ${comparisonCards}
       </div>
     </section>
 
